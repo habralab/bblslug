@@ -1,0 +1,16 @@
+# Prevent export of dev files
+/tests export-ignore
+/.gitignore export-ignore
+/.gitattributes export-ignore
+/README.md export-ignore
+/bin export-ignore
+
+# Ensure line endings are normalized
+*.php text
+*.md text
+*.json text
+*.yml text
+
+# Proprietary software authored by Vadim Rõbalko (Habr)
+# Contact: vadim@habr.team
+# License: proprietary (not open source)
