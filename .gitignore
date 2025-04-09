@@ -1,0 +1,5 @@
+.DS_Store
+*.prepared
+.env
+*.log
+vendor/

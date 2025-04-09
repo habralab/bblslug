@@ -1,0 +1,18 @@
+{
+  "name": "tools/babelium",
+  "description": "CLI DeepL translator for structured HTML and plain text files.",
+  "type": "project",
+  "require": {
+    "php": ">=7.0",
+    "ext-curl": "*"
+  },
+  "autoload": {
+    "psr-4": {
+      "Babelium\\": "src/"
+    }
+  },
+  "bin": [
+    "bin/babelium"
+  ],
+  "private": true
+}
