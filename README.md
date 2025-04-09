@@ -7,33 +7,44 @@ It supports HTML and plain text files, preserving structure, code blocks, and ra
 ## Features
 
 - Supports `html` and `text` formats
-- Placeholder-based protection for:
-  - `<pre>`, `<code>` blocks
-  - URL attributes and raw links
+- Placeholder-based protection with user-defined filters:
+  - `html_pre`, `html_code`, `url`, and more
+- Model selection via `--model`
+- Registry-based backend (DeepL Free/Pro, extensible)
 - Dry-run mode with intermediate output
-- Free/Pro DeepL endpoint toggle
+- Verbose mode with detailed stats
 - Compact and reusable CLI
 
 ## Usage
 
-### HTML
+### Basic HTML
 
 ```bash
 ./bin/babelium --format=html --source=input.html --translated=output.html
 ```
 
-### Text
+### With filters
 
 ```bash
-./bin/babelium --format=text --source=notes.txt --translated=notes_en.txt
+./bin/babelium --format=html --source=input.html --translated=output.html --filters=url,html_pre
+```
+
+### List available models
+
+```bash
+./bin/babelium --list-models
 ```
 
 ### Dry-run
 
-Save intermediate version with placeholders only:
-
 ```bash
 ./bin/babelium --format=html --source=input.html --translated=output.html --dry-run
+```
+
+### Verbose output
+
+```bash
+./bin/babelium --format=text --source=input.txt --translated=output.txt --verbose
 ```
 
 ### Alternative usage via Composer (requires linking or package installation)
@@ -44,21 +55,23 @@ vendor/bin/babelium --format=html --source=input.html --translated=output.html
 
 ## Environment
 
-Set your DeepL API key via environment:
+Set your API key via environment:
 
 ```bash
 export DEEPL_API_KEY=your-key-here
 ```
 
+## Environment
+
+
+```bash
+export DEEPL_API_KEY=your-key-here
+```
+
+## Examples
+
+You can find sample input files under the `examples/` directory.
+
 ## License
 
 Internal project — not publicly licensed.
-
-
-### Direct without Composer
-
-If you're not using Composer install, you can run the script directly:
-
-```bash
-php babelium.php --format=html --source=input.html --translated=output.html
-```
