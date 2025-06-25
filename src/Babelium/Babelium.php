@@ -41,7 +41,7 @@ class Babelium
             Help::error("Unknown model key: $modelKey");
         }
 
-        if ($modelKey !== "deepl:free") {
+        if (!in_array($modelKey, ['deepl:free', 'deepl:pro'], true)) {
             Help::warning("Model $modelKey is defined but not yet supported.");
             exit(1);
         }
@@ -135,17 +135,23 @@ class Babelium
         $bold = "\033[1m";
         $reset = "\033[0m";
 
-        echo $reset;
-        echo "Characters processed:\n";
-        echo "\t{$bold}Original:{$reset}    {$originalLength}\n";
-        echo "\t{$bold}Prepared:{$reset}    {$preparedLength}\n";
-        echo "\t{$bold}Translated:{$reset}  {$finalLength}\n";
-        echo "\n";
-        echo "Filter statistics:\n";
-        foreach ($filterManager->getStats() as $stat) {
-            echo "\t{$bold}{$stat['filter']}:{$reset}\t{$stat['count']} placeholder(s)\n";
-        }
+        $stderr = fopen('php://stderr', 'w');
+        fwrite($stderr, $reset);
+        fwrite($stderr, "Characters processed:\n");
+        fwrite($stderr, "\t{$bold}Original:{$reset}    {$originalLength}\n");
+        fwrite($stderr, "\t{$bold}Prepared:{$reset}    {$preparedLength}\n");
+        fwrite($stderr, "\t{$bold}Translated:{$reset}  {$finalLength}\n\n");
 
-        echo $reset;
+        $filterStats = $filterManager->getStats();
+        fwrite($stderr, "Filter statistics:\n");
+        if (empty($filterStats)) {
+            fwrite($stderr, "\t(no filters applied)\n");
+        } else {
+            foreach ($filterStats as $stat) {
+                fwrite($stderr, "\t{$bold}{$stat['filter']}:{$reset}\t{$stat['count']} placeholder(s)\n");
+            }
+        }
+        fwrite($stderr, $reset);
+        fclose($stderr);
     }
 }

@@ -21,7 +21,7 @@ return [
                 'type' => 'form',
                 'key_name' => 'auth_key',
                 'prefix' => null,
-                'env' => 'DEEPL_API_KEY',
+                'env' => 'DEEPL_FREE_API_KEY',
                 'arg' => '--api-key-deepl'
             ],
             'headers' => ['Content-Type: application/x-www-form-urlencoded'],
@@ -45,7 +45,7 @@ return [
                 'type' => 'form',
                 'key_name' => 'auth_key',
                 'prefix' => null,
-                'env' => 'DEEPL_API_KEY',
+                'env' => 'DEEPL_PRO_API_KEY',
                 'arg' => '--api-key-deepl'
             ],
             'headers' => ['Content-Type: application/x-www-form-urlencoded'],

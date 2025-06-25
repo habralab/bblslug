@@ -37,17 +37,22 @@ class Help
 
         echo $reset;
         echo "Usage:\n";
-        echo "\tphp babelium.php [options]\n\n";
+        echo "\tphp babelium.php [options]\n";
 
-        echo "Options:\n";
-        echo "\t{$bold}--source=FILE{$reset}           Input file to be translated\n";
-        echo "\t{$bold}--translated=FILE{$reset}       Output file for translated content\n";
+        echo "\nOptions:\n";
+        echo "\t{$bold}--dry-run{$reset}               Prepare and save placeholders, skip translation\n";
         echo "\t{$bold}--format=text|html{$reset}      Input format: plain text or structured HTML\n";
         echo "\t{$bold}--filters=F1,F2,...{$reset}     Filters to apply (e.g. url, html_pre, html_code)\n";
-        echo "\t{$bold}--model=MODEL_ID{$reset}        Translation model to use (see --list-models)\n";
-        echo "\t{$bold}--dry-run{$reset}               Prepare and save placeholders, skip translation\n";
-        echo "\t{$bold}--verbose{$reset}               Show extra debug info after processing\n";
+        echo "\t{$bold}--help{$reset}                  Show this help message\n";
         echo "\t{$bold}--list-models{$reset}           Show available translation models grouped by vendor\n";
+        echo "\t{$bold}--model=MODEL_ID{$reset}        Translation model to use (see --list-models)\n";
+        echo "\t{$bold}--source=FILE{$reset}           Input file to be translated\n";
+        echo "\t{$bold}--translated=FILE{$reset}       Output file for translated content\n";
+        echo "\t{$bold}--verbose{$reset}               Show extra debug info after processing\n";
+
+        echo "\nEnvironment:\n";
+        echo "\tSet API keys via environment variables depending on the model:\n";
+        echo "\t  DEEPL_FREE_API_KEY, DEEPL_PRO_API_KEY, OPENAI_API_KEY, GEMINI_API_KEY\n";
 
         echo "\nExamples:\n";
         echo "\tphp babelium.php --format=html --source=doc.html --translated=out.html\n";
