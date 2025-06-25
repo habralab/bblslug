@@ -1,6 +1,6 @@
 {
-  "name": "tools/babelium",
-  "description": "CLI DeepL translator for structured HTML and plain text files.",
+  "name": "tools/bblslug",
+  "description": "CLI translation tool for HTML and plain text using LLM-based APIs.",
   "type": "project",
   "require": {
     "php": ">=7.0",
@@ -8,11 +8,11 @@
   },
   "autoload": {
     "psr-4": {
-      "Babelium\\": "src/Babelium/"
+      "Bblslug\\": "src/Bblslug/"
     }
   },
   "bin": [
-    "bin/babelium"
+    "bin/bblslug"
   ],
   "private": true
 }

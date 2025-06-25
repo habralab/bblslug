@@ -1,8 +1,8 @@
 <?php
 
-namespace Babelium;
+namespace Bblslug;
 
-use Babelium\Models\ModelRegistry;
+use Bblslug\Models\ModelRegistry;
 
 class Help
     {
@@ -37,7 +37,7 @@ class Help
 
         echo $reset;
         echo "Usage:\n";
-        echo "\tphp babelium.php [options]\n";
+        echo "\tphp bblslug.php [options]\n";
 
         echo "\nOptions:\n";
         echo "\t{$bold}--dry-run{$reset}               Prepare and save placeholders, skip translation\n";
@@ -55,8 +55,8 @@ class Help
         echo "\t  DEEPL_FREE_API_KEY, DEEPL_PRO_API_KEY, OPENAI_API_KEY, GEMINI_API_KEY\n";
 
         echo "\nExamples:\n";
-        echo "\tphp babelium.php --format=html --source=doc.html --translated=out.html\n";
-        echo "\tphp babelium.php --source=in.txt --translated=out.txt --model=openai:gpt-4o --format=text\n";
+        echo "\tphp bblslug.php --format=html --source=doc.html --translated=out.html\n";
+        echo "\tphp bblslug.php --source=in.txt --translated=out.txt --model=openai:gpt-4o --format=text\n";
 
         echo $reset;
         if ($exitCode !== null) {

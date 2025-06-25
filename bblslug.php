@@ -3,6 +3,6 @@
 
 require __DIR__ . '/vendor/autoload.php';
 
-use Babelium\Babelium;
+use Bblslug\Bblslug;
 
-Babelium::runFromCli();
+Bblslug::runFromCli();

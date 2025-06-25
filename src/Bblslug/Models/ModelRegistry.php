@@ -1,6 +1,6 @@
 <?php
 
-namespace Babelium\Models;
+namespace Bblslug\Models;
 
 class ModelRegistry
 {

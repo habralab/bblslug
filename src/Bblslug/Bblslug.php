@@ -1,13 +1,13 @@
 <?php
 
-namespace Babelium;
+namespace Bblslug;
 
-use Babelium\Filters\FilterManager;
-use Babelium\Help;
-use Babelium\LLMClient;
-use Babelium\Models\ModelRegistry;
+use Bblslug\Filters\FilterManager;
+use Bblslug\Help;
+use Bblslug\LLMClient;
+use Bblslug\Models\ModelRegistry;
 
-class Babelium
+class Bblslug
 {
     public static function runFromCli()
     {

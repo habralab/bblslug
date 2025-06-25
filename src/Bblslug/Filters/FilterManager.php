@@ -1,6 +1,6 @@
 <?php
 
-namespace Babelium\Filters;
+namespace Bblslug\Filters;
 
 class PlaceholderCounter
 {

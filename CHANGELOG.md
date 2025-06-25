@@ -4,6 +4,24 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2025-06-25
+### Changed
+- Project renamed from **Babelium** to **Bblslug**
+  - All namespaces changed from `Babelium\` to `Bblslug\`
+  - Main entry file renamed: `babelium.php` → `bblslug.php`
+  - Binary renamed: `bin/babelium` → `bin/bblslug`
+  - Updated references in `composer.json`, `README.md`, and help output
+- Description updated to reflect broader LLM support,
+  removing DeepL-centric wording
+
+## [0.2.1] - 2025-06-25
+### Changed
+- Help output refined to better group options and improve clarity
+
+### Fixed
+- If no filters were specified, the filter statistics section
+  now explicitly notes that no filters were applied
+
 ## [0.2.0] - 2025-04-09
 ### Added
 - Model registry system with support for multiple LLM providers

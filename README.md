@@ -1,6 +1,6 @@
-# Babelium
+# Bblslug
 
-**Babelium** is a CLI-powered DeepL translation wrapper inspired by classic sci-fi visions of instant language translation devices.
+**Bblslug** is a CLI translation tool using LLM-based APIs like OpenAI, Gemini, and DeepL. It formats HTML and plain text for accurate machine translation.
 
 It supports HTML and plain text files, preserving structure, code blocks, and raw URLs using compact placeholders. Designed for automation, batch processing, and integration with scripts.
 
@@ -20,37 +20,37 @@ It supports HTML and plain text files, preserving structure, code blocks, and ra
 ### Basic HTML
 
 ```bash
-./bin/babelium --format=html --source=input.html --translated=output.html
+./bin/bblslug --format=html --source=input.html --translated=output.html
 ```
 
 ### With filters
 
 ```bash
-./bin/babelium --format=html --source=input.html --translated=output.html --filters=url,html_pre
+./bin/bblslug --format=html --source=input.html --translated=output.html --filters=url,html_pre
 ```
 
 ### List available models
 
 ```bash
-./bin/babelium --list-models
+./bin/bblslug --list-models
 ```
 
 ### Dry-run
 
 ```bash
-./bin/babelium --format=html --source=input.html --translated=output.html --dry-run
+./bin/bblslug --format=html --source=input.html --translated=output.html --dry-run
 ```
 
 ### Verbose output
 
 ```bash
-./bin/babelium --format=text --source=input.txt --translated=output.txt --verbose
+./bin/bblslug --format=text --source=input.txt --translated=output.txt --verbose
 ```
 
 ### Alternative usage via Composer (requires linking or package installation)
 
 ```bash
-vendor/bin/babelium --format=html --source=input.html --translated=output.html
+vendor/bin/bblslug --format=html --source=input.html --translated=output.html
 ```
 
 ## Environment
