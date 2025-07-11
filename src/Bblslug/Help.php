@@ -52,11 +52,13 @@ class Help
 
         echo "\nEnvironment:\n";
         echo "\tSet API keys via environment variables depending on the model:\n";
-        echo "\t  DEEPL_FREE_API_KEY, DEEPL_PRO_API_KEY, OPENAI_API_KEY, GEMINI_API_KEY\n";
+        echo "\t  DEEPL_FREE_API_KEY, DEEPL_PRO_API_KEY, OPENAI_API_KEY, GEMINI_API_KEY, ...\n";
+        echo "\t  (See each model's required variable with --list-models)\n";
+        echo "\tSome models may not require API keys at all.\n";
 
         echo "\nExamples:\n";
-        echo "\tphp bblslug.php --format=html --source=doc.html --translated=out.html\n";
-        echo "\tphp bblslug.php --source=in.txt --translated=out.txt --model=openai:gpt-4o --format=text\n";
+        echo "\tphp bblslug.php --format=html --model=deepl:pro --source=doc.html --translated=out.html --filters=url,html_code,html_pre\n";
+        echo "\tphp bblslug.php --format=text --model=openai:gpt-4o --source=in.txt --translated=out.txt\n";
 
         echo $reset;
         if ($exitCode !== null) {

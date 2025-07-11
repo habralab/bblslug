@@ -22,7 +22,7 @@ class LLMClient
         if ($auth) {
             $type = $auth['type'] ?? 'form';
             $key = $auth['key_name'] ?? 'auth_key';
-            $prefix = $auth['prefix'] ? $auth['prefix'] . ' ' : '';
+            $prefix = isset($auth['prefix']) ? $auth['prefix'] . ' ' : '';
 
             if ($type === 'header') {
                 $headers[] = $key . ': ' . $prefix . $apiKey;
@@ -38,17 +38,31 @@ class LLMClient
             ? json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT)
             : http_build_query($payload);
 
+        $hasContentType = array_filter($headers, fn($h) => str_starts_with(strtolower($h), 'content-type:'));
+        if (!$hasContentType) {
+            $headers[] = $bodyType === 'json'
+                ? 'Content-Type: application/json'
+                : 'Content-Type: application/x-www-form-urlencoded';
+        }
+
         // Print debug info if verbose or dry-run
         if ($isVerbose || $isDryRun) {
             $title = $isDryRun ? 'Dry-run: request data (not sent)' : 'Verbose: request preview';
             echo "\n\033[1m{$title}\033[0m\n";
             echo "Endpoint:\n  $endpoint\n";
+
             echo "Headers:\n";
-            foreach ($headers as $header) {
+            $displayHeaders = array_map(function ($h) use ($apiKey) {
+                return str_replace($apiKey, '***', $h);
+            }, $headers);
+            foreach ($displayHeaders as $header) {
                 echo "  $header\n";
             }
+
             echo "Body:\n";
-            echo ($bodyType === 'json' ? $body : urldecode($body)) . "\n\n";
+            $decodedBody = $bodyType === 'json' ? $body : urldecode($body);
+            $displayBody = str_replace($apiKey, '***', $decodedBody);
+            echo $displayBody . "\n\n";
         }
 
         if ($isDryRun) {
@@ -60,6 +74,7 @@ class LLMClient
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $body);
+        curl_setopt($ch, CURLOPT_POST, true);
 
         $response = curl_exec($ch);
         curl_close($ch);

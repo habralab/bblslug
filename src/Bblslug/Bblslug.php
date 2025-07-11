@@ -23,7 +23,7 @@ class Bblslug
         $isDryRun = isset($options["dry-run"]);
         $isVerbose = isset($options["verbose"]);
         $listModels = isset($options["list-models"]);
-        $modelKey = $options["model"] ?? "deepl:free";
+        $modelKey = $options["model"] ?? null;
 
         if (isset($options["help"])) {
             Help::printHelp(0);
@@ -37,12 +37,17 @@ class Bblslug
             exit(0);
         }
 
+        if (!$modelKey) {
+            Help::error("No model selected.\n\nPlease provide a model with --model.\nExample:\n  --model=openai:gpt-4o\n\nUse --list-models to view available models.");
+            exit(1);
+        }
+
         if (!$registry->has($modelKey)) {
             Help::error("Unknown model key: $modelKey");
         }
 
-        if (!in_array($modelKey, ['deepl:free', 'deepl:pro'], true)) {
-            Help::warning("Model $modelKey is defined but not yet supported.");
+        if (!$registry->getEndpoint($modelKey)) {
+            Help::warning("Model $modelKey is defined but missing required configuration.");
             exit(1);
         }
 
@@ -65,9 +70,6 @@ class Bblslug
             echo "   You can generate a key at: $help\n";
             exit(1);
         }
-
-        // Determine if DeepL Free API is used (for endpoint selection)
-        $isFree = $modelKey === 'deepl:free';
 
         // Read file
         $text = file_get_contents($sourceFile);

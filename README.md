@@ -10,62 +10,58 @@ It supports HTML and plain text files, preserving structure, code blocks, and ra
 - Placeholder-based protection with user-defined filters:
   - `html_pre`, `html_code`, `url`, and more
 - Model selection via `--model`
-- Registry-based backend (DeepL Free/Pro, extensible)
+- Registry-based backend (DeepL, OpenAI, Gemini — fully configurable)
 - Dry-run mode with intermediate output
 - Verbose mode with detailed stats
 - Compact and reusable CLI
 
 ## Usage
 
-### Basic HTML
+You must select a model via the `--model=vendor:name` option. This option is required.
 
-```bash
-./bin/bblslug --format=html --source=input.html --translated=output.html
-```
-
-### With filters
-
-```bash
-./bin/bblslug --format=html --source=input.html --translated=output.html --filters=url,html_pre
-```
-
-### List available models
+To view all available models, run:
 
 ```bash
 ./bin/bblslug --list-models
 ```
 
+Set the necessary API keys before running:
+
+```bash
+export DEEPL_FREE_API_KEY=your-key-for-deepl-free-here
+export DEEPL_PRO_API_KEY=your-key-for-deepl-pro-here
+export OPENAI_API_KEY=your-key-for-openai-here
+export GEMINI_API_KEY=your-key-for-gemini-here
+```
+
+### Basic HTML
+
+```bash
+./bin/bblslug --model=vendor:name --format=html --source=input.html --translated=output.html
+```
+
+### With filters
+
+```bash
+./bin/bblslug --model=vendor:name --format=html --source=input.html --translated=output.html --filters=url,html_pre
+```
+
 ### Dry-run
 
 ```bash
-./bin/bblslug --format=html --source=input.html --translated=output.html --dry-run
+./bin/bblslug --model=vendor:name --format=html --source=input.html --translated=output.html --dry-run
 ```
 
 ### Verbose output
 
 ```bash
-./bin/bblslug --format=text --source=input.txt --translated=output.txt --verbose
+./bin/bblslug --model=vendor:name --format=text --source=input.txt --translated=output.txt --verbose
 ```
 
 ### Alternative usage via Composer (requires linking or package installation)
 
 ```bash
-vendor/bin/bblslug --format=html --source=input.html --translated=output.html
-```
-
-## Environment
-
-Set your API key via environment:
-
-```bash
-export DEEPL_API_KEY=your-key-here
-```
-
-## Environment
-
-
-```bash
-export DEEPL_API_KEY=your-key-here
+vendor/bin/bblslug --model=vendor:name --format=html --source=input.html --translated=output.html
 ```
 
 ## Examples
@@ -74,4 +70,4 @@ You can find sample input files under the `examples/` directory.
 
 ## License
 
-Internal project — not publicly licensed.
+Private project, not yet open-source.
