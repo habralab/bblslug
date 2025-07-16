@@ -41,13 +41,13 @@ class Help
 
         echo "\nOptions:\n";
         echo "\t{$bold}--dry-run{$reset}               Prepare and save placeholders, skip translation\n";
+        echo "\t{$bold}--filters=F1,F2,...{$reset}     Comma-separated filters to apply (e.g. url, html_pre, html_code)\n";
         echo "\t{$bold}--format=text|html{$reset}      Input format: plain text or structured HTML\n";
-        echo "\t{$bold}--filters=F1,F2,...{$reset}     Filters to apply (e.g. url, html_pre, html_code)\n";
         echo "\t{$bold}--help{$reset}                  Show this help message\n";
         echo "\t{$bold}--list-models{$reset}           Show available translation models grouped by vendor\n";
         echo "\t{$bold}--model=MODEL_ID{$reset}        Translation model to use (see --list-models)\n";
-        echo "\t{$bold}--source=FILE{$reset}           Input file to be translated\n";
-        echo "\t{$bold}--translated=FILE{$reset}       Output file for translated content\n";
+        echo "\t{$bold}--source=FILE{$reset}           Input file to translate (omit to read from STDIN)\n";
+        echo "\t{$bold}--translated=FILE{$reset}       Output file for translated content (omit to write to STDOUT)\n";
         echo "\t{$bold}--verbose{$reset}               Show extra debug info after processing\n";
 
         echo "\nEnvironment:\n";
@@ -57,6 +57,23 @@ class Help
         echo "\tSome models may not require API keys at all.\n";
 
         echo "\nExamples:\n";
+        // List available models
+        echo "\tphp bblslug.php --list-models\n";
+        // Translate HTML from file to file
+        echo "\tphp bblslug.php --model=deepl:pro --format=html \\\n";
+        echo "\t    --source=doc.html --translated=out.html --filters=url,html_code,html_pre\n";
+        // Translate plain text via STDIN → STDOUT
+        echo "\tcat in.txt | php bblslug.php --model=openai:gpt-4o --format=text > out.txt\n";
+        // Dry-run to inspect placeholders in a file
+        echo "\tphp bblslug.php --model=deepl:free --format=text --filters=url,html_pre \\\n";
+        echo "\t    --source=in.txt --dry-run\n";
+        // Verbose mode (shows request preview)
+        echo "\tphp bblslug.php --model=deepl:pro --format=html --verbose \\\n";
+        echo "\t    --source=doc.html --translated=out.html\n";
+
+
+
+
         echo "\tphp bblslug.php --format=html --model=deepl:pro --source=doc.html --translated=out.html --filters=url,html_code,html_pre\n";
         echo "\tphp bblslug.php --format=text --model=openai:gpt-4o --source=in.txt --translated=out.txt\n";
 

@@ -1,67 +1,148 @@
 # Bblslug
 
-**Bblslug** is a CLI translation tool using LLM-based APIs like OpenAI, Gemini, and DeepL. It formats HTML and plain text for accurate machine translation.
+**Bblslug** is a versatile translation tool that can be used as both a **CLI utility** and a **PHP library**.
 
-It supports HTML and plain text files, preserving structure, code blocks, and raw URLs using compact placeholders. Designed for automation, batch processing, and integration with scripts.
+It leverages LLM-based APIs (DeepL, OpenAI, Gemini) to translate plain text or HTML while preserving structure, code blocks, and URLs via placeholder filters.
 
 ## Features
 
-- Supports `html` and `text` formats
-- Placeholder-based protection with user-defined filters:
-  - `html_pre`, `html_code`, `url`, and more
-- Model selection via `--model`
-- Registry-based backend (DeepL, OpenAI, Gemini — fully configurable)
-- Dry-run mode with intermediate output
-- Verbose mode with detailed stats
-- Compact and reusable CLI
+- Supports **html** and **plain text** (`--format=text|html`)
+- Placeholder-based protection with filters: `html_pre`, `html_code`, `url`, etc.
+- Model selection via `--model=vendor:name` (`deepl:free`, `deepl:pro`, `openai:gpt-4o`, `gemini:1.5-pro`, …)
+- Fully configurable backend registry
+- **Dry-run** mode to preview placeholders without making API calls
+- **Verbose** mode (`--verbose`) to print request previews
+- Can be invoked as a CLI tool or embedded in PHP code
 
-## Usage
-
-You must select a model via the `--model=vendor:name` option. This option is required.
-
-To view all available models, run:
+## Installation
 
 ```bash
-./bin/bblslug --list-models
+composer require habralab/bblslug
+chmod +x vendor/bin/bblslug
 ```
 
-Set the necessary API keys before running:
+## CLI Usage
 
+1. **Always specify a model** with `--model=vendor:name` option.
+
+2. **Export your API key(s)** before running:
+
+ ```bash
+ export DEEPL_FREE_API_KEY=...
+ export DEEPL_PRO_API_KEY=...
+ export OPENAI_API_KEY=...
+ export GEMINI_API_KEY=...
+ ```
+
+3. **Input / output**:
+
+ - If `--source` is omitted, Bblslug reads from **STDIN**.
+ - If `--translated` is omitted, Bblslug writes to **STDOUT**.
+
+### Show available models
 ```bash
-export DEEPL_FREE_API_KEY=your-key-for-deepl-free-here
-export DEEPL_PRO_API_KEY=your-key-for-deepl-pro-here
-export OPENAI_API_KEY=your-key-for-openai-here
-export GEMINI_API_KEY=your-key-for-gemini-here
+vendor/bin/bblslug --list-models
 ```
 
-### Basic HTML
+### Translate an HTML file and write to another file
 
 ```bash
-./bin/bblslug --model=vendor:name --format=html --source=input.html --translated=output.html
+vendor/bin/bblslug \
+  --model=vendor:name \
+  --format=html \
+  --source=input.html \
+  --translated=output.html
 ```
 
-### With filters
+### Translate an HTML file and write to another file with filters
 
 ```bash
-./bin/bblslug --model=vendor:name --format=html --source=input.html --translated=output.html --filters=url,html_pre
+vendor/bin/bblslug \
+  --model=vendor:name \
+  --format=html \
+  --source=input.html \
+  --translated=output.html \
+  --filters=url,html_code,html_pre
 ```
 
-### Dry-run
+### Pipe STDIN → file
 
 ```bash
-./bin/bblslug --model=vendor:name --format=html --source=input.html --translated=output.html --dry-run
+vendor/bin/bblslug \
+  --model=vendor:name \
+  --format=text \
+  --source=input.txt
 ```
 
-### Verbose output
+### Pipe STDIN → file
 
 ```bash
-./bin/bblslug --model=vendor:name --format=text --source=input.txt --translated=output.txt --verbose
+cat input.txt | vendor/bin/bblslug \
+  --model=vendor:name \
+  --format=text \
+  --translated=out.txt
 ```
 
-### Alternative usage via Composer (requires linking or package installation)
+### Pipe STDIN → STDOUT
 
 ```bash
-vendor/bin/bblslug --model=vendor:name --format=html --source=input.html --translated=output.html
+echo "Hello world" | vendor/bin/bblslug \
+  --model=vendor:name \
+  --format=text
+```
+
+### Dry-run placeholders only
+
+```bash
+vendor/bin/bblslug \
+  --model=vendor:name \
+  --format=text \
+  --filters=url \
+  --source=input.txt \
+  --dry-run
+```
+
+### Verbose mode (prints request preview to stderr)
+
+```bash
+vendor/bin/bblslug \
+  --model=vendor:name \
+  --format=html \
+  --verbose \
+  --source=input.html \
+  --translated=out.html
+```
+
+## PHP Library Usage
+
+You can embed Bblslug in your PHP project:
+
+```php
+<?php
+require 'vendor/autoload.php';
+
+use Bblslug\Bblslug;
+
+$text   = file_get_contents('input.html');
+$result = Bblslug::translate(
+    text:     $text,
+    modelKey: 'deepl:pro',
+    format:   'html',
+    apiKey:   getenv('DEEPL_PRO_API_KEY'),
+    filters:  ['url','html_code'],
+    dryRun:   false,
+    verbose:  true
+);
+
+// $result = [
+//   'original'    => '...',
+//   'prepared'    => '...',
+//   'result'      => '...',
+//   'lengths'     => ['original'=>123, 'prepared'=>100, 'translated'=>130],
+//   'filterStats' => [['filter'=>'url','count'=>5], ...]
+// ];
+
+echo $result['result'];
 ```
 
 ## Examples

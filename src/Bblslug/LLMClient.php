@@ -45,24 +45,24 @@ class LLMClient
                 : 'Content-Type: application/x-www-form-urlencoded';
         }
 
-        // Print debug info if verbose or dry-run
+        // Print debug info if verbose or dry-run to STDERR
         if ($isVerbose || $isDryRun) {
+            $fp = fopen('php://stderr','w');
             $title = $isDryRun ? 'Dry-run: request data (not sent)' : 'Verbose: request preview';
-            echo "\n\033[1m{$title}\033[0m\n";
-            echo "Endpoint:\n  $endpoint\n";
+            fwrite($fp, "\n\033[1m{$title}\033[0m\n");
+            fwrite($fp, "Endpoint:\n  $endpoint\n\n");
 
-            echo "Headers:\n";
-            $displayHeaders = array_map(function ($h) use ($apiKey) {
-                return str_replace($apiKey, '***', $h);
-            }, $headers);
-            foreach ($displayHeaders as $header) {
-                echo "  $header\n";
+            fwrite($fp, "Headers:\n");
+            $displayHeaders = array_map(fn($h) => str_replace($apiKey, '***', $h), $headers);
+            foreach ($displayHeaders as $h) {
+                fwrite($fp, "  {$h}\n");
             }
 
-            echo "Body:\n";
+            fwrite($fp, "\nBody:\n");
             $decodedBody = $bodyType === 'json' ? $body : urldecode($body);
             $displayBody = str_replace($apiKey, '***', $decodedBody);
-            echo $displayBody . "\n\n";
+            fwrite($fp, "{$displayBody}\n\n");
+            fclose($fp);
         }
 
         if ($isDryRun) {
