@@ -38,16 +38,16 @@ class Bblslug
      * @throws \RuntimeException On HTTP or parsing errors.
      */
     public static function translate(
-        string  $text,
-        string  $modelKey,
-        string  $format,
-        string  $apiKey,
-        array   $filters    = [],
-        bool    $dryRun     = false,
-        bool    $verbose    = false,
+        string $text,
+        string $modelKey,
+        string $format,
+        string $apiKey,
+        array $filters = [],
+        bool $dryRun = false,
+        bool $verbose = false,
         ?string $sourceLang = null,
         ?string $targetLang = null,
-        ?string $context    = null
+        ?string $context = null
     ): array {
         // Validate model
         $registry = new ModelRegistry();
@@ -77,30 +77,30 @@ class Bblslug
 
         // Apply placeholder filters
         $filterManager = new FilterManager($filters);
-        $prepared      = $filterManager->apply($text);
+        $prepared = $filterManager->apply($text);
         $preparedLength = mb_strlen($prepared);
 
         // Build request
         $req = $driver->buildRequest(
             $model,
             $prepared,
-            ['format'=>$format, 'dryRun'=>$dryRun, 'verbose'=>$verbose]
+            ['format' => $format, 'dryRun' => $dryRun, 'verbose' => $verbose]
         );
 
         // API auth key handling
         $auth = $model['requirements']['auth'] ?? null;
         if ($auth) {
             if (!$apiKey) {
-               throw new \InvalidArgumentException("API key is required for {$modelKey}");
+                throw new \InvalidArgumentException("API key is required for {$modelKey}");
             }
             $keyName = $auth['key_name'];
-            $prefix  = $auth['prefix'] ? $auth['prefix'].' ' : '';
+            $prefix  = $auth['prefix'] ? $auth['prefix'] . ' ' : '';
             switch ($auth['type'] ?? 'form') {
                 case 'header':
                     $req['headers'][] = "{$keyName}: {$prefix}{$apiKey}";
                     break;
                 case 'form':
-                    $req['body'] .= '&'.urlencode($keyName).'='.urlencode($apiKey);
+                    $req['body'] .= '&' . urlencode($keyName) . '=' . urlencode($apiKey);
                     break;
                 case 'query':
                     $sep = str_contains($req['url'], '?') ? '&' : '?';
@@ -113,21 +113,21 @@ class Bblslug
 
         // Perform HTTP request
         $http = HttpClient::request(
-            method:  'POST',
-            url:     $req['url'],
+            method: 'POST',
+            url: $req['url'],
             headers: $req['headers'],
-            body:    $req['body'],
+            body: $req['body'],
             verbose: $verbose,
-            dryRun:  $dryRun,
+            dryRun: $dryRun,
             maskPatterns: [
                 $apiKey,
             ]
         );
 
-        $httpStatus     = $http['status'];
-        $debugRequest   = $http['debugRequest'];
-        $debugResponse  = $http['debugResponse'];
-        $raw            = $http['body'];
+        $httpStatus = $http['status'];
+        $debugRequest = $http['debugRequest'];
+        $debugResponse = $http['debugResponse'];
+        $raw = $http['body'];
 
         // Parse response
         if ($dryRun) {
@@ -150,19 +150,19 @@ class Bblslug
         $filterStats = $filterManager->getStats();
 
         return [
-            'original'     => $text,
-            'prepared'     => $prepared,
-            'result'       => $result,
-            'httpStatus'        => $httpStatus,
-            'debugRequest'      => $debugRequest,
-            'debugResponse'     => $debugResponse,
-            'rawResponseBody'   => $raw,
-            'lengths'      => [
-                'original'   => $originalLength,
-                'prepared'   => $preparedLength,
+            'original' => $text,
+            'prepared' => $prepared,
+            'result' => $result,
+            'httpStatus' => $httpStatus,
+            'debugRequest' => $debugRequest,
+            'debugResponse' => $debugResponse,
+            'rawResponseBody' => $raw,
+            'lengths' => [
+                'original' => $originalLength,
+                'prepared' => $preparedLength,
                 'translated' => $finalLength,
             ],
-            'filterStats'  => $filterStats,
+            'filterStats' => $filterStats,
         ];
     }
 
@@ -207,18 +207,18 @@ class Bblslug
         }
 
         // Extract params
-        $context    = $options['context']     ?? null;
-        $dryRun     = isset($options['dry-run']);
-        $format     = $options['format']      ?? null;
-        $filters    = isset($options['filters'])
+        $context = $options['context'] ?? null;
+        $dryRun = isset($options['dry-run']);
+        $format = $options['format'] ?? null;
+        $filters = isset($options['filters'])
                         ? array_map('trim', explode(',', $options['filters']))
                         : [];
-        $modelKey   = $options['model']       ?? null;
-        $outFile    = $options['translated']  ?? null;
-        $sourceFile = $options['source']      ?? null;
+        $modelKey = $options['model'] ?? null;
+        $outFile = $options['translated'] ?? null;
+        $sourceFile = $options['source'] ?? null;
         $sourceLang = $options['source-lang'] ?? null;
         $targetLang = $options['target-lang'] ?? null;
-        $verbose    = isset($options['verbose']);
+        $verbose = isset($options['verbose']);
 
         // Validate model
         if (!$modelKey) {
@@ -322,23 +322,23 @@ class Bblslug
         $res = [];
         try {
             $res = self::translate(
-                text:       $text,
-                modelKey:   $modelKey,
-                format:     $format,
-                apiKey:     $apiKey,
-                filters:    $filters,
-                dryRun:     $dryRun,
-                verbose:    $verbose,
+                text: $text,
+                modelKey: $modelKey,
+                format: $format,
+                apiKey: $apiKey,
+                filters: $filters,
+                dryRun: $dryRun,
+                verbose: $verbose,
                 targetLang: $targetLang,
                 sourceLang: $sourceLang,
-                context:    $context
+                context: $context
             );
         } catch (\Throwable $e) {
             Help::error($e->getMessage());
         }
 
-        if (PHP_SAPI==='cli' && ($verbose || $dryRun)) {
-            file_put_contents('php://stderr', $res['debugRequest'],  FILE_APPEND);
+        if (PHP_SAPI === 'cli' && ($verbose || $dryRun)) {
+            file_put_contents('php://stderr', $res['debugRequest'], FILE_APPEND);
             file_put_contents('php://stderr', $res['debugResponse'], FILE_APPEND);
         }
 
@@ -360,7 +360,7 @@ class Bblslug
         $bold = "\033[1m";
         $reset = "\033[0m";
         $lh   = $res['lengths'];
-        $stderr = fopen('php://stderr','w');
+        $stderr = fopen('php://stderr', 'w');
         fwrite($stderr, "{$reset}Characters processed:\n");
         fwrite($stderr, "\t{$bold}Original:{$reset}    {$lh['original']}\n");
         fwrite($stderr, "\t{$bold}Prepared:{$reset}    {$lh['prepared']}\n");

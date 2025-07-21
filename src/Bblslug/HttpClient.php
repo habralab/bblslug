@@ -31,11 +31,11 @@ class HttpClient
     public static function request(
         string $method,
         string $url,
-        array  $headers = [],
+        array $headers = [],
         string $body = '',
-        bool   $dryRun = false,
-        array  $maskPatterns = [],
-        bool   $verbose = false
+        bool $dryRun = false,
+        array $maskPatterns = [],
+        bool $verbose = false
     ): array {
         // Prepare masked copies for logging
         $logHeaders = $headers;
@@ -91,7 +91,7 @@ class HttpClient
 
         // Capture response headers
         $responseHeaders = [];
-        curl_setopt($ch, CURLOPT_HEADERFUNCTION, function($curl, $line) use (&$responseHeaders) {
+        curl_setopt($ch, CURLOPT_HEADERFUNCTION, function ($curl, $line) use (&$responseHeaders) {
             if (strpos($line, ':') !== false) {
                 [$name, $value] = explode(':', trim($line), 2);
                 $responseHeaders[$name][] = trim($value);

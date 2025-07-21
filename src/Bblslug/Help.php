@@ -5,7 +5,7 @@ namespace Bblslug;
 use Bblslug\Models\ModelRegistry;
 
 class Help
-    {
+{
     public static function alert(string $label, string $message, string $color = "\033[0m", ?int $exitCode = null): void
     {
         fwrite(STDERR, "{$color}{$label}:\033[0m {$message}\n");
@@ -40,18 +40,18 @@ class Help
         echo "\tphp bblslug.php [options]\n";
 
         echo "\nOptions:\n";
-        echo "\t{$bold}--context=TEXT{$reset}          Optional: add translation context prompt\n";
-        echo "\t{$bold}--dry-run{$reset}               Optional: prepare and save placeholders, skip translation\n";
-        echo "\t{$bold}--filters=F1,F2,...{$reset}     Optional: comma-separated filters to apply (e.g. url, html_pre, html_code)\n";
-        echo "\t{$bold}--format=text|html{$reset}      Input format: plain text or structured HTML\n";
-        echo "\t{$bold}--help{$reset}                  Help: Show this help message\n";
-        echo "\t{$bold}--list-models{$reset}           Help: Show available translation models grouped by vendor\n";
-        echo "\t{$bold}--model=MODEL_ID{$reset}        Translation model to use (see --list-models)\n";
-        echo "\t{$bold}--source=FILE{$reset}           Optional: input file to translate (omit to read from STDIN)\n";
-        echo "\t{$bold}--source-lang=LANG{$reset}      Optional: source language code (e.g. EN, DE) - default autodetect\n";
-        echo "\t{$bold}--target-lang=LANG{$reset}      Optional: target language (e.g. EN, DE) - default EN\n";
-        echo "\t{$bold}--translated=FILE{$reset}       Optional: output file for translated content (omit to write to STDOUT)\n";
-        echo "\t{$bold}--verbose{$reset}               Optional: show extra debug info after processing\n";
+        echo "\t{$bold}--context=TEXT{$reset}       Add translation context prompt\n";
+        echo "\t{$bold}--dry-run{$reset}            Prepare and save placeholders, skip translation\n";
+        echo "\t{$bold}--filters=F1,F2,...{$reset}  Comma-separated filters to (e.g. url, html_pre, html_code)\n";
+        echo "\t{$bold}--format=text|html{$reset}   Input format: plain text or structured HTML\n";
+        echo "\t{$bold}--help{$reset}               Show this help message\n";
+        echo "\t{$bold}--list-models{$reset}        Show available translation models grouped by vendor\n";
+        echo "\t{$bold}--model=MODEL_ID{$reset}     Translation model to use (see --list-models)\n";
+        echo "\t{$bold}--source=FILE{$reset}        Input file to translate (omit to read from STDIN)\n";
+        echo "\t{$bold}--source-lang=LANG{$reset}   Source language code (e.g. EN, DE) - default autodetect\n";
+        echo "\t{$bold}--target-lang=LANG{$reset}   Target language (e.g. EN, DE) - default EN\n";
+        echo "\t{$bold}--translated=FILE{$reset}    Output file for translated content (omit to write to STDOUT)\n";
+        echo "\t{$bold}--verbose{$reset}            Show extra debug info after processing\n";
 
         echo "\nEnvironment:\n";
         echo "\tSet API keys via environment variables depending on the model:\n";
@@ -77,8 +77,10 @@ class Help
 
 
 
-        echo "\tphp bblslug.php --format=html --model=deepl:pro --source=doc.html --translated=out.html --filters=url,html_code,html_pre\n";
-        echo "\tphp bblslug.php --format=text --model=openai:gpt-4o --source=in.txt --translated=out.txt\n";
+        echo "\tphp bblslug.php --model=deepl:pro --format=html \\\n";
+        echo "\t    --source=doc.html --translated=out.html --filters=url,html_code,html_pre\n";
+        echo "\tphp bblslug.php --model=openai:gpt-4o --format=text \\\n";
+        echo "\t    --source=in.txt --translated=out.txt\n";
 
         echo $reset;
         if ($exitCode !== null) {
