@@ -29,7 +29,6 @@
     "lint": "vendor/bin/phpcs --standard=phpcs.xml",
     "phpunit": "vendor/bin/phpunit"
   },
-  "private": true,
   "authors": [
     {
       "name": "Vadim Rybalko",
