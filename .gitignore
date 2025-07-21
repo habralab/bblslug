@@ -1,5 +1,9 @@
+# Composer
+/vendor/
+/composer.lock
+/composer.phar
+
+# Other
 .DS_Store
 *.prepared
-.env
 *.log
-vendor/

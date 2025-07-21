@@ -1,7 +1,8 @@
 {
   "name": "tools/bblslug",
   "description": "CLI translation tool for HTML and plain text using LLM-based APIs.",
-  "type": "project",
+  "license": "proprietary",
+  "type": "library",
   "require": {
     "php": ">=8.0",
     "ext-curl": "*",
@@ -15,5 +16,11 @@
   "bin": [
     "bin/bblslug"
   ],
-  "private": true
+  "private": true,
+  "authors": [
+    {
+      "name": "Vadim Rybalko",
+      "role": "Lead"
+    }
+  ]
 }
