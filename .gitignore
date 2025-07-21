@@ -1,8 +1,12 @@
-.DS_Store
-*.prepared
-.env
-*.log
-vendor/
+# Composer
+/vendor/
+/composer.lock
+/composer.phar
 
 # PHPUnit result cache
 .phpunit.result.cache
+
+# Other
+.DS_Store
+*.prepared
+*.log
