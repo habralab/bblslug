@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<ruleset name="Bblslug">
+  <description>PSR-12 coding standard for Bblslug</description>
+  <file>src/</file>
+  <rule ref="PSR12"/>
+</ruleset>

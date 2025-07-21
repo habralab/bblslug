@@ -3,3 +3,6 @@
 .env
 *.log
 vendor/
+
+# PHPUnit result cache
+.phpunit.result.cache
