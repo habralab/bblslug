@@ -4,6 +4,34 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2025-07-21
+### Added
+- **Model driver abstraction**  
+  Introduce `ModelDriverInterface` and `DeepLDriver`
+  to encapsulate per-vendor request/response logic.
+- **HTTP client wrapper**  
+  Add `HttpClient::request()` with support for verbose logging,
+  dry-run mode and `maskPatterns`.
+- **DeepL parameters**  
+  Support optional `--source-lang`, `--target-lang` and `--context` (prompt)
+  flags in CLI and API.
+- **CLI flags**  
+  Add `--context`, `--source-lang` and `--target-lang` to `runFromCli()`.
+
+### Changed
+- **DeepL defaults**  
+  Move default `target_lang` & `formality` into registry `defaults`,
+  drop HTML-only `prompt_html` in favor of generic `context`.
+- **API signatures**  
+  Extend `translate()` and `runFromCli()` to accept the new parameters.
+- **Help & docs**  
+  Sort option lists alphabetically, translate all comments/docblocks to English,
+  update README and `resources/models.php`.
+
+### Removed
+- **Legacy client**  
+  Remove the old `LLMClient` in favor of `HttpClient` + drivers.
+
 ## [0.3.0] - 2025-06-25
 ### Changed
 - Project renamed from **Babelium** to **Bblslug**

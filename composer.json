@@ -3,8 +3,9 @@
   "description": "CLI translation tool for HTML and plain text using LLM-based APIs.",
   "type": "project",
   "require": {
-    "php": ">=7.0",
-    "ext-curl": "*"
+    "php": ">=8.0",
+    "ext-curl": "*",
+    "ext-mbstring": "*"
   },
   "autoload": {
     "psr-4": {
