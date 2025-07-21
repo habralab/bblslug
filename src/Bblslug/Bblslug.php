@@ -4,39 +4,50 @@ namespace Bblslug;
 
 use Bblslug\Filters\FilterManager;
 use Bblslug\Help;
-use Bblslug\LLMClient;
+use Bblslug\HttpClient;
 use Bblslug\Models\ModelRegistry;
 
 class Bblslug
 {
     /**
-     * Programmatic translation entrypoint.
+     * Translate text or HTML via any registered model.
+     * @param string      $text       The source text or HTML.
+     * @param string      $modelKey   Model ID (e.g. "deepl:pro").
+     * @param string      $format     "text" or "html".
+     * @param string      $apiKey     API key for the model.
+     * @param string[]    $filters    Placeholder filters to apply.
+     * @param bool        $dryRun     If true: prepare placeholders only.
+     * @param bool        $verbose    If true: include request/response logs.
+     * @param string|null $sourceLang Optional source language code.
+     * @param string|null $targetLang Optional target language code.
+     * @param string|null $context    Optional context prompt.
      *
-     * @param string $text       Input text or HTML to translate.
-     * @param string $modelKey   Identifier of the model, e.g. "deepl:free" or "openai:gpt-4o".
-     * @param string $format     "text" or "html".
-     * @param string $apiKey     API key for the selected model.
-     * @param array  $filters    List of filter names, e.g. ['url','html_pre'].
-     * @param bool   $dryRun     If true, skip actual API call and return prepared text.
-     * @param bool   $verbose    If true, pass verbose flag to the LLM client.
-     * @return array {
-     *     @type string $original     Original input.
-     *     @type string $prepared     Text after placeholder filters.
-     *     @type string $result       Final translated text with placeholders restored.
-     *     @type array  $lengths      Character counts: original, prepared, result.
-     *     @type array  $filterStats  Stats per filter: [ ['filter'=>..., 'count'=>...], ... ].
+     * @return array{
+     *     original: string,
+     *     prepared: string,
+     *     result: string,
+     *     httpStatus: int,
+     *     debugRequest: string,
+     *     debugResponse: string,
+     *     rawResponseBody: string,
+     *     lengths: array{original:int,prepared:int,translated:int},
+     *     filterStats: array<array{filter:string,count:int}>
      * }
-     * @throws \InvalidArgumentException on bad inputs.
-     * @throws \RuntimeException on translation failure.
+     *
+     * @throws \InvalidArgumentException If inputs are invalid.
+     * @throws \RuntimeException On HTTP or parsing errors.
      */
     public static function translate(
-        string $text,
-        string $modelKey,
-        string $format,
-        string $apiKey,
-        array  $filters = [],
-        bool   $dryRun  = false,
-        bool   $verbose = false
+        string  $text,
+        string  $modelKey,
+        string  $format,
+        string  $apiKey,
+        array   $filters    = [],
+        bool    $dryRun     = false,
+        bool    $verbose    = false,
+        ?string $sourceLang = null,
+        ?string $targetLang = null,
+        ?string $context    = null
     ): array {
         // Validate model
         $registry = new ModelRegistry();
@@ -48,6 +59,18 @@ class Bblslug
             throw new \InvalidArgumentException("Model {$modelKey} missing required configuration.");
         }
         $model = $registry->get($modelKey);
+        $driver = $registry->getDriver($modelKey);
+
+        // Override defaults from CLI args if present
+        if ($targetLang !== null) {
+            $model['defaults']['target_lang'] = $targetLang;
+        }
+        if ($sourceLang !== null) {
+            $model['defaults']['source_lang'] = $sourceLang;
+        }
+        if ($context !== null) {
+            $model['defaults']['context'] = $context;
+        }
 
         // Measure original length
         $originalLength = mb_strlen($text);
@@ -57,34 +80,66 @@ class Bblslug
         $prepared      = $filterManager->apply($text);
         $preparedLength = mb_strlen($prepared);
 
-        // Build payload
-        $payload = [
-            'auth_key'    => $apiKey,
-            'text'        => $prepared,
-            'target_lang' => 'EN',
-            'formality'   => 'prefer_more',
-        ]; // это надо упаковать в режистри
-        if ($format === 'html') {
-            $payload['tag_handling']     = 'html';
-            $payload['preserve_formatting'] = '1';
-            $payload['outline_detection']   = '1';
-            // inject translator instruction
-            $payload['text'] = "<!-- Translate as a professional technical translator. -->\n" //это надо бы упаковать в условия в режистри как промпт?
-                              . $prepared;
+        // Build request
+        $req = $driver->buildRequest(
+            $model,
+            $prepared,
+            ['format'=>$format, 'dryRun'=>$dryRun, 'verbose'=>$verbose]
+        );
+
+        // API auth key handling
+        $auth = $model['requirements']['auth'] ?? null;
+        if ($auth) {
+            if (!$apiKey) {
+               throw new \InvalidArgumentException("API key is required for {$modelKey}");
+            }
+            $keyName = $auth['key_name'];
+            $prefix  = $auth['prefix'] ? $auth['prefix'].' ' : '';
+            switch ($auth['type'] ?? 'form') {
+                case 'header':
+                    $req['headers'][] = "{$keyName}: {$prefix}{$apiKey}";
+                    break;
+                case 'form':
+                    $req['body'] .= '&'.urlencode($keyName).'='.urlencode($apiKey);
+                    break;
+                case 'query':
+                    $sep = str_contains($req['url'], '?') ? '&' : '?';
+                    $req['url'] .= $sep . http_build_query([$keyName => $apiKey]);
+                    break;
+                default:
+                    throw new \RuntimeException("Unsupported auth type: {$auth['type']}");
+            }
         }
 
-        // Perform (or skip) API call
-        $response = LLMClient::send($model, $payload, $apiKey, $dryRun, $verbose);
+        // Perform HTTP request
+        $http = HttpClient::request(
+            method:  'POST',
+            url:     $req['url'],
+            headers: $req['headers'],
+            body:    $req['body'],
+            verbose: $verbose,
+            dryRun:  $dryRun,
+            maskPatterns: [
+                $apiKey,
+            ]
+        );
+
+        $httpStatus     = $http['status'];
+        $debugRequest   = $http['debugRequest'];
+        $debugResponse  = $http['debugResponse'];
+        $raw            = $http['body'];
 
         // Parse response
         if ($dryRun) {
             $translated = $prepared;
         } else {
-            $data = json_decode($response, true);
-            if (!isset($data['translations'][0]['text'])) {
-                throw new \RuntimeException("Translation failed. Response: {$response}");
+            if ($httpStatus >= 400) {
+                $msg  = "HTTP {$httpStatus} error from {$req['url']}: {$raw}\n\n";
+                $msg .= $debugRequest . $debugResponse;
+                throw new \RuntimeException($msg);
+            } else {
+                $translated = $driver->parseResponse($model, $raw);
             }
-            $translated = $data['translations'][0]['text'];
         }
 
         // Restore placeholders
@@ -98,6 +153,10 @@ class Bblslug
             'original'     => $text,
             'prepared'     => $prepared,
             'result'       => $result,
+            'httpStatus'        => $httpStatus,
+            'debugRequest'      => $debugRequest,
+            'debugResponse'     => $debugResponse,
+            'rawResponseBody'   => $raw,
             'lengths'      => [
                 'original'   => $originalLength,
                 'prepared'   => $preparedLength,
@@ -107,23 +166,30 @@ class Bblslug
         ];
     }
 
+    /**
+     * CLI translation entrypoint.
+     *
+     * Parse CLI flags, read input, call {@see translate()}, and output results.
+     * Also handles `--help`, `--list-models`, `--dry-run`, `--verbose` and emits summary stats to STDERR.
+     *
+     * @return void
+     */
     public static function runFromCli()
     {
-        /**
-         * Translation CLI Interface
-         */
-
         // Load CLI arguments
         $options = getopt("", [
-            "source:",      // optional: path to input file; if omitted, read from STDIN
-            "translated:",  // optional: path to output file; if omitted, write to STDOUT
-            "format:",      // required: "text" or "html"
-            "filters:",     // optional: comma-separated list
-            "dry-run",      // optional: prepare placeholders only
-            "model:",       // required: model key
-            "list-models",  // optional: show registry and exit
-            "verbose",      // optional: pass-through to LLM client
-            "help",         // optional: show help and exit
+            "context:",      // extra context prompt
+            "dry-run",       // placeholders only
+            "filters:",      // comma-separated filter list
+            "format:",       // "text" or "html"
+            "help",          // show help and exit
+            "list-models",   // show models and exit
+            "model:",        // model key
+            "source:",       // input file (default = STDIN)
+            "source-lang:",  // override source language
+            "target-lang:",  // override target language
+            "translated:",   // output file (default = STDOUT)
+            "verbose",       // enable debug logs
         ]);
 
         // Initialize registry
@@ -141,14 +207,17 @@ class Bblslug
         }
 
         // Extract params
-        $modelKey   = $options['model']      ?? null;
-        $sourceFile = $options['source']     ?? null;
-        $outFile    = $options['translated'] ?? null;
-        $format     = $options['format']     ?? null;
+        $context    = $options['context']     ?? null;
+        $dryRun     = isset($options['dry-run']);
+        $format     = $options['format']      ?? null;
         $filters    = isset($options['filters'])
                         ? array_map('trim', explode(',', $options['filters']))
                         : [];
-        $dryRun     = isset($options['dry-run']);
+        $modelKey   = $options['model']       ?? null;
+        $outFile    = $options['translated']  ?? null;
+        $sourceFile = $options['source']      ?? null;
+        $sourceLang = $options['source-lang'] ?? null;
+        $targetLang = $options['target-lang'] ?? null;
         $verbose    = isset($options['verbose']);
 
         // Validate model
@@ -250,18 +319,33 @@ class Bblslug
         }
 
         // Perform translation
+        $res = [];
         try {
             $res = self::translate(
-                $text,
-                $modelKey,
-                $format,
-                $apiKey,
-                $filters,
-                $dryRun,
-                $verbose
+                text:       $text,
+                modelKey:   $modelKey,
+                format:     $format,
+                apiKey:     $apiKey,
+                filters:    $filters,
+                dryRun:     $dryRun,
+                verbose:    $verbose,
+                targetLang: $targetLang,
+                sourceLang: $sourceLang,
+                context:    $context
             );
         } catch (\Throwable $e) {
             Help::error($e->getMessage());
+        }
+
+        if (PHP_SAPI==='cli' && ($verbose || $dryRun)) {
+            file_put_contents('php://stderr', $res['debugRequest'],  FILE_APPEND);
+            file_put_contents('php://stderr', $res['debugResponse'], FILE_APPEND);
+        }
+
+        if (!empty($res['httpStatus']) && $res['httpStatus'] >= 400) {
+            Help::error(
+                "HTTP {$res['httpStatus']} error from request: {$res['rawResponseBody']}"
+            );
         }
 
         // Write output (file or STDOUT)

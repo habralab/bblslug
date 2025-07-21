@@ -28,7 +28,11 @@ return [
             'body_type' => 'form',
             'params' => ['text', 'target_lang']
         ],
-        'notes' => 'Best for structured HTML or plain text, with a limited monthly quota (free tier).'
+        'notes' => 'Best for structured HTML or plain text, with a limited monthly quota (free tier).',
+        'defaults' => [
+            'target_lang' => 'EN',
+            'formality'   => 'prefer_more',
+        ]
     ],
 
     'deepl:pro' => [
@@ -52,7 +56,11 @@ return [
             'body_type' => 'form',
             'params' => ['text', 'target_lang']
         ],
-        'notes' => 'Reliable structured translation for production use, requires paid subscription.'
+        'notes' => 'Reliable structured translation for production use, requires paid subscription.',
+        'defaults' => [
+            'target_lang' => 'EN',
+            'formality'   => 'prefer_more',
+        ]
     ],
 
     'openai:gpt-4o' => [
@@ -78,7 +86,12 @@ return [
             'body_type' => 'json',
             'params' => ['model', 'messages']
         ],
-        'notes' => 'Highly accurate with flexible prompts, ideal for AI-assisted adaptive translation.'
+        'notes' => 'Highly accurate with flexible prompts, ideal for AI-assisted adaptive translation.',
+        'defaults' => [
+            'target_lang' => 'EN',
+            'formality'   => null,
+            'prompt_html' => null,
+        ]
     ],
 
     'gemini:1.5-pro' => [
@@ -104,6 +117,11 @@ return [
             'body_type' => 'json',
             'params' => ['contents']
         ],
-        'notes' => 'Modern LLM for flexible prompt-based translation, API available with free quota.'
+        'notes' => 'Modern LLM for flexible prompt-based translation, API available with free quota.',
+        'defaults' => [
+            'target_lang' => 'EN',
+            'formality'   => null,
+            'prompt_html' => null,
+        ]
     ]
 ];

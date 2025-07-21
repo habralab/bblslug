@@ -65,6 +65,19 @@ vendor/bin/bblslug \
   --filters=url,html_code,html_pre
 ```
 
+### Add translation context (prompt), source and target language
+
+```bash
+vendor/bin/bblslug \
+  --model=vendor:name \
+  --format=html \
+  --source=input.html \
+  --translated=output.html \
+  --target-lang=EN \
+  --source-lang=DE \
+  --context="Translate as a professional technical translator"
+```
+
 ### Pipe STDIN → file
 
 ```bash
@@ -123,23 +136,37 @@ require 'vendor/autoload.php';
 
 use Bblslug\Bblslug;
 
+// Load input text or HTML from file
 $text   = file_get_contents('input.html');
+
+// Call library translate method
 $result = Bblslug::translate(
-    text:     $text,
-    modelKey: 'deepl:pro',
-    format:   'html',
-    apiKey:   getenv('DEEPL_PRO_API_KEY'),
-    filters:  ['url','html_code'],
-    dryRun:   false,
-    verbose:  true
+    modelKey:   'deepl:pro',                     // Model identifier (e.g. deepl:free, deepl:pro, openai:gpt-4o)
+    apiKey:     getenv('DEEPL_PRO_API_KEY'),     // API key for the chosen model
+    format:     'html',                          // 'text' or 'html'
+    text:       $text,                           // Source text or HTML
+
+    // optional parameters:
+    context:    null,                            // Additional context/prompt (DeepL: context)
+    dryRun:     false,                           // If true, only prepare placeholders, no API call
+    filters:    ['url', 'html_code'],            // List of placeholder filters
+    sourceLang: null,                            // Source language code (optional; autodetect if null)
+    targetLang: null,                            // Target language code (optional; default from registry)
+    verbose:    true                             // If true, prints debug request/response to stderr
 );
 
+// Result output example
 // $result = [
-//   'original'    => '...',
-//   'prepared'    => '...',
-//   'result'      => '...',
-//   'lengths'     => ['original'=>123, 'prepared'=>100, 'translated'=>130],
-//   'filterStats' => [['filter'=>'url','count'=>5], ...]
+//   'original'    => '...',      // Original input
+//   'prepared'    => '...',      // After placeholder filters
+//   'result'      => '...',      // Translated result
+//   'lengths'     => [           // Character counts
+//     'original'   => 123,
+//     'prepared'   => 100,
+//     'translated' => 130
+//   ],
+//   'filterStats' => [           // Placeholder stats
+//     ['filter'=>'url','count'=>5], …
 // ];
 
 echo $result['result'];
