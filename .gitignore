@@ -5,6 +5,7 @@
 
 # PHPUnit result cache
 .phpunit.result.cache
+.phpunit.junit.xml
 
 # Other
 .DS_Store

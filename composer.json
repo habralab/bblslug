@@ -27,7 +27,7 @@
   ],
   "scripts": {
     "lint": "vendor/bin/phpcs --standard=phpcs.xml",
-    "phpunit": "vendor/bin/phpunit"
+    "phpunit": "vendor/bin/phpunit --testdox --colors=always --log-junit .phpunit.junit.xml"
   },
   "authors": [
     {
