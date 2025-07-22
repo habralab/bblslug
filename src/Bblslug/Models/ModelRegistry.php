@@ -4,6 +4,7 @@ namespace Bblslug\Models;
 
 use Bblslug\Models\DeepLDriver;
 use Bblslug\Models\ModelDriverInterface;
+use Bblslug\Models\OpenAiDriver;
 
 /**
  * Registry of available translation models.
@@ -147,9 +148,10 @@ class ModelRegistry
         $vendor = $model['vendor'] ?? '';
 
         return match ($vendor) {
-            'deepl'              => new DeepLDriver(),
-            'google', 'openai'   => throw new \InvalidArgumentException("Driver for '{$vendor}' not implemented yet."),
-            default              => throw new \InvalidArgumentException("Unknown vendor '{$vendor}' in registry."),
+            'deepl'  => new DeepLDriver(),
+            'openai' => new OpenAiDriver(),
+            'google' => throw new \InvalidArgumentException("Driver for '{$vendor}' not implemented yet."),
+            default  => throw new \InvalidArgumentException("Unknown vendor '{$vendor}' in registry."),
         };
     }
 }

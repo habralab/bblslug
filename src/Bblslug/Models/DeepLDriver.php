@@ -2,6 +2,8 @@
 
 namespace Bblslug\Models;
 
+use Bblslug\Models\ModelDriverInterface;
+
 /**
  * DeepL model driver: builds requests and parses responses for DeepL API.
  */

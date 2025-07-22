@@ -67,7 +67,6 @@ return [
         'vendor' => 'openai',
         'name' => 'OpenAI GPT-4o',
         'endpoint' => 'https://api.openai.com/v1/chat/completions',
-        'format' => 'text',
         'limits' => [
             'max_tokens' => 128000,
             'token_estimator' => 'gpt',
@@ -83,14 +82,11 @@ return [
                 'arg' => '--api-key-openai'
             ],
             'headers' => ['Content-Type: application/json'],
-            'body_type' => 'json',
-            'params' => ['model', 'messages']
         ],
         'notes' => 'Highly accurate with flexible prompts, ideal for AI-assisted adaptive translation.',
         'defaults' => [
-            'target_lang' => 'EN',
-            'formality'   => null,
-            'prompt_html' => null,
+            'model'       => 'gpt-4o',
+            'temperature' => 0.0,
         ]
     ],
 
