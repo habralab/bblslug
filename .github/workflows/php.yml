@@ -40,7 +40,7 @@ jobs:
         run: make test
 
       - name: Upload PHPUnit report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: phpunit-report
           path: .phpunit.junit.xml
