@@ -39,6 +39,21 @@ chmod +x vendor/bin/bblslug
  - If `--source` is omitted, Bblslug reads from **STDIN**.
  - If `--translated` is omitted, Bblslug writes to **STDOUT**.
 
+4. **Optional proxy**:
+
+To route requests through a proxy (e.g. HTTP or SOCKS5), use the `--proxy` option or set the `BBLSLUG_PROXY` environment variable:
+
+```bash
+# using CLI flag
+vendor/bin/bblslug --proxy="http://localhost:8888" ...
+
+# or set it globally
+export BBLSLUG_PROXY="socks5h://127.0.0.1:9050"
+```
+
+This works for all HTTP requests and supports authentication (`http://user:pass@host:port`).
+
+
 ### Show available models
 ```bash
 vendor/bin/bblslug --list-models
@@ -141,18 +156,19 @@ $text   = file_get_contents('input.html');
 
 // Call library translate method
 $result = Bblslug::translate(
-    modelKey:   'deepl:pro',                     // Model identifier (e.g. deepl:free, deepl:pro, openai:gpt-4o)
     apiKey:     getenv('DEEPL_PRO_API_KEY'),     // API key for the chosen model
     format:     'html',                          // 'text' or 'html'
+    modelKey:   'deepl:pro',                     // Model identifier (e.g. deepl:free, deepl:pro, openai:gpt-4o)
     text:       $text,                           // Source text or HTML
 
     // optional parameters:
     context:    null,                            // Additional context/prompt (DeepL: context)
     dryRun:     false,                           // If true, only prepare placeholders, no API call
     filters:    ['url', 'html_code'],            // List of placeholder filters
+    proxy:      getenv('BBLSLUG_PROXY'),         // Optional proxy URI (http://..., socks5h://...)
     sourceLang: null,                            // Source language code (optional; autodetect if null)
-    targetLang: null,                            // Target language code (optional; default from registry)
-    verbose:    true                             // If true, prints debug request/response to stderr
+    targetLang: null,                            // Target language code (optional; default from driver settings)
+    verbose:    true,                            // If true, prints debug request/response to stderr
 );
 
 // Result output example

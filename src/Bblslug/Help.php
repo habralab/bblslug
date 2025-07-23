@@ -47,6 +47,7 @@ class Help
         echo "\t{$bold}--help{$reset}               Show this help message\n";
         echo "\t{$bold}--list-models{$reset}        Show available translation models grouped by vendor\n";
         echo "\t{$bold}--model=MODEL_ID{$reset}     Translation model to use (see --list-models)\n";
+        echo "\t{$bold}--proxy=URI{$reset}          Optional proxy URI (see examples) or set BBLSLUG_PROXY\n";
         echo "\t{$bold}--source=FILE{$reset}        Input file to translate (omit to read from STDIN)\n";
         echo "\t{$bold}--source-lang=LANG{$reset}   Source language code (e.g. EN, DE) - default autodetect\n";
         echo "\t{$bold}--target-lang=LANG{$reset}   Target language (e.g. EN, DE) - default EN\n";
@@ -58,29 +59,37 @@ class Help
         echo "\t  DEEPL_FREE_API_KEY, DEEPL_PRO_API_KEY, OPENAI_API_KEY, GEMINI_API_KEY, ...\n";
         echo "\t  (See each model's required variable with --list-models)\n";
         echo "\tSome models may not require API keys at all.\n";
+        echo "\n\tYou may also set a proxy globally via the BBLSLUG_PROXY environment variable:\n";
+        echo "\t  export BBLSLUG_PROXY=\"http://localhost:3128\" # HTTP proxy\n";
+        echo "\t  export BBLSLUG_PROXY=\"socks5h://127.0.0.1:9050\" # SOCKS5 proxy\n";
 
         echo "\nExamples:\n";
-        // List available models
+        echo "\tList available models:\n";
         echo "\tphp bblslug.php --list-models\n";
-        // Translate HTML from file to file
+
+        echo "\n\tTranslate HTML from file to file\n";
         echo "\tphp bblslug.php --model=deepl:pro --format=html \\\n";
         echo "\t    --source=doc.html --translated=out.html --filters=url,html_code,html_pre\n";
-        // Translate plain text via STDIN → STDOUT
+
+        echo "\n\tTranslate plain text via STDIN → STDOUT\n";
         echo "\tcat in.txt | php bblslug.php --model=openai:gpt-4o --format=text > out.txt\n";
-        // Dry-run to inspect placeholders in a file
+
+        echo "\n\tDry-run to inspect placeholders in a file\n";
         echo "\tphp bblslug.php --model=deepl:free --format=text --filters=url,html_pre \\\n";
         echo "\t    --source=in.txt --dry-run\n";
-        // Verbose mode (shows request preview)
+
+        echo "\n\tVerbose mode (shows request preview)\n";
         echo "\tphp bblslug.php --model=deepl:pro --format=html --verbose \\\n";
         echo "\t    --source=doc.html --translated=out.html\n";
 
-
-
-
+        echo "\n\tUse filters\n";
         echo "\tphp bblslug.php --model=deepl:pro --format=html \\\n";
         echo "\t    --source=doc.html --translated=out.html --filters=url,html_code,html_pre\n";
+
+        echo "\n\tUse HTTP proxy\n";
         echo "\tphp bblslug.php --model=openai:gpt-4o --format=text \\\n";
-        echo "\t    --source=in.txt --translated=out.txt\n";
+        echo "\t    --source=in.txt --translated=out.txt \\\n";
+        echo "\t    --proxy=\"http://localhost:3128\"\n";
 
         echo $reset;
         if ($exitCode !== null) {

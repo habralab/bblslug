@@ -12,10 +12,12 @@ class HttpClient
      *
      * @param string        $method        HTTP method (e.g. 'GET', 'POST', 'PUT').
      * @param string        $url           Full URL to request.
-     * @param string[]      $headers       Array of headers in "Name: value" format.
+     *
      * @param string        $body          Request body (optional).
      * @param bool          $dryRun        If true, skip real request and return placeholder.
+     * @param string[]      $headers       Array of headers in "Name: value" format.
      * @param array<string> $maskPatterns  Substrings to mask in debug logs.
+     * @param string|null   $proxy         Optional proxy URI (http, socks5, etc.).
      * @param bool          $verbose       If true, include request/response debug logs.
      *
      * @return array{
@@ -31,10 +33,11 @@ class HttpClient
     public static function request(
         string $method,
         string $url,
-        array $headers = [],
         string $body = '',
         bool $dryRun = false,
+        array $headers = [],
         array $maskPatterns = [],
+        ?string $proxy = null,
         bool $verbose = false
     ): array {
         // Prepare masked copies for logging
@@ -87,6 +90,9 @@ class HttpClient
         }
         if ($method !== 'GET') {
             curl_setopt($ch, CURLOPT_POSTFIELDS, $body);
+        }
+        if ($proxy !== null) {
+            curl_setopt($ch, CURLOPT_PROXY, $proxy);
         }
 
         // Capture response headers
