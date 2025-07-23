@@ -1,8 +1,17 @@
 {
   "name": "tools/bblslug",
   "description": "CLI translation tool for HTML and plain text using LLM-based APIs.",
-  "license": "proprietary",
+  "keywords": ["translation","LLM","deepl","openai"],
+  "homepage": "https://github.com/habralab/bblslug",
+  "license": "MIT",
   "type": "library",
+  "authors": [
+    {
+      "name": "Vadim Rybalko",
+      "email": "vadim@habr.team",
+      "role": "Lead"
+    }
+  ],
   "require": {
     "php": ">=8.0",
     "ext-curl": "*",
@@ -28,11 +37,5 @@
   "scripts": {
     "lint": "vendor/bin/phpcs --standard=phpcs.xml",
     "phpunit": "vendor/bin/phpunit"
-  },
-  "authors": [
-    {
-      "name": "Vadim Rybalko",
-      "role": "Lead"
-    }
-  ]
+  }
 }

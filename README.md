@@ -178,4 +178,4 @@ You can find sample input files under the `examples/` directory.
 
 ## License
 
-Private project, not yet open-source.
+This project is licensed under the MIT License – see the [LICENSE](LICENSE) file for details.
