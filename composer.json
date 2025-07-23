@@ -1,5 +1,5 @@
 {
-  "name": "tools/bblslug",
+  "name": "habr/bblslug",
   "description": "CLI translation tool for HTML and plain text using LLM-based APIs.",
   "keywords": ["translation","LLM","deepl","openai"],
   "homepage": "https://github.com/habralab/bblslug",
