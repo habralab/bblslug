@@ -85,12 +85,12 @@ EOD;
 
         // Build JSON payload
         $body = [
-            'system_instruction' => ['parts' => [['text' => $systemText]]],
-            'contents'           => [['parts' => [['text' => $contentText]]]],
-            'generationConfig'   => array_filter([
-                'temperature'    => (float)$temperature,
-                'candidateCount' => (int)$candidateCount,
-                'maxOutputTokens'=> $maxOutputTokens !== null ? (int)$maxOutputTokens : null,
+            'system_instruction'  => ['parts' => [['text' => $systemText]]],
+            'contents'            => [['parts' => [['text' => $contentText]]]],
+            'generationConfig'    => array_filter([
+                'temperature'     => (float)$temperature,
+                'candidateCount'  => (int)$candidateCount,
+                'maxOutputTokens' => $maxOutputTokens !== null ? (int)$maxOutputTokens : null,
             ], fn($v) => $v !== null),
         ];
 

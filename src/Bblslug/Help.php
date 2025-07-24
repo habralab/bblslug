@@ -56,7 +56,10 @@ class Help
 
         echo "\nEnvironment:\n";
         echo "\tSet API keys via environment variables depending on the model:\n";
-        echo "\t  DEEPL_FREE_API_KEY, DEEPL_PRO_API_KEY, OPENAI_API_KEY, GEMINI_API_KEY, ...\n";
+        echo "\t  export DEEPL_FREE_API_KEY=\"...\" # for DeepL Free\n";
+        echo "\t  export DEEPL_PRO_API_KEY=\"...\" # for DeepL Pro\n";
+        echo "\t  export GOOGLE_API_KEY=\"...\" # for Google (Gemini)\n";
+        echo "\t  export OPENAI_API_KEY=\"...\" # for OpenAI (GPT)\n";
         echo "\t  (See each model's required variable with --list-models)\n";
         echo "\tSome models may not require API keys at all.\n";
         echo "\n\tYou may also set a proxy globally via the BBLSLUG_PROXY environment variable:\n";

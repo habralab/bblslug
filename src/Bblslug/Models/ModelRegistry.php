@@ -149,10 +149,10 @@ class ModelRegistry
         $vendor = $model['vendor'] ?? '';
 
         return match ($vendor) {
-            'deepl'  => new DeepLDriver(),
-            'openai' => new OpenAiDriver(),
+            'deepl' => new DeepLDriver(),
             'google' => new GoogleDriver(),
-            default  => throw new \InvalidArgumentException("Unknown vendor '{$vendor}' in registry."),
+            'openai' => new OpenAiDriver(),
+            default => throw new \InvalidArgumentException("Unknown vendor '{$vendor}' in registry."),
         };
     }
 }

@@ -44,7 +44,6 @@ class Bblslug
         string $format,
         string $modelKey,
         string $text,
-
         // Optional arguments (alphabetical)
         ?string $context = null,
         bool $dryRun = false,

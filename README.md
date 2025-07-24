@@ -2,13 +2,13 @@
 
 **Bblslug** is a versatile translation tool that can be used as both a **CLI utility** and a **PHP library**.
 
-It leverages LLM-based APIs (DeepL, OpenAI, Gemini) to translate plain text or HTML while preserving structure, code blocks, and URLs via placeholder filters.
+It leverages LLM-based APIs (DeepL, Google Gemini, OpenAI GPT) to translate plain text or HTML while preserving structure, code blocks, and URLs via placeholder filters.
 
 ## Features
 
 - Supports **html** and **plain text** (`--format=text|html`)
 - Placeholder-based protection with filters: `html_pre`, `html_code`, `url`, etc.
-- Model selection via `--model=vendor:name` (`deepl:free`, `deepl:pro`, `openai:gpt-4o`, `gemini:1.5-pro`, …)
+- Model selection via `--model=vendor:name` (`deepl:pro`, `google:gemini-2.5-flash`, `openai:gpt-4o`, …)
 - Fully configurable backend registry
 - **Dry-run** mode to preview placeholders without making API calls
 - **Verbose** mode (`--verbose`) to print request previews
@@ -30,8 +30,8 @@ chmod +x vendor/bin/bblslug
  ```bash
  export DEEPL_FREE_API_KEY=...
  export DEEPL_PRO_API_KEY=...
+ export GOOGLE_API_KEY=...
  export OPENAI_API_KEY=...
- export GEMINI_API_KEY=...
  ```
 
 3. **Input / output**:

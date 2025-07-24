@@ -63,6 +63,140 @@ return [
         ]
     ],
 
+    'google:gemini-2.0-flash' => [
+        'vendor'       => 'google',
+        'name'         => 'Gemini 2.0 Flash',
+        'endpoint'     => 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent',
+        'format'       => 'text',
+        'limits'       => [
+            'max_tokens'           => 131072,
+            'token_estimator'      => 'gpt',
+            'estimated_max_chars'  => 524288,
+        ],
+        'requirements' => [
+            'auth'     => [
+                'help_url' => 'https://makersuite.google.com/app/apikey',
+                'type'     => 'header',
+                'key_name' => 'x-goog-api-key',
+                'prefix'   => null,
+                'env'      => 'GOOGLE_API_KEY',
+                'arg'      => '--api-key-google'
+            ],
+            'headers'  => ['Content-Type: application/json'],
+            'body_type'=> 'json',
+            'params'   => ['system_instruction','contents','generationConfig']
+        ],
+        'notes'        => 'Low-latency Flash model, balanced cost and performance.',
+        'defaults'     => [
+            'model'           => 'gemini-2.0-flash',
+            'temperature'     => 0.0,
+            'candidateCount'  => 1,
+            'maxOutputTokens' => null,
+        ]
+    ],
+
+    'google:gemini-2.5-flash' => [
+        'vendor'       => 'google',
+        'name'         => 'Gemini 2.5 Flash',
+        'endpoint'     => 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
+        'format'       => 'text',
+        'limits'       => [
+            'max_tokens'           => 131072,
+            'token_estimator'      => 'gpt',
+            'estimated_max_chars'  => 524288,
+        ],
+        'requirements' => [
+            'auth'     => [
+                'help_url' => 'https://makersuite.google.com/app/apikey',
+                'type'     => 'header',
+                'key_name' => 'x-goog-api-key',
+                'prefix'   => null,
+                'env'      => 'GOOGLE_API_KEY',
+                'arg'      => '--api-key-google'
+            ],
+            'headers'  => ['Content-Type: application/json'],
+            'body_type'=> 'json',
+            'params'   => ['system_instruction','contents','generationConfig']
+        ],
+        'notes'        => 'High-performance Flash model with chain-of-thought support.',
+        'defaults'     => [
+            'model'           => 'gemini-2.5-flash',
+            'temperature'     => 0.0,
+            'candidateCount'  => 1,
+            'maxOutputTokens' => null,
+            'thinkingBudget'  => null,
+            'includeThoughts' => null,
+        ]
+    ],
+
+    'google:gemini-2.5-flash-lite' => [
+        'vendor'       => 'google',
+        'name'         => 'Gemini 2.5 Flash-Lite',
+        'endpoint'     => 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent',
+        'format'       => 'text',
+        'limits'       => [
+            'max_tokens'           => 131072,
+            'token_estimator'      => 'gpt',
+            'estimated_max_chars'  => 524288,
+        ],
+        'requirements' => [
+            'auth'     => [
+                'help_url' => 'https://makersuite.google.com/app/apikey',
+                'type'     => 'header',
+                'key_name' => 'x-goog-api-key',
+                'prefix'   => null,
+                'env'      => 'GOOGLE_API_KEY',
+                'arg'      => '--api-key-google'
+            ],
+            'headers'  => ['Content-Type: application/json'],
+            'body_type'=> 'json',
+            'params'   => ['system_instruction','contents','generationConfig']
+        ],
+        'notes'        => 'Ultra-fast, cost-optimized Flash-Lite variant.',
+        'defaults'     => [
+            'model'           => 'gemini-2.5-flash-lite',
+            'temperature'     => 0.0,
+            'candidateCount'  => 1,
+            'maxOutputTokens' => null,
+            'thinkingBudget'  => null,
+            'includeThoughts' => null,
+        ]
+    ],
+
+    'google:gemini-2.5-pro' => [
+        'vendor'       => 'google',
+        'name'         => 'Gemini 2.5 Pro',
+        'endpoint'     => 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent',
+        'format'       => 'text',
+        'limits'       => [
+            'max_tokens'           => 262144,
+            'token_estimator'      => 'gpt',
+            'estimated_max_chars'  => 1048576,
+        ],
+        'requirements' => [
+            'auth'     => [
+                'help_url' => 'https://makersuite.google.com/app/apikey',
+                'type'     => 'header',
+                'key_name' => 'x-goog-api-key',
+                'prefix'   => null,
+                'env'      => 'GOOGLE_API_KEY',
+                'arg'      => '--api-key-google'
+            ],
+            'headers'  => ['Content-Type: application/json'],
+            'body_type'=> 'json',
+            'params'   => ['system_instruction','contents','generationConfig']
+        ],
+        'notes'        => 'Top-tier Pro model for longest contexts and highest accuracy.',
+        'defaults'     => [
+            'model'           => 'gemini-2.5-pro',
+            'temperature'     => 0.0,
+            'candidateCount'  => 1,
+            'maxOutputTokens' => null,
+            'thinkingBudget'  => null,
+            'includeThoughts' => null,
+        ]
+    ],
+
     'openai:gpt-4' => [
         'vendor' => 'openai',
         'name' => 'OpenAI GPT-4',
@@ -168,140 +302,6 @@ return [
         'defaults' => [
             'model'       => 'gpt-4o-mini',
             'temperature' => 0.0,
-        ]
-    ],
-
-    'gemini:2.0-flash' => [
-        'vendor'       => 'google',
-        'name'         => 'Gemini 2.0 Flash',
-        'endpoint'     => 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent',
-        'format'       => 'text',
-        'limits'       => [
-            'max_tokens'           => 131072,
-            'token_estimator'      => 'gpt',
-            'estimated_max_chars'  => 524288,
-        ],
-        'requirements' => [
-            'auth'     => [
-                'help_url' => 'https://makersuite.google.com/app/apikey',
-                'type'     => 'header',
-                'key_name' => 'x-goog-api-key',
-                'prefix'   => null,
-                'env'      => 'GEMINI_API_KEY',
-                'arg'      => '--api-key-gemini'
-            ],
-            'headers'  => ['Content-Type: application/json'],
-            'body_type'=> 'json',
-            'params'   => ['system_instruction','contents','generationConfig']
-        ],
-        'notes'        => 'Low-latency Flash model, balanced cost and performance.',
-        'defaults'     => [
-            'model'           => 'gemini-2.0-flash',
-            'temperature'     => 0.0,
-            'candidateCount'  => 1,
-            'maxOutputTokens' => null,
-        ]
-    ],
-
-    'gemini:2.5-flash' => [
-        'vendor'       => 'google',
-        'name'         => 'Gemini 2.5 Flash',
-        'endpoint'     => 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
-        'format'       => 'text',
-        'limits'       => [
-            'max_tokens'           => 131072,
-            'token_estimator'      => 'gpt',
-            'estimated_max_chars'  => 524288,
-        ],
-        'requirements' => [
-            'auth'     => [
-                'help_url' => 'https://makersuite.google.com/app/apikey',
-                'type'     => 'header',
-                'key_name' => 'x-goog-api-key',
-                'prefix'   => null,
-                'env'      => 'GEMINI_API_KEY',
-                'arg'      => '--api-key-gemini'
-            ],
-            'headers'  => ['Content-Type: application/json'],
-            'body_type'=> 'json',
-            'params'   => ['system_instruction','contents','generationConfig']
-        ],
-        'notes'        => 'High-performance Flash model with chain-of-thought support.',
-        'defaults'     => [
-            'model'           => 'gemini-2.5-flash',
-            'temperature'     => 0.0,
-            'candidateCount'  => 1,
-            'maxOutputTokens' => null,
-            'thinkingBudget'  => null,
-            'includeThoughts' => null,
-        ]
-    ],
-
-    'gemini:2.5-flash-lite' => [
-        'vendor'       => 'google',
-        'name'         => 'Gemini 2.5 Flash-Lite',
-        'endpoint'     => 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent',
-        'format'       => 'text',
-        'limits'       => [
-            'max_tokens'           => 131072,
-            'token_estimator'      => 'gpt',
-            'estimated_max_chars'  => 524288,
-        ],
-        'requirements' => [
-            'auth'     => [
-                'help_url' => 'https://makersuite.google.com/app/apikey',
-                'type'     => 'header',
-                'key_name' => 'x-goog-api-key',
-                'prefix'   => null,
-                'env'      => 'GEMINI_API_KEY',
-                'arg'      => '--api-key-gemini'
-            ],
-            'headers'  => ['Content-Type: application/json'],
-            'body_type'=> 'json',
-            'params'   => ['system_instruction','contents','generationConfig']
-        ],
-        'notes'        => 'Ultra-fast, cost-optimized Flash-Lite variant.',
-        'defaults'     => [
-            'model'           => 'gemini-2.5-flash-lite',
-            'temperature'     => 0.0,
-            'candidateCount'  => 1,
-            'maxOutputTokens' => null,
-            'thinkingBudget'  => null,
-            'includeThoughts' => null,
-        ]
-    ],
-
-    'gemini:2.5-pro' => [
-        'vendor'       => 'google',
-        'name'         => 'Gemini 2.5 Pro',
-        'endpoint'     => 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent',
-        'format'       => 'text',
-        'limits'       => [
-            'max_tokens'           => 262144,
-            'token_estimator'      => 'gpt',
-            'estimated_max_chars'  => 1048576,
-        ],
-        'requirements' => [
-            'auth'     => [
-                'help_url' => 'https://makersuite.google.com/app/apikey',
-                'type'     => 'header',
-                'key_name' => 'x-goog-api-key',
-                'prefix'   => null,
-                'env'      => 'GEMINI_API_KEY',
-                'arg'      => '--api-key-gemini'
-            ],
-            'headers'  => ['Content-Type: application/json'],
-            'body_type'=> 'json',
-            'params'   => ['system_instruction','contents','generationConfig']
-        ],
-        'notes'        => 'Top-tier Pro model for longest contexts and highest accuracy.',
-        'defaults'     => [
-            'model'           => 'gemini-2.5-pro',
-            'temperature'     => 0.0,
-            'candidateCount'  => 1,
-            'maxOutputTokens' => null,
-            'thinkingBudget'  => null,
-            'includeThoughts' => null,
         ]
     ],
 ];
