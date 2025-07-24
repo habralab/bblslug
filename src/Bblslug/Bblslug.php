@@ -144,7 +144,12 @@ class Bblslug
                 $msg .= $debugRequest . $debugResponse;
                 throw new \RuntimeException($msg);
             } else {
-                $translated = $driver->parseResponse($model, $raw);
+                try {
+                    $translated = $driver->parseResponse($model, $raw);
+                } catch (\RuntimeException $e) {
+                    $msgCombined = $e->getMessage() . "\n\n" . $debugRequest . $debugResponse;
+                    throw new \RuntimeException($msgCombined);
+                }
             }
         }
 

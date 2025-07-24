@@ -3,6 +3,7 @@
 namespace Bblslug\Models;
 
 use Bblslug\Models\DeepLDriver;
+use Bblslug\Models\GoogleDriver;
 use Bblslug\Models\ModelDriverInterface;
 use Bblslug\Models\OpenAiDriver;
 
@@ -150,7 +151,7 @@ class ModelRegistry
         return match ($vendor) {
             'deepl'  => new DeepLDriver(),
             'openai' => new OpenAiDriver(),
-            'google' => throw new \InvalidArgumentException("Driver for '{$vendor}' not implemented yet."),
+            'google' => new GoogleDriver(),
             default  => throw new \InvalidArgumentException("Unknown vendor '{$vendor}' in registry."),
         };
     }
