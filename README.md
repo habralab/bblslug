@@ -37,7 +37,7 @@ APIs supported:
 ## Installation
 
 ```bash
-composer require habralab/bblslug
+composer require habr/bblslug
 chmod +x vendor/bin/bblslug
 ```
 

@@ -45,4 +45,4 @@ jobs:
         with:
           name: phpunit-report
           path: .phpunit.junit.xml
-          include-hidden-files: false
+          include-hidden-files: true
