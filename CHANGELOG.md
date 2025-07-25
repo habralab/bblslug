@@ -4,6 +4,26 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] – 2025-07-25
+
+### Added
+- **New model support**:
+  - **Anthropic Claude** (Haiku 3.5, Sonnet 4, Opus 4) via `AnthropicDriver`
+  - **Google Gemini** (2.0 Flash, 2.5 Flash, 2.5 Flash-Lite, 2.5 Pro) via `GoogleDriver`
+  - **OpenAI GPT Chat** (GPT-4, GPT-4 Turbo, GPT-4o, GPT-4o Mini) via `OpenAiDriver`
+- **HTTP proxy** support (`--proxy` flag / `BBLSLUG_PROXY`) in `HttpClient` and CLI
+- **YAML-based registry** (`resources/models.yaml`) replacing the PHP model config
+
+### Changed
+- **Registry keys & auth flags**:
+  - Renamed `gemini:*` → `google:gemini-*`
+  - Added `ANTHROPIC_API_KEY` and updated `--api-key-google` / `GOOGLE_API_KEY`
+- Updated `README.md` & `Help.php` to list supported models
+- Minor cleanups: JSON payload alignment, code/style tweaks, help text refinements
+
+### Removed
+- Legacy PHP registry (`resources/models.php`)
+
 ## [0.4.0] - 2025-07-21
 ### Added
 - **Model driver abstraction**  
