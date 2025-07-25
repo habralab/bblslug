@@ -10,7 +10,3 @@
 *.md text
 *.json text
 *.yml text
-
-# Proprietary software authored by Vadim Rõbalko (Habr)
-# Contact: vadim@habr.team
-# License: proprietary (not open source)

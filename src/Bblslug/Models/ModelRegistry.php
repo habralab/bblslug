@@ -2,9 +2,12 @@
 
 namespace Bblslug\Models;
 
+use Bblslug\Models\AnthropicDriver;
 use Bblslug\Models\DeepLDriver;
+use Bblslug\Models\GoogleDriver;
 use Bblslug\Models\ModelDriverInterface;
 use Bblslug\Models\OpenAiDriver;
+use Symfony\Component\Yaml\Yaml;
 
 /**
  * Registry of available translation models.
@@ -23,8 +26,12 @@ class ModelRegistry
      */
     public function __construct(?string $path = null)
     {
-        $path ??= __DIR__ . '/../../../resources/models.php';
-        $this->models = require $path;
+        $path = __DIR__ . '/../../../resources/models.yaml';
+        if (!is_readable($path)) {
+            throw new \RuntimeException("Model registry not found: {$path}");
+        }
+
+        $this->models = Yaml::parseFile($path);
     }
 
     /**
@@ -148,10 +155,11 @@ class ModelRegistry
         $vendor = $model['vendor'] ?? '';
 
         return match ($vendor) {
-            'deepl'  => new DeepLDriver(),
+            'anthropic' => new AnthropicDriver(),
+            'deepl' => new DeepLDriver(),
+            'google' => new GoogleDriver(),
             'openai' => new OpenAiDriver(),
-            'google' => throw new \InvalidArgumentException("Driver for '{$vendor}' not implemented yet."),
-            default  => throw new \InvalidArgumentException("Unknown vendor '{$vendor}' in registry."),
+            default => throw new \InvalidArgumentException("Unknown vendor '{$vendor}' in registry."),
         };
     }
 }

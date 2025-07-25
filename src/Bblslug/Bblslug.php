@@ -11,16 +11,18 @@ class Bblslug
 {
     /**
      * Translate text or HTML via any registered model.
-     * @param string      $text       The source text or HTML.
-     * @param string      $modelKey   Model ID (e.g. "deepl:pro").
-     * @param string      $format     "text" or "html".
      * @param string      $apiKey     API key for the model.
-     * @param string[]    $filters    Placeholder filters to apply.
+     * @param string      $format     "text" or "html".
+     * @param string      $modelKey   Model ID (e.g. "deepl:pro").
+     * @param string      $text       The source text or HTML.
+     *
+     * @param string|null $context    Optional context prompt.
      * @param bool        $dryRun     If true: prepare placeholders only.
-     * @param bool        $verbose    If true: include request/response logs.
+     * @param string[]    $filters    Placeholder filters to apply.
+     * @param string|null $proxy      Optional proxy URL (from env or CLI).
      * @param string|null $sourceLang Optional source language code.
      * @param string|null $targetLang Optional target language code.
-     * @param string|null $context    Optional context prompt.
+     * @param bool        $verbose    If true: include request/response logs.
      *
      * @return array{
      *     original: string,
@@ -38,16 +40,18 @@ class Bblslug
      * @throws \RuntimeException On HTTP or parsing errors.
      */
     public static function translate(
-        string $text,
-        string $modelKey,
-        string $format,
         string $apiKey,
-        array $filters = [],
+        string $format,
+        string $modelKey,
+        string $text,
+        // Optional arguments (alphabetical)
+        ?string $context = null,
         bool $dryRun = false,
-        bool $verbose = false,
+        array $filters = [],
+        ?string $proxy = null,
         ?string $sourceLang = null,
         ?string $targetLang = null,
-        ?string $context = null
+        bool $verbose = false
     ): array {
         // Validate model
         $registry = new ModelRegistry();
@@ -115,13 +119,14 @@ class Bblslug
         $http = HttpClient::request(
             method: 'POST',
             url: $req['url'],
-            headers: $req['headers'],
             body: $req['body'],
-            verbose: $verbose,
             dryRun: $dryRun,
+            headers: $req['headers'],
             maskPatterns: [
                 $apiKey,
-            ]
+            ],
+            proxy: $proxy,
+            verbose: $verbose
         );
 
         $httpStatus = $http['status'];
@@ -134,11 +139,25 @@ class Bblslug
             $translated = $prepared;
         } else {
             if ($httpStatus >= 400) {
-                $msg  = "HTTP {$httpStatus} error from {$req['url']}: {$raw}\n\n";
-                $msg .= $debugRequest . $debugResponse;
-                throw new \RuntimeException($msg);
+                if (!empty($model['http_error_handling'])) {
+                    try {
+                        $translated = $driver->parseResponse($model, $raw);
+                    } catch (\RuntimeException $e) {
+                        $msgCombined = $e->getMessage() . "\n\n" . $debugRequest . $debugResponse;
+                        throw new \RuntimeException($msgCombined);
+                    }
+                } else {
+                    $msg  = "HTTP {$httpStatus} error from {$req['url']}: {$raw}\n\n";
+                    $msg .= $debugRequest . $debugResponse;
+                    throw new \RuntimeException($msg);
+                }
             } else {
-                $translated = $driver->parseResponse($model, $raw);
+                try {
+                    $translated = $driver->parseResponse($model, $raw);
+                } catch (\RuntimeException $e) {
+                    $msgCombined = $e->getMessage() . "\n\n" . $debugRequest . $debugResponse;
+                    throw new \RuntimeException($msgCombined);
+                }
             }
         }
 
@@ -185,6 +204,7 @@ class Bblslug
             "help",          // show help and exit
             "list-models",   // show models and exit
             "model:",        // model key
+            "proxy:",        // optional proxy URI
             "source:",       // input file (default = STDIN)
             "source-lang:",  // override source language
             "target-lang:",  // override target language
@@ -318,20 +338,24 @@ class Bblslug
             exit(0);
         }
 
+        // Read optional proxy setting (CLI flag has priority)
+        $proxy = $options['proxy'] ?? getenv('BBLSLUG_PROXY') ?: null;
+
         // Perform translation
         $res = [];
         try {
             $res = self::translate(
-                text: $text,
-                modelKey: $modelKey,
-                format: $format,
                 apiKey: $apiKey,
-                filters: $filters,
+                format: $format,
+                modelKey: $modelKey,
+                text: $text,
+                context: $context,
                 dryRun: $dryRun,
-                verbose: $verbose,
-                targetLang: $targetLang,
+                filters: $filters,
+                proxy: $proxy,
                 sourceLang: $sourceLang,
-                context: $context
+                targetLang: $targetLang,
+                verbose: $verbose,
             );
         } catch (\Throwable $e) {
             Help::error($e->getMessage());
