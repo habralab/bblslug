@@ -2,7 +2,27 @@
 
 **Bblslug** is a versatile translation tool that can be used as both a **CLI utility** and a **PHP library**.
 
-It leverages LLM-based APIs (Anthropic Claude, DeepL, Google Gemini, OpenAI GPT) to translate plain text or HTML while preserving structure, code blocks, and URLs via placeholder filters.
+It leverages LLM-based APIs to translate plain text or HTML while preserving structure, code blocks, and URLs via placeholder filters.
+
+APIs supported:
+
+- Anthropic (Claude):
+ - `anthropic:claude-haiku-3.5` - Claude Haiku 3.5 (latest)
+ - `anthropic:claude-opus-4` - Claude Opus 4 (20250514)
+ - `anthropic:claude-sonnet-4` - Claude Sonnet 4 (20250514)
+- DeepL
+ - `deepl:free` - DeepL free tier
+ - `deepl:pro` - DeepL pro tier
+- Google (Gemini)
+ - `google:gemini-2.0-flash` - Gemini 2.0 Flash
+ - `google:gemini-2.5-flash` - Gemini 2.5 Flash
+ - `google:gemini-2.5-flash-lite` - Gemini 2.5 Flash Lite
+ - `google:gemini-2.5-pro` - Gemini 2.5 Pro
+- OpenAI (GPT)
+ - `openai:gpt-4` - OpenAI GPT-4
+ - `openai:gpt-4-turbo` - OpenAI GPT-4 Turbo
+ - `openai:gpt-4o` - OpenAI GPT-4o
+ - `openai:gpt-4o-mini` - OpenAI GPT-4o Mini
 
 ## Features
 
