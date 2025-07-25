@@ -139,9 +139,18 @@ class Bblslug
             $translated = $prepared;
         } else {
             if ($httpStatus >= 400) {
-                $msg  = "HTTP {$httpStatus} error from {$req['url']}: {$raw}\n\n";
-                $msg .= $debugRequest . $debugResponse;
-                throw new \RuntimeException($msg);
+                if (!empty($model['http_error_handling'])) {
+                    try {
+                        $translated = $driver->parseResponse($model, $raw);
+                    } catch (\RuntimeException $e) {
+                        $msgCombined = $e->getMessage() . "\n\n" . $debugRequest . $debugResponse;
+                        throw new \RuntimeException($msgCombined);
+                    }
+                } else {
+                    $msg  = "HTTP {$httpStatus} error from {$req['url']}: {$raw}\n\n";
+                    $msg .= $debugRequest . $debugResponse;
+                    throw new \RuntimeException($msg);
+                }
             } else {
                 try {
                     $translated = $driver->parseResponse($model, $raw);

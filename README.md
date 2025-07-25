@@ -2,7 +2,7 @@
 
 **Bblslug** is a versatile translation tool that can be used as both a **CLI utility** and a **PHP library**.
 
-It leverages LLM-based APIs (DeepL, Google Gemini, OpenAI GPT) to translate plain text or HTML while preserving structure, code blocks, and URLs via placeholder filters.
+It leverages LLM-based APIs (Anthropic Claude, DeepL, Google Gemini, OpenAI GPT) to translate plain text or HTML while preserving structure, code blocks, and URLs via placeholder filters.
 
 ## Features
 
@@ -28,6 +28,7 @@ chmod +x vendor/bin/bblslug
 2. **Export your API key(s)** before running:
 
  ```bash
+ export ANTHROPIC_API_KEY=...
  export DEEPL_FREE_API_KEY=...
  export DEEPL_PRO_API_KEY=...
  export GOOGLE_API_KEY=...

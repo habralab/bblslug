@@ -2,6 +2,7 @@
 
 namespace Bblslug\Models;
 
+use Bblslug\Models\AnthropicDriver;
 use Bblslug\Models\DeepLDriver;
 use Bblslug\Models\GoogleDriver;
 use Bblslug\Models\ModelDriverInterface;
@@ -149,6 +150,7 @@ class ModelRegistry
         $vendor = $model['vendor'] ?? '';
 
         return match ($vendor) {
+            'anthropic' => new AnthropicDriver(),
             'deepl' => new DeepLDriver(),
             'google' => new GoogleDriver(),
             'openai' => new OpenAiDriver(),

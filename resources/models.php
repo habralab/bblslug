@@ -7,6 +7,99 @@
 
 return [
 
+    'anthropic:claude-haiku-3.5' => [
+        'vendor' => 'anthropic',
+        'endpoint' => 'https://api.anthropic.com/v1/chat/completions',
+        'format' => 'text',
+        'defaults' => [
+            'model' => 'claude-3-5-haiku-latest',
+            'temperature' => 0.0,
+            'source_lang' => 'auto',
+            'target_lang' => 'EN',
+            'max_tokens' => 8192,
+        ],
+        'requirements' => [
+            'auth' => [
+                'type' => 'header',
+                'key_name' => 'x-api-key',
+                'prefix' => null,
+                'env' => 'ANTHROPIC_API_KEY',
+                'help_url' => 'https://console.anthropic.com/',
+            ],
+            'headers' => [
+                'Content-Type: application/json',
+                'Anthropic-Version: 2023-06-01',
+            ],
+        ],
+        'limits' => [
+            'estimated_max_chars' => 400000,
+        ],
+        'http_error_handling' => true,
+        'notes' => 'A lightweight, low-latency model ideal for simple and quick translation tasks.',
+    ],
+
+    'anthropic:claude-opus-4' => [
+        'vendor' => 'anthropic',
+        'endpoint' => 'https://api.anthropic.com/v1/chat/completions',
+        'format' => 'text',
+        'defaults' => [
+            'model' => 'claude-opus-4-20250514',
+            'temperature' => 0.0,
+            'source_lang' => 'auto',
+            'target_lang' => 'EN',
+            'max_tokens' => 32000,
+        ],
+        'requirements' => [
+            'auth' => [
+                'type' => 'header',
+                'key_name' => 'x-api-key',
+                'prefix' => null,
+                'env' => 'ANTHROPIC_API_KEY',
+                'help_url' => 'https://console.anthropic.com/',
+            ],
+            'headers' => [
+                'Content-Type: application/json',
+                'Anthropic-Version: 2023-06-01',
+            ],
+        ],
+        'limits' => [
+            'estimated_max_chars' => 800000,
+        ],
+        'http_error_handling' => true,
+        'notes' => 'The most capable Claude model, with the largest context window.',
+    ],
+
+    'anthropic:claude-sonnet-4' => [
+        'vendor' => 'anthropic',
+        'endpoint' => 'https://api.anthropic.com/v1/chat/completions',
+        'format' => 'text',
+        'defaults' => [
+            'model' => 'claude-sonnet-4-20250514',
+            'temperature' => 0.0,
+            'source_lang' => 'auto',
+            'target_lang' => 'EN',
+            'max_tokens' => 64000,
+        ],
+        'requirements' => [
+            'auth' => [
+                'type' => 'header',
+                'key_name' => 'x-api-key',
+                'prefix' => null,
+                'env' => 'ANTHROPIC_API_KEY',
+                'help_url' => 'https://console.anthropic.com/',
+            ],
+            'headers' => [
+                'Content-Type: application/json',
+                'Anthropic-Version: 2023-06-01',
+            ],
+        ],
+        'limits' => [
+            'estimated_max_chars' => 800000,
+        ],
+        'http_error_handling' => true,
+        'notes' => 'A balanced model offering strong quality with lower latency and cost compared to Opus.',
+    ],
+
     'deepl:free' => [
         'vendor' => 'deepl',
         'name' => 'DeepL API Free',

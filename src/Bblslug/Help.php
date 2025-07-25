@@ -56,6 +56,7 @@ class Help
 
         echo "\nEnvironment:\n";
         echo "\tSet API keys via environment variables depending on the model:\n";
+        echo "\t  export ANTHROPIC_API_KEY=\"...\" # for Anthropic (Claude)\n";
         echo "\t  export DEEPL_FREE_API_KEY=\"...\" # for DeepL Free\n";
         echo "\t  export DEEPL_PRO_API_KEY=\"...\" # for DeepL Pro\n";
         echo "\t  export GOOGLE_API_KEY=\"...\" # for Google (Gemini)\n";
