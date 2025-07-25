@@ -26,7 +26,7 @@ class ModelRegistry
      */
     public function __construct(?string $path = null)
     {
-        $path = __DIR__ . '/../../../resources/models.yaml';
+        $path ??= __DIR__ . '/../../../resources/models.yaml';
         if (!is_readable($path)) {
             throw new \RuntimeException("Model registry not found: {$path}");
         }

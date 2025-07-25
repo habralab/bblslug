@@ -2,5 +2,6 @@
 <ruleset name="Bblslug">
   <description>PSR-12 coding standard for Bblslug</description>
   <file>src/</file>
+  <file>tests/</file>
   <rule ref="PSR12"/>
 </ruleset>
