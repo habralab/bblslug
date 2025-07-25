@@ -1,0 +1,27 @@
+---
+name: Notify Packagist
+
+on:
+  push:
+    branches: [ "main","develop","tests" ]
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Read package name from composer.json
+        id: composer
+        run: |
+          PACKAGE_NAME=$(jq -r .name composer.json)
+          echo "PACKAGE_NAME=$PACKAGE_NAME" >> $GITHUB_OUTPUT
+
+      - name: Notify Packagist
+        run: |
+          curl -s -X POST \
+            -H "Content-Type: application/json" \
+            -d "{\"repository\": {\"url\": \"https://packagist.org/packages/${{ steps.composer.outputs.PACKAGE_NAME }}\"}}" \
+            "https://packagist.org/api/update-package?username=${{ secrets.PACKAGIST_USERNAME }}&apiToken=${{ secrets.PACKAGIST_TOKEN }}"
