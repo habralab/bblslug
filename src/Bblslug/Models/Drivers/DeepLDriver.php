@@ -1,6 +1,6 @@
 <?php
 
-namespace Bblslug\Models;
+namespace Bblslug\Models\Drivers;
 
 use Bblslug\Models\ModelDriverInterface;
 

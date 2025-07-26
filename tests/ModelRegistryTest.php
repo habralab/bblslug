@@ -2,11 +2,11 @@
 
 namespace Bblslug\Tests;
 
-use Bblslug\Models\AnthropicDriver;
-use Bblslug\Models\DeepLDriver;
-use Bblslug\Models\GoogleDriver;
+use Bblslug\Models\Drivers\AnthropicDriver;
+use Bblslug\Models\Drivers\DeepLDriver;
+use Bblslug\Models\Drivers\GoogleDriver;
+use Bblslug\Models\Drivers\OpenAiDriver;
 use Bblslug\Models\ModelRegistry;
-use Bblslug\Models\OpenAiDriver;
 use PHPUnit\Framework\TestCase;
 
 class ModelRegistryTest extends TestCase

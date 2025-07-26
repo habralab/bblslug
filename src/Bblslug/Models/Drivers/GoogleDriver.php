@@ -1,8 +1,9 @@
 <?php
 
-namespace Bblslug\Models;
+namespace Bblslug\Models\Drivers;
 
 use Bblslug\Models\ModelDriverInterface;
+use Bblslug\Models\Prompts;
 
 /**
  * Google Gemini translation driver using Generative Language API.
@@ -38,7 +39,6 @@ class GoogleDriver implements ModelDriverInterface
     public function buildRequest(array $config, string $text, array $options): array
     {
         $defaults = $config['defaults'] ?? [];
-//        $model = $defaults['model'] ?? throw new \RuntimeException('Missing Gemini model name');
         $temperature = $options['temperature'] ?? $defaults['temperature'] ?? 0.0;
         $candidateCount = $options['candidateCount'] ?? $defaults['candidateCount'] ?? 1;
         $maxOutputTokens = $options['maxOutputTokens'] ?? $defaults['maxOutputTokens'] ?? null;
@@ -48,37 +48,17 @@ class GoogleDriver implements ModelDriverInterface
         $targetLang = $defaults['target_lang'] ?? 'EN';
         $format = $options['format'] ?? 'text';
 
-        if ($format === 'html') {
-            $template = <<<'EOD'
-You are a professional HTML translator.
-- Translate from {source} to {target}.
-- Preserve all HTML tags and attributes exactly.
-- Translate only visible text nodes.
-- Translate HTML attributes that contain natural language (e.g., title, alt, aria-label).
-- Do not touch any URLs or IDN domain names.
-- Do not modify or translate placeholders of the form @@number@@.
-- Wrap the translated HTML between markers: {start} and {end}.
-EOD;
-        } else {
-            $template = <<<'EOD'
-You are a professional translator.
-- Translate from {source} to {target}.
-- Translate the input text.
-- Do not modify or translate placeholders of the form @@number@@.
-- Do not alter any URLs or IDN domain names.
-- Wrap the translated text between markers: {start} and {end}.
-EOD;
-        }
-
-        $systemText = trim(strtr($template, [
-            '{source}' => $sourceLang,
-            '{target}' => $targetLang,
-            '{start}' => self::START,
-            '{end}' => self::END,
-        ]));
-        if ($context !== '') {
-            $systemText .= "\nContext: {$context}";
-        }
+        $systemText = Prompts::render(
+            'translator',
+            $format,
+            [
+                'source'  => $sourceLang,
+                'target'  => $targetLang,
+                'start'   => self::START,
+                'end'     => self::END,
+                'context' => $context !== '' ? "Context: {$context}" : '',
+            ]
+        );
 
         // Wrap user text in markers
         $contentText = self::START . "\n" . $text . "\n" . self::END;

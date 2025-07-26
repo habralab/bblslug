@@ -1,8 +1,9 @@
 <?php
 
-namespace Bblslug\Models;
+namespace Bblslug\Models\Drivers;
 
 use Bblslug\Models\ModelDriverInterface;
+use Bblslug\Models\Prompts;
 
 /**
  * Anthropic Claude driver: builds requests and parses responses for text completions.
@@ -37,38 +38,18 @@ class AnthropicDriver implements ModelDriverInterface
         $source = $defaults['source_lang'] ?? 'auto';
         $target = $defaults['target_lang'] ?? 'EN';
 
-        // System prompt template based on format
-        if ($format === 'html') {
-            $template = <<<'EOD'
-You are a professional HTML translator.
-- Translate from {source} to {target}.
-- Preserve all HTML tags and attributes exactly.
-- Translate only visible text nodes.
-- Translate HTML attributes that contain natural language (e.g., title, alt, aria-label).
-- Do not touch any URLs or IDN domain names.
-- Do not modify or translate placeholders of the form @@number@@.
-- Wrap the translated HTML between markers: {start} and {end}.
-{ctx}
-EOD;
-        } else {
-            $template = <<<'EOD'
-You are a professional translator.
-- Translate from {source} to {target}.
-- Translate the input text.
-- Do not modify or translate placeholders of the form @@number@@.
-- Do not alter any URLs or IDN domain names.
-- Wrap the translated text between markers: {start} and {end}.
-{ctx}
-EOD;
-        }
-
-        $systemPrompt = strtr($template, [
-            '{source}' => $source,
-            '{target}' => $target,
-            '{start}'  => self::START,
-            '{end}'    => self::END,
-            '{ctx}'    => $context !== '' ? "Context: {$context}" : '',
-        ]);
+        // Render system prompt from YAML templates
+        $systemPrompt = Prompts::render(
+            'translator',
+            $format,
+            [
+                'source'  => $source,
+                'target'  => $target,
+                'start'   => self::START,
+                'end'     => self::END,
+                'context' => $context !== '' ? "Context: {$context}" : '',
+            ]
+        );
 
         // Build message sequence
         $messages = [
