@@ -1,6 +1,6 @@
 <?php
 
-namespace Bblslug\Tests;
+namespace Bblslug\Tests\Models;
 
 use Bblslug\Models\ModelRegistry;
 use PHPUnit\Framework\TestCase;

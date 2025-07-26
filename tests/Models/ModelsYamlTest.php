@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Bblslug\Tests;
+namespace Bblslug\Tests\Models;
 
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Yaml\Yaml;
@@ -13,7 +13,7 @@ class ModelsYamlTest extends TestCase
     /** @test */
     public function modelsYamlIsValidAndNonEmpty(): void
     {
-        $path = __DIR__ . '/../resources/models.yaml';
+        $path = __DIR__ . '/../../resources/models.yaml';
 
         $this->assertFileExists($path, 'models.yaml must exist');
         $this->assertIsReadable($path, 'models.yaml must be readable');
