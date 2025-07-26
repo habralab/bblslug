@@ -6,6 +6,7 @@ use Bblslug\Models\Drivers\AnthropicDriver;
 use Bblslug\Models\Drivers\DeepLDriver;
 use Bblslug\Models\Drivers\GoogleDriver;
 use Bblslug\Models\Drivers\OpenAiDriver;
+use Bblslug\Models\Drivers\YandexDriver;
 use Bblslug\Models\ModelDriverInterface;
 use Symfony\Component\Yaml\Yaml;
 
@@ -111,6 +112,17 @@ class ModelRegistry
     }
 
     /**
+     * Get the map of variable names → env var names for a model.
+     *
+     * @param string $key Model key
+     * @return array<string,string>  e.g. ['some_var'=>'SOME_VAR']
+     */
+    public function getVariables(string $key): array
+    {
+        return $this->models[$key]['requirements']['variables'] ?? [];
+    }
+
+    /**
      * Get the documentation URL for obtaining a model's API key.
      *
      * @param  string $key Model key
@@ -159,6 +171,7 @@ class ModelRegistry
             'deepl' => new DeepLDriver(),
             'google' => new GoogleDriver(),
             'openai' => new OpenAiDriver(),
+            'yandex' => new YandexDriver(),
             default => throw new \InvalidArgumentException("Unknown vendor '{$vendor}' in registry."),
         };
     }

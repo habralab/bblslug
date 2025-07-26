@@ -52,6 +52,8 @@ class Help
         echo "\t{$bold}--source-lang=LANG{$reset}   Source language code (e.g. EN, DE) - default autodetect\n";
         echo "\t{$bold}--target-lang=LANG{$reset}   Target language (e.g. EN, DE) - default EN\n";
         echo "\t{$bold}--translated=FILE{$reset}    Output file for translated content (omit to write to STDOUT)\n";
+        echo "\t{$bold}--variables=K=V,...{$reset}  Comma-separated model-specific overrides\n";
+        echo "\t{$bold}--variables=k=v[,k2=v2,...]{$reset}  Comma-separated list of model-specific variables\n";
         echo "\t{$bold}--verbose{$reset}            Show extra debug info after processing\n";
 
         echo "\nEnvironment:\n";
@@ -63,6 +65,7 @@ class Help
         echo "\t  export OPENAI_API_KEY=\"...\" # for OpenAI (GPT)\n";
         echo "\t  (See each model's required variable with --list-models)\n";
         echo "\tSome models may not require API keys at all.\n";
+        echo "\tModel-specific variables can be passed via --variables or read from env\n";
         echo "\n\tYou may also set a proxy globally via the BBLSLUG_PROXY environment variable:\n";
         echo "\t  export BBLSLUG_PROXY=\"http://localhost:3128\" # HTTP proxy\n";
         echo "\t  export BBLSLUG_PROXY=\"socks5h://127.0.0.1:9050\" # SOCKS5 proxy\n";
@@ -89,6 +92,11 @@ class Help
         echo "\n\tUse filters\n";
         echo "\tphp bblslug.php --model=deepl:pro --format=html \\\n";
         echo "\t    --source=doc.html --translated=out.html --filters=url,html_code,html_pre\n";
+
+        echo "\n\tUsing model-specific variables (comma-separated):\n";
+        echo "\tphp bblslug.php --model=yandex:gpt-lite --format=text \\\n";
+        echo "\t    --variables=folder_id=...,foo=bar \\\n";
+        echo "\t    --source=in.txt --translated=out.txt\n";
 
         echo "\n\tUse HTTP proxy\n";
         echo "\tphp bblslug.php --model=openai:gpt-4o --format=text \\\n";

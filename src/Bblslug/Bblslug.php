@@ -22,6 +22,7 @@ class Bblslug
      * @param string|null $proxy      Optional proxy URL (from env or CLI).
      * @param string|null $sourceLang Optional source language code.
      * @param string|null $targetLang Optional target language code.
+     * @param array<string,string>     $variables  Model-specific vars (e.g. ['some'=>'...'])
      * @param bool        $verbose    If true: include request/response logs.
      *
      * @return array{
@@ -51,6 +52,7 @@ class Bblslug
         ?string $proxy = null,
         ?string $sourceLang = null,
         ?string $targetLang = null,
+        array $variables = [],
         bool $verbose = false
     ): array {
         // Validate model
@@ -84,11 +86,21 @@ class Bblslug
         $prepared = $filterManager->apply($text);
         $preparedLength = mb_strlen($prepared);
 
+        // Prepare options for driver, merging in any CLI-provided variables
+        $options = array_merge(
+            ['format' => $format, 'dryRun' => $dryRun, 'verbose' => $verbose],
+            $variables
+        );
+
+        if ($context !== null) {
+            $options['context'] = $context;
+        }
+
         // Build request
         $req = $driver->buildRequest(
             $model,
             $prepared,
-            ['format' => $format, 'dryRun' => $dryRun, 'verbose' => $verbose]
+            $options
         );
 
         // API auth key handling
@@ -209,6 +221,7 @@ class Bblslug
             "source-lang:",  // override source language
             "target-lang:",  // override target language
             "translated:",   // output file (default = STDOUT)
+            "variables:",    // model-specific overrides
             "verbose",       // enable debug logs
         ]);
 
@@ -282,6 +295,19 @@ class Bblslug
             );
         }
 
+        // Parse CLI --variables (takes precedence over env)
+        $cliVars = [];
+        if (!empty($options['variables'])) {
+            foreach (explode(',', $options['variables']) as $pair) {
+                [$k, $v] = array_map('trim', explode('=', $pair, 2)) + [null, null];
+                if ($k !== null && $v !== null) {
+                    $cliVars[$k] = $v;
+                } else {
+                    Help::error("Invalid --variables format: '{$pair}'");
+                }
+            }
+        }
+
         // in interactive mode without --source, warn user about STDIN and EOF
         if ($sourceFile === null && function_exists('stream_isatty') && stream_isatty(STDIN)) {
             Help::warning("Reading from STDIN; press Ctrl-D to finish input and continue.");
@@ -341,6 +367,18 @@ class Bblslug
         // Read optional proxy setting (CLI flag has priority)
         $proxy = $options['proxy'] ?? getenv('BBLSLUG_PROXY') ?: null;
 
+        // Collect any model-specific variables
+        $variables = [];
+        foreach ($registry->getVariables($modelKey) as $name => $envVar) {
+            $val = getenv($envVar);
+            if ($val === false) {
+                Help::error("Missing required env var {$envVar} for model {$modelKey}");
+            }
+            $variables[$name] = $val;
+        }
+        // Override by CLI
+        $variables = array_merge($variables, $cliVars);
+
         // Perform translation
         $res = [];
         try {
@@ -355,6 +393,7 @@ class Bblslug
                 proxy: $proxy,
                 sourceLang: $sourceLang,
                 targetLang: $targetLang,
+                variables: $variables,
                 verbose: $verbose,
             );
         } catch (\Throwable $e) {

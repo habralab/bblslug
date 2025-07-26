@@ -347,3 +347,138 @@
   defaults:
     model: gpt-4o-mini
     temperature: 0.0
+
+'yandex:gpt-lite':
+  vendor: yandex
+  name: 'Yandex GPT Lite'
+  endpoint: 'https://llm.api.cloud.yandex.net/foundationModels/v1/completion'
+  format: text
+  limits:
+    max_tokens: 8192
+    token_estimator: gpt
+    estimated_max_chars: 32768
+  requirements:
+    auth:
+      help_url: 'https://yandex.cloud/en/docs/foundation-models/api-ref/authentication'
+      type: header
+      key_name: Authorization
+      prefix: Bearer
+      env: YANDEX_API_KEY
+    variables:
+      folder_id: YANDEX_FOLDER_ID
+    headers:
+      - 'Content-Type: application/json'
+  defaults:
+    model: yandexgpt-lite/latest
+    temperature: 0.0
+    max_tokens: 8192
+  http_error_handling: true
+  notes: 'Low-latency model with up to 8 k tokens sync or 32 k async.'
+
+'yandex:gpt-pro':
+  vendor: yandex
+  name: 'Yandex GPT Pro'
+  endpoint: 'https://llm.api.cloud.yandex.net/foundationModels/v1/completion'
+  format: text
+  limits:
+    max_tokens: 8192
+    token_estimator: gpt
+    estimated_max_chars: 32768
+  requirements:
+    auth:
+      help_url: 'https://yandex.cloud/en/docs/foundation-models/api-ref/authentication'
+      type: header
+      key_name: Authorization
+      prefix: Bearer
+      env: YANDEX_API_KEY
+    variables:
+      folder_id: YANDEX_FOLDER_ID
+    headers:
+      - 'Content-Type: application/json'
+  defaults:
+    model: yandexgpt/latest
+    temperature: 0.0
+    max_tokens: 8192
+  http_error_handling: true
+  notes: 'High-capacity 5th-gen model, up to 8 k tokens sync or 32 k async.'
+
+'yandex:gpt-32k':
+  vendor: yandex
+  name: 'Yandex GPT Pro 32K'
+  endpoint: 'https://llm.api.cloud.yandex.net/foundationModels/v1/completion'
+  format: text
+  limits:
+    max_tokens: 32000
+    token_estimator: gpt
+    estimated_max_chars: 128000
+  requirements:
+    auth:
+      help_url: 'https://yandex.cloud/en/docs/foundation-models/api-ref/authentication'
+      type: header
+      key_name: Authorization
+      prefix: Bearer
+      env: YANDEX_API_KEY
+    variables:
+      folder_id: YANDEX_FOLDER_ID
+    headers:
+      - 'Content-Type: application/json'
+  defaults:
+    model: yandexgpt-32k/latest
+    temperature: 0.0
+    max_tokens: 32000
+  http_error_handling: true
+  notes: 'Extended-context model: up to 32 k tokens (sync only).'
+
+'yandex:llama-lite':
+  vendor: yandex
+  name: 'Llama 8B (Lite)'
+  endpoint: 'https://llm.api.cloud.yandex.net/foundationModels/v1/completion'
+  format: text
+  limits:
+    max_tokens: 8192
+    token_estimator: gpt
+    estimated_max_chars: 32768
+  requirements:
+    auth:
+      help_url: 'https://yandex.cloud/en/docs/foundation-models/api-ref/authentication'
+      type: header
+      key_name: Authorization
+      prefix: Bearer
+      env: YANDEX_API_KEY
+    variables:
+      folder_id: YANDEX_FOLDER_ID
+    headers:
+      - 'Content-Type: application/json'
+  defaults:
+    model: llama-lite/latest
+    temperature: 0.0
+    max_tokens: 8192
+  http_error_handling: true
+  notes: 'Meta Llama 8 B variant, up to 8 k tokens sync or async.'
+
+'yandex:llama':
+  vendor: yandex
+  name: 'Llama 70B'
+  endpoint: 'https://llm.api.cloud.yandex.net/foundationModels/v1/completion'
+  format: text
+  limits:
+    max_tokens: 8192
+    token_estimator: gpt
+    estimated_max_chars: 32768
+  requirements:
+    auth:
+      help_url: 'https://yandex.cloud/en/docs/foundation-models/api-ref/authentication'
+      type: header
+      key_name: Authorization
+      prefix: Bearer
+      env: YANDEX_API_KEY
+    variables:
+      folder_id: YANDEX_FOLDER_ID
+    headers:
+      - 'Content-Type: application/json'
+  defaults:
+    model: llama/latest
+    temperature: 0.0
+    max_tokens: 8192
+  http_error_handling: true
+  notes: 'Full-scale Meta Llama 70 B, up to 8 k tokens sync or async.'

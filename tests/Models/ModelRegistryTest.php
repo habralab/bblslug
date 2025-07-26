@@ -6,6 +6,7 @@ use Bblslug\Models\Drivers\AnthropicDriver;
 use Bblslug\Models\Drivers\DeepLDriver;
 use Bblslug\Models\Drivers\GoogleDriver;
 use Bblslug\Models\Drivers\OpenAiDriver;
+use Bblslug\Models\Drivers\YandexDriver;
 use Bblslug\Models\ModelRegistry;
 use PHPUnit\Framework\TestCase;
 
@@ -31,6 +32,11 @@ class ModelRegistryTest extends TestCase
         'openai:gpt-4-turbo',
         'openai:gpt-4o',
         'openai:gpt-4o-mini',
+        'yandex:gpt-lite',
+        'yandex:gpt-pro',
+        'yandex:gpt-32k',
+        'yandex:llama-lite',
+        'yandex:llama',
     ];
 
     protected function setUp(): void
@@ -127,6 +133,11 @@ class ModelRegistryTest extends TestCase
             'openai:gpt-4-turbo'           => 'OPENAI_API_KEY',
             'openai:gpt-4o'                => 'OPENAI_API_KEY',
             'openai:gpt-4o-mini'           => 'OPENAI_API_KEY',
+            'yandex:gpt-lite'              => 'YANDEX_API_KEY',
+            'yandex:gpt-pro'               => 'YANDEX_API_KEY',
+            'yandex:gpt-32k'               => 'YANDEX_API_KEY',
+            'yandex:llama-lite'            => 'YANDEX_API_KEY',
+            'yandex:llama'                 => 'YANDEX_API_KEY',
         ];
 
         foreach ($expected as $modelKey => $envName) {
@@ -136,6 +147,35 @@ class ModelRegistryTest extends TestCase
                 "Auth env for '{$modelKey}' should be '{$envName}'"
             );
         }
+    }
+
+    /** @test */
+    public function itReturnsExpectedVariablesForYandexModels(): void
+    {
+        // All Yandex models should declare the same 'folder_id' variable
+        $yandexModels = [
+            'yandex:gpt-lite',
+            'yandex:gpt-pro',
+            'yandex:gpt-32k',
+            'yandex:llama-lite',
+            'yandex:llama',
+        ];
+        foreach ($yandexModels as $modelKey) {
+            $this->assertSame(
+                ['folder_id' => 'YANDEX_FOLDER_ID'],
+                $this->registry->getVariables($modelKey),
+                "Variables for '{$modelKey}' should include folder_id => YANDEX_FOLDER_ID"
+            );
+        }
+    }
+
+    /** @test */
+    public function itNotReturnsExpectedVariablesForModelsWithoutIt(): void
+    {
+        $this->assertEmpty(
+            $this->registry->getVariables('openai:gpt-4'),
+            "Models vithout declared variables must return an empty array of variables"
+        );
     }
 
     /** @test */
@@ -155,6 +195,11 @@ class ModelRegistryTest extends TestCase
             'openai:gpt-4-turbo'           => 'platform.openai.com/account/api-keys',
             'openai:gpt-4o'                => 'platform.openai.com/account/api-keys',
             'openai:gpt-4o-mini'           => 'platform.openai.com/account/api-keys',
+            'yandex:gpt-lite'              => 'yandex.cloud/en/docs/foundation-models/api-ref/authentication',
+            'yandex:gpt-pro'               => 'yandex.cloud/en/docs/foundation-models/api-ref/authentication',
+            'yandex:gpt-32k'               => 'yandex.cloud/en/docs/foundation-models/api-ref/authentication',
+            'yandex:llama-lite'            => 'yandex.cloud/en/docs/foundation-models/api-ref/authentication',
+            'yandex:llama'                 => 'yandex.cloud/en/docs/foundation-models/api-ref/authentication',
         ];
 
         foreach ($expected as $modelKey => $urlSubstring) {
@@ -216,6 +261,11 @@ class ModelRegistryTest extends TestCase
             'openai:gpt-4-turbo'           => OpenAiDriver::class,
             'openai:gpt-4o'                => OpenAiDriver::class,
             'openai:gpt-4o-mini'           => OpenAiDriver::class,
+            'yandex:gpt-lite'              => YandexDriver::class,
+            'yandex:gpt-pro'               => YandexDriver::class,
+            'yandex:gpt-32k'               => YandexDriver::class,
+            'yandex:llama-lite'            => YandexDriver::class,
+            'yandex:llama'                 => YandexDriver::class,
         ];
 
         foreach ($map as $modelKey => $driverClass) {

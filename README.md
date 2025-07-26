@@ -23,6 +23,10 @@ APIs supported:
  - `openai:gpt-4-turbo` - OpenAI GPT-4 Turbo
  - `openai:gpt-4o` - OpenAI GPT-4o
  - `openai:gpt-4o-mini` - OpenAI GPT-4o Mini
+- Yandex:
+  - `yandex:gpt-lite` - YandexGPT Lite
+  - `yandex:gpt-pro` - YandexGPT Pro
+  - `yandex:gpt-32k` - YandexGPT Pro 32K
 
 ## Features
 
@@ -53,7 +57,10 @@ chmod +x vendor/bin/bblslug
  export DEEPL_PRO_API_KEY=...
  export GOOGLE_API_KEY=...
  export OPENAI_API_KEY=...
+ export YANDEX_API_KEY=... && export YANDEX_FOLDER_ID=...
  ```
+
+**NB!** Some vendors require additional parameters for client authentication (like Yandex)
 
 3. **Input / output**:
 
@@ -162,6 +169,18 @@ vendor/bin/bblslug \
   --translated=out.html
 ```
 
+### Use additional model/vendor-specific options
+
+```bash
+vendor/bin/bblslug \
+  --model=vendor:name \
+  --variables=some=XXX,other=YYY \
+  --format=html \
+  --verbose \
+  --source=input.html \
+  --translated=out.html
+```
+
 ## PHP Library Usage
 
 You can embed Bblslug in your PHP project:
@@ -189,6 +208,7 @@ $result = Bblslug::translate(
     proxy:      getenv('BBLSLUG_PROXY'),         // Optional proxy URI (http://..., socks5h://...)
     sourceLang: null,                            // Source language code (optional; autodetect if null)
     targetLang: null,                            // Target language code (optional; default from driver settings)
+    variables:  TBD,                             // TBD
     verbose:    true,                            // If true, prints debug request/response to stderr
 );
 
