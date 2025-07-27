@@ -32,7 +32,31 @@ class ModelRegistry
             throw new \RuntimeException("Model registry not found: {$path}");
         }
 
-        $this->models = Yaml::parseFile($path);
+        $raw = Yaml::parseFile($path);
+        $flat = [];
+
+        foreach ($raw as $key => $cfg) {
+            // vendor‐level grouping?
+            if (isset($cfg['models']) && is_array($cfg['models'])) {
+                $vendor = $key;
+                $vendorDefaults = $cfg;
+                unset($vendorDefaults['models']);
+
+                foreach ($cfg['models'] as $modelName => $modelOverrides) {
+                    // merge vendor-level + per-model (modelOverride wins)
+                    $merged = array_replace_recursive($vendorDefaults, $modelOverrides);
+                    // ensure we still know the vendor
+                    $merged['vendor'] = $vendor;
+                    $flat["{$vendor}:{$modelName}"] = $merged;
+                }
+
+            // flat (legacy) definition
+            } else {
+                $flat[$key] = $cfg;
+            }
+        }
+
+        $this->models = $flat;
     }
 
     /**
