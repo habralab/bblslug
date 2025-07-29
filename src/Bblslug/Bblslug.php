@@ -6,6 +6,7 @@ use Bblslug\Filters\FilterManager;
 use Bblslug\Help;
 use Bblslug\HttpClient;
 use Bblslug\Models\ModelRegistry;
+use Bblslug\Models\UsageExtractor;
 
 class Bblslug
 {
@@ -33,6 +34,7 @@ class Bblslug
      *     debugRequest: string,
      *     debugResponse: string,
      *     rawResponseBody: string,
+     *     consumed: array<string,mixed>,
      *     lengths: array{original:int,prepared:int,translated:int},
      *     filterStats: array<array{filter:string,count:int}>
      * }
@@ -110,7 +112,9 @@ class Bblslug
                 throw new \InvalidArgumentException("API key is required for {$modelKey}");
             }
             $keyName = $auth['key_name'];
-            $prefix  = $auth['prefix'] ? $auth['prefix'] . ' ' : '';
+            $prefix = isset($auth['prefix']) && $auth['prefix'] !== ''
+                ? $auth['prefix'] . ' '
+                : '';
             switch ($auth['type'] ?? 'form') {
                 case 'header':
                     $req['headers'][] = "{$keyName}: {$prefix}{$apiKey}";
@@ -149,29 +153,26 @@ class Bblslug
         // Parse response
         if ($dryRun) {
             $translated = $prepared;
+            $rawUsage   = null;
         } else {
-            if ($httpStatus >= 400) {
-                if (!empty($model['http_error_handling'])) {
-                    try {
-                        $translated = $driver->parseResponse($model, $raw);
-                    } catch (\RuntimeException $e) {
-                        $msgCombined = $e->getMessage() . "\n\n" . $debugRequest . $debugResponse;
-                        throw new \RuntimeException($msgCombined);
-                    }
-                } else {
-                    $msg  = "HTTP {$httpStatus} error from {$req['url']}: {$raw}\n\n";
-                    $msg .= $debugRequest . $debugResponse;
-                    throw new \RuntimeException($msg);
-                }
-            } else {
-                try {
-                    $translated = $driver->parseResponse($model, $raw);
-                } catch (\RuntimeException $e) {
-                    $msgCombined = $e->getMessage() . "\n\n" . $debugRequest . $debugResponse;
-                    throw new \RuntimeException($msgCombined);
-                }
+            if ($httpStatus >= 400 && empty($model['http_error_handling'])) {
+                throw new \RuntimeException(
+                    "HTTP {$httpStatus} error from {$req['url']}: {$raw}\n\n" .
+                    $debugRequest . $debugResponse
+                );
+            }
+            try {
+                $parsed     = $driver->parseResponse($model, $raw);
+                $translated = $parsed['text'];
+                $rawUsage   = $parsed['usage'] ?? null;
+            } catch (\RuntimeException $e) {
+                throw new \RuntimeException(
+                    $e->getMessage() . "\n\n" . $debugRequest . $debugResponse
+                );
             }
         }
+
+        $consumed = UsageExtractor::extract($model, $rawUsage);
 
         // Restore placeholders
         $result = $filterManager->restore($translated);
@@ -188,6 +189,7 @@ class Bblslug
             'debugRequest' => $debugRequest,
             'debugResponse' => $debugResponse,
             'rawResponseBody' => $raw,
+            'consumed' => $consumed,
             'lengths' => [
                 'original' => $originalLength,
                 'prepared' => $preparedLength,
@@ -424,11 +426,13 @@ class Bblslug
         $reset = "\033[0m";
         $lh   = $res['lengths'];
         $stderr = fopen('php://stderr', 'w');
-        fwrite($stderr, "{$reset}Characters processed:\n");
+        // Characters processed visualization
+        fwrite($stderr, "\n{$bold}Characters processed:{$reset}\n");
         fwrite($stderr, "\t{$bold}Original:{$reset}    {$lh['original']}\n");
         fwrite($stderr, "\t{$bold}Prepared:{$reset}    {$lh['prepared']}\n");
-        fwrite($stderr, "\t{$bold}Translated:{$reset}  {$lh['translated']}\n\n");
-        fwrite($stderr, "Filter statistics:\n");
+        fwrite($stderr, "\t{$bold}Translated:{$reset}  {$lh['translated']}\n");
+        // Filter statistics visualization
+        fwrite($stderr, "\n{$bold}Filter statistics:{$reset}\n");
         if (empty($res['filterStats'])) {
             fwrite($stderr, "\t(no filters applied)\n");
         } else {
@@ -436,6 +440,32 @@ class Bblslug
                 fwrite($stderr, "\t{$bold}{$stat['filter']}:{$reset}\t{$stat['count']} placeholder(s)\n");
             }
         }
+        // Usage visualization
+        $consumed = $res['consumed'] ?? [];
+
+        fwrite($stderr, "\n{$bold}Usage metrics:{$reset}\n");
+        if (empty($consumed)) {
+            fwrite($stderr, "\t(not provided)\n");
+        } else {
+            foreach ($consumed as $category => $metrics) {
+                // Category header, e.g. "Tokens:"
+                fwrite($stderr, "\t" . ucfirst($category) . ":\n");
+                // Total line
+                $total = $metrics['total'] ?? 0;
+                fwrite($stderr, sprintf("\t\t%-12s %d\n", 'Total:', $total));
+                // Separator line of appropriate length
+                $sepLen = 12 + 1 + strlen((string)$total);
+                $sep    = str_repeat('-', $sepLen);
+                fwrite($stderr, "\t\t{$sep}\n");
+                // Breakdown lines, e.g. Prompt, Completion
+                if (!empty($metrics['breakdown']) && is_array($metrics['breakdown'])) {
+                    foreach ($metrics['breakdown'] as $label => $cnt) {
+                        fwrite($stderr, sprintf("\t\t%-12s %d\n", ucfirst($label) . ':', $cnt));
+                    }
+                }
+            }
+        }
+
         fwrite($stderr, $reset);
         fclose($stderr);
     }

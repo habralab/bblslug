@@ -99,11 +99,14 @@ class GoogleDriver implements ModelDriverInterface
      * @param array<string,mixed> $config       Model config (not used)
      * @param string              $responseBody Raw HTTP body
      *
-     * @return string Translated text (placeholders still in)
+     * @return array{
+     *     text:  string,
+     *     usage: array<string,mixed>|null
+     * }
      *
      * @throws \RuntimeException If response malformed or no candidate found
      */
-    public function parseResponse(array $config, string $responseBody): string
+    public function parseResponse(array $config, string $responseBody): array
     {
         // First, extract the 'content' field from the JSON wrapper
         $data = json_decode($responseBody, true);
@@ -143,12 +146,19 @@ class GoogleDriver implements ModelDriverInterface
                 $matches
             )
         ) {
-            return trim($matches[1]);
+            $text = trim($matches[1]);
+        } else {
+            throw new \RuntimeException(
+                "Markers not found in Gemini response: " . substr($content, 0, 200) . '…'
+            );
         }
 
-        // If markers are missing, throw to avoid silent failures
-        throw new \RuntimeException(
-            "Markers not found in Gemini response: " . substr($content, 0, 200) . '…'
-        );
+        // Raw usage metadata from Gemini
+        $usage = $data['usageMetadata'] ?? null;
+
+        return [
+            'text'  => $text,
+            'usage' => $usage,
+        ];
     }
 }

@@ -64,11 +64,14 @@ class DeepLDriver implements ModelDriverInterface
      * @param array<string,mixed> $config       Model config (unused here).
      * @param string              $responseBody Raw JSON response body.
      *
-     * @return string Translated text.
+     * @return array{
+     *     text:  string,
+     *     usage: array<string,mixed>|null
+     * }
      *
      * @throws RuntimeException If the response format is unexpected.
      */
-    public function parseResponse(array $config, string $responseBody): string
+    public function parseResponse(array $config, string $responseBody): array
     {
         $data = json_decode($responseBody, true);
         if (
@@ -77,6 +80,10 @@ class DeepLDriver implements ModelDriverInterface
         ) {
             throw new \RuntimeException("DeepL translation failed: {$responseBody}");
         }
-        return $data['translations'][0]['text'];
+
+        return [
+            'text'  => $data['translations'][0]['text'],
+            'usage' => null,  // DeepL API does not provide token usage
+        ];
     }
 }

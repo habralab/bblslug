@@ -94,10 +94,13 @@ class YandexDriver implements ModelDriverInterface
     * @param array<string,mixed> $config       Model config from registry
     * @param string              $responseBody Raw HTTP response body
     *
-    * @return string Translated text
+    * @return array{
+    *     text:  string,
+    *     usage: array<string,mixed>|null
+    * }
     * @throws \RuntimeException On API error or unexpected response format
     */
-    public function parseResponse(array $config, string $responseBody): string
+    public function parseResponse(array $config, string $responseBody): array
     {
         $data = json_decode($responseBody, true);
 
@@ -133,14 +136,22 @@ class YandexDriver implements ModelDriverInterface
 
         // Pull out content between markers.
         if (
-            preg_match(
+            !preg_match(
                 '/' . preg_quote(self::START, '/') . '(.*?)' . preg_quote(self::END, '/') . '/s',
                 $text,
                 $matches
             )
         ) {
-            return trim($matches[1]);
+            throw new \RuntimeException("YandexDriver: markers not found in response");
         }
-        throw new \RuntimeException("YandexDriver: markers not found in response");
+        $text = trim($matches[1]);
+
+        // Raw usage statistics
+        $usage = $data['result']['usage'] ?? null;
+
+        return [
+            'text'  => $text,
+            'usage' => $usage,
+        ];
     }
 }

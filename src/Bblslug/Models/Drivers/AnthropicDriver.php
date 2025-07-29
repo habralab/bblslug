@@ -80,10 +80,13 @@ class AnthropicDriver implements ModelDriverInterface
      * @param array<string,mixed> $config       Model config from registry
      * @param string              $responseBody Raw JSON response body
      *
-     * @return string Translated text
+     * @return array{
+     *     text:  string,
+     *     usage: array<string,mixed>|null
+     * }
      * @throws \RuntimeException If the response is malformed or an API error is returned
      */
-    public function parseResponse(array $config, string $responseBody): string
+    public function parseResponse(array $config, string $responseBody): array
     {
         $data = json_decode($responseBody, true);
 
@@ -118,12 +121,19 @@ class AnthropicDriver implements ModelDriverInterface
                     $matches
                 )
         ) {
-            return trim($matches[1]);
+            $text = trim($matches[1]);
+        } else {
+            throw new \RuntimeException(
+                "Markers not found in Anthropic response: " . substr($content, 0, 200) . '…'
+            );
         }
 
-        // If markers are missing, throw to avoid silent failures
-        throw new \RuntimeException(
-            "Markers not found in Anthropic response: " . substr($content, 0, 200) . '…'
-        );
+        // Raw usage statistics from Anthropic
+        $usage = $data['usage'] ?? null;
+
+        return [
+            'text'  => $text,
+            'usage' => $usage,
+        ];
     }
 }

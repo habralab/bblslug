@@ -21,6 +21,12 @@ anthropic:
   limits:
     estimated_max_chars: 400000
   http_error_handling: true
+  usage:
+    tokens:
+      total: total_tokens
+      breakdown:
+        prompt: prompt_tokens
+        completion: completion_tokens
 
   models:
     claude-haiku-3.5:
@@ -107,6 +113,12 @@ google:
       - system_instruction
       - contents
       - generationConfig
+  usage:
+    tokens:
+      total: totalTokenCount
+      breakdown:
+        prompt: promptTokenCount
+        candidates: candidatesTokenCount
 
   models:
     gemini-2.0-flash:
@@ -180,6 +192,12 @@ openai:
     max_tokens: 128000
     token_estimator: gpt
     estimated_max_chars: 512000
+  usage:
+    tokens:
+      total: total_tokens
+      breakdown:
+        prompt: prompt_tokens
+        completion: completion_tokens
 
   models:
     gpt-4:
@@ -232,6 +250,12 @@ yandex:
     token_estimator: gpt
     estimated_max_chars: 32768
   http_error_handling: true
+  usage:
+    tokens:
+      total: totalTokens
+      breakdown:
+        input: inputTextTokens
+        completion: completionTokens
 
   models:
     gpt-lite:

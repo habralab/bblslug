@@ -79,11 +79,13 @@ class OpenAiDriver implements ModelDriverInterface
      * @param array<string,mixed> $config       Model config (not used)
      * @param string              $responseBody Raw HTTP body
      *
-     * @return string Translated text (placeholders still in)
+     * @return array{
+     *     text:  string,
+     *     usage: array<string,mixed>|null
      *
      * @throws \RuntimeException If response is malformed or markers not found
      */
-    public function parseResponse(array $config, string $responseBody): string
+    public function parseResponse(array $config, string $responseBody): array
     {
         // First, extract the 'content' field from the JSON wrapper
         $data = json_decode($responseBody, true);
@@ -97,18 +99,19 @@ class OpenAiDriver implements ModelDriverInterface
 
         // Now pull out everything between our markers
         if (
-            preg_match(
+            !preg_match(
                 '/' . preg_quote(self::START, '/') . '(.*?)' . preg_quote(self::END, '/') . '/s',
                 $content,
                 $matches
             )
         ) {
-            return trim($matches[1]);
+            throw new \RuntimeException("Markers not found in OpenAI response");
         }
+        $text = trim($matches[1]);
 
-        // If markers are missing, throw to avoid silent failures
-        throw new \RuntimeException(
-            "Markers not found in OpenAI response: " . substr($content, 0, 200) . '…'
-        );
+        // Usage statistics
+        $usage = $data['usage'] ?? null;
+
+        return ['text' => $text, 'usage' => $usage];
     }
 }
