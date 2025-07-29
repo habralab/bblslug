@@ -1,7 +1,8 @@
 <?php
 
-namespace Bblslug;
+namespace Bblslug\Console;
 
+use Bblslug\Bblslug;
 use Bblslug\Models\ModelRegistry;
 
 class Help
@@ -109,31 +110,30 @@ class Help
         }
     }
 
-    // for execution with --list-models
-    public static function printModelList(ModelRegistry $registry): void
+    /**
+     * Print a grouped list of available models to STDOUT.
+     *
+     * @param array<string, array<string, array<string,mixed>>> $modelsByVendor
+     *     Hierarchical map of vendor => [modelKey => config].
+     * @return void
+     */
+    public static function printModelList(): void
     {
+        $modelsByVendor = Bblslug::listModels();
+
         $bold = "\033[1m";
         $reset = "\033[0m";
 
-        echo $reset;
-        echo "Available models:\n\n";
+        echo $reset, "Available models:\n\n";
 
-        $grouped = [];
-
-        foreach ($registry->getAll() as $key => $model) {
-            $vendor = $model['vendor'] ?? 'other';
-            $grouped[$vendor][$key] = $model;
-        }
-
-        foreach ($grouped as $vendor => $models) {
+        foreach ($modelsByVendor as $vendor => $models) {
             echo "\t{$bold}{$vendor}{$reset}:\n";
-
-            foreach ($models as $key => $model) {
+            foreach ($models as $key => $conf) {
                 $label = "{$bold}{$key}{$reset}";
-                $line = "\t\t- " . str_pad($label, 32 + strlen($bold . $reset)) . ($model['notes'] ?? '') . "\n";
-                echo $line;
+                $pad   = str_pad($label, 32 + strlen($bold . $reset));
+                $notes = $conf['notes'] ?? '';
+                echo "\t\t- {$pad}{$notes}\n";
             }
-
             echo "\n";
         }
 

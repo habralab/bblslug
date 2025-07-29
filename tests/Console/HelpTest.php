@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Bblslug\Tests;
+namespace Bblslug\Tests\Console;
 
-use PHPUnit\Framework\TestCase;
-use Bblslug\Help;
+use Bblslug\Console\Help;
 use Bblslug\Models\ModelRegistry;
+use PHPUnit\Framework\TestCase;
 
 class HelpTest extends TestCase
 {

@@ -209,29 +209,31 @@ You can embed Bblslug in your PHP project.
   use Bblslug\Bblslug;
   ```
 
-3. **Translate:**
+### Translate
 
-  ```php
-  $text = file_get_contents('input.html');
-  $result = Bblslug::translate(
-      apiKey:   getenv('MODEL_API_KEY'),         // API key for the chosen model
-      format:   'html',                          // 'text' or 'html'
-      modelKey: 'vendor:model',                  // Model identifier (e.g. deepl:free, openai:gpt-4o, etc.)
-      text:     $text,                           // Source text or HTML
-      // optional:
-      // Additional context/prompt pass to model
-      context:    'Translate as a professional technical translator',
-      filters:    ['url','html_code'],           // List of placeholder filters
-      proxy:      getenv('BBLSLUG_PROXY'),       // Optional proxy URI (http://..., socks5h://...)
-      sourceLang: 'DE',                          // Source language code (optional; autodetect if null)
-      targetLang: 'EN',                          // Target language code (optional; default from driver settings)
-      variables:  ['foo'=>'bar'],                // model-specific overrides
-      verbose:    true,                          // If true, returns debug request/response
-  );
-  echo $result['result'];
-  ```
+Text translation function example:
 
-### Result structure
+```php
+$text = file_get_contents('input.html');
+$result = Bblslug::translate(
+    apiKey:   getenv('MODEL_API_KEY'),         // API key for the chosen model
+    format:   'html',                          // 'text' or 'html'
+    modelKey: 'vendor:model',                  // Model identifier (e.g. deepl:free, openai:gpt-4o, etc.)
+    text:     $text,                           // Source text or HTML
+    // optional:
+    // Additional context/prompt pass to model
+    context:    'Translate as a professional technical translator',
+    filters:    ['url','html_code'],           // List of placeholder filters
+    proxy:      getenv('BBLSLUG_PROXY'),       // Optional proxy URI (http://..., socks5h://...)
+    sourceLang: 'DE',                          // Source language code (optional; autodetect if null)
+    targetLang: 'EN',                          // Target language code (optional; default from driver settings)
+    variables:  ['foo'=>'bar'],                // model-specific overrides
+    verbose:    true,                          // If true, returns debug request/response
+);
+echo $result['result'];
+```
+
+Result structure:
 
 ```php
 [
@@ -259,6 +261,29 @@ You can embed Bblslug in your PHP project.
   'filterStats'     => [         // Placeholder stats
      ['filter'=>'url','count'=>3], …
   ],
+]
+```
+
+### List available models
+
+```php
+$modelsByVendor = Bblslug::listModels();
+
+foreach ($modelsByVendor as $vendor => $models) {
+    echo "Vendor: {$vendor}\n";
+    foreach ($models as $key => $config) {
+        printf("  - %s: %s\n", $key, $config['notes'] ?? '(no notes)');
+    }
+}
+```
+
+Returns an array like:
+
+```php
+[
+  'deepl'  => ['deepl:free' => […], 'deepl:pro' => […]],
+  'openai' => ['openai:gpt-4' => […], …],
+  …
 ]
 ```
 

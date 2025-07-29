@@ -3,6 +3,4 @@
 
 require __DIR__ . '/vendor/autoload.php';
 
-use Bblslug\Bblslug;
-
-Bblslug::runFromCli();
+\Bblslug\Console\Cli::run();
