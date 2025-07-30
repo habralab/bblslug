@@ -64,6 +64,8 @@ class Help
         echo "\t  export DEEPL_PRO_API_KEY=\"...\" # for DeepL Pro\n";
         echo "\t  export GOOGLE_API_KEY=\"...\" # for Google (Gemini)\n";
         echo "\t  export OPENAI_API_KEY=\"...\" # for OpenAI (GPT)\n";
+        echo "\t  export YANDEX_API_KEY=\"...\" && export YANDEX_FOLDER_ID=\"...\" # for Yandex (FM)\n";
+        echo "\t  export XAI_API_KEY=\"...\" # for X.AI (Grok)\n";
         echo "\t  (See each model's required variable with --list-models)\n";
         echo "\tSome models may not require API keys at all.\n";
         echo "\tModel-specific variables can be passed via --variables or read from env\n";

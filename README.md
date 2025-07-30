@@ -27,6 +27,12 @@ APIs supported:
   - `yandex:gpt-lite` - YandexGPT Lite
   - `yandex:gpt-pro` - YandexGPT Pro
   - `yandex:gpt-32k` - YandexGPT Pro 32K
+- X.ai:
+  - `xai:grok-4` - Grok 4
+  - `xai:grok-3` - Grok 3
+  - `xai:grok-3-fast` - Grok 3 Fast
+  - `xai:grok-3-mini` - Grok 3 Mini
+  - `xai:grok-3-mini-fast` - Grok 3 Mini Fast
 
 ## Features
 
@@ -61,6 +67,7 @@ chmod +x vendor/bin/bblslug
   export GOOGLE_API_KEY=...
   export OPENAI_API_KEY=...
   export YANDEX_API_KEY=... && export YANDEX_FOLDER_ID=...
+  export XAI_API_KEY=...
   ```
 
   **NB!** Some vendors require additional parameters, e.g. `YANDEX_FOLDER_ID`.

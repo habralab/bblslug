@@ -7,6 +7,7 @@ use Bblslug\Models\Drivers\DeepLDriver;
 use Bblslug\Models\Drivers\GoogleDriver;
 use Bblslug\Models\Drivers\OpenAiDriver;
 use Bblslug\Models\Drivers\YandexDriver;
+use Bblslug\Models\Drivers\XaiDriver;
 use Bblslug\Models\ModelDriverInterface;
 use Symfony\Component\Yaml\Yaml;
 
@@ -196,6 +197,7 @@ class ModelRegistry
             'google' => new GoogleDriver(),
             'openai' => new OpenAiDriver(),
             'yandex' => new YandexDriver(),
+            'xai' => new XaiDriver(),
             default => throw new \InvalidArgumentException("Unknown vendor '{$vendor}' in registry."),
         };
     }

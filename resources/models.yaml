@@ -291,3 +291,66 @@ yandex:
       defaults:
         model: llama/latest
       notes: 'Full-scale Meta Llama 70 B, up to 8 k tokens sync or async.'
+
+
+# -------------------------------------------------------------------
+# xAI (Grok)
+# -------------------------------------------------------------------
+xai:
+  endpoint: 'https://api.x.ai/v1/chat/completions'
+  format: text
+  defaults:
+    temperature: 0.0
+    source_lang: auto
+    target_lang: EN
+  requirements:
+    auth:
+      type: header
+      key_name: Authorization
+      prefix: Bearer
+      env: XAI_API_KEY
+      help_url: 'https://console.x.ai/team/default/api-keys'
+    headers:
+      - 'Content-Type: application/json'
+  limits:
+    max_tokens: 262144
+    token_estimator: gpt
+    estimated_max_chars: 1048576
+  usage:
+    tokens:
+      total:       total_tokens
+      breakdown:
+        prompt:      prompt_tokens
+        completion:  completion_tokens
+        reasoning: completion_tokens_details.reasoning_tokens
+
+  models:
+    grok-4:
+      name: 'Grok 4'
+      defaults:
+        model: grok-4
+      notes: 'Scientist-grade reasoning, coding mode, and real-time internet understanding'
+
+    grok-3:
+      name: 'Grok 3'
+      defaults:
+        model: grok-3
+      notes: 'Optimized for logical reasoning, math problem-solving, and real-time data with DeepSearch'
+
+    grok-3-fast:
+      name: 'Grok 3 Fast'
+      defaults:
+        model: grok-3-fast
+      notes: 'Optimized for fastest Grok 3 inference'
+
+    grok-3-mini:
+      name: 'Grok 3 Mini'
+      defaults:
+        model: grok-3-mini
+      notes: 'Compact variant balancing Grok 3 performance and efficiency'
+
+    grok-3-mini-fast:
+      name: 'Grok 3 Mini Fast'
+      defaults:
+        model: grok-3-mini-fast
+      notes: 'Mini variant optimized for fastest inference with compact footprint'
