@@ -4,6 +4,49 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] – 2025-08-01
+
+### Added
+- **HTML validation**  
+  - `ValidatorInterface`, `ValidationResult` and `HtmlValidator` to perform pre- and post-translation syntax checks on HTML documents and fragments  
+  - `--no-validate` CLI flag and `validate` option in `Bblslug::translate()` to disable validation  
+- **Centralized prompts**  
+  - New `resources/prompts.yaml` with `translator.text` and `translator.html` templates  
+  - `Prompts::render()` to load and substitute variables into system prompts  
+- **Usage metrics**  
+  - `UsageExtractor` normalizes raw vendor usage data into a common schema  
+  - CLI now reports “Usage metrics” (total + breakdown) after each translation  
+- **Improved CLI**  
+  - Extracted CLI logic into `src/Bblslug/Console/Cli.php` with `Cli::run()` entrypoint  
+  - `bblslug.php` now invokes `\Bblslug\Console\Cli::run()`  
+  - New `--list-models` command via `Bblslug::listModels()`  
+  - `--variables` to pass or override model-specific options  
+- **Models registry & drivers**  
+  - Support for vendor-level grouping in `resources/models.yaml` (flattened into `vendor:model` keys)  
+  - Added Yandex Foundation Models (`YandexDriver`) and xAI Grok (`XaiDriver`) support  
+  - `ModelDriverInterface::parseResponse()` now returns `[ 'text' => ..., 'usage' => ... ]`  
+  - `ModelRegistry::getVariables()` to fetch required env vars (e.g. `YANDEX_FOLDER_ID`)  
+- **Samples**  
+  - `samples/html_fragments/ru_fragment.html` and `..._corrupted.html` for validation tests  
+  - Restructured `samples/tech_fragments/` into `classical/` and new `modern/` sets with fresh examples  
+
+### Changed
+- **README & Help**  
+  - Document new validation (`--no-validate`), variables, usage-metrics and new vendors (Yandex, xAI)  
+  - Expanded CLI examples and Quickstart sections  
+- **Debug logging**  
+  - When `--verbose` is used, “[Validation pre-pass]” is prepended to request log and “[Validation post-pass]” appended to response  
+- **ModelRegistry**  
+  - Renamed and relocated driver classes under `Models/Drivers/`  
+  - Registered new `yandex` and `xai` vendors in `getDriver()`  
+- **Bblslug::translate()**  
+  - Signature updated to accept `bool $validate` and `array $variables`  
+  - Merged `variables` into driver options and extracted usage via `UsageExtractor`  
+
+### Removed
+- **Legacy CLI bootstrap** (`Bblslug::runFromCli()`, old `Help::printModelList(ModelRegistry)`)  
+- **Obsolete test** `tests/DummyTest.php`  
+
 ## [0.5.0] – 2025-07-25
 
 ### Added
@@ -24,7 +67,9 @@ The format is based on [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 ### Removed
 - Legacy PHP registry (`resources/models.php`)
 
+
 ## [0.4.0] - 2025-07-21
+
 ### Added
 - **Model driver abstraction**  
   Introduce `ModelDriverInterface` and `DeepLDriver`
@@ -52,7 +97,9 @@ The format is based on [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 - **Legacy client**  
   Remove the old `LLMClient` in favor of `HttpClient` + drivers.
 
+
 ## [0.3.0] - 2025-06-25
+
 ### Changed
 - Project renamed from **Babelium** to **Bblslug**
   - All namespaces changed from `Babelium\` to `Bblslug\`
@@ -62,7 +109,9 @@ The format is based on [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 - Description updated to reflect broader LLM support,
   removing DeepL-centric wording
 
+
 ## [0.2.1] - 2025-06-25
+
 ### Changed
 - Help output refined to better group options and improve clarity
 
@@ -70,7 +119,9 @@ The format is based on [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 - If no filters were specified, the filter statistics section
   now explicitly notes that no filters were applied
 
+
 ## [0.2.0] - 2025-04-09
+
 ### Added
 - Model registry system with support for multiple LLM providers
 - `--model`, `--list-models`, `--filters` CLI options
@@ -88,7 +139,9 @@ The format is based on [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 ### Removed
 - Old placeholder handling hardcoded into Babelium.php
 
+
 ## [0.1.0] - 2025-04-09
+
 ### Added
 - Initial CLI interface for DeepL-based translation
 - Format support: `html`, `text`
