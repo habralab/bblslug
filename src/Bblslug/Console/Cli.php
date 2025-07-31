@@ -33,6 +33,7 @@ class Cli
             "help",          // show help and exit
             "list-models",   // show models and exit
             "model:",        // model key
+            "no-validate",   // disable pre- and post-validation of container syntax
             "proxy:",        // optional proxy URI
             "source:",       // input file (default = STDIN)
             "source-lang:",  // override source language
@@ -68,6 +69,7 @@ class Cli
         $sourceFile = $options['source'] ?? null;
         $sourceLang = $options['source-lang'] ?? null;
         $targetLang = $options['target-lang'] ?? null;
+        $validate   = ! isset($options['no-validate']);
         $verbose    = isset($options['verbose']);
 
         if (!$modelKey) {
@@ -205,6 +207,7 @@ class Cli
                 proxy: $proxy,
                 sourceLang: $sourceLang,
                 targetLang: $targetLang,
+                validate: $validate,
                 variables: $variables,
                 verbose: $verbose,
             );

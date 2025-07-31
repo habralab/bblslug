@@ -44,6 +44,7 @@ APIs supported:
 - **Variables** (`--variables`) to send or override model-specific options
 - **Verbose** mode (`--verbose`) to print request previews
 - Can be invoked as a CLI tool or embedded in PHP code
+- **Validation** of container syntax for HTML; disable with `--no-validate`
 
 ## Installation
 
@@ -182,6 +183,19 @@ echo "Hello world" | vendor/bin/bblslug \
   --format=text > translated.out
 ```
 
+### Disable validation
+
+For HTML format, Bblslug performs basic syntax validation before and after translation. To skip this step, add:
+
+```bash
+vendor/bin/bblslug \
+  --model=vendor:name \
+  --format=html \
+  --no-validate \
+  --source=input.html \
+  --translated=out.html
+```
+
 ### Statistics
 
 - **Usage metrics**
@@ -234,6 +248,7 @@ $result = Bblslug::translate(
     proxy:      getenv('BBLSLUG_PROXY'),       // Optional proxy URI (http://..., socks5h://...)
     sourceLang: 'DE',                          // Source language code (optional; autodetect if null)
     targetLang: 'EN',                          // Target language code (optional; default from driver settings)
+    validate: false,                           // perform or skip syntax validation for container formats
     variables:  ['foo'=>'bar'],                // model-specific overrides
     verbose:    true,                          // If true, returns debug request/response
 );
