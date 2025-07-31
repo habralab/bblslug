@@ -6,6 +6,7 @@ use Bblslug\Filters\FilterManager;
 use Bblslug\HttpClient;
 use Bblslug\Models\ModelRegistry;
 use Bblslug\Models\UsageExtractor;
+use Bblslug\Validation\HtmlValidator;
 
 class Bblslug
 {
@@ -31,19 +32,21 @@ class Bblslug
 
     /**
      * Translate text or HTML via any registered model.
-     * @param string      $apiKey     API key for the model.
-     * @param string      $format     "text" or "html".
-     * @param string      $modelKey   Model ID (e.g. "deepl:pro").
-     * @param string      $text       The source text or HTML.
      *
-     * @param string|null $context    Optional context prompt.
-     * @param bool        $dryRun     If true: prepare placeholders only.
-     * @param string[]    $filters    Placeholder filters to apply.
-     * @param string|null $proxy      Optional proxy URL (from env or CLI).
-     * @param string|null $sourceLang Optional source language code.
-     * @param string|null $targetLang Optional target language code.
-     * @param array<string,string>     $variables  Model-specific vars (e.g. ['some'=>'...'])
-     * @param bool        $verbose    If true: include request/response logs.
+     * @param string                $apiKey     API key for the model.
+     * @param string                $format     "text" or "html".
+     * @param string                $modelKey   Model ID (e.g. "deepl:pro").
+     * @param string                $text       The source text or HTML.
+     *
+     * @param string|null           $context    Optional context prompt.
+     * @param bool                  $dryRun     If true: prepare placeholders only.
+     * @param string[]              $filters    Placeholder filters to apply.
+     * @param string|null           $proxy      Optional proxy URL (from env or CLI).
+     * @param string|null           $sourceLang Optional source language code.
+     * @param string|null           $targetLang Optional target language code.
+     * @param bool                  $validate   If true: perform container syntax validation.
+     * @param array<string,string>  $variables  Model-specific vars (e.g. ['some'=>'...'])
+     * @param bool                  $verbose    If true: include request/response logs.
      *
      * @return array{
      *     original: string,
@@ -59,7 +62,7 @@ class Bblslug
      * }
      *
      * @throws \InvalidArgumentException If inputs are invalid.
-     * @throws \RuntimeException On HTTP or parsing errors.
+     * @throws \RuntimeException         On HTTP, parsing or validation errors.
      */
     public static function translate(
         string $apiKey,
@@ -73,9 +76,14 @@ class Bblslug
         ?string $proxy = null,
         ?string $sourceLang = null,
         ?string $targetLang = null,
+        bool $validate = true,
         array $variables = [],
         bool $verbose = false
     ): array {
+        // Prepare holders for validation debug
+        $valLogPre  = '';
+        $valLogPost = '';
+
         // Validate model
         $registry = new ModelRegistry();
         if (!$registry->has($modelKey)) {
@@ -101,6 +109,24 @@ class Bblslug
 
         // Measure original length
         $originalLength = mb_strlen($text);
+
+        // Pre-validation (before filters)
+        if ($validate && $format !== 'text') {
+            $validator = match ($format) {
+                'html' => new HtmlValidator(),
+                default => null,
+            };
+            if ($validator) {
+                $result = $validator->validate($text);
+                if (! $result->isValid()) {
+                    throw new \RuntimeException(
+                        "Validation failed: " . implode('; ', $result->getErrors())
+                    );
+                } elseif ($verbose) {
+                    $valLogPre = "[Validation pre-pass]\n";
+                }
+            }
+        }
 
         // Apply placeholder filters
         $filterManager = new FilterManager($filters);
@@ -165,7 +191,7 @@ class Bblslug
         );
 
         $httpStatus = $http['status'];
-        $debugRequest = $http['debugRequest'];
+        $debugRequest = $valLogPre . $http['debugRequest'];
         $debugResponse = $http['debugResponse'];
         $raw = $http['body'];
 
@@ -199,6 +225,29 @@ class Bblslug
 
         // Collect stats
         $filterStats = $filterManager->getStats();
+
+        // Post-validation (after translation)
+        if ($validate && $format !== 'text') {
+            $validator = match ($format) {
+                'html' => new HtmlValidator(),
+                default => null,
+            };
+            if ($validator) {
+                $res2 = $validator->validate($result);
+                if (! $res2->isValid()) {
+                    throw new \RuntimeException(
+                        "Validation failed: " . implode('; ', $res2->getErrors())
+                    );
+                } elseif ($verbose) {
+                    $valLogPost = "[Validation post-pass]\n";
+                }
+            }
+        }
+
+        // Append post-validation log into response debug
+        if ($verbose) {
+            $debugResponse .= $valLogPost;
+        }
 
         return [
             'original' => $text,
