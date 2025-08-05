@@ -99,6 +99,12 @@ chmod +x vendor/bin/bblslug
 vendor/bin/bblslug --list-models
 ```
 
+### Show available prompt templates
+
+```bash
+vendor/bin/bblslug --list-prompts
+```
+
 ### Translate an HTML file and write to another file
 
 ```bash
@@ -144,6 +150,17 @@ vendor/bin/bblslug \
   --translated=out.txt
 ```
 
+### Choose a different prompt template
+
+```bash
+vendor/bin/bblslug \
+  --model=vendor:name \
+  --format=html \
+  --source=input.html \
+  --translated=out.html \
+  --prompt-key=smart-legal
+```
+
 ### Dry-run placeholders only
 
 ```bash
@@ -182,6 +199,7 @@ echo "Hello world" | vendor/bin/bblslug \
   --model=vendor:name \
   --format=text > translated.out
 ```
+
 
 ### Disable validation
 
@@ -245,6 +263,7 @@ $result = Bblslug::translate(
     // Additional context/prompt pass to model
     context:    'Translate as a professional technical translator',
     filters:    ['url','html_code'],           // List of placeholder filters
+    promptKey: 'translator',                   // which prompt template to use
     proxy:      getenv('BBLSLUG_PROXY'),       // Optional proxy URI (http://..., socks5h://...)
     sourceLang: 'DE',                          // Source language code (optional; autodetect if null)
     targetLang: 'EN',                          // Target language code (optional; default from driver settings)
@@ -306,6 +325,37 @@ Returns an array like:
   'deepl'  => ['deepl:free' => […], 'deepl:pro' => […]],
   'openai' => ['openai:gpt-4' => […], …],
   …
+]
+```
+
+### List available prompts
+
+```php
+$prompts = Bblslug::listPrompts();
+
+foreach ($prompts as $key => $info) {
+    $formats = implode(', ', $info['formats']);
+    echo "{$key} ({$formats})";
+    if (! empty($info['notes'])) {
+        echo " – {$info['notes']}";
+    }
+    echo "\n";
+}
+```
+
+Returns an array like:
+
+```php
+[
+  'translator' => [
+      'formats' => ['text', 'html'],
+      'notes'   => 'professional translator template',
+  ],
+  'legal'      => [
+      'formats' => ['text'],
+      'notes'   => 'legal-style translator template',
+  ],
+  // …
 ]
 ```
 

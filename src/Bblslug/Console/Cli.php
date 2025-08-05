@@ -18,7 +18,8 @@ class Cli
      * CLI translation entrypoint.
      *
      * Parse CLI flags, read input, call {@see Bblslug::translate()}, and output results.
-     * Also handles `--help`, `--list-models`, `--dry-run`, `--verbose` and emits summary stats to STDERR.
+     * Also handles `--help`, `--list-models`, `--list-prompts`, `--dry-run`,
+     * `--verbose` and emits summary stats to STDERR.
      *
      * @return void
      */
@@ -32,8 +33,10 @@ class Cli
             "format:",       // "text" or "html"
             "help",          // show help and exit
             "list-models",   // show models and exit
+            "list-prompts",  // show available prompt templates and exit
             "model:",        // model key
             "no-validate",   // disable pre- and post-validation of container syntax
+            "prompt-key:",   // prompt template key (from prompts.yaml)
             "proxy:",        // optional proxy URI
             "source:",       // input file (default = STDIN)
             "source-lang:",  // override source language
@@ -56,6 +59,11 @@ class Cli
             Help::printModelList();
             exit(0);
         }
+        // List prompts screen
+        if (isset($options['list-prompts'])) {
+            Help::printPromptList();
+            exit(0);
+        }
 
         // Extract params
         $context    = $options['context'] ?? null;
@@ -66,6 +74,7 @@ class Cli
                         : [];
         $modelKey   = $options['model'] ?? null;
         $outFile    = $options['translated'] ?? null;
+        $promptKey  = $options['prompt-key'] ?? 'translator';
         $sourceFile = $options['source'] ?? null;
         $sourceLang = $options['source-lang'] ?? null;
         $targetLang = $options['target-lang'] ?? null;
@@ -204,6 +213,7 @@ class Cli
                 context: $context,
                 dryRun: $dryRun,
                 filters: $filters,
+                promptKey: $promptKey,
                 proxy: $proxy,
                 sourceLang: $sourceLang,
                 targetLang: $targetLang,

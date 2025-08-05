@@ -7,6 +7,8 @@ use Bblslug\Models\Prompts;
 
 /**
  * Google Gemini translation driver using Generative Language API.
+ *
+ * Builds requests and parses responses for the Google Generative Language Chat Completions API.
  */
 class GoogleDriver implements ModelDriverInterface
 {
@@ -14,42 +16,40 @@ class GoogleDriver implements ModelDriverInterface
     private const END   = '‹‹END››';
 
     /**
-     * Build HTTP request params for Google Gemini.
+     * {@inheritdoc}
      *
-     * @param array<string,mixed> $config  Model config from registry
-     * @param string              $text    Input text
-     * @param array<string,mixed> $options Options: [
-     *     'dryRun'          => bool,
-     *     'format'          => 'text'|'html',
-     *     'verbose'         => bool,
-     *     'temperature'     => float,
-     *     'candidateCount'  => int,
-     *     'maxOutputTokens' => int|null,
-     *     'thinkingBudget'   => int|null,         // Gemini 2.5 only
-     *     'includeThoughts'  => bool|null,        // Gemini 2.5 only
-     *     'context'         => string|null
-     * ]
+     * @param array<string,mixed> $config  Model configuration from registry.
+     * @param string              $text    Input text (placeholders applied).
+     * @param array<string,mixed> $options Options (all optional; see README):
+     *     - candidateCount  (int)         Number of responses to generate.
+     *     - context         (string|null) Additional context for system prompt.
+     *     - format          (string)      'text' or 'html'.
+     *     - includeThoughts (bool|null)   Include chain-of-thought reasoning (Gemini 2.5+).
+     *     - maxOutputTokens (int|null)    Maximum tokens for output.
+     *     - promptKey       (string)      Key of the prompt template in prompts.yaml.
+     *     - temperature     (float)       Sampling temperature.
+     *     - thinkingBudget  (int|null)    Budget for internal reasoning (Gemini 2.5+).
+     *     - verbose         (bool)        Include debug logs (ignored here).
      *
-     * @return array{
-     *     url: string,
-     *     headers: string[],
-     *     body: string
-     * }
+     * @return array{url:string, headers:string[], body:string}
      */
     public function buildRequest(array $config, string $text, array $options): array
     {
         $defaults = $config['defaults'] ?? [];
-        $temperature = $options['temperature'] ?? $defaults['temperature'] ?? 0.0;
         $candidateCount = $options['candidateCount'] ?? $defaults['candidateCount'] ?? 1;
-        $maxOutputTokens = $options['maxOutputTokens'] ?? $defaults['maxOutputTokens'] ?? null;
         $context = trim((string) ($options['context'] ?? $defaults['context'] ?? ''));
-
+        $format = $options['format'] ?? $defaults['format'] ?? 'text';
+        $includeThoughts = $options['includeThoughts'] ?? null;
+        $maxOutputTokens = $options['maxOutputTokens'] ?? $defaults['maxOutputTokens'] ?? null;
+        $promptKey = $options['promptKey'] ?? 'translator';
         $sourceLang = $defaults['source_lang'] ?? 'auto';
         $targetLang = $defaults['target_lang'] ?? 'EN';
-        $format = $options['format'] ?? 'text';
+        $temperature = $options['temperature'] ?? $defaults['temperature'] ?? 0.0;
+        $thinkingBudget = $options['thinkingBudget'] ?? null;
 
+        // Render system prompt from YAML templates
         $systemText = Prompts::render(
-            'translator',
+            $promptKey,
             $format,
             [
                 'source'  => $sourceLang,
@@ -64,96 +64,94 @@ class GoogleDriver implements ModelDriverInterface
         $contentText = self::START . "\n" . $text . "\n" . self::END;
 
         // Build JSON payload
-        $body = [
-            'system_instruction'  => ['parts' => [['text' => $systemText]]],
-            'contents'            => [['parts' => [['text' => $contentText]]]],
-            'generationConfig'    => array_filter([
-                'temperature'     => (float)$temperature,
-                'candidateCount'  => (int)$candidateCount,
-                'maxOutputTokens' => $maxOutputTokens !== null ? (int)$maxOutputTokens : null,
-            ], fn($v) => $v !== null),
-        ];
+        $generationConfig = array_filter([
+            'temperature' => (float) $temperature,
+            'candidateCount' => (int) $candidateCount,
+            'maxOutputTokens' => $maxOutputTokens !== null ? (int) $maxOutputTokens : null,
+        ], fn($value) => $value !== null);
 
-        // thinkingConfig for Gemini 2.5+ (optional)
-        $thinking = array_filter([
-            'thinkingBudget'  => isset($options['thinkingBudget'])  ? (int)$options['thinkingBudget']  : null,
-            'includeThoughts' => isset($options['includeThoughts']) ? (bool)$options['includeThoughts'] : null,
-        ], fn($v) => $v !== null);
-        if ($thinking) {
-            $body['generationConfig']['thinkingConfig'] = $thinking;
+        // Add optional thinking config
+        $thinkingConfig = array_filter([
+            'thinkingBudget'  => $thinkingBudget !== null ? (int) $thinkingBudget : null,
+            'includeThoughts' => $includeThoughts,
+        ], fn($value) => $value !== null);
+        if ($thinkingConfig) {
+            $generationConfig['thinkingConfig'] = $thinkingConfig;
         }
 
-        // Assemble headers, including API key
-        $headers = $config['requirements']['headers'] ?? [];
+        $body = [
+            'system_instruction' => ['parts' => [['text' => $systemText]]],
+            'contents'           => [['parts' => [['text' => $contentText]]]],
+            'generationConfig'   => $generationConfig,
+        ];
 
         return [
             'url'     => $config['endpoint'],
-            'headers' => $headers,
+            'headers' => $config['requirements']['headers'] ?? [],
             'body'    => json_encode($body, JSON_UNESCAPED_UNICODE),
         ];
     }
 
     /**
-     * Parse the translated text from Gemini's response.
+     * {@inheritdoc}
      *
-     * @param array<string,mixed> $config       Model config (not used)
-     * @param string              $responseBody Raw HTTP body
+     * Parses the JSON, extracts the assistant’s reply between markers
+     * defined by self::START and self::END.
      *
-     * @return array{
-     *     text:  string,
-     *     usage: array<string,mixed>|null
-     * }
+     * @param array<string,mixed> $config       Model configuration (unused).
+     * @param string              $responseBody Raw HTTP response body.
      *
-     * @throws \RuntimeException If response malformed or no candidate found
+     * @return array{text:string, usage:array<string,mixed>|null}
+     *
+     * @throws \RuntimeException If the response is malformed or markers are missing.
      */
     public function parseResponse(array $config, string $responseBody): array
     {
-        // First, extract the 'content' field from the JSON wrapper
         $data = json_decode($responseBody, true);
-        $candidate = $data['candidates'][0] ?? null;
+        if (!is_array($data)) {
+            throw new \RuntimeException("Invalid JSON response: {$responseBody}");
+        }
 
-        $finish = $candidate['finishReason'] ?? '';
-        if ($finish === 'MAX_TOKENS') {
+        $candidate = $data['candidates'][0] ?? null;
+        $finishReason = $candidate['finishReason'] ?? '';
+
+        if ($finishReason === 'MAX_TOKENS') {
             throw new \RuntimeException(
                 "Gemini: translation was truncated—reached model's max output tokens.\n" .
                 "Try increasing maxOutputTokens or splitting input into smaller chunks."
             );
         }
-        if ($finish !== 'STOP') {
+
+        if ($finishReason !== 'STOP') {
             throw new \RuntimeException(
-                "Gemini: unexpected finishReason «{$finish}» — check the response output:\n{$responseBody}"
+                "Gemini: unexpected finishReason '{$finishReason}' — check the response output:\n{$responseBody}"
             );
         }
 
         $contentWrap = $candidate['content'] ?? null;
+
         if (!isset($contentWrap['parts']) || !is_array($contentWrap['parts'])) {
             throw new \RuntimeException("Gemini translation failed: no text parts in response: {$responseBody}");
         }
 
-        $texts = [];
+        $accumulated = '';
+
         foreach ($contentWrap['parts'] as $part) {
             if (isset($part['text']) && is_string($part['text'])) {
-                $texts[] = $part['text'];
+                $accumulated .= $part['text'];
             }
         }
-        $content = implode('', $texts);
 
         // Extract between markers
-        if (
-            preg_match(
-                '/' . preg_quote(self::START, '/') . '(.*?)' . preg_quote(self::END, '/') . '/s',
-                $content,
-                $matches
-            )
-        ) {
-            $text = trim($matches[1]);
-        } else {
-            throw new \RuntimeException(
-                "Markers not found in Gemini response: " . substr($content, 0, 200) . '…'
-            );
+        $pattern = '/' . preg_quote(self::START, '/') . '(.*?)' . preg_quote(self::END, '/') . '/s';
+
+        if (!preg_match($pattern, $accumulated, $matches)) {
+            throw new \RuntimeException("Markers not found in Gemini response");
         }
 
-        // Raw usage metadata from Gemini
+        $text = trim($matches[1]);
+
+        // Usage metadata
         $usage = $data['usageMetadata'] ?? null;
 
         return [

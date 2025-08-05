@@ -15,6 +15,14 @@ class Prompts
     /** @var array<string,mixed>|null */
     private static ?array $templates = null;
 
+    /**
+     * Load prompt definitions from YAML.
+     *
+     * @param string|null $path
+     * @return void
+     * @throws \RuntimeException
+     */
+
     public static function load(?string $path = null): void
     {
         $path ??= __DIR__ . '/../../../resources/prompts.yaml';
@@ -52,5 +60,36 @@ class Prompts
         }
         // Replace placeholders in template
         return strtr($tpl, $replacements);
+    }
+
+    /**
+     * Return a flat list of all prompts, with supported formats and optional notes.
+     *
+     * @return array<string, array{formats: string[], notes: ?string}>
+     * @throws \RuntimeException
+     */
+    public static function list(): array
+    {
+        if (self::$templates === null) {
+            self::load();
+        }
+
+        $out = [];
+        foreach (self::$templates as $key => $cfg) {
+            // collect formats (all keys except “notes”)
+            $formats = [];
+            foreach ($cfg as $fmt => $_) {
+                if ($fmt === 'notes') {
+                    continue;
+                }
+                $formats[] = $fmt;
+            }
+            $out[$key] = [
+                'formats' => $formats,
+                'notes'   => $cfg['notes'] ?? null,
+            ];
+        }
+
+        return $out;
     }
 }

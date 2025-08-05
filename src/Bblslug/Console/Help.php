@@ -47,8 +47,10 @@ class Help
         echo "\t{$bold}--format=text|html{$reset}   Input format: plain text or structured HTML\n";
         echo "\t{$bold}--help{$reset}               Show this help message\n";
         echo "\t{$bold}--list-models{$reset}        Show available translation models grouped by vendor\n";
+        echo "\t{$bold}--list-prompts{$reset}       Show available prompt templates\n";
         echo "\t{$bold}--model=MODEL_ID{$reset}     Translation model to use (see --list-models)\n";
         echo "\t{$bold}--no-validate{$reset}        Disable container syntax validation\n";
+        echo "\t{$bold}--prompt-key=KEY{$reset}     Specify prompt template key (prompts.yaml)\n";
         echo "\t{$bold}--proxy=URI{$reset}          Optional proxy URI (see examples) or set BBLSLUG_PROXY\n";
         echo "\t{$bold}--source=FILE{$reset}        Input file to translate (omit to read from STDIN)\n";
         echo "\t{$bold}--source-lang=LANG{$reset}   Source language code (e.g. EN, DE) - default autodetect\n";
@@ -138,6 +140,31 @@ class Help
                 echo "\t\t- {$pad}{$notes}\n";
             }
             echo "\n";
+        }
+
+        echo $reset;
+    }
+
+    /**
+     * Print a flat list of available prompt templates to STDOUT.
+     *
+     * @return void
+     */
+    public static function printPromptList(): void
+    {
+        $prompts = Bblslug::listPrompts();
+        $bold = "\033[1m";
+        $reset = "\033[0m";
+
+        // Header
+        echo $reset, "Available prompts:\n\n";
+
+        foreach ($prompts as $key => $info) {
+            $formats = implode(', ', $info['formats']);
+            $label = "- {$key} ({$formats})";
+            $pad = str_pad($label, 40);
+            $notes = $info['notes'] ?? '';
+            echo "\t{$pad} {$notes}\n";
         }
 
         echo $reset;

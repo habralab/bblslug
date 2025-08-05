@@ -5,6 +5,7 @@ namespace Bblslug;
 use Bblslug\Filters\FilterManager;
 use Bblslug\HttpClient;
 use Bblslug\Models\ModelRegistry;
+use Bblslug\Models\Prompts;
 use Bblslug\Models\UsageExtractor;
 use Bblslug\Validation\HtmlValidator;
 
@@ -31,16 +32,27 @@ class Bblslug
     }
 
     /**
+     * Return a list of available prompt templates, with formats and notes.
+     *
+     * @return array<string, array{formats:string[], notes:?string}>
+     * @throws \RuntimeException If prompts.yaml is missing
+     */
+    public static function listPrompts(): array
+    {
+        return Prompts::list();
+    }
+
+    /**
      * Translate text or HTML via any registered model.
      *
-     * @param string                $apiKey     API key for the model.
-     * @param string                $format     "text" or "html".
-     * @param string                $modelKey   Model ID (e.g. "deepl:pro").
-     * @param string                $text       The source text or HTML.
-     *
+     * @param string                $apiKey     API key for the model - mandatory.
+     * @param string                $format     "text" or "html" - mandatory.
+     * @param string                $modelKey   Model ID (e.g. "deepl:pro") - mandatory.
+     * @param string                $text       The source text or HTML - mandatory.
      * @param string|null           $context    Optional context prompt.
      * @param bool                  $dryRun     If true: prepare placeholders only.
      * @param string[]              $filters    Placeholder filters to apply.
+     * @param string                $promptKey  Prompt template key
      * @param string|null           $proxy      Optional proxy URL (from env or CLI).
      * @param string|null           $sourceLang Optional source language code.
      * @param string|null           $targetLang Optional target language code.
@@ -73,6 +85,7 @@ class Bblslug
         ?string $context = null,
         bool $dryRun = false,
         array $filters = [],
+        string $promptKey = 'translator',
         ?string $proxy = null,
         ?string $sourceLang = null,
         ?string $targetLang = null,
@@ -135,7 +148,12 @@ class Bblslug
 
         // Prepare options for driver, merging in any CLI-provided variables
         $options = array_merge(
-            ['format' => $format, 'dryRun' => $dryRun, 'verbose' => $verbose],
+            [
+                'format' => $format,
+                'dryRun' => $dryRun,
+                'promptKey' => $promptKey,
+                'verbose' => $verbose,
+            ],
             $variables
         );
 

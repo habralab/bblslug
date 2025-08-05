@@ -6,7 +6,9 @@ use Bblslug\Models\ModelDriverInterface;
 use Bblslug\Models\Prompts;
 
 /**
- * Anthropic Claude driver: builds requests and parses responses for text completions.
+ * Anthropic Claude translation driver.
+ *
+ * Builds requests and parses responses for the Anthropic Claude Chat Completions API.
  */
 
 class AnthropicDriver implements ModelDriverInterface
@@ -15,32 +17,38 @@ class AnthropicDriver implements ModelDriverInterface
     private const END   = '‹‹END››';
 
     /**
-     * Build the HTTP request parameters for Anthropic
+     * {@inheritdoc}
      *
-     * @param array<string,mixed> $config  Model config from registry
-     * @param string              $text    Input text or HTML
-     * @param array<string,mixed> $options Options: [
-     *     'format'      => 'text'|'html',
-     *     'temperature' => float,
-     *     'context'     => string|null,
-     * ]
+     * @param array<string,mixed> $config  Model configuration from registry.
+     * @param string              $text    Input text (placeholders applied).
+     * @param array<string,mixed> $options Options (all optional; see README):
+     *     - context     (string|null) Additional context for system prompt.
+     *     - dryRun      (bool)        Skip API call (ignored here).
+     *     - format      (string)      'text' or 'html'.
+     *     - maxTokens   (int)         Maximum tokens to generate.
+     *     - promptKey   (string)      Key of the prompt template in prompts.yaml.
+     *     - temperature (float)       Sampling temperature.
+     *     - verbose     (bool)        Include debug logs (ignored here).
      *
      * @return array{url:string, headers:string[], body:string}
+     *
+     * @throws \RuntimeException If required configuration is missing.
      */
     public function buildRequest(array $config, string $text, array $options): array
     {
         $defaults = $config['defaults'] ?? [];
-        $model = $defaults['model'] ?? throw new \RuntimeException('Missing Anthropic model name');
-        $temperature = $options['temperature'] ?? $defaults['temperature'] ?? 0.0;
-        $maxTokens = $defaults['max_tokens'] ?? 1000;
         $context = trim((string)($options['context'] ?? $defaults['context'] ?? ''));
-        $format = $options['format'] ?? $config['format'] ?? 'text';
+        $format = $options['format'] ?? $defaults['format'] ?? $config['format'] ?? 'text';
+        $model = $defaults['model'] ?? throw new \RuntimeException('Missing Anthropic model name');
+        $maxTokens = $options['maxTokens'] ?? $defaults['max_tokens'] ?? 1000;
+        $promptKey = $options['promptKey'] ?? 'translator';
         $source = $defaults['source_lang'] ?? 'auto';
         $target = $defaults['target_lang'] ?? 'EN';
+        $temperature = $options['temperature'] ?? $defaults['temperature'] ?? 0.0;
 
-        // Render system prompt from YAML templates
+        // Render system prompt
         $systemPrompt = Prompts::render(
-            'translator',
+            $promptKey,
             $format,
             [
                 'source'  => $source,
@@ -51,13 +59,13 @@ class AnthropicDriver implements ModelDriverInterface
             ]
         );
 
-        // Build message sequence
+        // Compose chat messages
         $messages = [
             ['role' => 'system', 'content' => $systemPrompt],
             ['role' => 'user',   'content' => self::START . "\n" . $text . "\n" . self::END],
         ];
 
-        // Construct payload for Messages API
+        // Prepare payload
         $payload = [
             'model' => $model,
             'messages' => $messages,
@@ -65,68 +73,62 @@ class AnthropicDriver implements ModelDriverInterface
             'temperature' => (float)$temperature,
         ];
 
-        $body = json_encode($payload, JSON_UNESCAPED_UNICODE);
-
         return [
             'url'     => $config['endpoint'],
             'headers' => $config['requirements']['headers'] ?? [],
-            'body'    => $body,
+            'body'    => json_encode($payload, JSON_UNESCAPED_UNICODE),
         ];
     }
 
     /**
-     * Parse the raw API response into translated text.
+     * {@inheritdoc}
      *
-     * @param array<string,mixed> $config       Model config from registry
-     * @param string              $responseBody Raw JSON response body
+     * Parses the JSON, extracts the assistant’s reply between markers
+     * defined by self::START and self::END.
      *
-     * @return array{
-     *     text:  string,
-     *     usage: array<string,mixed>|null
-     * }
-     * @throws \RuntimeException If the response is malformed or an API error is returned
+     * @param array<string,mixed> $config       Model configuration (unused).
+     * @param string              $responseBody Raw HTTP response body.
+     *
+     * @return array{text:string, usage:array<string,mixed>|null}
+     *
+     * @throws \RuntimeException If the response is malformed or markers are missing.
      */
     public function parseResponse(array $config, string $responseBody): array
     {
         $data = json_decode($responseBody, true);
 
+        if (!is_array($data)) {
+            throw new \RuntimeException("Invalid JSON response: {$responseBody}");
+        }
+
         // Catch API-level errors
         if (isset($data['error'])) {
-            $err = $data['error'];
-            $msg = $err['message'] ?? json_encode($err);
+            $error = $data['error'];
+            $message = $error['message'] ?? json_encode($error);
             // Specific handling for max_tokens errors
-            if (strpos($msg, 'max_tokens') !== false) {
+            if (strpos($message, 'max_tokens') !== false) {
                 throw new \RuntimeException(
                     "Requested max_tokens ({$config['defaults']['max_tokens']}) exceeds model limit. " .
-                    "Please reduce to at most the allowed number of tokens.\n\nResponse: {$msg}"
+                    "Please reduce to at most the allowed number.\n\nResponse: {$message}"
                 );
             }
-            throw new \RuntimeException("Anthropic API error: {$msg}");
+            throw new \RuntimeException("Anthropic API error: {$message}");
         }
 
-        // Extract assistant content
-        if (
-            !isset($data['choices'][0]['message']['content']) ||
-            !is_string($data['choices'][0]['message']['content'])
-        ) {
-            throw new \RuntimeException("Invalid Anthropic response: {$responseBody}");
+        // Validate content
+        $content = $data['choices'][0]['message']['content'] ?? null;
+        if (!is_string($content)) {
+            throw new \RuntimeException("Anthropic translation failed: {$responseBody}");
         }
-        $content = $data['choices'][0]['message']['content'];
 
-        // Pull out text between markers
-        if (
-                preg_match(
-                    '/' . preg_quote(self::START, '/') . '(.*?)' . preg_quote(self::END, '/') . '/s',
-                    $content,
-                    $matches
-                )
-        ) {
-            $text = trim($matches[1]);
-        } else {
-            throw new \RuntimeException(
-                "Markers not found in Anthropic response: " . substr($content, 0, 200) . '…'
-            );
+        // Extract between markers
+        $pattern = '/' . preg_quote(self::START, '/') . '(.*?)' . preg_quote(self::END, '/') . '/s';
+
+        if (!preg_match($pattern, $content, $matches)) {
+            throw new \RuntimeException("Markers not found in Anthropic response");
         }
+
+        $text = trim($matches[1]);
 
         // Raw usage statistics from Anthropic
         $usage = $data['usage'] ?? null;

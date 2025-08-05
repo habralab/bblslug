@@ -6,7 +6,9 @@ use Bblslug\Models\ModelDriverInterface;
 use Bblslug\Models\Prompts;
 
 /**
- * xAI Grok driver using explicit markers and OpenAI‐style API.
+ * xAI Grok translation driver.
+ *
+ * Builds requests and parses responses for the xAI (Grok) Chat Completions API.
  */
 class XaiDriver implements ModelDriverInterface
 {
@@ -14,44 +16,47 @@ class XaiDriver implements ModelDriverInterface
     private const END   = '‹‹END››';
 
     /**
-     * Build HTTP request params for Grok.
+     * {@inheritdoc}
      *
-     * @param array<string,mixed> $config  Model config from registry
-     * @param string              $text    Input text
-     * @param array<string,mixed> $options Options: [
-     *     'dryRun'      => bool,
-     *     'format'      => 'text'|'html',
-     *     'verbose'     => bool,
-     *     'temperature' => float,
-     *     'context'     => string|null,
-     * ]
+     * @param array<string,mixed> $config  Model configuration from registry.
+     * @param string              $text    Input text (placeholders applied).
+     * @param array<string,mixed> $options Options (all optional; see README):
+     *     - context     (string|null) Additional context for system prompt.
+     *     - dryRun      (bool)        Skip API call (ignored here).
+     *     - format      (string)      'text' or 'html'.
+     *     - promptKey   (string)      Key of the prompt template in prompts.yaml.
+     *     - temperature (float)       Sampling temperature.
+     *     - verbose     (bool)        Include debug logs (ignored here).
      *
-     * @return array{
-     *     url:     string,
-     *     headers: string[],
-     *     body:    string
-     * }
+     * @return array{url:string, headers:string[], body:string}
+     *
+     * @throws \RuntimeException If required configuration is missing.
      */
     public function buildRequest(array $config, string $text, array $options): array
     {
-        $defaults    = $config['defaults'] ?? [];
-        $model       = $defaults['model'] ?? throw new \RuntimeException('Missing xAI model name');
+        $defaults = $config['defaults'] ?? [];
+        $context = trim((string) ($options['context'] ?? $defaults['context'] ?? ''));
+        $format = $options['format'] ?? $defaults['format'] ?? 'text';
+        $model = $defaults['model'] ?? throw new \RuntimeException('Missing xAI model name');
+        $promptKey = $options['promptKey'] ?? 'translator';
+        $sourceLang = $defaults['source_lang'] ?? 'auto';
+        $targetLang = $defaults['target_lang'] ?? 'EN';
         $temperature = (float) ($options['temperature'] ?? $defaults['temperature'] ?? 0.0);
-        $context     = trim((string) ($options['context'] ?? $defaults['context'] ?? ''));
-        $format      = $options['format'] ?? 'text';
 
+        // Render system prompt
         $systemPrompt = Prompts::render(
-            'translator',
+            $promptKey,
             $format,
             [
-                'source'  => $defaults['source_lang'] ?? 'auto',
-                'target'  => $defaults['target_lang'] ?? 'EN',
+                'source'  => $sourceLang,
+                'target'  => $targetLang,
                 'start'   => self::START,
                 'end'     => self::END,
                 'context' => $context !== '' ? "Context: {$context}" : '',
             ]
         );
 
+        // Compose chat messages
         $messages = [
             ['role' => 'system', 'content' => $systemPrompt],
             ['role' => 'user',   'content' => self::START . "\n{$text}\n" . self::END],
@@ -72,21 +77,25 @@ class XaiDriver implements ModelDriverInterface
     }
 
     /**
-     * Parse the translated text from Grok's response.
+     * {@inheritdoc}
      *
-     * @param array<string,mixed> $config       Model config (not used)
-     * @param string              $responseBody Raw HTTP body
+     * Parses the JSON, extracts the assistant’s reply between markers
+     * defined by self::START and self::END.
      *
-     * @return array{
-     *     text:  string,
-     *     usage: array<string,mixed>|null
-     * }
+     * @param array<string,mixed> $config       Model configuration (unused).
+     * @param string              $responseBody Raw HTTP response body.
      *
-     * @throws \RuntimeException If API returned an error or markers not found
+     * @return array{text:string, usage:array<string,mixed>|null}
+     *
+     * @throws \RuntimeException If the response is malformed or markers are missing.
      */
     public function parseResponse(array $config, string $responseBody): array
     {
         $data = json_decode($responseBody, true);
+
+        if (!is_array($data)) {
+            throw new \RuntimeException("Invalid JSON response: {$responseBody}");
+        }
 
         // xAI error payload (model not found, auth, etc.)
         if (isset($data['error'])) {
@@ -95,22 +104,13 @@ class XaiDriver implements ModelDriverInterface
         }
 
         // Normal completion path
-        if (
-            empty($data['choices'][0]['message']['content'])
-            || !is_string($data['choices'][0]['message']['content'])
-        ) {
+        $content = $data['choices'][0]['message']['content'] ?? null;
+        if (!is_string($content)) {
             throw new \RuntimeException("Grok translation failed: {$responseBody}");
         }
 
-        $content = $data['choices'][0]['message']['content'];
-
-        if (
-            !preg_match(
-                '/' . preg_quote(self::START, '/') . '(.*?)' . preg_quote(self::END, '/') . '/s',
-                $content,
-                $matches
-            )
-        ) {
+        $pattern = '/' . preg_quote(self::START, '/') . '(.*?)' . preg_quote(self::END, '/') . '/s';
+        if (!preg_match($pattern, $content, $matches)) {
             throw new \RuntimeException("Markers not found in Grok response");
         }
 

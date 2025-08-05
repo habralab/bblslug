@@ -6,7 +6,9 @@ use Bblslug\Models\ModelDriverInterface;
 use Bblslug\Models\Prompts;
 
 /**
- * OpenAI Chat-based translation driver using explicit markers.
+ * OpenAI GPT translation driver.
+ *
+ * Builds requests and parses responses for the OpenAI Chat Completions API.
  */
 class OpenAiDriver implements ModelDriverInterface
 {
@@ -14,37 +16,34 @@ class OpenAiDriver implements ModelDriverInterface
     private const END   = '‹‹END››';
 
     /**
-     * Build HTTP request params for OpenAI.
+     * {@inheritdoc}
      *
-     * @param array<string,mixed> $config  Model config from registry
-     * @param string              $text    Input text
-     * @param array<string,mixed> $options Options: [
-     *     'dryRun'      => bool,
-     *     'format'      => 'text'|'html',
-     *     'verbose'     => bool,
-     *     'temperature' => float,
-     *     'context'     => string|null,
-     * ]
+     * @param array<string,mixed> $config  Model configuration from registry.
+     * @param string              $text    Input text (placeholders applied).
+     * @param array<string,mixed> $options Options (all optional; see README):
+     *     - context     (string|null) Additional context for system prompt.
+     *     - dryRun      (bool)        Skip API call (ignored here).
+     *     - format      (string)      'text' or 'html'.
+     *     - promptKey   (string)      Key of the prompt template in prompts.yaml.
+     *     - temperature (float)       Sampling temperature.
+     *     - verbose     (bool)        Include debug logs (ignored here).
      *
-     * @return array{
-     *     body: string,
-     *     headers: string[],
-     *     url: string
-     * }
+     * @return array{url:string, headers:string[], body:string}
      */
     public function buildRequest(array $config, string $text, array $options): array
     {
         $defaults = $config['defaults'] ?? [];
-        $model = $defaults['model'] ?? throw new \RuntimeException('Missing OpenAI model name');
-        $format = $options['format'] ?? 'text';
-        $temperature = $options['temperature'] ?? $defaults['temperature'] ?? 0.0;
         $context = trim((string) ($options['context'] ?? $defaults['context'] ?? ''));
+        $format = $options['format'] ?? $defaults['format'] ?? 'text';
+        $model = $defaults['model'] ?? throw new \RuntimeException('Missing OpenAI model name');
+        $promptKey = $options['promptKey'] ?? 'translator';
         $sourceLang = $defaults['source_lang'] ?? 'auto';
         $targetLang = $defaults['target_lang'] ?? 'EN';
+        $temperature = $options['temperature'] ?? $defaults['temperature'] ?? 0.0;
 
         // Render system prompt from YAML templates
         $systemPrompt = Prompts::render(
-            'translator',
+            $promptKey,
             $format,
             [
                 'source'  => $sourceLang,
@@ -55,9 +54,10 @@ class OpenAiDriver implements ModelDriverInterface
             ]
         );
 
+        // Compose chat messages
         $messages = [
             ['role' => 'system', 'content' => $systemPrompt],
-            ['role' => 'user',   'content' => $text],
+            ['role' => 'user',   'content' => self::START . "\n{$text}\n" . self::END],
         ];
 
         $payload = [
@@ -74,37 +74,35 @@ class OpenAiDriver implements ModelDriverInterface
     }
 
     /**
-     * Parse the translated text from OpenAI's response.
+     * {@inheritdoc}
      *
-     * @param array<string,mixed> $config       Model config (not used)
-     * @param string              $responseBody Raw HTTP body
+     * Parses the JSON, extracts the assistant’s reply between markers
+     * defined by self::START and self::END.
      *
-     * @return array{
-     *     text:  string,
-     *     usage: array<string,mixed>|null
+     * @param array<string,mixed> $config       Model configuration (unused).
+     * @param string              $responseBody Raw HTTP response body.
      *
-     * @throws \RuntimeException If response is malformed or markers not found
+     * @return array{text:string, usage:array<string,mixed>|null}
+     *
+     * @throws \RuntimeException If the response is malformed or markers are missing.
      */
     public function parseResponse(array $config, string $responseBody): array
     {
-        // First, extract the 'content' field from the JSON wrapper
         $data = json_decode($responseBody, true);
-        if (
-            !isset($data['choices'][0]['message']['content'])
-            || !is_string($data['choices'][0]['message']['content'])
-        ) {
+
+        if (!is_array($data)) {
+            throw new \RuntimeException("Invalid JSON response: {$responseBody}");
+        }
+
+        // Validate response structure
+        $content = $data['choices'][0]['message']['content'] ?? null;
+        if (!is_string($content)) {
             throw new \RuntimeException("OpenAI translation failed: {$responseBody}");
         }
-        $content = $data['choices'][0]['message']['content'];
 
-        // Now pull out everything between our markers
-        if (
-            !preg_match(
-                '/' . preg_quote(self::START, '/') . '(.*?)' . preg_quote(self::END, '/') . '/s',
-                $content,
-                $matches
-            )
-        ) {
+        // Extract between markers
+        $pattern = '/' . preg_quote(self::START, '/') . '(.*?)' . preg_quote(self::END, '/') . '/s';
+        if (!preg_match($pattern, $content, $matches)) {
             throw new \RuntimeException("Markers not found in OpenAI response");
         }
         $text = trim($matches[1]);
