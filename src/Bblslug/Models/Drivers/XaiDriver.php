@@ -23,7 +23,7 @@ class XaiDriver implements ModelDriverInterface
      * @param array<string,mixed> $options Options (all optional; see README):
      *     - context     (string|null) Additional context for system prompt.
      *     - dryRun      (bool)        Skip API call (ignored here).
-     *     - format      (string)      'text' or 'html'.
+     *     - format      (string)      Indicates which prompt format to use.
      *     - promptKey   (string)      Key of the prompt template in prompts.yaml.
      *     - temperature (float)       Sampling temperature.
      *     - verbose     (bool)        Include debug logs (ignored here).

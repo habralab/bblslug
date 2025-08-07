@@ -8,6 +8,8 @@ use Bblslug\Models\ModelRegistry;
 use Bblslug\Models\Prompts;
 use Bblslug\Models\UsageExtractor;
 use Bblslug\Validation\HtmlValidator;
+use Bblslug\Validation\JsonValidator;
+use Bblslug\Validation\Schema;
 
 class Bblslug
 {
@@ -43,12 +45,12 @@ class Bblslug
     }
 
     /**
-     * Translate text or HTML via any registered model.
+     * Translate text, HTML or JSON via any registered model.
      *
      * @param string                $apiKey     API key for the model - mandatory.
-     * @param string                $format     "text" or "html" - mandatory.
+     * @param string                $format     "text", "html" or "json" - mandatory.
      * @param string                $modelKey   Model ID (e.g. "deepl:pro") - mandatory.
-     * @param string                $text       The source text or HTML - mandatory.
+     * @param string                $text       The source to be translated - mandatory.
      * @param string|null           $context    Optional context prompt.
      * @param bool                  $dryRun     If true: prepare placeholders only.
      * @param string[]              $filters    Placeholder filters to apply.
@@ -125,19 +127,38 @@ class Bblslug
 
         // Pre-validation (before filters)
         if ($validate && $format !== 'text') {
-            $validator = match ($format) {
-                'html' => new HtmlValidator(),
-                default => null,
-            };
-            if ($validator) {
-                $result = $validator->validate($text);
-                if (! $result->isValid()) {
-                    throw new \RuntimeException(
-                        "Validation failed: " . implode('; ', $result->getErrors())
-                    );
-                } elseif ($verbose) {
-                    $valLogPre = "[Validation pre-pass]\n";
-                }
+            switch ($format) {
+                case 'json':
+                    $jsonValidator = new JsonValidator();
+                    $preResult = $jsonValidator->validate($text);
+                    if (! $preResult->isValid()) {
+                        throw new \RuntimeException(
+                            "JSON syntax failed: " . implode('; ', $preResult->getErrors())
+                        );
+                    }
+                    $parsedIn = json_decode($text, true);
+                    $schemaIn = Schema::capture($parsedIn);
+                    if ($verbose) {
+                        $valLogPre = "[JSON schema captured]\n";
+                    }
+                    break;
+
+                case 'html':
+                    $htmlValidator = new HtmlValidator();
+                    $preResult = $htmlValidator->validate($text);
+                    if (! $preResult->isValid()) {
+                        throw new \RuntimeException(
+                            "HTML validation failed: " . implode('; ', $preResult->getErrors())
+                        );
+                    }
+                    if ($verbose) {
+                        $valLogPre = "[HTML validation pre-pass]\n";
+                    }
+                    break;
+
+                default:
+                    // Other formats: no container validation
+                    break;
             }
         }
 
@@ -246,19 +267,45 @@ class Bblslug
 
         // Post-validation (after translation)
         if ($validate && $format !== 'text') {
-            $validator = match ($format) {
-                'html' => new HtmlValidator(),
-                default => null,
-            };
-            if ($validator) {
-                $res2 = $validator->validate($result);
-                if (! $res2->isValid()) {
-                    throw new \RuntimeException(
-                        "Validation failed: " . implode('; ', $res2->getErrors())
-                    );
-                } elseif ($verbose) {
-                    $valLogPost = "[Validation post-pass]\n";
-                }
+            switch ($format) {
+                case 'json':
+                    $postResult = (new JsonValidator())->validate($result);
+                    if (! $postResult->isValid()) {
+                        throw new \RuntimeException(
+                            "JSON syntax broken: " . implode('; ', $postResult->getErrors()) .
+                            "\n\n" . $debugRequest . $debugResponse
+                        );
+                    }
+                    $parsedOut = json_decode($result, true);
+                    $schemaOut = Schema::capture($parsedOut);
+                    $schemaValidation = Schema::validate($schemaIn, $schemaOut);
+                    if (! $schemaValidation->isValid()) {
+                        throw new \RuntimeException(
+                            "Schema mismatch: " . implode('; ', $schemaValidation->getErrors()) .
+                            "\n\n" . $debugRequest . $debugResponse
+                        );
+                    }
+                    if ($verbose) {
+                        $valLogPost = "[JSON schema validated]\n";
+                    }
+                    break;
+
+                case 'html':
+                    $htmlValidator = new HtmlValidator();
+                    $postResult = $htmlValidator->validate($result);
+                    if (! $postResult->isValid()) {
+                        throw new \RuntimeException(
+                            "HTML validation failed: " . implode('; ', $postResult->getErrors())
+                        );
+                    }
+                    if ($verbose) {
+                        $valLogPost = "[HTML validation post-pass]\n";
+                    }
+                    break;
+
+                default:
+                    // Other formats: no container validation
+                    break;
             }
         }
 

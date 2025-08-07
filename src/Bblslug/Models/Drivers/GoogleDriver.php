@@ -23,7 +23,7 @@ class GoogleDriver implements ModelDriverInterface
      * @param array<string,mixed> $options Options (all optional; see README):
      *     - candidateCount  (int)         Number of responses to generate.
      *     - context         (string|null) Additional context for system prompt.
-     *     - format          (string)      'text' or 'html'.
+     *     - format          (string)      Indicates which prompt format to use.
      *     - includeThoughts (bool|null)   Include chain-of-thought reasoning (Gemini 2.5+).
      *     - maxOutputTokens (int|null)    Maximum tokens for output.
      *     - promptKey       (string)      Key of the prompt template in prompts.yaml.

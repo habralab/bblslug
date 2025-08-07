@@ -44,7 +44,7 @@ class Help
         echo "\t{$bold}--context=TEXT{$reset}       Add translation context prompt\n";
         echo "\t{$bold}--dry-run{$reset}            Prepare and save placeholders, skip translation\n";
         echo "\t{$bold}--filters=F1,F2,...{$reset}  Comma-separated filters to (e.g. url, html_pre, html_code)\n";
-        echo "\t{$bold}--format=text|html{$reset}   Input format: plain text or structured HTML\n";
+        echo "\t{$bold}--format=html|json|text{$reset}  Input format: plain text or structured HTML or JSON\n";
         echo "\t{$bold}--help{$reset}               Show this help message\n";
         echo "\t{$bold}--list-models{$reset}        Show available translation models grouped by vendor\n";
         echo "\t{$bold}--list-prompts{$reset}       Show available prompt templates\n";

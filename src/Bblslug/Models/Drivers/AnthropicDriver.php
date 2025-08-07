@@ -24,7 +24,7 @@ class AnthropicDriver implements ModelDriverInterface
      * @param array<string,mixed> $options Options (all optional; see README):
      *     - context     (string|null) Additional context for system prompt.
      *     - dryRun      (bool)        Skip API call (ignored here).
-     *     - format      (string)      'text' or 'html'.
+     *     - format      (string)      Indicates which prompt format to use.
      *     - maxTokens   (int)         Maximum tokens to generate.
      *     - promptKey   (string)      Key of the prompt template in prompts.yaml.
      *     - temperature (float)       Sampling temperature.

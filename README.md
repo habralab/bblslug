@@ -2,7 +2,7 @@
 
 **Bblslug** is a versatile translation tool that can be used as both a **CLI utility** and a **PHP library**.
 
-It leverages LLM-based APIs to translate plain text or HTML while preserving structure, code blocks, and URLs via placeholder filters.
+It leverages LLM-based APIs to translate plain text, HTML and JSON while preserving structure, code blocks, and URLs via placeholder filters.
 
 APIs supported:
 
@@ -36,7 +36,7 @@ APIs supported:
 
 ## Features
 
-- Supports **HTML** and **plain text** (`--format=text|html`)
+- Supports **HTML**, **JSON** and **plain text** (`--format=text|html|json`)
 - Placeholder-based protection with filters: `html_pre`, `html_code`, `url`, etc.
 - Model selection via `--model=vendor:name`
 - Fully configurable backend registry (via `resources/models.yaml`)
@@ -44,7 +44,7 @@ APIs supported:
 - **Variables** (`--variables`) to send or override model-specific options
 - **Verbose** mode (`--verbose`) to print request previews
 - Can be invoked as a CLI tool or embedded in PHP code
-- **Validation** of container syntax for HTML; disable with `--no-validate`
+- **Validation** of container syntax for HTML or JSON; disable with `--no-validate`
 
 ## Installation
 
@@ -113,6 +113,16 @@ vendor/bin/bblslug \
   --format=html \
   --source=input.html \
   --translated=output.html
+```
+
+### Translate an JSON file and write to another file
+
+```bash
+vendor/bin/bblslug \
+  --model=vendor:name \
+  --format=json \
+  --source=input.json \
+  --translated=output.json
 ```
 
 ### Translate an HTML file and write to another file with filters
@@ -203,7 +213,7 @@ echo "Hello world" | vendor/bin/bblslug \
 
 ### Disable validation
 
-For HTML format, Bblslug performs basic syntax validation before and after translation. To skip this step, add:
+For HTML and JSON formats, Bblslug performs basic syntax validation before and after translation. To skip this step, add:
 
 ```bash
 vendor/bin/bblslug \
@@ -256,9 +266,9 @@ Text translation function example:
 $text = file_get_contents('input.html');
 $result = Bblslug::translate(
     apiKey:   getenv('MODEL_API_KEY'),         // API key for the chosen model
-    format:   'html',                          // 'text' or 'html'
+    format:   'html',                          // 'text', 'html' of 'json'
     modelKey: 'vendor:model',                  // Model identifier (e.g. deepl:free, openai:gpt-4o, etc.)
-    text:     $text,                           // Source text or HTML
+    text:     $text,                           // Source text to be translated
     // optional:
     // Additional context/prompt pass to model
     context:    'Translate as a professional technical translator',
@@ -348,7 +358,7 @@ Returns an array like:
 ```php
 [
   'translator' => [
-      'formats' => ['text', 'html'],
+      'formats' => ['text', 'html', 'json'],
       'notes'   => 'professional translator template',
   ],
   'legal'      => [

@@ -6,37 +6,39 @@ use Bblslug\Models\ModelDriverInterface;
 
 /**
  * DeepL model driver: builds requests and parses responses for DeepL API.
+ *
+ * Builds HTTP params in x-www-form-urlencoded format.
  */
 class DeepLDriver implements ModelDriverInterface
 {
     /**
-     * Construct the HTTP request parameters for DeepL.
+     * {@inheritdoc}
      *
      * @param array<string,mixed> $config  Model config from registry (endpoint, requirements, defaults…)
      * @param string              $text    Input text (placeholders already applied)
-     * @param array<string,mixed> $options Options: [
-     *     'dryRun' => bool,
-     *     'format' => 'text'|'html',
-     *     'verbose'=> bool
-     * ]
+     * @param array<string,mixed> $options Options:
+     *     - dryRun    (bool)   Skip real HTTP call
+     *     - format    (string) 'text', 'html' or 'json'
+     *     - verbose   (bool)   Include debug logs
      *
      * @return array{
-     *     body: string,
-     *     headers: string[],
-     *     url: string
+     *     url:     string,   // Full endpoint URL
+     *     headers: string[], // HTTP headers to send
+     *     body:    string    // URL-encoded form body
      * }
      */
     public function buildRequest(array $config, string $text, array $options): array
     {
-        // Start payload with core fields
         $defaults = $config['defaults'] ?? [];
+
+        // Core payload
         $payload = [
-            'text'        => $text,
+            'text' => $text,
             'target_lang' => $defaults['target_lang'] ?? 'EN',
-            'formality'   => $defaults['formality']   ?? 'prefer_more',
+            'formality' => $defaults['formality'] ?? 'prefer_more',
         ];
 
-        // Optional overrides (only if set)
+        // Optional overrides
         if (!empty($defaults['source_lang'])) {
             $payload['source_lang'] = $defaults['source_lang'];
         }
@@ -44,32 +46,55 @@ class DeepLDriver implements ModelDriverInterface
             $payload['context'] = $defaults['context'];
         }
 
-        // HTML-specific parameters
-        if ($options['format'] === 'html') {
-            $payload['tag_handling']      = 'html';
-            $payload['preserve_formatting'] = '1';
-            $payload['outline_detection']   = '1';
+        // Format-specific adjustments
+        $format = $options['format'] ?? $defaults['format'] ?? 'text';
+
+        switch ($format) {
+            case 'html':
+                $payload['tag_handling'] = 'html';
+                $payload['preserve_formatting'] = '1';
+                $payload['outline_detection'] = '1';
+                break;
+
+            case 'json':
+                $payload['tag_handling'] = 'html';
+                $payload['preserve_formatting'] = '1';
+                $payload['outline_detection'] = '1';
+                $protect = [
+                    '{'   => '<jlc/>',
+                    '}'   => '<jrc/>',
+                    '['   => '<jlb/>',
+                    ']'   => '<jrb/>',
+                    ':'   => '<jcol/>',
+                    ','   => '<jcomma/>',
+                    '"'   => '<jqt/>',
+                ];
+                $protectedText = strtr($payload['text'], $protect);
+                $payload['text'] = $protectedText;
+                break;
+
+            case 'text':
+            default:
+                // Default text behavior: nothing extra
+                break;
         }
 
         return [
-            'url'     => $config['endpoint'],
+            'url' => $config['endpoint'],
             'headers' => $config['requirements']['headers'] ?? [],
-            'body'    => http_build_query($payload),
+            'body' => http_build_query($payload),
         ];
     }
 
     /**
-     * Extract the translated text from DeepL's JSON response.
+     * {@inheritdoc}
      *
      * @param array<string,mixed> $config       Model config (unused here).
      * @param string              $responseBody Raw JSON response body.
      *
-     * @return array{
-     *     text:  string,
-     *     usage: array<string,mixed>|null
-     * }
+     * @return array{text:string, usage:array<string,mixed>|null}
      *
-     * @throws RuntimeException If the response format is unexpected.
+     * @throws \RuntimeException If the response format is unexpected.
      */
     public function parseResponse(array $config, string $responseBody): array
     {
@@ -81,8 +106,22 @@ class DeepLDriver implements ModelDriverInterface
             throw new \RuntimeException("DeepL translation failed: {$responseBody}");
         }
 
+        $text = $data['translations'][0]['text'];
+
+        // Restore any JSON pseudo-tags back to original characters
+        $reverse = [
+            '<jlc/>'    => '{',
+            '<jrc/>'    => '}',
+            '<jlb/>'    => '[',
+            '<jrb/>'    => ']',
+            '<jcol/>'   => ':',
+            '<jcomma/>' => ',',
+            '<jqt/>'    => '"',
+        ];
+        $text = strtr($text, $reverse);
+
         return [
-            'text'  => $data['translations'][0]['text'],
+            'text'  => $text,
             'usage' => null,  // DeepL API does not provide token usage
         ];
     }

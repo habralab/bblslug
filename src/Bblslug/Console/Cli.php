@@ -30,7 +30,7 @@ class Cli
             "context:",      // extra context prompt
             "dry-run",       // placeholders only
             "filters:",      // comma-separated filter list
-            "format:",       // "text" or "html"
+            "format:",       // "text", "html" or "json"
             "help",          // show help and exit
             "list-models",   // show models and exit
             "list-prompts",  // show available prompt templates and exit
@@ -99,8 +99,8 @@ class Cli
             );
         }
 
-        if (!in_array($format, ['text','html'], true)) {
-            Help::error("Invalid format: '{$format}'. Allowed: text, html.");
+        if (!in_array($format, ['text','html','json'], true)) {
+            Help::error("Invalid format: '{$format}'. Allowed: text, html, json.");
         }
 
         // Load API key
