@@ -89,14 +89,25 @@ class OpenAiDriver implements ModelDriverInterface
     public function parseResponse(array $config, string $responseBody): array
     {
         $data = json_decode($responseBody, true);
-
         if (!is_array($data)) {
             throw new \RuntimeException("Invalid JSON response: {$responseBody}");
         }
 
+        // Extract raw content early
+        $contentRaw = $data['choices'][0]['message']['content'] ?? '';
+        $contentRaw = is_string($contentRaw) ? $contentRaw : '';
+
+        // If OpenAI cut output by tokens, fail with a clear message before marker search
+        $finishReason = $data['choices'][0]['finish_reason'] ?? null;
+        if ($finishReason === 'length') {
+            throw new \RuntimeException(
+                "OpenAI: translation was truncated (finish_reason=length) — increase max_tokens or split input. "
+            );
+        }
+
         // Validate response structure
-        $content = $data['choices'][0]['message']['content'] ?? null;
-        if (!is_string($content)) {
+        $content = $contentRaw;
+        if ($content === '') {
             throw new \RuntimeException("OpenAI translation failed: {$responseBody}");
         }
 
