@@ -274,6 +274,7 @@ $result = Bblslug::translate(
     // Additional context/prompt pass to model
     context:    'Translate as a professional technical translator',
     filters:    ['url','html_code'],           // List of placeholder filters
+    onFeedback: $verbose ? static function (string $message, string $level = 'info'): void { error_log("[$level] $message"); } : null, // Optional progress callback
     promptKey: 'translator',                   // which prompt template to use
     proxy:      getenv('BBLSLUG_PROXY'),       // Optional proxy URI (http://..., socks5h://...)
     sourceLang: 'DE',                          // Source language code (optional; autodetect if null)
@@ -284,6 +285,9 @@ $result = Bblslug::translate(
 );
 echo $result['result'];
 ```
+
+`onFeedback` is an optional callback for the progress information, accepts (string $message, string $level),  
+where `$level` includes `'info' | 'warning' | 'error'`. Send null to swhitch off.
 
 Result structure:
 

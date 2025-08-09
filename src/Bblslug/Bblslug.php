@@ -55,6 +55,8 @@ class Bblslug
      * @param string|null           $context    Optional context prompt.
      * @param bool                  $dryRun     If true: prepare placeholders only.
      * @param string[]              $filters    Placeholder filters to apply.
+     * @param ?callable(string,string=):void $onFeedback Optional feedback callback that
+     *        receives (message, level).
      * @param string                $promptKey  Prompt template key
      * @param string|null           $proxy      Optional proxy URL (from env or CLI).
      * @param string|null           $sourceLang Optional source language code.
@@ -88,6 +90,7 @@ class Bblslug
         ?string $context = null,
         bool $dryRun = false,
         array $filters = [],
+        ?callable $onFeedback = null,
         string $promptKey = 'translator',
         ?string $proxy = null,
         ?string $sourceLang = null,
@@ -99,6 +102,25 @@ class Bblslug
         // Prepare holders for validation debug
         $valLogPre  = '';
         $valLogPost = '';
+
+        // Feedback helper.
+        $say = static function (?callable $cb, string $msg, string $level = 'info'): void {
+            if (is_callable($cb)) {
+                try {
+                    $cb($msg, $level);
+                } catch (\Throwable $e) {
+                    /* swallow on purpose */
+                }
+            }
+        };
+
+        $say(
+            $onFeedback,
+            "Starting translation (model='{$modelKey}', format='{$format}', dryRun="
+            . ($dryRun ? 'true' : 'false')
+            . ")",
+            'info'
+        );
 
         // Validate model
         $registry = new ModelRegistry();
@@ -125,9 +147,11 @@ class Bblslug
 
         // Measure original length
         $originalLength = mb_strlen($text);
+        $say($onFeedback, "Input received (length={$originalLength})", 'info');
 
         // Pre-validation (before filters)
         if ($validate && $format !== 'text') {
+            $say($onFeedback, "Pre-validation started ({$format})", 'info');
             switch ($format) {
                 case 'json':
                     $jsonValidator = new JsonValidator();
@@ -161,14 +185,18 @@ class Bblslug
                     // Other formats: no container validation
                     break;
             }
+            $say($onFeedback, "Pre-validation passed ({$format})", 'info');
         }
 
         // Apply placeholder filters
         $filterManager = new FilterManager($filters);
+        $say($onFeedback, "Applying filters: " . (empty($filters) ? '(none)' : implode(', ', $filters)), 'info');
         $prepared = $filterManager->apply($text);
         $preparedLength = mb_strlen($prepared);
+        $say($onFeedback, "Filters applied (preparedLength={$preparedLength})", 'info');
 
         // Length guard: make sure prepared text fits model constraints
+        $say($onFeedback, "Checking model length limits", 'info');
         $lengthValidator = TextLengthValidator::fromModelConfig($model);
         $lenResult = $lengthValidator->validate($prepared);
         if (! $lenResult->isValid()) {
@@ -176,6 +204,7 @@ class Bblslug
                 "Input length exceeds model limits: " . implode('; ', $lenResult->getErrors())
             );
         }
+        $say($onFeedback, "Length check passed", 'info');
 
         // Prepare options for driver, merging in any CLI-provided variables
         $options = array_merge(
@@ -193,6 +222,7 @@ class Bblslug
         }
 
         // Build request
+        $say($onFeedback, "Building request for endpoint: {$endpoint}", 'info');
         $req = $driver->buildRequest(
             $model,
             $prepared,
@@ -205,6 +235,7 @@ class Bblslug
             if (!$apiKey) {
                 throw new \InvalidArgumentException("API key is required for {$modelKey}");
             }
+            $say($onFeedback, "Injecting auth credentials", 'info');
             $keyName = $auth['key_name'];
             $prefix = isset($auth['prefix']) && $auth['prefix'] !== ''
                 ? $auth['prefix'] . ' '
@@ -226,6 +257,7 @@ class Bblslug
         }
 
         // Perform HTTP request
+        $say($onFeedback, $dryRun ? "Dry-run: skipping HTTP request" : "Sending HTTP request", 'info');
         $http = HttpClient::request(
             method: 'POST',
             url: $req['url'],
@@ -248,13 +280,16 @@ class Bblslug
         if ($dryRun) {
             $translated = $prepared;
             $rawUsage   = null;
+            $say($onFeedback, "Dry-run completed", 'info');
         } else {
+            $say($onFeedback, "HTTP response received (status={$httpStatus})", 'info');
             if ($httpStatus >= 400 && empty($model['http_error_handling'])) {
                 throw new \RuntimeException(
                     "HTTP {$httpStatus} error from {$req['url']}: {$raw}\n\n" .
                     $debugRequest . $debugResponse
                 );
             }
+            $say($onFeedback, "Parsing provider response", 'info');
             try {
                 $parsed     = $driver->parseResponse($model, $raw);
                 $translated = $parsed['text'];
@@ -264,19 +299,23 @@ class Bblslug
                     $e->getMessage() . "\n\n" . $debugRequest . $debugResponse
                 );
             }
+            $say($onFeedback, "Provider response parsed", 'info');
         }
 
         $consumed = UsageExtractor::extract($model, $rawUsage);
 
         // Restore placeholders
+        $say($onFeedback, "Restoring placeholders", 'info');
         $result = $filterManager->restore($translated);
         $finalLength = mb_strlen($result);
+        $say($onFeedback, "Placeholders restored (translatedLength={$finalLength})", 'info');
 
         // Collect stats
         $filterStats = $filterManager->getStats();
 
         // Post-validation (after translation)
         if ($validate && $format !== 'text') {
+            $say($onFeedback, "Post-validation started ({$format})", 'info');
             switch ($format) {
                 case 'json':
                     $postResult = (new JsonValidator())->validate($result);
@@ -317,12 +356,15 @@ class Bblslug
                     // Other formats: no container validation
                     break;
             }
+            $say($onFeedback, "Post-validation passed ({$format})", 'info');
         }
 
         // Append post-validation log into response debug
         if ($verbose) {
             $debugResponse .= $valLogPost;
         }
+
+        $say($onFeedback, "Done", 'info');
 
         return [
             'original' => $text,

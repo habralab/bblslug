@@ -202,6 +202,20 @@ class Cli
         // Override by CLI
         $variables = array_merge($variables, $cliVars);
 
+        // Feedback handler for progress messages.
+        $feedback = function (string $message, string $level = 'info'): void {
+            switch ($level) {
+                case 'warning':
+                    Help::warning($message);
+                    break;
+                case 'error':
+                    Help::error($message);
+                    break;
+                default:
+                    Help::info($message);
+            }
+        };
+
         // Perform translation
         $res = [];
         try {
@@ -213,6 +227,7 @@ class Cli
                 context: $context,
                 dryRun: $dryRun,
                 filters: $filters,
+                onFeedback: $verbose ? $feedback : null,
                 promptKey: $promptKey,
                 proxy: $proxy,
                 sourceLang: $sourceLang,
