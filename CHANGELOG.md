@@ -4,6 +4,43 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] – 2025-08-09
+
+### Added
+- **JSON translation**  
+  - New `--format=json` in CLI and API.  
+  - `JsonValidator` (syntax) and `Schema` (structure capture/compare) for pre- and post-translation checks of JSON containers.  
+  - DeepLDriver: JSON support via safe punctuation placeholders and restoration on parse.
+  - Samples: added some JSON samples.
+- **Multiple prompt templates**  
+  - `promptKey` in `Bblslug::translate()` and CLI flag `--prompt-key`.  
+  - `Bblslug::listPrompts()` and `--list-prompts` to inspect available templates.  
+  - All drivers aligned to the new templating.
+- **Progress callback**  
+  - `onFeedback(?callable)` progress callback with levels `info|warning|error`, wired to `--verbose` in CLI.
+- **Input length guard**  
+  - `TextLengthValidator` — early check of prepared input against model limits (`max_tokens`, `max_output_tokens`, `estimated_max_chars`, ~4 chars/token heuristic).
+- **Models**  
+  - OpenAI: add GPT-5 family (`gpt-5`, `gpt-5-mini`, `gpt-5-nano`).  
+  - X.ai: removed deprecated `grok-3-fast` and `grok-3-mini-fast` due to anouncement.
+
+### Changed
+- **Registry & usage metrics**  
+  - OpenAI: expose reasoning tokens (`completion_tokens_details.reasoning_tokens`); set explicit limits for GPT-4o / GPT-4o-mini / GPT-4 / GPT-4-turbo.  
+  - Google: account for `thoughts` in usage; keep `gemini-2.0-flash` defined and listed after the 2.5 family.  
+  - xAI: normalized usage keys; explicit limits for `grok-4`, `grok-3`, `grok-3-mini`.
+- **Docs & CLI**  
+  - README updated: model list, `onFeedback`, examples with `promptKey` and `--list-prompts`.  
+  - CLI: shows progress messages when `--verbose` is enabled.
+
+### Fixed
+- **Truncation handling**  
+  - OpenAI & Anthropic: detect `finish_reason=length` and fail fast with a clear error.  
+
+### Breaking changes
+- **X.ai Grok models**  
+  - Models `grok-3-fast` and `grok-3-mini-fast` has been completely removed.
+
 ## [0.6.0] – 2025-08-01
 
 ### Added
