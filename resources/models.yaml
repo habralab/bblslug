@@ -119,19 +119,9 @@ google:
       breakdown:
         prompt: promptTokenCount
         candidates: candidatesTokenCount
+        thoughts: thoughtsTokenCount
 
   models:
-    gemini-2.0-flash:
-      name: 'Gemini 2.0 Flash'
-      endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent'
-      defaults:
-        model: gemini-2.0-flash
-      limits:
-        max_tokens: 131072
-        token_estimator: gpt
-        estimated_max_chars: 524288
-      notes: 'Low-latency Flash model, balanced cost and performance.'
-
     gemini-2.5-flash:
       name: 'Gemini 2.5 Flash'
       endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent'
@@ -171,6 +161,17 @@ google:
         estimated_max_chars: 1048576
       notes: 'Top-tier Pro model for longest contexts and highest accuracy.'
 
+    gemini-2.0-flash:
+      name: 'Gemini 2.0 Flash'
+      endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent'
+      defaults:
+        model: gemini-2.0-flash
+      limits:
+        max_tokens: 131072
+        token_estimator: gpt
+        estimated_max_chars: 524288
+      notes: 'Low-latency Flash model, balanced cost and performance.'
+
 
 # -------------------------------------------------------------------
 # OpenAI GPT
@@ -189,40 +190,86 @@ openai:
     headers:
       - 'Content-Type: application/json'
   limits:
-    max_tokens: 128000
     token_estimator: gpt
-    estimated_max_chars: 512000
   usage:
     tokens:
       total: total_tokens
       breakdown:
         prompt: prompt_tokens
         completion: completion_tokens
+        reasoning: completion_tokens_details.reasoning_tokens
 
   models:
-    gpt-4:
-      name: 'OpenAI GPT-4'
+    gpt-5:
+      name: 'OpenAI GPT-5'
       defaults:
-        model: gpt-4
-      notes: 'Classic GPT-4 model: highest reliability.'
+        model: gpt-5
+        temperature: 1
+      limits:
+        max_tokens: 400000
+        max_output_tokens: 128000
+        estimated_max_chars: 1600000   # 400k * 4
+      notes: 'Flagship model with enhanced reasoning, multimodal capabilities, and extended context support.'
 
-    gpt-4-turbo:
-      name: 'OpenAI GPT-4 Turbo'
+    gpt-5-mini:
+      name: 'OpenAI GPT-5 Mini'
       defaults:
-        model: gpt-4-turbo
-      notes: 'Fast & cost-effective GPT-4 quality.'
+        model: gpt-5-mini
+        temperature: 1
+      limits:
+        max_tokens: 400000
+        max_output_tokens: 128000
+        estimated_max_chars: 1600000
+      notes: 'Compact, cost-efficient GPT-5 variant suitable for high-volume or latency-sensitive translation tasks.'
+
+    gpt-5-nano:
+      name: 'OpenAI GPT-5 Nano'
+      defaults:
+        model: gpt-5-nano
+        temperature: 1
+      limits:
+        max_tokens: 400000
+        max_output_tokens: 128000
+        estimated_max_chars: 1600000
+      notes: 'Ultra-fast GPT-5 variant optimized for small-scale and real-time translation tasks.'
 
     gpt-4o:
       name: 'OpenAI GPT-4o'
       defaults:
         model: gpt-4o
+      limits:
+        max_tokens: 128000
+        max_output_tokens: 16384
+        estimated_max_chars: 512000
       notes: 'Highly accurate with flexible prompts, ideal for AI-assisted adaptive translation.'
 
     gpt-4o-mini:
       name: 'OpenAI GPT-4o Mini'
       defaults:
         model: gpt-4o-mini
+      limits:
+        max_tokens: 128000
+        max_output_tokens: 16384
+        estimated_max_chars: 512000
       notes: 'Lightweight GPT-4o: lower latency/cost.'
+
+    gpt-4:
+      name: 'OpenAI GPT-4'
+      defaults:
+        model: gpt-4
+      limits:
+        max_tokens: 8192
+        estimated_max_chars: 32768
+      notes: 'Classic GPT-4 model: highest reliability.'
+
+    gpt-4-turbo:
+      name: 'OpenAI GPT-4 Turbo'
+      defaults:
+        model: gpt-4-turbo
+      limits:
+        max_tokens: 128000
+        estimated_max_chars: 512000
+      notes: 'Fast & cost-effective GPT-4 quality.'
 
 
 # -------------------------------------------------------------------
@@ -313,15 +360,13 @@ xai:
     headers:
       - 'Content-Type: application/json'
   limits:
-    max_tokens: 262144
     token_estimator: gpt
-    estimated_max_chars: 1048576
   usage:
     tokens:
-      total:       total_tokens
+      total: total_tokens
       breakdown:
-        prompt:      prompt_tokens
-        completion:  completion_tokens
+        prompt: prompt_tokens
+        completion: completion_tokens
         reasoning: completion_tokens_details.reasoning_tokens
 
   models:
@@ -329,28 +374,25 @@ xai:
       name: 'Grok 4'
       defaults:
         model: grok-4
+      limits:
+        max_tokens: 256000
+        estimated_max_chars: 1024000
       notes: 'Scientist-grade reasoning, coding mode, and real-time internet understanding'
 
     grok-3:
       name: 'Grok 3'
       defaults:
         model: grok-3
+      limits:
+        max_tokens: 131072
+        estimated_max_chars: 524288
       notes: 'Optimized for logical reasoning, math problem-solving, and real-time data with DeepSearch'
-
-    grok-3-fast:
-      name: 'Grok 3 Fast'
-      defaults:
-        model: grok-3-fast
-      notes: 'Optimized for fastest Grok 3 inference'
 
     grok-3-mini:
       name: 'Grok 3 Mini'
       defaults:
         model: grok-3-mini
+      limits:
+        max_tokens: 131072
+        estimated_max_chars: 524288
       notes: 'Compact variant balancing Grok 3 performance and efficiency'
-
-    grok-3-mini-fast:
-      name: 'Grok 3 Mini Fast'
-      defaults:
-        model: grok-3-mini-fast
-      notes: 'Mini variant optimized for fastest inference with compact footprint'

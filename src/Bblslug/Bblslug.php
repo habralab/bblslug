@@ -10,6 +10,7 @@ use Bblslug\Models\UsageExtractor;
 use Bblslug\Validation\HtmlValidator;
 use Bblslug\Validation\JsonValidator;
 use Bblslug\Validation\Schema;
+use Bblslug\Validation\TextLengthValidator;
 
 class Bblslug
 {
@@ -166,6 +167,15 @@ class Bblslug
         $filterManager = new FilterManager($filters);
         $prepared = $filterManager->apply($text);
         $preparedLength = mb_strlen($prepared);
+
+        // Length guard: make sure prepared text fits model constraints
+        $lengthValidator = TextLengthValidator::fromModelConfig($model);
+        $lenResult = $lengthValidator->validate($prepared);
+        if (! $lenResult->isValid()) {
+            throw new \RuntimeException(
+                "Input length exceeds model limits: " . implode('; ', $lenResult->getErrors())
+            );
+        }
 
         // Prepare options for driver, merging in any CLI-provided variables
         $options = array_merge(

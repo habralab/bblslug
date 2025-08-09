@@ -115,9 +115,21 @@ class AnthropicDriver implements ModelDriverInterface
             throw new \RuntimeException("Anthropic API error: {$message}");
         }
 
+        // Extract raw content early (may be partial when truncated)
+        $contentRaw = $data['choices'][0]['message']['content'] ?? '';
+        $contentRaw = is_string($contentRaw) ? $contentRaw : '';
+
+        // If Anthropic cut output by tokens, fail with a clear message before marker search
+        $finishReason = $data['choices'][0]['finish_reason'] ?? null;
+        if ($finishReason === 'length') {
+            throw new \RuntimeException(
+                "Anthropic: translation was truncated (finish_reason=length) — increase max_tokens or split input. "
+            );
+        }
+
         // Validate content
-        $content = $data['choices'][0]['message']['content'] ?? null;
-        if (!is_string($content)) {
+        $content = $contentRaw;
+        if ($content === '') {
             throw new \RuntimeException("Anthropic translation failed: {$responseBody}");
         }
 

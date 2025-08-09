@@ -14,15 +14,18 @@ APIs supported:
   - `deepl:free` - DeepL free tier
   - `deepl:pro` - DeepL pro tier
 - Google (Gemini):
-  - `google:gemini-2.0-flash` - Gemini 2.0 Flash
   - `google:gemini-2.5-flash` - Gemini 2.5 Flash
   - `google:gemini-2.5-flash-lite` - Gemini 2.5 Flash Lite
   - `google:gemini-2.5-pro` - Gemini 2.5 Pro
+  - `google:gemini-2.0-flash` - Gemini 2.0 Flash
 - OpenAI (GPT):
-  - `openai:gpt-4` - OpenAI GPT-4
-  - `openai:gpt-4-turbo` - OpenAI GPT-4 Turbo
+  - `openai:gpt-5` - OpenAI GPT-5
+  - `openai:gpt-5-mini` - OpenAI GPT-5 Mini
+  - `openai:gpt-5-nano` - OpenAI GPT-5 Nano
   - `openai:gpt-4o` - OpenAI GPT-4o
   - `openai:gpt-4o-mini` - OpenAI GPT-4o Mini
+  - `openai:gpt-4` - OpenAI GPT-4
+  - `openai:gpt-4-turbo` - OpenAI GPT-4 Turbo
 - Yandex:
   - `yandex:gpt-lite` - YandexGPT Lite
   - `yandex:gpt-pro` - YandexGPT Pro
@@ -30,9 +33,7 @@ APIs supported:
 - X.ai:
   - `xai:grok-4` - Grok 4
   - `xai:grok-3` - Grok 3
-  - `xai:grok-3-fast` - Grok 3 Fast
   - `xai:grok-3-mini` - Grok 3 Mini
-  - `xai:grok-3-mini-fast` - Grok 3 Mini Fast
 
 ## Features
 
