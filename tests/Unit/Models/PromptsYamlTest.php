@@ -12,7 +12,7 @@ final class PromptsYamlTest extends TestCase
 {
     private function loadPrompts(): array
     {
-        $path = __DIR__ . '/../../resources/prompts.yaml';
+        $path = __DIR__ . '/../../../resources/prompts.yaml';
 
         $this->assertFileExists($path, 'prompts.yaml must exist');
         $this->assertIsReadable($path, 'prompts.yaml must be readable');

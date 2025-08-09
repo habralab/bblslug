@@ -9,4 +9,7 @@ lint:
 	composer run lint
 
 test:
-	composer run phpunit
+	composer run test
+
+test-unit:
+	composer run test:unit

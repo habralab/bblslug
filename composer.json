@@ -37,6 +37,7 @@
   ],
   "scripts": {
     "lint": "vendor/bin/phpcs --standard=phpcs.xml",
-    "phpunit": "vendor/bin/phpunit --testdox --colors=always --log-junit .phpunit.junit.xml"
+    "test": "vendor/bin/phpunit --testdox --colors=always --log-junit .phpunit.junit.xml",
+    "test:unit": "vendor/bin/phpunit --testsuite unit --testdox --colors=always --log-junit .phpunit.junit.xml"
   }
 }
