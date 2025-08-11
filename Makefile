@@ -11,5 +11,8 @@ lint:
 test:
 	composer run test
 
-test-unit:
-	composer run test:unit
+test-phpunit:
+	composer run test:phpunit
+
+test-phpstan:
+	composer run test:phpstan

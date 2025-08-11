@@ -38,7 +38,10 @@ jobs:
         run: make lint
 
       - name: Run PHPUnit tests
-        run: make test
+        run: make test-unit
+
+      - name: Run PHPStan tests
+        run: make test-phpstan
 
       - name: Upload PHPUnit report
         uses: actions/upload-artifact@v4
