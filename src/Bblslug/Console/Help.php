@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Bblslug\Console;
 
 use Bblslug\Bblslug;
@@ -15,9 +17,15 @@ class Help
         }
     }
 
-    public static function error(string $message, ?int $exitCode = 1): void
+    /**
+     * Print error and terminate the process.
+     *
+     * @return never
+     */
+    public static function error(string $message, int $exitCode = 1)
     {
         self::alert("Error", $message, "\033[31m", $exitCode); // Red
+        exit($exitCode);
     }
 
     public static function warning(string $message, ?int $exitCode = null): void
@@ -118,12 +126,11 @@ class Help
     /**
      * Print a grouped list of available models to STDOUT.
      *
-     * @param array<string, array<string, array<string,mixed>>> $modelsByVendor
-     *     Hierarchical map of vendor => [modelKey => config].
      * @return void
      */
     public static function printModelList(): void
     {
+        /** @var array<string, array<string, array<string, mixed>>> $modelsByVendor */
         $modelsByVendor = Bblslug::listModels();
 
         $bold = "\033[1m";
@@ -136,7 +143,10 @@ class Help
             foreach ($models as $key => $conf) {
                 $label = "{$bold}{$key}{$reset}";
                 $pad   = str_pad($label, 32 + strlen($bold . $reset));
-                $notes = $conf['notes'] ?? '';
+                $notes = '';
+                if (isset($conf['notes']) && is_string($conf['notes'])) {
+                    $notes = $conf['notes'];
+                }
                 echo "\t\t- {$pad}{$notes}\n";
             }
             echo "\n";
@@ -152,6 +162,7 @@ class Help
      */
     public static function printPromptList(): void
     {
+        /** @var array<string, array{formats: array<int,string>, notes?: string|null}> $prompts */
         $prompts = Bblslug::listPrompts();
         $bold = "\033[1m";
         $reset = "\033[0m";
@@ -163,7 +174,10 @@ class Help
             $formats = implode(', ', $info['formats']);
             $label = "- {$key} ({$formats})";
             $pad = str_pad($label, 40);
-            $notes = $info['notes'] ?? '';
+            $notes = '';
+            if (array_key_exists('notes', $info) && is_string($info['notes'])) {
+                $notes = $info['notes'];
+            }
             echo "\t{$pad} {$notes}\n";
         }
 
