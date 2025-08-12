@@ -37,9 +37,8 @@
     "bin/bblslug"
   ],
   "scripts": {
-    "lint": "vendor/bin/phpcs --standard=phpcs.xml",
-    "test": "vendor/bin/phpunit --testdox --colors=always --log-junit .phpunit.junit.xml",
-    "test:phpunit": "vendor/bin/phpunit --testsuite unit --testdox --colors=always --log-junit .phpunit.junit.xml",
+    "test:phplint": "vendor/bin/phpcs --standard=phpcs.xml",
+    "test:phpunit": "vendor/bin/phpunit --testdox --colors=always --log-junit .phpunit.junit.xml",
     "test:phpstan": "vendor/bin/phpstan analyse src --level=max --memory-limit=-1"
   }
 }

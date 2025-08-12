@@ -34,11 +34,11 @@ jobs:
       - name: Install dependencies
         run: make install
 
-      - name: Lint code (PSR-12)
-        run: make lint
+      - name: Lint PHP code (PSR-12)
+        run: make test-phplint
 
       - name: Run PHPUnit tests
-        run: make test-unit
+        run: make test-phpunit
 
       - name: Run PHPStan tests
         run: make test-phpstan
