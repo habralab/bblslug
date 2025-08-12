@@ -25,12 +25,26 @@ class Prompts
 
     public static function load(?string $path = null): void
     {
-        $path ??= __DIR__ . '/../../../resources/prompts.yaml';
-        // Ensure the YAML file is readable
-        if (!is_readable($path)) {
-            throw new \RuntimeException("Prompts file not found: {$path}");
+        if (self::$templates !== null) {
+            return;
         }
-        self::$templates = Yaml::parseFile($path);
+
+        $path ??= __DIR__ . '/../../../resources/prompts.yaml';
+
+        if (!is_readable($path)) {
+            throw new \RuntimeException("Prompts file not found or not readable: {$path}");
+        }
+
+        $data = Yaml::parseFile($path);
+        if (!is_array($data) || empty($data)) {
+            throw new \RuntimeException("Prompts YAML is empty or invalid at: {$path}");
+        }
+
+        if (\getenv('BBLSLUG_DEBUG_PROMPTS')) {
+            \error_log('[bblslug:prompts] path=' . $path
+                . '; keys=' . \implode(', ', \array_keys($data)));
+        }
+        self::$templates = $data;
     }
 
     /**
@@ -48,11 +62,15 @@ class Prompts
             self::load();
         }
 
-        if (!isset(self::$templates[$kind][$format])) {
+        if (!isset(self::$templates[$kind]) || !is_array(self::$templates[$kind])) {
+            throw new \InvalidArgumentException("Prompt group '{$kind}' not found");
+        }
+        if (!isset(self::$templates[$kind][$format]) || !is_string(self::$templates[$kind][$format])) {
             throw new \InvalidArgumentException("Prompt '{$kind}.{$format}' not found");
         }
 
         $tpl = self::$templates[$kind][$format];
+
         // Build replacements map "{key}" => value
         $replacements = [];
         foreach ($vars as $key => $value) {
@@ -76,6 +94,10 @@ class Prompts
 
         $out = [];
         foreach (self::$templates as $key => $cfg) {
+            if (!is_array($cfg)) {
+                continue;
+            }
+
             // collect formats (all keys except “notes”)
             $formats = [];
             foreach ($cfg as $fmt => $_) {
@@ -86,7 +108,7 @@ class Prompts
             }
             $out[$key] = [
                 'formats' => $formats,
-                'notes'   => $cfg['notes'] ?? null,
+                'notes'   => isset($cfg['notes']) ? (string) $cfg['notes'] : null,
             ];
         }
 

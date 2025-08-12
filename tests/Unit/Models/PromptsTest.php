@@ -34,6 +34,11 @@ class PromptsTest extends TestCase
         if (file_exists($this->yamlPath)) {
             unlink($this->yamlPath);
         }
+        // Reset internal cache so other tests don't see our overridden prompts
+        $ref = new ReflectionClass(Prompts::class);
+        $prop = $ref->getProperty('templates');
+        $prop->setAccessible(true);
+        $prop->setValue(null, null);
         parent::tearDown();
     }
 
@@ -72,9 +77,9 @@ YAML;
     }
 
     /** @test */
-    public function testRenderThrowsExceptionForUndefinedTemplate(): void
+    public function testRenderThrowsExceptionForUndefinedGroup(): void
     {
-        // Create YAML with a single known template
+        // Create YAML with a single known template; group "unknown" is not present
         $yaml = <<<YAML
 bot:
   html: '<p>{message}</p>'
@@ -83,11 +88,33 @@ YAML;
 
         Prompts::load($this->yamlPath);
 
-        // Trying to render missing kind.format should fail
+        // Missing group should fail before format check
         $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage("Prompt 'unknown.json' not found");
+        $this->expectExceptionMessage("Prompt group 'unknown' not found");
         Prompts::render(
             kind: 'unknown',
+            format: 'json',
+            vars: []
+        );
+    }
+
+    /** @test */
+    public function testRenderThrowsExceptionForUndefinedFormat(): void
+    {
+        // Create YAML where group exists, but requested format does not
+        $yaml = <<<YAML
+translator:
+  text: 'Translate {text}'
+YAML;
+        file_put_contents($this->yamlPath, $yaml);
+
+        Prompts::load($this->yamlPath);
+
+        // Missing format within an existing group should fail with precise message
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage("Prompt 'translator.json' not found");
+        Prompts::render(
+            kind: 'translator',
             format: 'json',
             vars: []
         );
