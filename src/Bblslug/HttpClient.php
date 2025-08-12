@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Bblslug;
 
 /**
@@ -10,13 +12,13 @@ class HttpClient
     /**
      * Execute an HTTP request and return detailed response information.
      *
-     * @param string        $method        HTTP method (e.g. 'GET', 'POST', 'PUT').
+     * @param non-empty-string $method     HTTP method (e.g. 'GET', 'POST', 'PUT').
      * @param string        $url           Full URL to request.
      *
      * @param string        $body          Request body (optional).
      * @param bool          $dryRun        If true, skip real request and return placeholder.
-     * @param string[]      $headers       Array of headers in "Name: value" format.
-     * @param array<string> $maskPatterns  Substrings to mask in debug logs.
+     * @param array<int,string> $headers       Array of headers in "Name: value" format.
+     * @param array<int,string> $maskPatterns  Substrings to mask in debug logs.
      * @param string|null   $proxy         Optional proxy URI (http, socks5, etc.).
      * @param bool          $verbose       If true, include request/response debug logs.
      *
@@ -24,7 +26,7 @@ class HttpClient
      *     body: string,
      *     debugRequest: string,
      *     debugResponse: string,
-     *     headers: array<string,string[]>,
+     *     headers: array<string, array<int,string>>,
      *     status: int
      * }
      *
@@ -82,37 +84,53 @@ class HttpClient
         }
 
         // Perform real cURL request
-        $ch = curl_init($url);
-        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        $ch = \curl_init($url);
+        \curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
+        \curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         if (!empty($headers)) {
-            curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+            \curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
         }
         if ($method !== 'GET') {
-            curl_setopt($ch, CURLOPT_POSTFIELDS, $body);
+            \curl_setopt($ch, CURLOPT_POSTFIELDS, $body);
         }
-        if ($proxy !== null) {
-            curl_setopt($ch, CURLOPT_PROXY, $proxy);
+        if ($proxy !== null && $proxy !== '') {
+            /** @var non-empty-string $proxyVal */
+            $proxyVal = $proxy;
+            \curl_setopt($ch, CURLOPT_PROXY, $proxyVal);
         }
 
         // Capture response headers
+        /** @var array<string, array<int,string>> $responseHeaders */
         $responseHeaders = [];
-        curl_setopt($ch, CURLOPT_HEADERFUNCTION, function ($curl, $line) use (&$responseHeaders) {
-            if (strpos($line, ':') !== false) {
-                [$name, $value] = explode(':', trim($line), 2);
-                $responseHeaders[$name][] = trim($value);
-            }
-            return strlen($line);
-        });
+        \curl_setopt(
+            $ch,
+            CURLOPT_HEADERFUNCTION,
+            /**
+             * @param resource $curl
+             */
+            function ($curl, string $line) use (&$responseHeaders): int {
 
-        $respBody = curl_exec($ch);
-        if (curl_errno($ch)) {
-            $err = curl_error($ch);
-            curl_close($ch);
+
+                if (strpos($line, ':') !== false) {
+                    [$name, $value] = explode(':', trim($line), 2);
+                    $responseHeaders[$name][] = trim($value);
+                }
+                return strlen($line);
+            }
+        );
+
+        $respBody = \curl_exec($ch);
+        if ($respBody === false) {
+            $respBody = '';
+        }
+
+        if (\curl_errno($ch)) {
+            $err = \curl_error($ch);
+            \curl_close($ch);
             throw new \RuntimeException("Network error: {$err}");
         }
-        $status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
+        $status = (int)\curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        \curl_close($ch);
 
         // Build response debug log
         $debugResponse = '';
@@ -127,7 +145,7 @@ class HttpClient
                     $debugResponse .= "  {$name}: {$val}\n";
                 }
             }
-            $logRespBody = $respBody;
+            $logRespBody = (string) $respBody;
             foreach ($maskPatterns as $pat) {
                 $logRespBody = str_replace($pat, '***', $logRespBody);
             }
@@ -137,7 +155,7 @@ class HttpClient
         return [
             'status'        => $status,
             'headers'       => $responseHeaders,
-            'body'          => $respBody,
+            'body'          => (string)$respBody,
             'debugRequest'  => $debugRequest,
             'debugResponse' => $debugResponse,
         ];
