@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Bblslug\Validation;
 
 /**
@@ -8,8 +10,13 @@ namespace Bblslug\Validation;
 class ValidationResult
 {
     private bool $valid;
+
+    /** @var array<int,string> */
     private array $errors;
 
+    /**
+     * @param array<int,string> $errors
+     */
     public function __construct(bool $valid, array $errors = [])
     {
         $this->valid = $valid;
@@ -43,7 +50,7 @@ class ValidationResult
     /**
      * Create a failure result with given errors
      *
-     * @param string[] $errors
+     * @param array<int,string> $errors
      */
     public static function failure(array $errors): self
     {

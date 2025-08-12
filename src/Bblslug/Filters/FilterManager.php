@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Bblslug\Filters;
 
 use Bblslug\Filters\FilterInterface;
@@ -9,9 +11,13 @@ use Bblslug\Filters\UrlFilter;
 
 class FilterManager
 {
+    /** @var array<int,FilterInterface> */
     private array $filters = [];
     private PlaceholderCounter $counter;
 
+    /**
+     * @param array<int,string> $filterNames
+     */
     public function __construct(array $filterNames)
     {
         $this->counter = new PlaceholderCounter();
@@ -42,6 +48,9 @@ class FilterManager
         return $text;
     }
 
+    /**
+     * @return array<int, array{filter:string,count:int}>
+     */
     public function getStats(): array
     {
         $stats = [];

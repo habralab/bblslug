@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Bblslug\Validation;
 
 class TextLengthValidator implements ValidatorInterface
@@ -47,10 +49,22 @@ class TextLengthValidator implements ValidatorInterface
     public static function fromModelConfig(array $model, int $fallbackReservePct = 20, int $overheadChars = 2000): self
     {
         $limits = $model['limits'] ?? [];
+        if (!is_array($limits)) {
+            $limits = [];
+        }
 
-        $estimatedMaxChars = (int)($limits['estimated_max_chars'] ?? 0);
-        $maxTokens         = (int)($limits['max_tokens'] ?? 0);
-        $maxOutTokens      = (int)($limits['max_output_tokens'] ?? 0);
+        /**
+         * Values can come as int or numeric-string from YAML.
+         * @var array{
+         *   estimated_max_chars?: int|string,
+         *   max_tokens?: int|string,
+         *   max_output_tokens?: int|string
+         * } $limits
+         */
+
+        $estimatedMaxChars = (int) ($limits['estimated_max_chars'] ?? 0);
+        $maxTokens         = (int) ($limits['max_tokens'] ?? 0);
+        $maxOutTokens      = (int) ($limits['max_output_tokens'] ?? 0);
 
         // Prefer a token-based calculation if we know both totals.
         if ($maxTokens > 0) {
