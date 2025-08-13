@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Bblslug\Models\Drivers;
 
 use Bblslug\Models\ModelDriverInterface;
@@ -36,19 +38,50 @@ class YandexDriver implements ModelDriverInterface
      */
     public function buildRequest(array $config, string $text, array $options): array
     {
-        $defaults = $config['defaults'] ?? [];
-        $context = trim((string) ($options['context'] ?? $defaults['context'] ?? ''));
-        $format = $options['format'] ?? $defaults['format'] ?? 'text';
-        $folderId = $options['folder_id'] ?? throw new \RuntimeException('Missing Yandex folder_id in options');
-        $maxTokens = (int) ($options['maxTokens'] ?? $defaults['max_tokens'] ?? 0);
-        $modelName = $defaults['model'] ?? throw new \RuntimeException('Missing Yandex model name');
-        $promptKey = $options['promptKey'] ?? 'translator';
-        $sourceLang = $defaults['source_lang'] ?? 'auto';
-        $targetLang = $defaults['target_lang'] ?? 'EN';
-        $temperature = $options['temperature'] ?? $defaults['temperature'] ?? 0.0;
+        $defaults = \is_array($config['defaults'] ?? null) ? $config['defaults'] : [];
+
+        $ctxRaw = $options['context'] ?? ($defaults['context'] ?? '');
+        $context = (\is_scalar($ctxRaw) || ($ctxRaw instanceof \Stringable))
+            ? \trim((string)$ctxRaw)
+            : '';
+
+        $format = \is_string($options['format'] ?? null)
+            ? $options['format']
+            : (\is_string($defaults['format'] ?? null)
+                ? $defaults['format']
+                : (\is_string($config['format'] ?? null) ? $config['format'] : 'text'));
+
+        $folderId = $options['folder_id'] ?? null;
+        if (!\is_string($folderId) || $folderId === '') {
+            throw new \RuntimeException('Missing Yandex folder_id in options');
+        }
+
+        $maxRaw = $options['maxTokens'] ?? ($defaults['max_tokens'] ?? 0);
+        $maxTokens = (\is_int($maxRaw) || \is_numeric($maxRaw)) ? (int)$maxRaw : 0;
+
+        $modelName = \is_string($defaults['model'] ?? null)
+            ? $defaults['model']
+            : throw new \RuntimeException('Missing Yandex model name');
+
+        $promptKey = \is_string($options['promptKey'] ?? null)
+            ? $options['promptKey']
+            : 'translator';
+
+        $sourceLang = \is_string($defaults['source_lang'] ?? null)
+            ? $defaults['source_lang']
+            : 'auto';
+
+        $targetLang = \is_string($defaults['target_lang'] ?? null)
+            ? $defaults['target_lang']
+            : 'EN';
+
+        $tempRaw = $options['temperature'] ?? ($defaults['temperature'] ?? 0.0);
+        $temperature = (\is_float($tempRaw) || \is_int($tempRaw) || \is_numeric($tempRaw))
+            ? (float)$tempRaw
+            : 0.0;
 
         // Construct model URI.
-        $modelUri = sprintf('gpt://%s/%s', $folderId, $modelName);
+        $modelUri = \sprintf('gpt://%s/%s', $folderId, $modelName);
 
         // Render system prompt
         $systemPrompt = Prompts::render(
@@ -80,10 +113,22 @@ class YandexDriver implements ModelDriverInterface
             'messages'          => $messages,
         ];
 
+        // Normalize return shape and types
+        $url = \is_string($config['endpoint'] ?? null) ? (string)$config['endpoint'] : '';
+        $headers = [];
+        $req = \is_array($config['requirements'] ?? null) ? $config['requirements'] : null;
+        $headersSrc = \is_array($req['headers'] ?? null) ? $req['headers'] : [];
+        foreach ((array)$headersSrc as $h) {
+            if (\is_string($h)) {
+                $headers[] = $h;
+            }
+        }
+        $body = \json_encode($payload, JSON_UNESCAPED_UNICODE);
+
         return [
-            'url'     => $config['endpoint'],
-            'headers' => $config['requirements']['headers'] ?? [],
-            'body'    => json_encode($payload, JSON_UNESCAPED_UNICODE),
+            'url'     => $url,
+            'headers' => $headers,
+            'body'    => \is_string($body) ? $body : '{}',
         ];
     }
 
@@ -102,54 +147,80 @@ class YandexDriver implements ModelDriverInterface
      */
     public function parseResponse(array $config, string $responseBody): array
     {
-        $data = json_decode($responseBody, true);
+        $data = \json_decode($responseBody, true);
 
         if (!is_array($data)) {
             throw new \RuntimeException("Invalid JSON response: {$responseBody}");
         }
 
         // API-level errors
-        if (isset($data['error'])) {
+        if (\is_array($data['error'] ?? null)) {
             $error = $data['error'];
-            $message = $error['message'] ?? json_encode($error);
+            $msg = \is_string($error['message'] ?? null)
+                ? $error['message']
+                : (\json_encode($error, JSON_UNESCAPED_UNICODE) ?: 'unknown error');
             $code = $error['httpCode'] ?? null;
+            $status = \is_string($error['httpStatus'] ?? null) ? $error['httpStatus'] : null;
 
             // folder ID mismatch
-            if ($code === 400 && stripos($message, 'folder ID') !== false) {
-                throw new \RuntimeException("Yandex API folder-id mismatch: {$message}");
+            if (
+                (\is_int($code) && $code === 400)
+                && (\stripos($msg, 'folder ID') !== false)
+            ) {
+                throw new \RuntimeException("Yandex API folder-id mismatch: {$msg}");
             }
 
             // authentication failures
             if (
-                $code === 401
-                || (isset($error['httpStatus']) && stripos($error['httpStatus'], 'Unauthorized') !== false)
+                (\is_int($code) && $code === 401)
+                || ($status !== null && \stripos($status, 'Unauthorized') !== false)
             ) {
-                throw new \RuntimeException("Yandex API authentication error: {$message}");
+                throw new \RuntimeException("Yandex API authentication error: {$msg}");
             }
 
             // internal server errors
-            if ($code === 500) {
-                throw new \RuntimeException("Yandex API internal server error: {$message}");
+            if (\is_int($code) && $code === 500) {
+                throw new \RuntimeException("Yandex API internal server error: {$msg}");
             }
 
-            $codePart = $code ? " (HTTP {$code})" : '';
-            throw new \RuntimeException("Yandex API error{$codePart}: {$message}");
+            $codePart = \is_int($code) ? " (HTTP {$code})" : '';
+            throw new \RuntimeException("Yandex API error{$codePart}: {$msg}");
         }
 
         // Extract translated text
         $content = null;
-        if (isset($data['result']['alternatives'][0]['message']['text'])) {
-            $content = $data['result']['alternatives'][0]['message']['text'];
-        } elseif (isset($data['completions'][0]['text'])) {
-            $content = $data['completions'][0]['text'];
+        // Newer Yandex response shape
+        $result = \is_array($data['result'] ?? null) ? $data['result'] : null;
+        if ($result !== null) {
+            $alts = \is_array($result['alternatives'] ?? null) ? $result['alternatives'] : null;
+            if ($alts !== null && isset($alts[0]) && \is_array($alts[0])) {
+                $msg = \is_array($alts[0]['message'] ?? null) ? $alts[0]['message'] : null;
+                if ($msg !== null && \is_string($msg['text'] ?? null)) {
+                    $content = $msg['text'];
+                }
+            }
+        }
+        // Legacy completions shape
+        if ($content === null) {
+            $comps = \is_array($data['completions'] ?? null) ? $data['completions'] : null;
+            if ($comps !== null && isset($comps[0]) && \is_array($comps[0])) {
+                $t = $comps[0]['text'] ?? null;
+                if (\is_string($t)) {
+                    $content = $t;
+                }
+            }
         }
 
-        if (!is_string($content)) {
+        if (!\is_string($content)) {
             throw new \RuntimeException("Yandex translation failed: {$responseBody}");
         }
 
         // Extract between markers
-        $pattern = '/' . preg_quote(self::START, '/') . '(.*?)' . preg_quote(self::END, '/') . '/s';
+        $pattern = '/'
+            . \preg_quote(self::START, '/')
+            . '(.*?)'
+            . \preg_quote(self::END, '/')
+            . '/s';
 
         if (!preg_match($pattern, $content, $matches)) {
             throw new \RuntimeException("Markers not found in Yandex response");
@@ -158,7 +229,18 @@ class YandexDriver implements ModelDriverInterface
         $text = trim($matches[1]);
 
         // Usage statistics
-        $usage = $data['result']['usage'] ?? null;
+        $usage = null;
+        $ru = $result['usage'] ?? null;
+        if (\is_array($ru)) {
+            /** @var array<string,mixed> $typed */
+            $typed = [];
+            foreach ($ru as $k => $v) {
+                if (\is_string($k)) {
+                    $typed[$k] = $v;
+                }
+            }
+            $usage = $typed;
+        }
 
         return [
             'text'  => $text,

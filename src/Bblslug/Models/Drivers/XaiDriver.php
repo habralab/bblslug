@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Bblslug\Models\Drivers;
 
 use Bblslug\Models\ModelDriverInterface;
@@ -34,14 +36,39 @@ class XaiDriver implements ModelDriverInterface
      */
     public function buildRequest(array $config, string $text, array $options): array
     {
-        $defaults = $config['defaults'] ?? [];
-        $context = trim((string) ($options['context'] ?? $defaults['context'] ?? ''));
-        $format = $options['format'] ?? $defaults['format'] ?? 'text';
-        $model = $defaults['model'] ?? throw new \RuntimeException('Missing xAI model name');
-        $promptKey = $options['promptKey'] ?? 'translator';
-        $sourceLang = $defaults['source_lang'] ?? 'auto';
-        $targetLang = $defaults['target_lang'] ?? 'EN';
-        $temperature = (float) ($options['temperature'] ?? $defaults['temperature'] ?? 0.0);
+        $defaults = \is_array($config['defaults'] ?? null) ? $config['defaults'] : [];
+
+        $ctxRaw = $options['context'] ?? ($defaults['context'] ?? '');
+        $context = (\is_scalar($ctxRaw) || ($ctxRaw instanceof \Stringable))
+            ? \trim((string)$ctxRaw)
+            : '';
+
+        $format = \is_string($options['format'] ?? null)
+            ? $options['format']
+            : (\is_string($defaults['format'] ?? null)
+                ? $defaults['format']
+                : 'text');
+
+        $model = \is_string($defaults['model'] ?? null)
+            ? $defaults['model']
+            : throw new \RuntimeException('Missing xAI model name');
+
+        $promptKey = \is_string($options['promptKey'] ?? null)
+            ? $options['promptKey']
+            : 'translator';
+
+        $sourceLang = \is_string($defaults['source_lang'] ?? null)
+            ? $defaults['source_lang']
+            : 'auto';
+
+        $targetLang = \is_string($defaults['target_lang'] ?? null)
+            ? $defaults['target_lang']
+            : 'EN';
+
+        $tempRaw = $options['temperature'] ?? ($defaults['temperature'] ?? 0.0);
+        $temperature = (\is_float($tempRaw) || \is_int($tempRaw) || \is_numeric($tempRaw))
+            ? (float)$tempRaw
+            : 0.0;
 
         // Render system prompt
         $systemPrompt = Prompts::render(
@@ -69,10 +96,22 @@ class XaiDriver implements ModelDriverInterface
             'stream'      => false,
         ];
 
+        // Normalize return shape and types
+        $url = \is_string($config['endpoint'] ?? null) ? (string)$config['endpoint'] : '';
+        $headers = [];
+        $req = \is_array($config['requirements'] ?? null) ? $config['requirements'] : null;
+        $headersSrc = \is_array($req['headers'] ?? null) ? $req['headers'] : [];
+        foreach ((array)$headersSrc as $h) {
+            if (\is_string($h)) {
+                $headers[] = $h;
+            }
+        }
+        $body = \json_encode($payload, JSON_UNESCAPED_UNICODE);
+
         return [
-            'url'     => $config['endpoint'],
-            'headers' => $config['requirements']['headers'] ?? [],
-            'body'    => json_encode($payload, JSON_UNESCAPED_UNICODE),
+            'url'     => $url,
+            'headers' => $headers,
+            'body'    => \is_string($body) ? $body : '{}',
         ];
     }
 
@@ -91,22 +130,48 @@ class XaiDriver implements ModelDriverInterface
      */
     public function parseResponse(array $config, string $responseBody): array
     {
-        $data = json_decode($responseBody, true);
+        $data = \json_decode($responseBody, true);
 
         if (!is_array($data)) {
             throw new \RuntimeException("Invalid JSON response: {$responseBody}");
         }
 
         // xAI error payload (model not found, auth, etc.)
-        if (isset($data['error'])) {
-            $code = $data['code'] ?? 'unknown_error';
-            throw new \RuntimeException("Grok API error [{$code}]: {$data['error']}");
+        if (\is_array($data['error'] ?? null) || \is_string($data['error'] ?? null)) {
+            $code = \is_string($data['code'] ?? null) ? $data['code'] : 'unknown_error';
+            $err  = $data['error'];
+            $msg  = \is_string($err)
+                ? $err
+                : (\json_encode($err, JSON_UNESCAPED_UNICODE) ?: 'unknown error');
+            throw new \RuntimeException("Grok API error [{$code}]: {$msg}");
         }
 
-        // Normal completion path
-        $content = $data['choices'][0]['message']['content'] ?? null;
-        if (!is_string($content)) {
+        // Extract the first choice safely
+        $first = null;
+        $choices = $data['choices'] ?? null;
+        if (\is_array($choices) && isset($choices[0]) && \is_array($choices[0])) {
+            $first = $choices[0];
+        }
+
+        // Normal completion path: content string at choices[0].message.content
+        $content = null;
+        if (\is_array($first) && \is_array($first['message'] ?? null)) {
+            $content = $first['message']['content'] ?? null;
+        }
+        if (!\is_string($content)) {
             throw new \RuntimeException("Grok translation failed: {$responseBody}");
+        }
+
+        // If truncated by tokens (if API mirrors OpenAI), check finish_reason
+        $finishReason = null;
+        if (\is_array($first) && \is_string($first['finish_reason'] ?? null)) {
+            $finishReason = $first['finish_reason'];
+        }
+        if ($finishReason === 'length') {
+            throw new \RuntimeException(
+                "Grok: translation was truncated (finish_reason=length) — "
+                . "increase max_tokens or split input."
+            );
         }
 
         $pattern = '/' . preg_quote(self::START, '/') . '(.*?)' . preg_quote(self::END, '/') . '/s';
@@ -115,7 +180,19 @@ class XaiDriver implements ModelDriverInterface
         }
 
         $text  = trim($matches[1]);
-        $usage = $data['usage'] ?? null;
+        // Usage statistics normalized to array<string,mixed>|null
+        $usage = null;
+        $u = $data['usage'] ?? null;
+        if (\is_array($u)) {
+            /** @var array<string,mixed> $typed */
+            $typed = [];
+            foreach ($u as $k => $v) {
+                if (\is_string($k)) {
+                    $typed[$k] = $v;
+                }
+            }
+            $usage = $typed;
+        }
 
         return ['text' => $text, 'usage' => $usage];
     }

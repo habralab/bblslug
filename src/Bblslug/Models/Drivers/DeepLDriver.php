@@ -1,5 +1,9 @@
 <?php
 
+/** @noinspection PhpUnhandledExceptionInspection */
+
+declare(strict_types=1);
+
 namespace Bblslug\Models\Drivers;
 
 use Bblslug\Models\ModelDriverInterface;
@@ -29,25 +33,41 @@ class DeepLDriver implements ModelDriverInterface
      */
     public function buildRequest(array $config, string $text, array $options): array
     {
-        $defaults = $config['defaults'] ?? [];
+        $defaults = \is_array($config['defaults'] ?? null) ? $config['defaults'] : [];
+
+        // Base payload fields
+        $payloadText = $text;
+        $targetLang  = \is_string($defaults['target_lang'] ?? null)
+            ? $defaults['target_lang']
+            : 'EN';
+        $formality   = \is_string($defaults['formality'] ?? null)
+            ? $defaults['formality']
+            : 'prefer_more';
 
         // Core payload
         $payload = [
-            'text' => $text,
-            'target_lang' => $defaults['target_lang'] ?? 'EN',
-            'formality' => $defaults['formality'] ?? 'prefer_more',
+            'text'        => $payloadText,
+            'target_lang' => $targetLang,
+            'formality'   => $formality,
         ];
 
         // Optional overrides
-        if (!empty($defaults['source_lang'])) {
-            $payload['source_lang'] = $defaults['source_lang'];
+        $src = $defaults['source_lang'] ?? null;
+        if (\is_string($src) && $src !== '') {
+            $payload['source_lang'] = $src;
         }
-        if (!empty($defaults['context'])) {
-            $payload['context'] = $defaults['context'];
+        $ctx = $defaults['context'] ?? null;
+        if (\is_scalar($ctx) || ($ctx instanceof \Stringable)) {
+            $ctxStr = \trim((string) $ctx);
+            if ($ctxStr !== '') {
+                $payload['context'] = $ctxStr;
+            }
         }
 
         // Format-specific adjustments
-        $format = $options['format'] ?? $defaults['format'] ?? 'text';
+        $format = \is_string($options['format'] ?? null)
+            ? $options['format']
+            : (\is_string($defaults['format'] ?? null) ? $defaults['format'] : 'text');
 
         switch ($format) {
             case 'html':
@@ -69,7 +89,7 @@ class DeepLDriver implements ModelDriverInterface
                     ','   => '<jcomma/>',
                     '"'   => '<jqt/>',
                 ];
-                $protectedText = strtr($payload['text'], $protect);
+                $protectedText = \strtr($payload['text'], $protect);
                 $payload['text'] = $protectedText;
                 break;
 
@@ -79,10 +99,21 @@ class DeepLDriver implements ModelDriverInterface
                 break;
         }
 
+        // Normalize return shape and types (url/headers)
+        $url = \is_string($config['endpoint'] ?? null) ? (string) $config['endpoint'] : '';
+        $headers = [];
+        $req = \is_array($config['requirements'] ?? null) ? $config['requirements'] : null;
+        $headersSrc = \is_array($req['headers'] ?? null) ? $req['headers'] : [];
+        foreach ((array) $headersSrc as $h) {
+            if (\is_string($h)) {
+                $headers[] = $h;
+            }
+        }
+
         return [
-            'url' => $config['endpoint'],
-            'headers' => $config['requirements']['headers'] ?? [],
-            'body' => http_build_query($payload),
+            'url'     => $url,
+            'headers' => $headers,
+            'body'    => \http_build_query($payload),
         ];
     }
 
@@ -98,31 +129,39 @@ class DeepLDriver implements ModelDriverInterface
      */
     public function parseResponse(array $config, string $responseBody): array
     {
-        $data = json_decode($responseBody, true);
-        if (
-            !isset($data['translations']) ||
-            !isset($data['translations'][0]['text'])
-        ) {
-            throw new \RuntimeException("DeepL translation failed: {$responseBody}");
+        $data = \json_decode($responseBody, true);
+        if (!\is_array($data)) {
+            throw new \RuntimeException("Invalid JSON response: {$responseBody}");
         }
 
-        $text = $data['translations'][0]['text'];
+        // translations[0]['text'] safe extraction
+        $translations = \is_array($data['translations'] ?? null) ? $data['translations'] : null;
+        if ($translations === null || !isset($translations[0]) || !\is_array($translations[0])) {
+            throw new \RuntimeException("DeepL translation failed: {$responseBody}");
+        }
+        $first = $translations[0];
+        $txt = $first['text'] ?? null;
+        if (!\is_string($txt)) {
+            throw new \RuntimeException("DeepL translation failed: {$responseBody}");
+        }
+        $text = $txt;
 
         // Restore any JSON pseudo-tags back to original characters
         $reverse = [
-            '<jlc/>'    => '{',
-            '<jrc/>'    => '}',
-            '<jlb/>'    => '[',
-            '<jrb/>'    => ']',
-            '<jcol/>'   => ':',
+            '<jlc/>' => '{',
+            '<jrc/>' => '}',
+            '<jlb/>' => '[',
+            '<jrb/>' => ']',
+            '<jcol/>' => ':',
             '<jcomma/>' => ',',
-            '<jqt/>'    => '"',
+            '<jqt/>' => '"',
         ];
-        $text = strtr($text, $reverse);
+        $text = \strtr($text, $reverse);
 
         return [
             'text'  => $text,
-            'usage' => null,  // DeepL API does not provide token usage
+            // DeepL API does not provide usage here
+            'usage' => null,
         ];
     }
 }
