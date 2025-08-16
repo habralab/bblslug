@@ -316,6 +316,9 @@ class Bblslug
         // Post-validation (after translation)
         if ($validate && $format !== 'text') {
             $say($onFeedback, "Post-validation started ({$format})", 'info');
+            // Track any micro-repairs applied during post-validation
+            $repairsApplied = false;
+            $repairsList = [];
             switch ($format) {
                 case 'json':
                     $postResult = (new JsonValidator())->validate($result);
@@ -326,7 +329,19 @@ class Bblslug
                         );
                     }
                     $parsedOut = json_decode($result, true);
-                    $schemaOut = Schema::capture($parsedOut);
+                    $parsedOutFixed = Schema::applyRepairs(
+                        $parsedIn,
+                        $parsedOut,
+                        [Schema::REPAIR_MISSING_NULLS]
+                    );
+                    if ($parsedOutFixed !== $parsedOut) {
+                        $repairsApplied = true;
+                        $repairsList[] = 'missing_nulls';
+                        if ($verbose) {
+                            $valLogPost .= "[JSON repairs applied: missing_nulls]\n";
+                        }
+                    }
+                    $schemaOut = Schema::capture($parsedOutFixed);
                     $schemaValidation = Schema::validate($schemaIn, $schemaOut);
                     if (! $schemaValidation->isValid()) {
                         throw new \RuntimeException(
@@ -335,7 +350,7 @@ class Bblslug
                         );
                     }
                     if ($verbose) {
-                        $valLogPost = "[JSON schema validated]\n";
+                        $valLogPost .= "[JSON schema validated]\n";
                     }
                     break;
 
@@ -357,6 +372,14 @@ class Bblslug
                     break;
             }
             $say($onFeedback, "Post-validation passed ({$format})", 'info');
+            if ($repairsApplied) {
+                // Warn initiator that structural auto-fixes were applied
+                $say(
+                    $onFeedback,
+                    "Post-validation applied JSON repairs ({$format}): " . implode(', ', $repairsList),
+                    'warning'
+                );
+            }
         }
 
         // Append post-validation log into response debug
