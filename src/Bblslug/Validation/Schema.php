@@ -46,10 +46,10 @@ class Schema
      * Apply selected micro-repairs to the `$after` value, using `$before` as reference.
      * Repairs are opt-in via feature flags to allow multiple independent fix-ups.
      *
-     * @param mixed $before   Source value before translation (reference structure)
-     * @param mixed $after    Value after translation (to be repaired)
-     * @param array $features List of feature flags (Schema::REPAIR_*)
-     * @return mixed          Repaired $after
+     * @param mixed                 $before   Source value before translation (reference structure)
+     * @param mixed                 $after    Value after translation (to be repaired)
+     * @param array<int,string>     $features List of feature flags (Schema::REPAIR_*)
+     * @return mixed                          Repaired $after
      */
     public static function applyRepairs(mixed $before, mixed $after, array $features = []): mixed
     {
@@ -95,20 +95,27 @@ class Schema
             $out = is_array($after) ? $after : [];
             $max = max(count($before), count($out));
             for ($i = 0; $i < $max; $i++) {
-                $bHas = array_key_exists($i, $before);
-                $aHas = array_key_exists($i, $out);
+                $bHas = \array_key_exists($i, $before);
+                $aHas = \array_key_exists($i, $out);
 
-                if ($bHas && !$aHas) {
+                if (! $bHas) {
+                    continue;
+                }
+
+                if (! $aHas) {
                     if ($before[$i] === null) {
                         $out[$i] = null;
                     }
                     // if $before[$i] !== null and missing in $after -> do not invent values
                     continue;
                 }
-                if ($bHas && $aHas) {
-                    $out[$i] = self::repairMissingNulls($before[$i], $out[$i]);
-                }
+
+                $out[$i] = self::repairMissingNulls(
+                    $before[$i],
+                    $out[$i]
+                );
             }
+
             // Preserve list semantics
             ksort($out);
             return $out;
