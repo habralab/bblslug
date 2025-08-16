@@ -348,42 +348,83 @@ class Bblslug
         // Post-validation (after translation)
         if ($validate) {
             $say($onFeedback, "Post-validation started ({$format})", 'info');
+
+            // Track micro-repairs applied during post-validation (from develop)
+            $repairsApplied = false;
+            $repairsList    = [];
+
             if ($format === 'json') {
+                // Ensure we have input schema captured (head branch safeguard)
                 if ($schemaIn === null) {
                     $schemaIn = Schema::capture(\json_decode($text, true));
                 }
+
+                // JSON syntax check
                 $postResult = (new JsonValidator())->validate($result);
                 if (! $postResult->isValid()) {
                     throw new \RuntimeException(
-                        "JSON syntax broken: " . implode('; ', $postResult->getErrors()) .
-                        "\n\n" . $debugRequest . $debugResponse
+                        "JSON syntax broken: " . implode('; ', $postResult->getErrors())
+                        . "\n\n" . $debugRequest . $debugResponse
                     );
                 }
-                $parsedOut = json_decode($result, true);
-                $schemaOut = Schema::capture($parsedOut);
+
+                // Decode produced JSON
+                /** @var mixed $parsedOut */
+                $parsedOut = \json_decode($result, true);
+
+                // Apply minimal non-destructive repairs from develop
+                /** @var mixed $parsedInLocal */
+                $parsedInLocal = \json_decode($text, true);
+                $parsedOutFixed = Schema::applyRepairs(
+                    $parsedInLocal,
+                    $parsedOut,
+                    [Schema::REPAIR_MISSING_NULLS]
+                );
+                if ($parsedOutFixed !== $parsedOut) {
+                    $repairsApplied = true;
+                    $repairsList[]  = 'missing_nulls';
+                    if ($verbose) {
+                        $valLogPost .= "[JSON repairs applied: missing_nulls]\n";
+                    }
+                }
+
+                // Schema validation (against possibly repaired output)
+                $schemaOut = Schema::capture($parsedOutFixed);
                 $schemaValidation = Schema::validate($schemaIn, $schemaOut);
+
                 if (! $schemaValidation->isValid()) {
                     throw new \RuntimeException(
-                        "Schema mismatch: " . implode('; ', $schemaValidation->getErrors()) .
-                        "\n\n" . $debugRequest . $debugResponse
+                        "Schema mismatch: "
+                        . implode('; ', $schemaValidation->getErrors())
+                        . "\n\n" . $debugRequest . $debugResponse
                     );
                 }
                 if ($verbose) {
-                    $valLogPost = "[JSON schema validated]\n";
+                    $valLogPost .= "[JSON schema validated]\n";
                 }
             } elseif ($format === 'html') {
                 $htmlValidator = new HtmlValidator();
                 $postResult = $htmlValidator->validate($result);
                 if (! $postResult->isValid()) {
                     throw new \RuntimeException(
-                        "HTML validation failed: " . implode('; ', $postResult->getErrors())
+                        "HTML validation failed: "
+                        . implode('; ', $postResult->getErrors())
                     );
                 }
                 if ($verbose) {
                     $valLogPost = "[HTML validation post-pass]\n";
                 }
             } // other formats: no container validation
+
             $say($onFeedback, "Post-validation passed ({$format})", 'info');
+            if ($repairsApplied) {
+                // Warn initiator that structural auto-fixes were applied
+                $say(
+                    $onFeedback,
+                    "Post-validation applied JSON repairs ({$format}): " . implode(', ', $repairsList),
+                    'warning'
+                );
+            }
         }
 
         // Append post-validation log into response debug
