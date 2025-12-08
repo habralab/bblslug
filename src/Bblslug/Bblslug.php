@@ -2,6 +2,7 @@
 
 namespace Bblslug;
 
+use Bblslug\Content\Transformer;
 use Bblslug\Filters\FilterManager;
 use Bblslug\HttpClient;
 use Bblslug\Models\ModelRegistry;
@@ -130,6 +131,7 @@ class Bblslug
         if ($validate && $format !== 'text') {
             switch ($format) {
                 case 'json':
+                case 'linedJson':
                     $jsonValidator = new JsonValidator();
                     $preResult = $jsonValidator->validate($text);
                     if (! $preResult->isValid()) {
@@ -299,7 +301,23 @@ class Bblslug
                         $valLogPost = "[JSON schema validated]\n";
                     }
                     break;
-
+                case 'linedJson':
+                    $postResult = (new JsonValidator())->validate($result);
+                    if (! $postResult->isValid()) {
+                        /**
+                         * Костыльно пытаемся исправить json. Иногда в конце строк лишнее "
+                         */
+                        $resultFixed = preg_replace('/([^\\\{1}])""/', '$1"', $result);
+                        $preResult = $jsonValidator->validate($resultFixed);
+                        if (!$preResult->isValid()) {
+                            throw new \RuntimeException(
+                                "JSON syntax broken: " . implode('; ', $postResult->getErrors()) .
+                                "\n\n" . $debugRequest . $debugResponse
+                            );
+                        }
+                        $result = $resultFixed;
+                    }
+                    break;
                 case 'html':
                     $htmlValidator = new HtmlValidator();
                     $postResult = $htmlValidator->validate($result);

@@ -99,8 +99,8 @@ class Cli
             );
         }
 
-        if (!in_array($format, ['text','html','json'], true)) {
-            Help::error("Invalid format: '{$format}'. Allowed: text, html, json.");
+        if (!in_array($format, ['text','html','json', 'linedJson'], true)) {
+            Help::error("Invalid format: '{$format}'. Allowed: text, html, json, linedJson.");
         }
 
         // Load API key
