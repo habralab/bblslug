@@ -35,5 +35,5 @@ interface ModelDriverInterface
      *
      * @throws \RuntimeException If the response is malformed or indicates an error
      */
-    public function parseResponse(array $config, string $responseBody): array;
+    public function parseResponse(array $config, string $responseBody, array $options): array;
 }

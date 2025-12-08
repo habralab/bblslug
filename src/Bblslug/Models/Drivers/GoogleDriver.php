@@ -60,9 +60,6 @@ class GoogleDriver implements ModelDriverInterface
             ]
         );
 
-        // Wrap user text in markers
-        $contentText = self::START . "\n" . $text . "\n" . self::END;
-
         // Build JSON payload
         $generationConfig = array_filter([
             'temperature' => (float) $temperature,
@@ -77,6 +74,16 @@ class GoogleDriver implements ModelDriverInterface
         ], fn($value) => $value !== null);
         if ($thinkingConfig) {
             $generationConfig['thinkingConfig'] = $thinkingConfig;
+        }
+
+        if (!empty($options['response_schema'])) {
+            // @link https://ai.google.dev/gemini-api/docs/structured-output
+            $generationConfig['response_schema'] = $this->adaptSchema($options['response_schema']);
+            $generationConfig['response_mime_type'] = 'application/json';
+            $contentText = $text;
+        } else {
+            // Wrap user text in markers
+            $contentText = self::START . "\n" . $text . "\n" . self::END;
         }
 
         $body = [
@@ -105,7 +112,7 @@ class GoogleDriver implements ModelDriverInterface
      *
      * @throws \RuntimeException If the response is malformed or markers are missing.
      */
-    public function parseResponse(array $config, string $responseBody): array
+    public function parseResponse(array $config, string $responseBody, array $options): array
     {
         $data = json_decode($responseBody, true);
         if (!is_array($data)) {
@@ -142,14 +149,18 @@ class GoogleDriver implements ModelDriverInterface
             }
         }
 
-        // Extract between markers
-        $pattern = '/' . preg_quote(self::START, '/') . '(.*?)' . preg_quote(self::END, '/') . '/s';
+        if (!empty($options['response_schema'])) {
+            $text = $accumulated;
+        } else {
+            // Extract between markers
+            $pattern = '/' . preg_quote(self::START, '/') . '(.*?)' . preg_quote(self::END, '/') . '/s';
 
-        if (!preg_match($pattern, $accumulated, $matches)) {
-            throw new \RuntimeException("Markers not found in Gemini response");
+            if (!preg_match($pattern, $accumulated, $matches)) {
+                throw new \RuntimeException("Markers not found in Gemini response");
+            }
+
+            $text = trim($matches[1]);
         }
-
-        $text = trim($matches[1]);
 
         // Usage metadata
         $usage = $data['usageMetadata'] ?? null;
@@ -158,5 +169,20 @@ class GoogleDriver implements ModelDriverInterface
             'text'  => $text,
             'usage' => $usage,
         ];
+    }
+
+    protected function adaptSchema(array $schema): array
+    {
+        if (\array_key_exists('additionalProperties', $schema)) {
+            unset($schema['additionalProperties']);
+        }
+
+        foreach ($schema as $key => $value) {
+            if (\is_array($value)) {
+                $schema[$key] = $this->adaptSchema($value);
+            }
+        }
+
+        return $schema;
     }
 }

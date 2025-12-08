@@ -89,7 +89,7 @@ class XaiDriver implements ModelDriverInterface
      *
      * @throws \RuntimeException If the response is malformed or markers are missing.
      */
-    public function parseResponse(array $config, string $responseBody): array
+    public function parseResponse(array $config, string $responseBody, array $options): array
     {
         $data = json_decode($responseBody, true);
 
