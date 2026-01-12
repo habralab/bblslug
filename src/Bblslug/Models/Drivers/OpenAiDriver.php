@@ -54,10 +54,25 @@ class OpenAiDriver implements ModelDriverInterface
             ]
         );
 
+        $responseFormat = [];
+        if (!empty($options['response_schema'])) {
+            $content = $text;
+            $responseFormat = [
+                'type'        => 'json_schema',
+                'json_schema' => [
+                    'strict' =>  $options['strict'] ?? true,
+                    "name" => $options['response_schema_name'] ?? 'anonymous',
+                    "schema" => $options['response_schema'],
+                ],
+            ];
+        } else {
+            $content = self::START . "\n{$text}\n" . self::END;
+        }
+
         // Compose chat messages
         $messages = [
             ['role' => 'system', 'content' => $systemPrompt],
-            ['role' => 'user',   'content' => self::START . "\n{$text}\n" . self::END],
+            ['role' => 'user',   'content' => $content],
         ];
 
         $payload = [
@@ -65,6 +80,10 @@ class OpenAiDriver implements ModelDriverInterface
             'messages'    => $messages,
             'temperature' => (float) $temperature,
         ];
+
+        if (count($responseFormat) > 0) {
+            $payload['response_format'] = $responseFormat;
+        }
 
         return [
             'url'     => $config['endpoint'],
@@ -86,7 +105,7 @@ class OpenAiDriver implements ModelDriverInterface
      *
      * @throws \RuntimeException If the response is malformed or markers are missing.
      */
-    public function parseResponse(array $config, string $responseBody): array
+    public function parseResponse(array $config, string $responseBody, array $options): array
     {
         $data = json_decode($responseBody, true);
         if (!is_array($data)) {
@@ -111,12 +130,16 @@ class OpenAiDriver implements ModelDriverInterface
             throw new \RuntimeException("OpenAI translation failed: {$responseBody}");
         }
 
-        // Extract between markers
-        $pattern = '/' . preg_quote(self::START, '/') . '(.*?)' . preg_quote(self::END, '/') . '/s';
-        if (!preg_match($pattern, $content, $matches)) {
-            throw new \RuntimeException("Markers not found in OpenAI response");
+        if (!empty($options['response_schema'])) {
+            $text = $content;
+        } else {
+            // Extract between markers
+            $pattern = '/' . preg_quote(self::START, '/') . '(.*?)' . preg_quote(self::END, '/') . '/s';
+            if (!preg_match($pattern, $content, $matches)) {
+                throw new \RuntimeException("Markers not found in OpenAI response");
+            }
+            $text = trim($matches[1]);
         }
-        $text = trim($matches[1]);
 
         // Usage statistics
         $usage = $data['usage'] ?? null;

@@ -2,6 +2,7 @@
 
 namespace Bblslug;
 
+use Bblslug\Content\Transformer;
 use Bblslug\Filters\FilterManager;
 use Bblslug\HttpClient;
 use Bblslug\Models\ModelRegistry;
@@ -83,7 +84,7 @@ class Bblslug
         string $apiKey,
         string $format,
         string $modelKey,
-        string $text,
+        string|array $text,
         // Optional arguments (alphabetical)
         ?string $context = null,
         bool $dryRun = false,
@@ -123,13 +124,13 @@ class Bblslug
             $model['defaults']['context'] = $context;
         }
 
-        // Measure original length
         $originalLength = mb_strlen($text);
 
         // Pre-validation (before filters)
         if ($validate && $format !== 'text') {
             switch ($format) {
                 case 'json':
+                case 'structured_json':
                     $jsonValidator = new JsonValidator();
                     $preResult = $jsonValidator->validate($text);
                     if (! $preResult->isValid()) {
@@ -171,7 +172,7 @@ class Bblslug
         // Length guard: make sure prepared text fits model constraints
         $lengthValidator = TextLengthValidator::fromModelConfig($model);
         $lenResult = $lengthValidator->validate($prepared);
-        if (! $lenResult->isValid()) {
+        if (!$lenResult->isValid()) {
             throw new \RuntimeException(
                 "Input length exceeds model limits: " . implode('; ', $lenResult->getErrors())
             );
@@ -256,7 +257,7 @@ class Bblslug
                 );
             }
             try {
-                $parsed     = $driver->parseResponse($model, $raw);
+                $parsed     = $driver->parseResponse($model, $raw, $options);
                 $translated = $parsed['text'];
                 $rawUsage   = $parsed['usage'] ?? null;
             } catch (\RuntimeException $e) {
@@ -279,6 +280,7 @@ class Bblslug
         if ($validate && $format !== 'text') {
             switch ($format) {
                 case 'json':
+                case 'structured_json':
                     $postResult = (new JsonValidator())->validate($result);
                     if (! $postResult->isValid()) {
                         throw new \RuntimeException(
@@ -299,7 +301,6 @@ class Bblslug
                         $valLogPost = "[JSON schema validated]\n";
                     }
                     break;
-
                 case 'html':
                     $htmlValidator = new HtmlValidator();
                     $postResult = $htmlValidator->validate($result);

@@ -96,7 +96,7 @@ class DeepLDriver implements ModelDriverInterface
      *
      * @throws \RuntimeException If the response format is unexpected.
      */
-    public function parseResponse(array $config, string $responseBody): array
+    public function parseResponse(array $config, string $responseBody, array $options): array
     {
         $data = json_decode($responseBody, true);
         if (
