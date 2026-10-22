@@ -160,6 +160,54 @@ final class HttpClientTest extends TestCase
     }
 
     /** @test */
+    public function dryRunMasksRawAndEncodedSecretsInUrl(): void
+    {
+        $secret = 'demo +/key=value';
+        $encodedSecret = rawurlencode($secret);
+        $formEncodedSecret = urlencode($secret);
+        $url = $this->url('/echo?raw=' . $secret . '&encoded=' . $encodedSecret . '&form=' . $formEncodedSecret);
+
+        $resp = HttpClient::request(
+            method: 'GET',
+            url: $url,
+            dryRun: true,
+            maskPatterns: [$secret],
+            verbose: true
+        );
+
+        $this->assertStringContainsString('GET ' . $this->url('/echo'), $resp['debugRequest']);
+        $this->assertStringNotContainsString($secret, $resp['debugRequest']);
+        $this->assertStringNotContainsString($encodedSecret, $resp['debugRequest']);
+        $this->assertStringNotContainsString($formEncodedSecret, $resp['debugRequest']);
+        $this->assertStringContainsString('***', $resp['debugRequest']);
+    }
+
+    /** @test */
+    public function verboseRequestMasksUrlWithoutChangingSentBody(): void
+    {
+        $secret = 'demo+/key=value';
+        $encodedSecret = rawurlencode($secret);
+        $body = 'token=' . $secret;
+
+        $resp = HttpClient::request(
+            method: 'POST',
+            url: $this->url('/echo?key=' . $encodedSecret),
+            body: $body,
+            headers: ['Content-Type: application/x-www-form-urlencoded'],
+            maskPatterns: [$secret],
+            verbose: true
+        );
+
+        $this->assertSame(200, $resp['status']);
+        $this->assertStringNotContainsString($secret, $resp['debugRequest']);
+        $this->assertStringNotContainsString($encodedSecret, $resp['debugRequest']);
+        $this->assertStringContainsString('***', $resp['debugRequest']);
+
+        $data = json_decode($resp['body'], true, 512, JSON_THROW_ON_ERROR);
+        $this->assertSame($body, $data['body']);
+    }
+
+    /** @test */
     public function verboseSuccessParsesHeadersAndMasksResponse(): void
     {
         $secret = 'TOPSECRET';

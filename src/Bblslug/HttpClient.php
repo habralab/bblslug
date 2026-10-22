@@ -52,11 +52,13 @@ class HttpClient
         $connectTimeoutSeconds = self::resolveTimeout($connectTimeoutSeconds, 'BBLSLUG_HTTP_CONNECT_TIMEOUT', 10);
 
         // Prepare masked copies for logging
+        $logUrl = $url;
         $logHeaders = $headers;
         $logBody    = $body;
 
         if (!empty($maskPatterns)) {
             foreach ($maskPatterns as $pat) {
+                $logUrl = str_replace([$pat, rawurlencode($pat), urlencode($pat)], '***', $logUrl);
                 foreach ($logHeaders as &$h) {
                     $h = str_replace($pat, '***', $h);
                 }
@@ -72,7 +74,7 @@ class HttpClient
                    ? 'Dry-run: request (not sent)'
                    : 'Verbose: request preview';
             $debugRequest .= "\n\033[1m{$title}\033[0m\n";
-            $debugRequest .= "{$method} {$url}\n\nHeaders:\n";
+            $debugRequest .= "{$method} {$logUrl}\n\nHeaders:\n";
             foreach ($logHeaders as $h) {
                 $debugRequest .= "  {$h}\n";
             }
