@@ -55,7 +55,8 @@ final class HttpClientTest extends TestCase
 
         // Start PHP built-in server with our router.
         $cmd = sprintf(
-            'php -S %s:%d %s',
+            '%s -S %s:%d %s',
+            escapeshellarg(PHP_BINARY),
             self::$host,
             self::$port,
             escapeshellarg($router)
