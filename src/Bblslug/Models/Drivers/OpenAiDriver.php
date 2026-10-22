@@ -10,7 +10,7 @@ use Bblslug\Models\Prompts;
 /**
  * OpenAI GPT translation driver.
  *
- * Builds requests and parses responses for the OpenAI Chat Completions API.
+ * Builds requests and parses responses for OpenAI text-generation APIs.
  */
 class OpenAiDriver implements ModelDriverInterface
 {
@@ -88,15 +88,36 @@ class OpenAiDriver implements ModelDriverInterface
             ['role' => 'user',   'content' => self::START . "\n{$text}\n" . self::END],
         ];
 
-        $payload = [
-            'model'       => $model,
-            'messages'    => $messages,
-        ];
+        $apiType = \is_string($config['api_type'] ?? null)
+            ? \strtolower($config['api_type'])
+            : 'chat_completions';
+        if (!\in_array($apiType, ['chat_completions', 'responses', 'completions'], true)) {
+            throw new \InvalidArgumentException("Unsupported OpenAI API type '{$apiType}'");
+        }
+
+        $payload = match ($apiType) {
+            'responses' => [
+                'model' => $model,
+                'input' => $messages,
+            ],
+            'completions' => [
+                'model' => $model,
+                'prompt' => $systemPrompt . "\n\n" . self::START . "\n{$text}\n" . self::END,
+            ],
+            default => [
+                'model' => $model,
+                'messages' => $messages,
+            ],
+        };
         if ($temperature !== null) {
             $payload['temperature'] = $temperature;
         }
         if (\is_string($settings['reasoning_effort'] ?? null)) {
-            $payload['reasoning_effort'] = $settings['reasoning_effort'];
+            if ($apiType === 'responses') {
+                $payload['reasoning'] = ['effort' => $settings['reasoning_effort']];
+            } else {
+                $payload['reasoning_effort'] = $settings['reasoning_effort'];
+            }
         }
         if (isset($settings['max_completion_tokens'])) {
             $budget = $settings['max_completion_tokens'];
@@ -106,7 +127,12 @@ class OpenAiDriver implements ModelDriverInterface
             ) {
                 throw new \InvalidArgumentException('max_completion_tokens must be a positive integer');
             }
-            $payload['max_completion_tokens'] = (int)$budget;
+            $budgetKey = match ($apiType) {
+                'responses' => 'max_output_tokens',
+                'completions' => 'max_tokens',
+                default => 'max_completion_tokens',
+            };
+            $payload[$budgetKey] = (int)$budget;
         }
 
         // Normalize return shape and types
@@ -147,20 +173,35 @@ class OpenAiDriver implements ModelDriverInterface
         if (!is_array($data)) {
             throw new \RuntimeException("Invalid JSON response: {$responseBody}");
         }
+        /** @var array<string,mixed> $data */
 
-        // Extract the first choice safely
+        if (($data['status'] ?? null) === 'incomplete' || ($data['status'] ?? null) === 'failed') {
+            $status = (string)$data['status'];
+            $reason = \is_array($data['incomplete_details'] ?? null)
+                ? ($data['incomplete_details']['reason'] ?? null)
+                : null;
+            $detail = \is_string($reason) ? $reason : '';
+            throw new \RuntimeException("OpenAI response is {$status}" . ($detail !== '' ? ": {$detail}" : ''));
+        }
+        if (\is_array($data['error'] ?? null) && \is_string($data['error']['message'] ?? null)) {
+            throw new \RuntimeException('OpenAI API error: ' . $data['error']['message']);
+        }
+        if (isset($data['incomplete_details'])) {
+            throw new \RuntimeException("OpenAI response did not complete: {$responseBody}");
+        }
+
+        $refusal = $this->extractRefusal($data);
+        if ($refusal !== null) {
+            throw new \RuntimeException('OpenAI response refused: ' . $refusal);
+        }
+
+        $contentRaw = $this->extractText($data);
+
         $first = null;
         $choices = $data['choices'] ?? null;
         if (\is_array($choices) && isset($choices[0]) && \is_array($choices[0])) {
             $first = $choices[0];
         }
-
-        // Extract raw content early
-        $contentRaw = '';
-        if (\is_array($first) && \is_array($first['message'] ?? null)) {
-            $contentRaw = $first['message']['content'] ?? '';
-        }
-        $contentRaw = \is_string($contentRaw) ? $contentRaw : '';
 
         // If OpenAI cut output by tokens, fail with a clear message before marker search
         $finishReason = null;
@@ -202,5 +243,64 @@ class OpenAiDriver implements ModelDriverInterface
         }
 
         return ['text' => $text, 'usage' => $usage];
+    }
+
+    /** @param array<string,mixed> $data */
+    private function extractText(array $data): string
+    {
+        if (\is_string($data['output_text'] ?? null)) {
+            return $data['output_text'];
+        }
+
+        $output = $data['output'] ?? null;
+        if (\is_array($output)) {
+            $parts = '';
+            foreach ($output as $item) {
+                if (!\is_array($item) || !\is_array($item['content'] ?? null)) {
+                    continue;
+                }
+                foreach ($item['content'] as $part) {
+                    if (\is_array($part) && \is_string($part['text'] ?? null)) {
+                        $parts .= $part['text'];
+                    }
+                }
+            }
+            if ($parts !== '') {
+                return $parts;
+            }
+        }
+
+        $choices = $data['choices'] ?? null;
+        if (\is_array($choices) && isset($choices[0]) && \is_array($choices[0])) {
+            $choice = $choices[0];
+            if (\is_string($choice['text'] ?? null)) {
+                return $choice['text'];
+            }
+            if (\is_array($choice['message'] ?? null) && \is_string($choice['message']['content'] ?? null)) {
+                return $choice['message']['content'];
+            }
+        }
+
+        return '';
+    }
+
+    /** @param array<string,mixed> $data */
+    private function extractRefusal(array $data): ?string
+    {
+        $output = $data['output'] ?? null;
+        if (!\is_array($output)) {
+            return null;
+        }
+        foreach ($output as $item) {
+            if (!\is_array($item) || !\is_array($item['content'] ?? null)) {
+                continue;
+            }
+            foreach ($item['content'] as $part) {
+                if (\is_array($part) && \is_string($part['refusal'] ?? null)) {
+                    return $part['refusal'];
+                }
+            }
+        }
+        return null;
     }
 }

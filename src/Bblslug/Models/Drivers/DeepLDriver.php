@@ -21,6 +21,7 @@ class DeepLDriver implements ModelDriverInterface
      * @param array<string,mixed> $config  Model config from registry (endpoint, requirements, defaults…)
      * @param string              $text    Input text (placeholders already applied)
      * @param array<string,mixed> $options Options:
+     *     - model_type (string) Translation engine: quality_optimized, prefer_quality_optimized, latency_optimized.
      *     - dryRun    (bool)   Skip real HTTP call
      *     - format    (string) 'text', 'html' or 'json'
      *     - verbose   (bool)   Include debug logs
@@ -50,6 +51,14 @@ class DeepLDriver implements ModelDriverInterface
             'target_lang' => $targetLang,
             'formality'   => $formality,
         ];
+
+        $modelType = $options['model_type'] ?? ($defaults['model_type'] ?? null);
+        if ($modelType !== null) {
+            if (!in_array($modelType, ['quality_optimized', 'prefer_quality_optimized', 'latency_optimized'], true)) {
+                throw new \InvalidArgumentException('Unsupported DeepL model_type');
+            }
+            $payload['model_type'] = $modelType;
+        }
 
         // Optional overrides
         $src = $defaults['source_lang'] ?? null;

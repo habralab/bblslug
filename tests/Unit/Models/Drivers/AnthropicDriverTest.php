@@ -127,4 +127,34 @@ final class AnthropicDriverTest extends TestCase
         $this->expectException(\InvalidArgumentException::class);
         (new AnthropicDriver())->buildRequest($config, 'Hello', ['maxTokens' => '1.5']);
     }
+
+    public function testAdaptiveThinkingOmitsTemperatureAndUsesEffort(): void
+    {
+        $request = (new AnthropicDriver())->buildRequest([
+            'endpoint' => 'https://api.anthropic.com/v1/messages',
+            'defaults' => [
+                'model' => 'claude-opus-4-8',
+                'temperature' => 0.2,
+                'thinking' => 'adaptive',
+            ],
+        ], 'Hello', ['effort' => 'high']);
+        $body = json_decode($request['body'], true, 512, JSON_THROW_ON_ERROR);
+
+        $this->assertArrayNotHasKey('temperature', $body);
+        $this->assertSame(['type' => 'adaptive'], $body['thinking']);
+        $this->assertSame(['effort' => 'high'], $body['output_config']);
+    }
+
+    public function testLegacyThinkingKeepsTemperatureAndDoesNotInventEffort(): void
+    {
+        $request = (new AnthropicDriver())->buildRequest([
+            'endpoint' => 'https://api.anthropic.com/v1/messages',
+            'defaults' => ['model' => 'claude-3-haiku-20240307', 'temperature' => 0.2],
+        ], 'Hello', []);
+        $body = json_decode($request['body'], true, 512, JSON_THROW_ON_ERROR);
+
+        $this->assertSame(0.2, $body['temperature']);
+        $this->assertArrayNotHasKey('thinking', $body);
+        $this->assertArrayNotHasKey('output_config', $body);
+    }
 }

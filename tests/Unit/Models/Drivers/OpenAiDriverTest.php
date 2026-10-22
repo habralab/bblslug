@@ -89,4 +89,80 @@ final class OpenAiDriverTest extends TestCase
         $this->expectException(\InvalidArgumentException::class);
         (new OpenAiDriver())->buildRequest($config, 'Hello', ['max_completion_tokens' => '1.5']);
     }
+
+    public function testResponsesApiUsesNativeInputAndOutputOptions(): void
+    {
+        $config = [
+            'endpoint' => 'https://api.openai.com/v1/responses',
+            'api_type' => 'responses',
+            'defaults' => ['model' => 'gpt-5.1', 'reasoning_effort' => 'low'],
+        ];
+        $driver = new OpenAiDriver();
+        $body = json_decode($driver->buildRequest($config, 'Hello', [
+            'max_completion_tokens' => 512,
+        ])['body'], true, 512, JSON_THROW_ON_ERROR);
+
+        $this->assertSame('gpt-5.1', $body['model']);
+        $this->assertSame('low', $body['reasoning']['effort']);
+        $this->assertSame(512, $body['max_output_tokens']);
+        $this->assertSame('Hola', $driver->parseResponse($config, json_encode([
+            'output' => [[
+                'type' => 'message',
+                'content' => [
+                    ['type' => 'output_text', 'text' => "‹‹TRANSLATION››\nHo"],
+                    ['type' => 'output_text', 'text' => "la\n‹‹END››"],
+                ],
+            ]]], JSON_THROW_ON_ERROR))['text']);
+    }
+
+    public function testLegacyCompletionsApiUsesPromptAndParsesText(): void
+    {
+        $config = [
+            'endpoint' => 'https://api.openai.com/v1/completions',
+            'api_type' => 'completions',
+            'defaults' => ['model' => 'text-davinci-003'],
+        ];
+        $driver = new OpenAiDriver();
+        $body = json_decode($driver->buildRequest($config, 'Hello', [
+            'max_completion_tokens' => 128,
+        ])['body'], true, 512, JSON_THROW_ON_ERROR);
+
+        $this->assertSame('text-davinci-003', $body['model']);
+        $this->assertStringContainsString('Hello', $body['prompt']);
+        $this->assertSame(128, $body['max_tokens']);
+        $this->assertSame('Hola', $driver->parseResponse($config, json_encode([
+            'choices' => [['text' => "‹‹TRANSLATION››\nHola\n‹‹END››"]],
+        ], JSON_THROW_ON_ERROR))['text']);
+    }
+
+    public function testUnknownApiTypeIsRejected(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        (new OpenAiDriver())->buildRequest([
+            'endpoint' => 'https://example.test',
+            'api_type' => 'audio',
+            'defaults' => ['model' => 'gpt-audio'],
+        ], 'Hello', []);
+    }
+
+    public function testIncompleteResponsesAreRejected(): void
+    {
+        $this->expectException(\RuntimeException::class);
+        (new OpenAiDriver())->parseResponse([], json_encode([
+            'status' => 'incomplete',
+            'incomplete_details' => ['reason' => 'max_output_tokens'],
+        ], JSON_THROW_ON_ERROR));
+    }
+
+    public function testResponsesRefusalIsReported(): void
+    {
+        $this->expectExceptionMessage('OpenAI response refused: policy restriction');
+        (new OpenAiDriver())->parseResponse([], json_encode([
+            'status' => 'completed',
+            'output' => [[
+                'type' => 'message',
+                'content' => [['type' => 'refusal', 'refusal' => 'policy restriction']],
+            ]],
+        ], JSON_THROW_ON_ERROR));
+    }
 }

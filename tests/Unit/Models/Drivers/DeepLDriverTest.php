@@ -17,6 +17,29 @@ use RuntimeException;
 final class DeepLDriverTest extends TestCase
 {
     /** @test */
+    public function translationEngineCanBeSelectedWithoutChangingText(): void
+    {
+        $driver = new DeepLDriver();
+        foreach (['quality_optimized', 'prefer_quality_optimized', 'latency_optimized'] as $engine) {
+            $request = $driver->buildRequest(
+                ['endpoint' => 'https://api.deepl.com/v2/translate'],
+                'Hello',
+                ['format' => 'text', 'model_type' => $engine]
+            );
+            parse_str($request['body'], $params);
+            $this->assertSame($engine, $params['model_type']);
+            $this->assertSame('Hello', $params['text']);
+        }
+    }
+
+    /** @test */
+    public function unsupportedTranslationEngineIsRejected(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        (new DeepLDriver())->buildRequest([], 'Hello', ['model_type' => 'unknown']);
+    }
+
+    /** @test */
     public function buildRequestTextFormat(): void
     {
         $driver = new DeepLDriver();

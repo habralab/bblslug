@@ -31,6 +31,7 @@ class GoogleDriver implements ModelDriverInterface
      *     - promptKey       (string)      Key of the prompt template in prompts.yaml.
      *     - temperature     (float)       Sampling temperature.
      *     - thinkingBudget  (int|null)    Budget for internal reasoning (Gemini 2.5+).
+     *     - thinkingLevel   (string|null) Reasoning level for models that support it.
      *     - verbose         (bool)        Include debug logs (ignored here).
      *
      * @return array{url:string, headers:string[], body:string}
@@ -54,6 +55,8 @@ class GoogleDriver implements ModelDriverInterface
         $includeThoughts = null;
         if (\array_key_exists('includeThoughts', $options)) {
             $includeThoughts = (bool) $options['includeThoughts'];
+        } elseif (\array_key_exists('includeThoughts', $defaults)) {
+            $includeThoughts = (bool) $defaults['includeThoughts'];
         }
 
         $motRaw = $options['maxOutputTokens'] ?? ($defaults['maxOutputTokens'] ?? null);
@@ -71,10 +74,13 @@ class GoogleDriver implements ModelDriverInterface
             ? (float) $tempRaw
             : 0.0;
 
-        $tbRaw = $options['thinkingBudget'] ?? null;
+        $tbRaw = $options['thinkingBudget'] ?? ($defaults['thinkingBudget'] ?? null);
         $thinkingBudget = ($tbRaw !== null && (\is_int($tbRaw) || \is_numeric($tbRaw)))
             ? (int) $tbRaw
             : null;
+
+        $levelRaw = $options['thinkingLevel'] ?? ($defaults['thinkingLevel'] ?? null);
+        $thinkingLevel = \is_string($levelRaw) && $levelRaw !== '' ? $levelRaw : null;
 
         // Render system prompt from YAML templates
         $systemText = Prompts::render(
@@ -102,7 +108,9 @@ class GoogleDriver implements ModelDriverInterface
             $generationConfig['maxOutputTokens'] = $maxOutputTokens;
         }
         $thinking = [];
-        if ($thinkingBudget !== null) {
+        if ($thinkingLevel !== null) {
+            $thinking['thinkingLevel'] = $thinkingLevel;
+        } elseif ($thinkingBudget !== null) {
             $thinking['thinkingBudget'] = $thinkingBudget;
         }
         if ($includeThoughts !== null) {

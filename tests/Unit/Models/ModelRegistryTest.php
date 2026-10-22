@@ -34,8 +34,6 @@ class ModelRegistryTest extends TestCase
         'yandex:gpt-lite',
         'yandex:gpt-pro',
         'yandex:gpt-32k',
-        'yandex:llama-lite',
-        'yandex:llama',
     ];
 
     protected function setUp(): void
@@ -134,8 +132,6 @@ class ModelRegistryTest extends TestCase
             'yandex:gpt-lite'              => 'YANDEX_API_KEY',
             'yandex:gpt-pro'               => 'YANDEX_API_KEY',
             'yandex:gpt-32k'               => 'YANDEX_API_KEY',
-            'yandex:llama-lite'            => 'YANDEX_API_KEY',
-            'yandex:llama'                 => 'YANDEX_API_KEY',
         ];
 
         foreach ($expected as $modelKey => $envName) {
@@ -155,9 +151,7 @@ class ModelRegistryTest extends TestCase
             'yandex:gpt-lite',
             'yandex:gpt-pro',
             'yandex:gpt-32k',
-            'yandex:llama-lite',
-            'yandex:llama',
-        ];
+                ];
         foreach ($yandexModels as $modelKey) {
             $this->assertSame(
                 ['folder_id' => 'YANDEX_FOLDER_ID'],
@@ -195,8 +189,6 @@ class ModelRegistryTest extends TestCase
             'yandex:gpt-lite'              => 'yandex.cloud/en/docs/foundation-models/api-ref/authentication',
             'yandex:gpt-pro'               => 'yandex.cloud/en/docs/foundation-models/api-ref/authentication',
             'yandex:gpt-32k'               => 'yandex.cloud/en/docs/foundation-models/api-ref/authentication',
-            'yandex:llama-lite'            => 'yandex.cloud/en/docs/foundation-models/api-ref/authentication',
-            'yandex:llama'                 => 'yandex.cloud/en/docs/foundation-models/api-ref/authentication',
         ];
 
         foreach ($expected as $modelKey => $urlSubstring) {
@@ -260,8 +252,6 @@ class ModelRegistryTest extends TestCase
             'yandex:gpt-lite'              => YandexDriver::class,
             'yandex:gpt-pro'               => YandexDriver::class,
             'yandex:gpt-32k'               => YandexDriver::class,
-            'yandex:llama-lite'            => YandexDriver::class,
-            'yandex:llama'                 => YandexDriver::class,
         ];
 
         foreach ($map as $modelKey => $driverClass) {

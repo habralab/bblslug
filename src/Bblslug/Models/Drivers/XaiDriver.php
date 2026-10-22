@@ -27,7 +27,9 @@ class XaiDriver implements ModelDriverInterface
      *     - dryRun      (bool)        Skip API call (ignored here).
      *     - format      (string)      Indicates which prompt format to use.
      *     - promptKey   (string)      Key of the prompt template in prompts.yaml.
-     *     - temperature (float)       Sampling temperature.
+     *     - temperature (float|null)  Sampling temperature; null omits it.
+     *     - reasoning_effort (string) Reasoning effort for supported Grok models.
+     *     - max_completion_tokens (int) Optional output budget.
      *     - verbose     (bool)        Include debug logs (ignored here).
      *
      * @return array{url:string, headers:string[], body:string}
@@ -65,10 +67,9 @@ class XaiDriver implements ModelDriverInterface
             ? $defaults['target_lang']
             : 'EN';
 
-        $tempRaw = $options['temperature'] ?? ($defaults['temperature'] ?? 0.0);
-        $temperature = (\is_float($tempRaw) || \is_int($tempRaw) || \is_numeric($tempRaw))
-            ? (float)$tempRaw
-            : 0.0;
+        $settings = array_replace($defaults, $options);
+        $tempRaw = \array_key_exists('temperature', $settings) ? $settings['temperature'] : 0.0;
+        $temperature = $tempRaw === null ? null : (\is_numeric($tempRaw) ? (float)$tempRaw : 0.0);
 
         // Render system prompt
         $systemPrompt = Prompts::render(
@@ -91,10 +92,39 @@ class XaiDriver implements ModelDriverInterface
 
         $payload = [
             'model'       => $model,
-            'messages'    => $messages,
-            'temperature' => $temperature,
-            'stream'      => false,
         ];
+        $apiType = \is_string($config['api_type'] ?? null)
+            ? \strtolower($config['api_type'])
+            : 'chat_completions';
+        if (!\in_array($apiType, ['chat_completions', 'responses'], true)) {
+            throw new \InvalidArgumentException("Unsupported xAI API type '{$apiType}'");
+        }
+        if ($apiType === 'responses') {
+            $payload['input'] = $messages;
+        } else {
+            $payload['messages'] = $messages;
+            $payload['stream'] = false;
+        }
+        if ($temperature !== null) {
+            $payload['temperature'] = $temperature;
+        }
+        if (\is_string($settings['reasoning_effort'] ?? null)) {
+            if ($apiType === 'responses') {
+                $payload['reasoning'] = ['effort' => $settings['reasoning_effort']];
+            } else {
+                $payload['reasoning_effort'] = $settings['reasoning_effort'];
+            }
+        }
+        if (isset($settings['max_completion_tokens'])) {
+            $budget = $settings['max_completion_tokens'];
+            if (
+                (!\is_int($budget) && !\is_string($budget))
+                || filter_var($budget, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) === false
+            ) {
+                throw new \InvalidArgumentException('max_completion_tokens must be a positive integer');
+            }
+            $payload[$apiType === 'responses' ? 'max_output_tokens' : 'max_tokens'] = (int)$budget;
+        }
 
         // Normalize return shape and types
         $url = \is_string($config['endpoint'] ?? null) ? (string)$config['endpoint'] : '';
@@ -146,6 +176,16 @@ class XaiDriver implements ModelDriverInterface
             throw new \RuntimeException("Grok API error [{$code}]: {$msg}");
         }
 
+        $isResponses = \array_key_exists('output', $data);
+        if (
+            $isResponses && \is_string($data['status'] ?? null)
+            && $data['status'] !== 'completed'
+        ) {
+            throw new \RuntimeException(
+                "Grok Responses API did not complete the request: {$data['status']}"
+            );
+        }
+
         // Extract the first choice safely
         $first = null;
         $choices = $data['choices'] ?? null;
@@ -157,6 +197,50 @@ class XaiDriver implements ModelDriverInterface
         $content = null;
         if (\is_array($first) && \is_array($first['message'] ?? null)) {
             $content = $first['message']['content'] ?? null;
+        }
+        if (!\is_string($content)) {
+            $output = $data['output'] ?? null;
+            if (\is_array($output)) {
+                $outputText = '';
+                foreach ($output as $item) {
+                    if (!\is_array($item)) {
+                        continue;
+                    }
+                    if (
+                        ($item['type'] ?? null) === 'refusal'
+                        || \is_string($item['refusal'] ?? null)
+                    ) {
+                        throw new \RuntimeException('Grok Responses API returned a refusal');
+                    }
+                    if (($item['type'] ?? null) !== 'message') {
+                        continue;
+                    }
+                    $parts = $item['content'] ?? null;
+                    if (!\is_array($parts)) {
+                        continue;
+                    }
+                    foreach ($parts as $part) {
+                        if (!\is_array($part)) {
+                            continue;
+                        }
+                        if (
+                            ($part['type'] ?? null) === 'refusal'
+                            || \is_string($part['refusal'] ?? null)
+                        ) {
+                            throw new \RuntimeException('Grok Responses API returned a refusal');
+                        }
+                        if (
+                            ($part['type'] ?? null) === 'output_text'
+                            && \is_string($part['text'] ?? null)
+                        ) {
+                            $outputText .= $part['text'];
+                        }
+                    }
+                }
+                if ($outputText !== '') {
+                    $content = $outputText;
+                }
+            }
         }
         if (!\is_string($content)) {
             throw new \RuntimeException("Grok translation failed: {$responseBody}");

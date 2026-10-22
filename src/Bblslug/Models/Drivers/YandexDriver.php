@@ -80,8 +80,11 @@ class YandexDriver implements ModelDriverInterface
             ? (float)$tempRaw
             : 0.0;
 
-        // Construct model URI.
-        $modelUri = \sprintf('gpt://%s/%s', $folderId, $modelName);
+        // Construct model URI for the native API. OpenAI-compatible requests
+        // accept the same URI in the model field, but use a different payload.
+        $modelUri = \str_starts_with($modelName, 'gpt://')
+            ? $modelName
+            : \sprintf('gpt://%s/%s', $folderId, $modelName);
 
         // Render system prompt
         $systemPrompt = Prompts::render(
@@ -102,16 +105,41 @@ class YandexDriver implements ModelDriverInterface
             ['role' => 'user',   'text' => self::START . "\n{$text}\n" . self::END],
         ];
 
+        $apiType = \is_string($config['api_type'] ?? null)
+            ? \strtolower($config['api_type'])
+            : 'foundation';
+        if (!\in_array($apiType, ['foundation', 'chat_completions'], true)) {
+            throw new \InvalidArgumentException("Unsupported Yandex API type '{$apiType}'");
+        }
+
         // Prepare payload
-        $payload = [
-            'modelUri'          => $modelUri,
-            'completionOptions' => [
-                'stream'      => false,
+        if ($apiType === 'chat_completions') {
+            $payload = [
+                'model'       => $modelUri,
+                'messages'    => array_map(
+                    static fn (array $message): array => [
+                        'role' => $message['role'],
+                        'content' => $message['text'],
+                    ],
+                    $messages
+                ),
                 'temperature' => (float) $temperature,
-                'maxTokens'   => $maxTokens,
-            ],
-            'messages'          => $messages,
-        ];
+                'stream'      => false,
+            ];
+            if ($maxTokens > 0) {
+                $payload['max_tokens'] = $maxTokens;
+            }
+        } else {
+            $payload = [
+                'modelUri'          => $modelUri,
+                'completionOptions' => [
+                    'stream'      => false,
+                    'temperature' => (float) $temperature,
+                    'maxTokens'   => $maxTokens,
+                ],
+                'messages'          => $messages,
+            ];
+        }
 
         // Normalize return shape and types
         $url = \is_string($config['endpoint'] ?? null) ? (string)$config['endpoint'] : '';
@@ -122,6 +150,9 @@ class YandexDriver implements ModelDriverInterface
             if (\is_string($h)) {
                 $headers[] = $h;
             }
+        }
+        if ($apiType === 'chat_completions') {
+            $headers[] = "x-project: {$folderId}";
         }
         $body = \json_encode($payload, JSON_UNESCAPED_UNICODE);
 
@@ -189,9 +220,18 @@ class YandexDriver implements ModelDriverInterface
 
         // Extract translated text
         $content = null;
+        // OpenAI-compatible Chat Completions response shape
+        $choices = $data['choices'] ?? null;
+        if (\is_array($choices) && isset($choices[0]) && \is_array($choices[0])) {
+            $message = \is_array($choices[0]['message'] ?? null) ? $choices[0]['message'] : null;
+            if ($message !== null && \is_string($message['content'] ?? null)) {
+                $content = $message['content'];
+            }
+        }
+
         // Newer Yandex response shape
         $result = \is_array($data['result'] ?? null) ? $data['result'] : null;
-        if ($result !== null) {
+        if ($content === null && $result !== null) {
             $alts = \is_array($result['alternatives'] ?? null) ? $result['alternatives'] : null;
             if ($alts !== null && isset($alts[0]) && \is_array($alts[0])) {
                 $msg = \is_array($alts[0]['message'] ?? null) ? $alts[0]['message'] : null;

@@ -7,6 +7,9 @@ The format is based on [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 ## [Unreleased]
 
 ### Added
+- Expanded provider text-model catalogues to include served legacy models, previews, and dated snapshots, with provenance and exclusion records.
+- OpenAI and xAI Responses API support, and Yandex OpenAI-compatible requests for models unavailable through the Foundation API.
+- DeepL translation engine selection through `model_type`, plus model-specific Claude adaptive thinking and Gemini thinking levels.
 - OpenAI GPT-6 and Claude 5.5 model entries with reasoning request settings.
 - CLI credential lookup accepts non-empty `BBLSLUG_` prefixed variables before unprefixed names.
 - Live integration tests can select a model with `BBLSLUG_LIVE_MODEL`.
@@ -24,6 +27,8 @@ The format is based on [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 - Composer requirements now declare PHP 8.2+ (required by Symfony YAML 7.3) and the DOM extension used by HTML validation.
 
 ### Removed
+- Compatibility-redirect model keys `xai:grok-4`, `xai:grok-3`, and `xai:grok-3-mini`; the provider serves Grok 4.3 for these names.
+- `yandex:llama` and `yandex:llama-lite`, which return `unknown model`. Served legacy Yandex GPT keys remain available.
 - Retired model keys `anthropic:claude-haiku-3.5`, `anthropic:claude-opus-4`,
   `anthropic:claude-sonnet-4`, and `google:gemini-2.0-flash` from the registry and CLI list.
   These models are no longer served by their providers. Removed keys now fail locally

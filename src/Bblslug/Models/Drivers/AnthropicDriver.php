@@ -28,6 +28,7 @@ class AnthropicDriver implements ModelDriverInterface
      *     - dryRun      (bool)        Skip API call (ignored here).
      *     - format      (string)      Indicates which prompt format to use.
      *     - effort      (string)      Reasoning effort for models that support it.
+     *     - thinking    (array|string|null) Thinking configuration, or `adaptive`.
      *     - maxTokens   (int)         Maximum tokens to generate.
      *     - promptKey   (string)      Key of the prompt template in prompts.yaml.
      *     - temperature (float|null)  Sampling temperature; null omits the parameter.
@@ -81,6 +82,11 @@ class AnthropicDriver implements ModelDriverInterface
         $tempRaw = \array_key_exists('temperature', $settings) ? $settings['temperature'] : 0.0;
         $temperature = $tempRaw === null ? null : (\is_numeric($tempRaw) ? (float)$tempRaw : 0.0);
 
+        $thinking = $settings['thinking'] ?? null;
+        if ($thinking === 'adaptive') {
+            $thinking = ['type' => 'adaptive'];
+        }
+
         // Render system prompt
         $systemPrompt = Prompts::render(
             $promptKey,
@@ -106,8 +112,13 @@ class AnthropicDriver implements ModelDriverInterface
             'messages' => $messages,
             'max_tokens' => $maxTokens,
         ];
-        if ($temperature !== null) {
+        // Adaptive thinking models reject temperature. Older Claude models
+        // continue to use the ordinary sampling parameter.
+        if ($temperature !== null && $thinking === null) {
             $payload['temperature'] = $temperature;
+        }
+        if (\is_array($thinking)) {
+            $payload['thinking'] = $thinking;
         }
         if (\is_string($settings['effort'] ?? null)) {
             $payload['output_config'] = ['effort' => $settings['effort']];
