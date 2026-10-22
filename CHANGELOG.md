@@ -7,6 +7,7 @@ The format is based on [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 ## [Unreleased]
 
 ### Fixed
+- Translation HTTP and provider parsing errors now mask API keys echoed in URLs, responses, and diagnostic logs, including URL-encoded and JSON-escaped forms.
 - HTTP request logs now mask secrets in URLs, including URL-encoded credentials, in verbose and dry-run modes.
 - HTTP requests now have configurable connection and total timeouts (10 and 120 seconds by default); network exceptions preserve the cURL error code.
 - CLI now exits with an error when a translated or dry-run prepared file cannot be fully written.

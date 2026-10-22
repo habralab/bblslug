@@ -305,6 +305,12 @@ class Bblslug
         $debugResponse = $http['debugResponse'];
         $raw = $http['body'];
 
+        $errorMaskPatterns = [$apiKey, rawurlencode($apiKey), urlencode($apiKey)];
+        $jsonApiKey = json_encode($apiKey);
+        if ($jsonApiKey !== false) {
+            $errorMaskPatterns[] = substr($jsonApiKey, 1, -1);
+        }
+
         // Parse response
         if ($dryRun) {
             $translated = $prepared;
@@ -315,8 +321,11 @@ class Bblslug
             $hasCustomHttpHandling = isset($model['http_error_handling']) && !empty($model['http_error_handling']);
             if ($httpStatus >= 400 && !$hasCustomHttpHandling) {
                 throw new \RuntimeException(
-                    "HTTP {$httpStatus} error from {$reqUrl}: {$raw}\n\n" .
-                    $debugRequest . $debugResponse
+                    str_replace(
+                        $errorMaskPatterns,
+                        '***',
+                        "HTTP {$httpStatus} error from {$reqUrl}: {$raw}\n\n" . $debugRequest . $debugResponse
+                    )
                 );
             }
             $say($onFeedback, "Parsing provider response", 'info');
@@ -328,7 +337,11 @@ class Bblslug
                 $rawUsage   = $parsed['usage'] ?? null;
             } catch (\RuntimeException $e) {
                 throw new \RuntimeException(
-                    $e->getMessage() . "\n\n" . $debugRequest . $debugResponse
+                    str_replace(
+                        $errorMaskPatterns,
+                        '***',
+                        $e->getMessage() . "\n\n" . $debugRequest . $debugResponse
+                    )
                 );
             }
             $say($onFeedback, "Provider response parsed", 'info');
