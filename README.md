@@ -250,7 +250,13 @@ echo "Hello world" | vendor/bin/bblslug \
 
 ### Disable validation
 
-For HTML and JSON formats, Bblslug performs basic syntax validation before and after translation. To skip this step, add:
+For HTML and JSON formats, Bblslug performs basic syntax validation before and after translation.
+
+JSON validation also checks the returned structure against the input. Missing
+fields or list elements, including `null` values, cause a schema error. Omitted
+values are not automatically restored.
+
+To skip validation, add:
 
 ```bash
 vendor/bin/bblslug \

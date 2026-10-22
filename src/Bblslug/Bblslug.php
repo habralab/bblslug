@@ -362,10 +362,6 @@ class Bblslug
         if ($validate) {
             $say($onFeedback, "Post-validation started ({$format})", 'info');
 
-            // Track micro-repairs applied during post-validation (from develop)
-            $repairsApplied = false;
-            $repairsList    = [];
-
             if ($format === 'json') {
                 // Ensure we have input schema captured (head branch safeguard)
                 if ($schemaIn === null) {
@@ -385,24 +381,8 @@ class Bblslug
                 /** @var mixed $parsedOut */
                 $parsedOut = \json_decode($result, true);
 
-                // Apply minimal non-destructive repairs from develop
-                /** @var mixed $parsedInLocal */
-                $parsedInLocal = \json_decode($text, true);
-                $parsedOutFixed = Schema::applyRepairs(
-                    $parsedInLocal,
-                    $parsedOut,
-                    [Schema::REPAIR_MISSING_NULLS]
-                );
-                if ($parsedOutFixed !== $parsedOut) {
-                    $repairsApplied = true;
-                    $repairsList[]  = 'missing_nulls';
-                    if ($verbose) {
-                        $valLogPost .= "[JSON repairs applied: missing_nulls]\n";
-                    }
-                }
-
-                // Schema validation (against possibly repaired output)
-                $schemaOut = Schema::capture($parsedOutFixed);
+                // Validate the structure of the JSON that will actually be returned.
+                $schemaOut = Schema::capture($parsedOut);
                 $schemaValidation = Schema::validate($schemaIn, $schemaOut);
 
                 if (! $schemaValidation->isValid()) {
@@ -430,14 +410,6 @@ class Bblslug
             } // other formats: no container validation
 
             $say($onFeedback, "Post-validation passed ({$format})", 'info');
-            if ($repairsApplied) {
-                // Warn initiator that structural auto-fixes were applied
-                $say(
-                    $onFeedback,
-                    "Post-validation applied JSON repairs ({$format}): " . implode(', ', $repairsList),
-                    'warning'
-                );
-            }
         }
 
         // Append post-validation log into response debug
