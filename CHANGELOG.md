@@ -4,10 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.8.0] – 2026-10-23
+## [0.9.0] – 2026-10-23
 
-This release replaces the earlier, withdrawn `v0.8.0` tag; it is not the same
-source revision. See the upgrade notes below.
+This release supersedes the withdrawn `v0.8.0` Git release. Packagist retains
+published version references, so the updated code is distributed under a new
+version number. Consumers pinned to `0.8.0` must update their constraint.
 
 ### Added
 
@@ -89,12 +90,15 @@ source revision. See the upgrade notes below.
 - Requests that previously waited indefinitely can now time out. Override
   `BBLSLUG_HTTP_CONNECT_TIMEOUT` and `BBLSLUG_HTTP_TIMEOUT` when needed. Invalid
   timeout settings fail locally. Requests are not automatically retried.
-- Reusing `v0.8.0` does not update an existing `composer.lock`. After the replacement
-  tag is published and repository metadata is refreshed, run
-  `composer update habr/bblslug`, review the new source/dist reference in the lock
-  file, and commit it. If the old reference is retained, refresh Composer metadata
-  and resolve the dependency again; `composer install` alone uses the locked copy.
-  Verify application compatibility before deployment.
+- **Upgrade consumers pinned to `0.8.0` to `0.9.0`.** For example, run
+  `composer require habr/bblslug:0.9.0`, review the updated source/dist reference,
+  and commit both `composer.json` and `composer.lock`. Existing `composer install`
+  commands continue to use their locked copy.
+- Packagist's [version immutability policy](https://packagist.org/about/version-immutability)
+  prevents replacing stable source/dist references when a Git tag moves. The
+  attempted Git republication of `0.8.0` was therefore withdrawn. Cache clearing
+  and update webhooks do not replace that snapshot; use `0.9.0` instead. A VCS
+  override is not required for this release.
 
 ### Verification and known limitations
 
@@ -120,6 +124,14 @@ source revision. See the upgrade notes below.
   Placeholder loss and duplication are not checked automatically.
 - Model retirement dates and access restrictions still apply after release;
   the catalog is a dated record, not a guarantee of continuing availability.
+
+## [0.8.0] – Withdrawn
+
+The original tag contained unfinished JSON translation prototypes. A Git
+republication was withdrawn because Packagist retained the original immutable
+source/dist references. The generic prototypes were completed and integrated
+into **0.9.0** with their original authorship preserved. Use 0.9.0 for the updated
+code; changing the old tag cannot update existing Packagist snapshots or lock files.
 
 ## [0.7.0] – 2025-08-09
 
