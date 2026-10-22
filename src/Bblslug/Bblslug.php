@@ -180,7 +180,7 @@ class Bblslug
                         "JSON syntax failed: " . implode('; ', $preResult->getErrors())
                     );
                 }
-                $parsedIn = json_decode($text, true);
+                $parsedIn = json_decode($text, false);
                 $schemaIn = Schema::capture($parsedIn);
                 if ($verbose) {
                     $valLogPre = "[JSON schema captured]\n";
@@ -365,7 +365,7 @@ class Bblslug
             if ($format === 'json') {
                 // Ensure we have input schema captured (head branch safeguard)
                 if ($schemaIn === null) {
-                    $schemaIn = Schema::capture(\json_decode($text, true));
+                    $schemaIn = Schema::capture(\json_decode($text, false));
                 }
 
                 // JSON syntax check
@@ -379,7 +379,7 @@ class Bblslug
 
                 // Decode produced JSON
                 /** @var mixed $parsedOut */
-                $parsedOut = \json_decode($result, true);
+                $parsedOut = \json_decode($result, false);
 
                 // Validate the structure of the JSON that will actually be returned.
                 $schemaOut = Schema::capture($parsedOut);

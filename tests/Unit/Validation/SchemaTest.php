@@ -12,6 +12,42 @@ use function array_is_list;
 final class SchemaTest extends TestCase
 {
     /** @test */
+    public function emptyObjectAndListHaveDifferentSchemas(): void
+    {
+        $before = Schema::capture(new \stdClass());
+        $after = Schema::capture([]);
+
+        $this->assertFalse(Schema::validate($before, $after)->isValid());
+    }
+
+    /** @test */
+    public function objectsWithDifferentValuesHaveTheSameSchema(): void
+    {
+        $before = Schema::capture((object) ['title' => 'source']);
+        $after = Schema::capture((object) ['title' => 'translation']);
+
+        $this->assertTrue(Schema::validate($before, $after)->isValid());
+    }
+
+    /** @test */
+    public function nestedObjectMemberTypeChangeIsDetected(): void
+    {
+        $before = Schema::capture((object) ['value' => (object) ['text' => 'source']]);
+        $after = Schema::capture((object) ['value' => (object) ['text' => 1]]);
+
+        $this->assertFalse(Schema::validate($before, $after)->isValid());
+    }
+
+    /** @test */
+    public function numericKeyObjectAndListHaveDifferentSchemas(): void
+    {
+        $before = Schema::capture((object) ['0' => 'source']);
+        $after = Schema::capture(['translation']);
+
+        $this->assertFalse(Schema::validate($before, $after)->isValid());
+    }
+
+    /** @test */
     public function captureBuildsTypesAndShapes(): void
     {
         $in = [

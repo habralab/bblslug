@@ -9,6 +9,85 @@ use PHPUnit\Framework\TestCase;
 final class BblslugJsonOutputTest extends TestCase
 {
     /** @test */
+    public function emptyObjectAndListCannotBeSwappedAtRoot(): void
+    {
+        foreach ([['{}', '[]'], ['[]', '{}']] as [$input, $translated]) {
+            $result = $this->runFixture([
+                'input' => $input,
+                'translated' => $translated,
+            ]);
+
+            $this->assertSchemaMismatch($result);
+        }
+    }
+
+    /** @test */
+    public function emptyObjectAndListCannotBeSwappedWhenNested(): void
+    {
+        foreach (
+            [
+                ['{"value":{}}', '{"value":[]}'],
+                ['{"value":[]}', '{"value":{}}'],
+            ] as [$input, $translated]
+        ) {
+            $result = $this->runFixture([
+                'input' => $input,
+                'translated' => $translated,
+            ]);
+
+            $this->assertSchemaMismatch($result);
+        }
+    }
+
+    /** @test */
+    public function numericKeyObjectCannotBecomeList(): void
+    {
+        $result = $this->runFixture([
+            'input' => '{"0":"source"}',
+            'translated' => '["translation"]',
+        ]);
+
+        $this->assertSchemaMismatch($result);
+    }
+
+    /** @test */
+    public function nestedNumericKeyObjectCannotBecomeList(): void
+    {
+        $result = $this->runFixture([
+            'input' => '{"value":{"0":"source"}}',
+            'translated' => '{"value":["translation"]}',
+        ]);
+
+        $this->assertSchemaMismatch($result);
+    }
+
+    /** @test */
+    public function nestedMemberTypeChangesAreRejected(): void
+    {
+        $result = $this->runFixture([
+            'input' => '{"value":{"text":"source"}}',
+            'translated' => '{"value":{"text":1}}',
+        ]);
+
+        $this->assertSchemaMismatch($result);
+    }
+
+    /** @test */
+    public function nestedObjectsAndListsWithTranslatedStringsArePreserved(): void
+    {
+        $translated = '{"article":{"title":"Перевод","items":[{"text":"Первый"},'
+            . '{"text":"Второй"}]}}';
+        $result = $this->runFixture([
+            'input' => '{"article":{"title":"Source","items":[{"text":"First"},'
+                . '{"text":"Second"}]}}',
+            'translated' => $translated,
+        ]);
+
+        $this->assertSame('success', $result['type'], (string) ($result['message'] ?? ''));
+        $this->assertSame($translated, $result['result']);
+    }
+
+    /** @test */
     public function missingTrailingObjectNullIsRejected(): void
     {
         $result = $this->runFixture([

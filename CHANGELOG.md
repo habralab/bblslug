@@ -7,6 +7,7 @@ The format is based on [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 ## [Unreleased]
 
 ### Fixed
+- JSON structure validation now distinguishes objects from arrays, including empty containers and objects with numeric keys.
 - JSON validation now rejects omitted `null` fields and list elements instead of validating a repaired tree while returning the incomplete output.
 - Translation HTTP and provider parsing errors now mask API keys echoed in URLs, responses, and diagnostic logs, including URL-encoded and JSON-escaped forms.
 - HTTP request logs now mask secrets in URLs, including URL-encoded credentials, in verbose and dry-run modes.

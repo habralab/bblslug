@@ -255,6 +255,7 @@ For HTML and JSON formats, Bblslug performs basic syntax validation before and a
 JSON validation also checks the returned structure against the input. Missing
 fields or list elements, including `null` values, cause a schema error. Omitted
 values are not automatically restored.
+Objects and arrays must retain their container types, including empty `{}` and `[]`.
 
 To skip validation, add:
 

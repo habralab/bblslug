@@ -25,12 +25,20 @@ class Schema
      * - Scalars map to their gettype()
      * - Indexed arrays become ordered lists of schemas
      * - Associative arrays become key=>schema maps
+     * - JSON objects (stdClass) retain an object tag and recursively captured properties
      *
      * @param mixed $data Input PHP value
      * @return mixed      Schema tree
      */
     public static function capture(mixed $data): mixed
     {
+        if ($data instanceof \stdClass) {
+            $properties = [];
+            foreach (get_object_vars($data) as $key => $value) {
+                $properties[$key] = self::capture($value);
+            }
+            return ['type' => 'object', 'properties' => $properties];
+        }
         if (is_array($data)) {
             $isList = array_is_list($data);
             $out = [];
