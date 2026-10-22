@@ -2,7 +2,7 @@
 
 **Bblslug** is a versatile translation tool that can be used as both a **CLI utility** and a **PHP library**.
 
-It leverages LLM-based APIs to translate plain text, HTML and JSON while preserving structure, code blocks, and URLs via placeholder filters.
+It uses translation APIs for plain text, HTML and JSON, with validation and placeholder filters to help preserve structure, code blocks, and URLs.
 
 APIs supported:
 
@@ -55,7 +55,8 @@ Older OpenAI model identifiers remain available for existing integrations; regis
 
 The Claude 5.5 entries use the [Anthropic Messages API](https://platform.claude.com/docs/en/api/messages/create)
 with `effort=low`, no `temperature`, and an initial output budget of 4096 tokens.
-Use `--variables=maxTokens=8192,effort=low` to override that budget and effort.
+Use `--variables=maxTokens=8192` to override the output budget. Effort is currently
+fixed by the model registry; passing `effort` in `--variables` does not override it.
 Retired Claude 3.5/4 and Gemini 2.0 model keys have been removed, rather than redirected
 to different models. Their retirement is documented by [Anthropic](https://platform.claude.com/docs/en/about-claude/model-deprecations)
 and [Google](https://ai.google.dev/gemini-api/docs/deprecations).
@@ -73,7 +74,8 @@ chmod +x vendor/bin/bblslug
 
 ### Prepare
 
-1. **Always specify a model** with `--model=vendor:name` option.
+1. **Specify a model and format** with `--model=vendor:name` and `--format=text|html|json`.
+   Both are required for translation and dry-run; listing models, prompts, and help does not require them.
 
 2. **Export your API key(s)** before running:
 
@@ -98,6 +100,8 @@ chmod +x vendor/bin/bblslug
 
   - If `--source` is omitted, Bblslug reads from **STDIN**.
   - If `--translated` is omitted, Bblslug writes to **STDOUT**.
+  - Progress, errors, and translation statistics go to **STDERR**.
+  - Failed requests or output writes exit with a nonzero status.
 
 4. **Optional proxy**:
 
@@ -118,7 +122,8 @@ chmod +x vendor/bin/bblslug
   All providers use a 10-second connection timeout and a 120-second total request
   timeout. Set `BBLSLUG_HTTP_CONNECT_TIMEOUT` and `BBLSLUG_HTTP_TIMEOUT` to change
   these limits (positive integer seconds). Unset or empty values use the defaults;
-  invalid values fail before sending a request, including in dry-run mode.
+  invalid values fail before sending a request, including library dry-run mode.
+  CLI dry-run only runs filters and does not use the HTTP client.
 
   Direct callers of `HttpClient::request()` can override these settings with
   `connectTimeoutSeconds` and `timeoutSeconds`. Explicit arguments take precedence
@@ -148,7 +153,7 @@ vendor/bin/bblslug \
   --translated=output.html
 ```
 
-### Translate an JSON file and write to another file
+### Translate a JSON file and write to another file
 
 ```bash
 vendor/bin/bblslug \
@@ -188,27 +193,41 @@ For OpenAI, `--variables=reasoning_effort=low,max_completion_tokens=8192` can se
 the reasoning effort and output budget (including reasoning tokens). These parameters
 must be supported by the selected model. GPT-6 reasoning requests should omit temperature.
 
+CLI values are passed as strings, separated by commas; there is no escaping syntax
+for commas inside values. Drivers convert known numeric parameters. For boolean
+options using a PHP boolean cast, such as Gemini's `includeThoughts`, use `0` or `1`:
+the non-empty string `false` is treated as true.
+
 ```bash
 vendor/bin/bblslug \
   --model=vendor:name \
   --format=text \
-  --variables=foo=bar,foo2=bar2 \
+  --variables=max_completion_tokens=8192,reasoning_effort=low \
   --source=in.txt \
   --translated=out.txt
 ```
 
 ### Choose a different prompt template
 
+Use `--list-prompts` to check supported formats. The `experimental` group supports JSON only.
+
 ```bash
 vendor/bin/bblslug \
-  --model=vendor:name \
-  --format=html \
-  --source=input.html \
-  --translated=out.html \
-  --prompt-key=smart-legal
+  --model=openai:gpt-6-luna \
+  --format=json \
+  --source=input.json \
+  --translated=out.json \
+  --prompt-key=experimental
 ```
 
 ### Dry-run placeholders only
+
+CLI dry-run applies filters without calling a provider or validating the container.
+It still requires a registered model, format, and API-key environment variable.
+With `--source=input.txt`, it writes `input.txt.prepared`; with STDIN, it writes
+the prepared text to STDOUT. `--translated` is not used in this mode.
+The library's `dryRun: true` follows the full preparation and validation path and
+returns a request preview without sending a request.
 
 ```bash
 vendor/bin/bblslug \
@@ -256,6 +275,10 @@ JSON validation also checks the returned structure against the input. Missing
 fields or list elements, including `null` values, cause a schema error. Omitted
 values are not automatically restored.
 Objects and arrays must retain their container types, including empty `{}` and `[]`.
+
+Current limits: object key order is compared strictly. HTML validation checks parsing,
+not preservation of the original DOM tree. Placeholder loss or duplication is not
+yet checked, and JSON encoded inside string values is not validated separately.
 
 To skip validation, add:
 
@@ -308,10 +331,18 @@ Text translation function example:
 
 ```php
 $text = file_get_contents('input.html');
+if ($text === false) {
+    throw new \RuntimeException('Cannot read input.html');
+}
+$apiKey = getenv('BBLSLUG_OPENAI_API_KEY') ?: getenv('OPENAI_API_KEY');
+if ($apiKey === false || $apiKey === '') {
+    throw new \RuntimeException('Set BBLSLUG_OPENAI_API_KEY or OPENAI_API_KEY');
+}
+$verbose = true;
 $result = Bblslug::translate(
-    apiKey:   getenv('MODEL_API_KEY'),         // API key for the chosen model
-    format:   'html',                          // 'text', 'html' of 'json'
-    modelKey: 'vendor:model',                  // Model identifier (e.g. deepl:free, openai:gpt-4o, etc.)
+    apiKey:   $apiKey,
+    format:   'html',                          // 'text', 'html' or 'json'
+    modelKey: 'openai:gpt-6-luna',              // A key from Bblslug::listModels()
     text:     $text,                           // Source text to be translated
     // optional:
     // Additional context/prompt pass to model
@@ -319,18 +350,18 @@ $result = Bblslug::translate(
     filters:    ['url','html_code'],           // List of placeholder filters
     onFeedback: $verbose ? static function (string $message, string $level = 'info'): void { error_log("[$level] $message"); } : null, // Optional progress callback
     promptKey: 'translator',                   // which prompt template to use
-    proxy:      getenv('BBLSLUG_PROXY'),       // Optional proxy URI (http://..., socks5h://...)
+    proxy:      getenv('BBLSLUG_PROXY') ?: null, // Optional proxy URI
     sourceLang: 'DE',                          // Source language code (optional; autodetect if null)
     targetLang: 'EN',                          // Target language code (optional; default from driver settings)
-    validate: false,                           // perform or skip syntax validation for container formats
-    variables:  ['foo'=>'bar'],                // model-specific overrides
+    validate: true,                            // Container syntax and JSON structure validation
+    variables:  ['max_completion_tokens'=>'8192'], // Model-specific overrides
     verbose:    true,                          // If true, returns debug request/response
 );
 echo $result['result'];
 ```
 
 `onFeedback` is an optional callback for the progress information, accepts (string $message, string $level),  
-where `$level` includes `'info' | 'warning' | 'error'`. Send null to swhitch off.
+where `$level` includes `'info' | 'warning' | 'error'`. Pass null to switch it off.
 
 Result structure:
 
@@ -343,15 +374,16 @@ Result structure:
   'debugRequest'    => string,   // Request debug
   'debugResponse'   => string,   // Response debug
   'rawResponseBody' => string,   // Response body
-  'consumed'        => [                  // Normalized usage metrics
+  'consumed'        => [                  // Normalized usage metrics; [] if unavailable
      'tokens' => [
        'total'     => int,                // Total tokens consumed
        'breakdown' => [                   // Per-type breakdown
-         'prompt'      => int,            // Name depeds of model
-         'completion'  => int,            // Name depeds of model
+         'prompt'      => int,            // Names depend on the model
+         'completion'  => int,
        ],
      ],
      // additional categories if supported by the model...
+  ],
   'lengths'         => [         // Text length statistics
      'original'    => int,       // - original text
      'prepared'    => int,       // - after placeholder filters
@@ -409,9 +441,9 @@ Returns an array like:
       'formats' => ['text', 'html', 'json'],
       'notes'   => 'professional translator template',
   ],
-  'legal'      => [
-      'formats' => ['text'],
-      'notes'   => 'legal-style translator template',
+  'experimental' => [
+      'formats' => ['json'],
+      'notes'   => 'Compact experimental prompt based on `translator`',
   ],
   // …
 ]
@@ -421,9 +453,14 @@ Returns an array like:
 
 ```php
 try {
-    $res = Bblslug::translate(...);
+    $res = Bblslug::translate(
+        apiKey: $apiKey,
+        format: 'html',
+        modelKey: 'openai:gpt-6-luna',
+        text: $text
+    );
 } catch (\InvalidArgumentException $e) {
-    // invalid model, missing API key, etc.
+    // Invalid model, unsupported format, invalid timeout settings, etc.
 } catch (\RuntimeException $e) {
     // HTTP error, parse failure, driver-specific error
 }

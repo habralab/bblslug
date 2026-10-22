@@ -6,7 +6,14 @@ The format is based on [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ## [Unreleased]
 
+### Added
+- OpenAI GPT-6 and Claude 5.5 model entries with reasoning request settings.
+- CLI credential lookup accepts non-empty `BBLSLUG_` prefixed variables before unprefixed names.
+- Live integration tests can select a model with `BBLSLUG_LIVE_MODEL`.
+
 ### Fixed
+- README examples and CLI help now describe current prompts, credential precedence, dry-run behavior, and validation limits.
+- Anthropic requests use the Messages API; DeepL uses header authentication and the correct Pro endpoint.
 - JSON structure validation now distinguishes objects from arrays, including empty containers and objects with numeric keys.
 - JSON validation now rejects omitted `null` fields and list elements instead of validating a repaired tree while returning the incomplete output.
 - Translation HTTP and provider parsing errors now mask API keys echoed in URLs, responses, and diagnostic logs, including URL-encoded and JSON-escaped forms.
