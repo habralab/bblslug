@@ -59,6 +59,7 @@ class Help
         echo "\t{$bold}--model=MODEL_ID{$reset}     Required model (see --list-models)\n";
         echo "\t{$bold}--no-validate{$reset}        Disable HTML/JSON syntax and JSON structure checks\n";
         echo "\t{$bold}--prompt-key=KEY{$reset}     Specify prompt template key (prompts.yaml)\n";
+        echo "\t{$bold}--response-schema=FILE{$reset} JSON Schema for OpenAI/Google native JSON output\n";
         echo "\t{$bold}--proxy=URI{$reset}          Optional proxy URI (see examples) or set BBLSLUG_PROXY\n";
         echo "\t{$bold}--source=FILE{$reset}        Input file to translate (omit to read from STDIN)\n";
         echo "\t{$bold}--source-lang=LANG{$reset}   Source language code (e.g. EN, DE) - default autodetect\n";

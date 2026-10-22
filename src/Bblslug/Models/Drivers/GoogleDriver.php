@@ -29,6 +29,7 @@ class GoogleDriver implements ModelDriverInterface
      *     - includeThoughts (bool|null)   Include chain-of-thought reasoning (Gemini 2.5+).
      *     - maxOutputTokens (int|null)    Maximum tokens for output.
      *     - promptKey       (string)      Key of the prompt template in prompts.yaml.
+     *     - response_schema (array)       Gemini JSON schema for native structured output.
      *     - temperature     (float)       Sampling temperature.
      *     - thinkingBudget  (int|null)    Budget for internal reasoning (Gemini 2.5+).
      *     - thinkingLevel   (string|null) Reasoning level for models that support it.
@@ -51,6 +52,24 @@ class GoogleDriver implements ModelDriverInterface
         $format = \is_string($options['format'] ?? null)
             ? $options['format']
             : (\is_string($defaults['format'] ?? null) ? $defaults['format'] : 'text');
+
+        $hasResponseSchema = \array_key_exists('response_schema', $options);
+        $responseSchema = $hasResponseSchema ? $options['response_schema'] : null;
+        if (
+            $hasResponseSchema
+            && (!\is_array($responseSchema) || $responseSchema === [] || \array_is_list($responseSchema))
+        ) {
+            throw new \InvalidArgumentException('response_schema must be a non-empty associative array.');
+        }
+        if ($format === 'structured_json' && !$hasResponseSchema) {
+            throw new \InvalidArgumentException(
+                'format structured_json requires a non-empty associative response_schema.'
+            );
+        }
+        $nativeStructured = $hasResponseSchema;
+        if ($nativeStructured && !\in_array($format, ['json', 'structured_json', 'linedJson'], true)) {
+            throw new \InvalidArgumentException('response_schema requires format json, structured_json, or linedJson');
+        }
 
         $includeThoughts = null;
         if (\array_key_exists('includeThoughts', $options)) {
@@ -85,7 +104,7 @@ class GoogleDriver implements ModelDriverInterface
         // Render system prompt from YAML templates
         $systemText = Prompts::render(
             $promptKey,
-            $format,
+            $nativeStructured ? 'structured_json' : $format,
             [
                 'source'  => $sourceLang,
                 'target'  => $targetLang,
@@ -96,7 +115,7 @@ class GoogleDriver implements ModelDriverInterface
         );
 
         // Wrap user text in markers
-        $contentText = self::START . "\n" . $text . "\n" . self::END;
+        $contentText = $nativeStructured ? $text : self::START . "\n" . $text . "\n" . self::END;
 
         // Build JSON payload
         /** @var array<string,mixed> $generationConfig */
@@ -118,6 +137,10 @@ class GoogleDriver implements ModelDriverInterface
         }
         if ($thinking !== []) {
             $generationConfig['thinkingConfig'] = $thinking;
+        }
+        if ($nativeStructured) {
+            $generationConfig['responseMimeType'] = 'application/json';
+            $generationConfig['responseJsonSchema'] = $responseSchema;
         }
 
         $bodyArr = [
@@ -155,11 +178,13 @@ class GoogleDriver implements ModelDriverInterface
      * @param array<string,mixed> $config       Model configuration (unused).
      * @param string              $responseBody Raw HTTP response body.
      *
+     * @param array<string,mixed> $options Request options used to build the request.
+     *
      * @return array{text:string, usage:array<string,mixed>|null}
      *
      * @throws \RuntimeException If the response is malformed or markers are missing.
      */
-    public function parseResponse(array $config, string $responseBody): array
+    public function parseResponse(array $config, string $responseBody, array $options = []): array
     {
         $data = \json_decode($responseBody, true);
         if (!\is_array($data)) {
@@ -205,23 +230,13 @@ class GoogleDriver implements ModelDriverInterface
 
         $accumulated = '';
         foreach ($parts as $part) {
+            if (\is_array($part) && ($part['thought'] ?? false) === true) {
+                continue;
+            }
             if (\is_array($part) && \is_string($part['text'] ?? null)) {
                 $accumulated .= $part['text'];
             }
         }
-
-        // Extract between markers
-        $pattern = '/'
-            . \preg_quote(self::START, '/')
-            . '(.*?)'
-            . \preg_quote(self::END, '/')
-            . '/s';
-
-        if (!\preg_match($pattern, $accumulated, $matches)) {
-            throw new \RuntimeException("Markers not found in Gemini response");
-        }
-
-        $text = \trim($matches[1]);
 
         // Usage metadata → array<string,mixed>|null
         $usage = null;
@@ -236,6 +251,26 @@ class GoogleDriver implements ModelDriverInterface
             }
             $usage = $typed;
         }
+
+        if (\array_key_exists('response_schema', $options)) {
+            return [
+                'text'  => \trim($accumulated),
+                'usage' => $usage,
+            ];
+        }
+
+        // Extract between markers
+        $pattern = '/'
+            . \preg_quote(self::START, '/')
+            . '(.*?)'
+            . \preg_quote(self::END, '/')
+            . '/s';
+
+        if (!\preg_match($pattern, $accumulated, $matches)) {
+            throw new \RuntimeException("Markers not found in Gemini response");
+        }
+
+        $text = \trim($matches[1]);
 
         return [
             'text'  => $text,

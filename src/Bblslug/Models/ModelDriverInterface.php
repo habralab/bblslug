@@ -30,10 +30,11 @@ interface ModelDriverInterface
      *
      * @param array<string,mixed> $config       Model config from registry
      * @param string              $responseBody Raw response body from the API
+     * @param array<string,mixed> $options Request options used to build the request
      *
      * @return array{text:string, usage: array<string,mixed>|null}
      *
      * @throws \RuntimeException If the response is malformed or indicates an error
      */
-    public function parseResponse(array $config, string $responseBody): array;
+    public function parseResponse(array $config, string $responseBody, array $options = []): array;
 }

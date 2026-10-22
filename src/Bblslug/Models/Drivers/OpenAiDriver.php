@@ -30,6 +30,9 @@ class OpenAiDriver implements ModelDriverInterface
      *     - reasoning_effort (string) Reasoning effort supported by the selected model.
      *     - max_completion_tokens (int) Optional output budget, including reasoning tokens.
      *     - temperature (float|null) Sampling temperature; null omits the parameter.
+     *     - response_schema (array) Native structured output JSON schema.
+     *     - response_schema_name (string) Native schema name (default: anonymous).
+     *     - strict (bool) Whether native structured output is strict (default: true).
      *     - verbose     (bool)        Include debug logs (ignored here).
      *
      * @return array{url:string, headers:string[], body:string}
@@ -66,13 +69,35 @@ class OpenAiDriver implements ModelDriverInterface
             : 'EN';
 
         $settings = array_replace($defaults, $options);
+        $hasSchema = \array_key_exists('response_schema', $settings);
+        $schema = $settings['response_schema'] ?? null;
+        $native = $hasSchema;
+        if ($native && (!\is_array($schema) || $schema === [] || \array_is_list($schema))) {
+            throw new \InvalidArgumentException('response_schema must be a non-empty associative array');
+        }
+        if ($format === 'structured_json' && !$native) {
+            throw new \InvalidArgumentException('format=structured_json requires response_schema');
+        }
+        if ($native && !\in_array($format, ['json', 'structured_json', 'linedJson'], true)) {
+            throw new \InvalidArgumentException('response_schema requires format json, structured_json, or linedJson');
+        }
+        $schemaName = $settings['response_schema_name'] ?? 'anonymous';
+        $strict = $settings['strict'] ?? true;
+        if ($native) {
+            if (!\is_string($schemaName) || !\preg_match('/^[A-Za-z0-9_-]{1,64}$/', $schemaName)) {
+                throw new \InvalidArgumentException('response_schema_name must match [A-Za-z0-9_-]{1,64}');
+            }
+            if (!\is_bool($strict)) {
+                throw new \InvalidArgumentException('strict must be a boolean');
+            }
+        }
         $tempRaw = \array_key_exists('temperature', $settings) ? $settings['temperature'] : 0.0;
         $temperature = $tempRaw === null ? null : (\is_numeric($tempRaw) ? (float)$tempRaw : 0.0);
 
         // Render system prompt from YAML templates
         $systemPrompt = Prompts::render(
             $promptKey,
-            $format,
+            $native ? 'structured_json' : $format,
             [
                 'source'  => $sourceLang,
                 'target'  => $targetLang,
@@ -85,7 +110,7 @@ class OpenAiDriver implements ModelDriverInterface
         // Compose chat messages
         $messages = [
             ['role' => 'system', 'content' => $systemPrompt],
-            ['role' => 'user',   'content' => self::START . "\n{$text}\n" . self::END],
+            ['role' => 'user',   'content' => $native ? $text : self::START . "\n{$text}\n" . self::END],
         ];
 
         $apiType = \is_string($config['api_type'] ?? null)
@@ -93,6 +118,11 @@ class OpenAiDriver implements ModelDriverInterface
             : 'chat_completions';
         if (!\in_array($apiType, ['chat_completions', 'responses', 'completions'], true)) {
             throw new \InvalidArgumentException("Unsupported OpenAI API type '{$apiType}'");
+        }
+        if ($native && $apiType === 'completions') {
+            throw new \InvalidArgumentException(
+                'Native structured outputs are unsupported by the legacy completions API'
+            );
         }
 
         $payload = match ($apiType) {
@@ -109,6 +139,17 @@ class OpenAiDriver implements ModelDriverInterface
                 'messages' => $messages,
             ],
         };
+        if ($native) {
+            if ($apiType === 'responses') {
+                $payload['text'] = ['format' => [
+                    'type' => 'json_schema', 'name' => $schemaName, 'strict' => $strict, 'schema' => $schema,
+                ]];
+            } else {
+                $payload['response_format'] = ['type' => 'json_schema', 'json_schema' => [
+                    'name' => $schemaName, 'strict' => $strict, 'schema' => $schema,
+                ]];
+            }
+        }
         if ($temperature !== null) {
             $payload['temperature'] = $temperature;
         }
@@ -162,12 +203,13 @@ class OpenAiDriver implements ModelDriverInterface
      *
      * @param array<string,mixed> $config       Model configuration (unused).
      * @param string              $responseBody Raw HTTP response body.
+     * @param array<string,mixed> $options      Request options used to build the request.
      *
      * @return array{text:string, usage:array<string,mixed>|null}
      *
      * @throws \RuntimeException If the response is malformed or markers are missing.
      */
-    public function parseResponse(array $config, string $responseBody): array
+    public function parseResponse(array $config, string $responseBody, array $options = []): array
     {
         $data = \json_decode($responseBody, true);
         if (!is_array($data)) {
@@ -221,13 +263,6 @@ class OpenAiDriver implements ModelDriverInterface
             throw new \RuntimeException("OpenAI translation failed: {$responseBody}");
         }
 
-        // Extract between markers
-        $pattern = '/' . preg_quote(self::START, '/') . '(.*?)' . preg_quote(self::END, '/') . '/s';
-        if (!preg_match($pattern, $content, $matches)) {
-            throw new \RuntimeException("Markers not found in OpenAI response");
-        }
-        $text = trim($matches[1]);
-
         // Usage statistics
         $usage = null;
         $u = $data['usage'] ?? null;
@@ -241,6 +276,19 @@ class OpenAiDriver implements ModelDriverInterface
             }
             $usage = $typed;
         }
+
+        $native = \array_key_exists('response_schema', $options)
+            || (($options['format'] ?? null) === 'structured_json');
+        if ($native) {
+            return ['text' => \trim($content), 'usage' => $usage];
+        }
+
+        // Extract between markers
+        $pattern = '/' . preg_quote(self::START, '/') . '(.*?)' . preg_quote(self::END, '/') . '/s';
+        if (!preg_match($pattern, $content, $matches)) {
+            throw new \RuntimeException("Markers not found in OpenAI response");
+        }
+        $text = trim($matches[1]);
 
         return ['text' => $text, 'usage' => $usage];
     }
@@ -279,6 +327,15 @@ class OpenAiDriver implements ModelDriverInterface
             if (\is_array($choice['message'] ?? null) && \is_string($choice['message']['content'] ?? null)) {
                 return $choice['message']['content'];
             }
+            if (\is_array($choice['message'] ?? null) && \is_array($choice['message']['content'] ?? null)) {
+                $parts = '';
+                foreach ($choice['message']['content'] as $part) {
+                    if (\is_array($part) && \is_string($part['text'] ?? null)) {
+                        $parts .= $part['text'];
+                    }
+                }
+                return $parts;
+            }
         }
 
         return '';
@@ -287,6 +344,13 @@ class OpenAiDriver implements ModelDriverInterface
     /** @param array<string,mixed> $data */
     private function extractRefusal(array $data): ?string
     {
+        $choices = $data['choices'] ?? null;
+        if (\is_array($choices) && isset($choices[0]) && \is_array($choices[0])) {
+            $message = $choices[0]['message'] ?? null;
+            if (\is_array($message) && \is_string($message['refusal'] ?? null)) {
+                return $message['refusal'];
+            }
+        }
         $output = $data['output'] ?? null;
         if (!\is_array($output)) {
             return null;

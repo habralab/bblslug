@@ -60,7 +60,7 @@ class Bblslug
      * Translate text, HTML or JSON via any registered model.
      *
      * @param string                $apiKey     API key for the model - mandatory.
-     * @param string                $format     "text", "html" or "json" - mandatory.
+     * @param string                $format     "text", "html", "json", "structured_json" or "linedJson".
      * @param string                $modelKey   Model ID (e.g. "deepl:pro") - mandatory.
      * @param string                $text       The source to be translated - mandatory.
      * @param string|null           $context    Optional context prompt.
@@ -73,7 +73,7 @@ class Bblslug
      * @param string|null           $sourceLang Optional source language code.
      * @param string|null           $targetLang Optional target language code.
      * @param bool                  $validate   If true: perform container syntax validation.
-     * @param array<string,string>  $variables  Model-specific vars (e.g. ['some'=>'...'])
+     * @param array<string,mixed>   $variables  Model-specific vars (e.g. ['some'=>'...'])
      * @param bool                  $verbose    If true: include request/response logs.
      *
      * @return array{
@@ -101,14 +101,14 @@ class Bblslug
         ?string $context = null,
         bool $dryRun = false,
         array $filters = [],
-        ?callable $onFeedback = null,
         string $promptKey = 'translator',
         ?string $proxy = null,
         ?string $sourceLang = null,
         ?string $targetLang = null,
         bool $validate = true,
         array $variables = [],
-        bool $verbose = false
+        bool $verbose = false,
+        ?callable $onFeedback = null
     ): array {
         // Prepare holders for validation debug
         $valLogPre  = '';
@@ -150,6 +150,15 @@ class Bblslug
         $model = $registry->get($modelKey);
         $driver = $registry->getDriver($modelKey);
 
+        if ($format === 'structured_json' || \array_key_exists('response_schema', $variables)) {
+            if (!\in_array($model['vendor'] ?? null, ['openai', 'google'], true)) {
+                throw new \InvalidArgumentException('Native JSON schema output is supported only by OpenAI and Google');
+            }
+            if (!\in_array($format, ['json', 'structured_json', 'linedJson'], true)) {
+                throw new \InvalidArgumentException('response_schema requires a JSON format');
+            }
+        }
+
         // Override defaults from CLI args if present
         if (!isset($model['defaults']) || !\is_array($model['defaults'])) {
             $model['defaults'] = [];
@@ -172,7 +181,7 @@ class Bblslug
         // Pre-validation (before filters)
         if ($validate) {
             $say($onFeedback, "Pre-validation started ({$format})", 'info');
-            if ($format === 'json') {
+            if (\in_array($format, ['json', 'structured_json', 'linedJson'], true)) {
                 $jsonValidator = new JsonValidator();
                 $preResult = $jsonValidator->validate($text);
                 if (! $preResult->isValid()) {
@@ -331,7 +340,7 @@ class Bblslug
             $say($onFeedback, "Parsing provider response", 'info');
             try {
                 /** @var array{text:string, usage?:array<string,mixed>|null} $parsed */
-                $parsed     = $driver->parseResponse($model, $raw);
+                $parsed     = $driver->parseResponse($model, $raw, $options);
                 $translated = $parsed['text'];
                 /** @var array<string,mixed>|null $rawUsage */
                 $rawUsage   = $parsed['usage'] ?? null;
@@ -362,7 +371,7 @@ class Bblslug
         if ($validate) {
             $say($onFeedback, "Post-validation started ({$format})", 'info');
 
-            if ($format === 'json') {
+            if (\in_array($format, ['json', 'structured_json', 'linedJson'], true)) {
                 // Ensure we have input schema captured (head branch safeguard)
                 if ($schemaIn === null) {
                     $schemaIn = Schema::capture(\json_decode($text, false));

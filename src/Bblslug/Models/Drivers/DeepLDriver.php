@@ -86,6 +86,7 @@ class DeepLDriver implements ModelDriverInterface
                 break;
 
             case 'json':
+            case 'linedJson':
                 $payload['tag_handling'] = 'html';
                 $payload['preserve_formatting'] = '1';
                 $payload['outline_detection'] = '1';
@@ -132,11 +133,13 @@ class DeepLDriver implements ModelDriverInterface
      * @param array<string,mixed> $config       Model config (unused here).
      * @param string              $responseBody Raw JSON response body.
      *
+     * @param array<string,mixed> $options Request options (unused).
+     *
      * @return array{text:string, usage:array<string,mixed>|null}
      *
      * @throws \RuntimeException If the response format is unexpected.
      */
-    public function parseResponse(array $config, string $responseBody): array
+    public function parseResponse(array $config, string $responseBody, array $options = []): array
     {
         $data = \json_decode($responseBody, true);
         if (!\is_array($data)) {

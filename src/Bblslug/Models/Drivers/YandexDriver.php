@@ -171,12 +171,13 @@ class YandexDriver implements ModelDriverInterface
      *
      * @param array<string,mixed> $config       Model configuration (unused).
      * @param string              $responseBody Raw HTTP response body.
+     * @param array<string,mixed> $options Request options (unused).
      *
      * @return array{text:string, usage:array<string,mixed>|null}
      *
      * @throws \RuntimeException If the response is malformed or markers are missing.
      */
-    public function parseResponse(array $config, string $responseBody): array
+    public function parseResponse(array $config, string $responseBody, array $options = []): array
     {
         $data = \json_decode($responseBody, true);
 

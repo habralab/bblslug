@@ -32,13 +32,14 @@ class Cli
             "context:",      // extra context prompt
             "dry-run",       // placeholders only
             "filters:",      // comma-separated filter list
-            "format:",       // "text", "html" or "json"
+            "format:",       // text, HTML or a JSON format
             "help",          // show help and exit
             "list-models",   // show models and exit
             "list-prompts",  // show available prompt templates and exit
             "model:",        // model key
             "no-validate",   // disable pre- and post-validation of container syntax
             "prompt-key:",   // prompt template key (from prompts.yaml)
+            "response-schema:", // JSON Schema file for native JSON output
             "proxy:",        // optional proxy URI
             "source:",       // input file (default = STDIN)
             "source-lang:",  // override source language
@@ -108,13 +109,15 @@ class Cli
 
         // Format must be provided explicitly and valid
         if ($format === null) {
-            Help::error("Missing required option --format. Allowed values: text, html, json.");
+            Help::error(
+                "Missing required option --format. Allowed values: text, html, json, structured_json, linedJson."
+            );
         }
 
-        if (!in_array($format, ['text', 'html', 'json'], true)) {
-            Help::error("Invalid format: '{$format}'. Allowed: text, html, json.");
+        if (!in_array($format, ['text', 'html', 'json', 'structured_json', 'linedJson'], true)) {
+            Help::error("Invalid format: '{$format}'. Allowed: text, html, json, structured_json, linedJson.");
         }
-        /** @var 'text'|'html'|'json' $format */
+        /** @var 'text'|'html'|'json'|'structured_json'|'linedJson' $format */
 
 
         if (!$registry->has($modelKey)) {
@@ -164,6 +167,32 @@ class Cli
         // in interactive mode without --source, warn user about STDIN and EOF
         if ($sourceFile === null && function_exists('stream_isatty') && stream_isatty(STDIN)) {
             Help::warning("Reading from STDIN; press Ctrl-D to finish input and continue.");
+        }
+
+        if ($format === 'structured_json' && !isset($options['response-schema'])) {
+            Help::error('structured_json requires --response-schema=FILE.');
+        }
+        if (isset($options['response-schema'])) {
+            if (!\in_array($format, ['json', 'structured_json', 'linedJson'], true)) {
+                Help::error('--response-schema requires a JSON format.');
+            }
+            if (!\in_array($registry->get($modelKey)['vendor'] ?? null, ['openai', 'google'], true)) {
+                Help::error('Native JSON schema output is supported only by OpenAI and Google.');
+            }
+            $schemaPath = $options['response-schema'];
+            $schemaJson = \is_string($schemaPath) ? @\file_get_contents($schemaPath) : false;
+            if ($schemaJson === false) {
+                Help::error('Cannot read --response-schema file.');
+            }
+            try {
+                $schema = \json_decode($schemaJson, false, 512, JSON_THROW_ON_ERROR);
+            } catch (\JsonException $exception) {
+                Help::error('Invalid JSON in --response-schema file: ' . $exception->getMessage());
+            }
+            if (!$schema instanceof \stdClass || \get_object_vars($schema) === []) {
+                Help::error('--response-schema must contain a nonempty JSON Schema object.');
+            }
+            $cliVars['response_schema'] = \get_object_vars($schema);
         }
 
         // read input text (file or STDIN)
