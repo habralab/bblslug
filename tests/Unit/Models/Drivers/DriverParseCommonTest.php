@@ -42,10 +42,8 @@ final class DriverParseCommonTest extends TestCase
             'anthropic' => [
                 new AnthropicDriver(),
                 json_encode([
-                    'choices' => [[
-                        'message' => ['content' => '‹‹TRANSLATION››Hi there‹‹END››'],
-                        'finish_reason' => 'stop',
-                    ]],
+                    'content' => [['type' => 'text', 'text' => '‹‹TRANSLATION››Hi there‹‹END››']],
+                    'stop_reason' => 'end_turn',
                     'usage' => ['input_tokens' => 1],
                 ], JSON_UNESCAPED_UNICODE),
                 'Hi there',
@@ -119,10 +117,8 @@ final class DriverParseCommonTest extends TestCase
             'anthropic' => [
                 new AnthropicDriver(),
                 json_encode([
-                    'choices' => [[
-                        'message' => ['content' => 'just text'],
-                        'finish_reason' => 'stop',
-                    ]],
+                    'content' => [['type' => 'text', 'text' => 'just text']],
+                    'stop_reason' => 'end_turn',
                 ], JSON_UNESCAPED_UNICODE),
             ],
             'google' => [
@@ -183,14 +179,12 @@ final class DriverParseCommonTest extends TestCase
                     ]],
                 ], JSON_UNESCAPED_UNICODE),
             ],
-            // Anthropic uses the same finish_reason field in our wrapper
+            // Messages API signals truncation with stop_reason=max_tokens.
             'anthropic-truncated' => [
                 new AnthropicDriver(),
                 json_encode([
-                    'choices' => [[
-                        'message' => ['content' => '‹‹TRANSLATION››partial‹‹END››'],
-                        'finish_reason' => 'length',
-                    ]],
+                    'content' => [['type' => 'text', 'text' => '‹‹TRANSLATION››partial‹‹END››']],
+                    'stop_reason' => 'max_tokens',
                 ], JSON_UNESCAPED_UNICODE),
             ],
             // Google uses finishReason = "MAX_TOKENS"

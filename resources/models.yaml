@@ -3,7 +3,7 @@
 # Anthropic (Claude)
 # -------------------------------------------------------------------
 anthropic:
-  endpoint: 'https://api.anthropic.com/v1/chat/completions'
+  endpoint: 'https://api.anthropic.com/v1/messages'
   format: text
   defaults:
     temperature: 0.0
@@ -25,15 +25,56 @@ anthropic:
     tokens:
       total: total_tokens
       breakdown:
-        prompt: prompt_tokens
-        completion: completion_tokens
+        prompt: input_tokens
+        completion: output_tokens
+        cache_creation: cache_creation_input_tokens
+        cache_read: cache_read_input_tokens
 
   models:
+    # Current Messages API models, verified on 2026-10-22.
+    # Adaptive thinking does not accept temperature; keep requests at low effort.
+    claude-haiku-5.5:
+      defaults:
+        model: claude-haiku-5-5
+        max_tokens: 4096
+        temperature: null
+        effort: low
+      limits:
+        max_tokens: 1000000
+        max_output_tokens: 128000
+        estimated_max_chars: 4000000
+      notes: 'Current efficient Claude model for high-volume translation.'
+
+    claude-sonnet-5.5:
+      defaults:
+        model: claude-sonnet-5-5
+        max_tokens: 4096
+        temperature: null
+        effort: low
+      limits:
+        max_tokens: 1000000
+        max_output_tokens: 128000
+        estimated_max_chars: 4000000
+      notes: 'Current balanced Claude model for translation.'
+
+    claude-opus-5.5:
+      defaults:
+        model: claude-opus-5-5
+        max_tokens: 4096
+        temperature: null
+        effort: low
+      limits:
+        max_tokens: 1000000
+        max_output_tokens: 128000
+        estimated_max_chars: 4000000
+      notes: 'Current capable Claude model for demanding translation.'
+
+    # Legacy keys retained for existing callers; providers may no longer serve these models.
     claude-haiku-3.5:
       defaults:
         model: claude-3-5-haiku-latest
         max_tokens: 8192
-      notes: 'A lightweight, low-latency model ideal for simple and quick translation tasks.'
+      notes: 'Legacy model, absent from the account model list checked on 2026-10-22; prefer claude-haiku-5.5.'
 
     claude-opus-4:
       defaults:
@@ -41,7 +82,7 @@ anthropic:
         max_tokens: 32000
       limits:
         estimated_max_chars: 800000
-      notes: 'The most capable Claude model, with the largest context window.'
+      notes: 'Legacy model, absent from the account model list checked on 2026-10-22; prefer claude-opus-5.5.'
 
     claude-sonnet-4:
       defaults:
@@ -49,7 +90,7 @@ anthropic:
         max_tokens: 64000
       limits:
         estimated_max_chars: 800000
-      notes: 'A balanced model offering strong quality with lower latency and cost compared to Opus.'
+      notes: 'Legacy model, absent from the account model list checked on 2026-10-22; prefer claude-sonnet-5.5.'
 
 
 # -------------------------------------------------------------------

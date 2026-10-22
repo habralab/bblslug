@@ -10,7 +10,7 @@ use Bblslug\Models\Prompts;
 /**
  * Anthropic Claude translation driver.
  *
- * Builds requests and parses responses for the Anthropic Claude Chat Completions API.
+ * Builds requests and parses responses for the Anthropic Messages API.
  */
 
 class AnthropicDriver implements ModelDriverInterface
@@ -27,9 +27,10 @@ class AnthropicDriver implements ModelDriverInterface
      *     - context     (string|null) Additional context for system prompt.
      *     - dryRun      (bool)        Skip API call (ignored here).
      *     - format      (string)      Indicates which prompt format to use.
+     *     - effort      (string)      Reasoning effort for models that support it.
      *     - maxTokens   (int)         Maximum tokens to generate.
      *     - promptKey   (string)      Key of the prompt template in prompts.yaml.
-     *     - temperature (float)       Sampling temperature.
+     *     - temperature (float|null)  Sampling temperature; null omits the parameter.
      *     - verbose     (bool)        Include debug logs (ignored here).
      *
      * @return array{url:string, headers:string[], body:string}
@@ -52,7 +53,13 @@ class AnthropicDriver implements ModelDriverInterface
                 : (\is_string($config['format'] ?? null) ? $config['format'] : 'text'));
 
         $maxRaw = $options['maxTokens'] ?? ($defaults['max_tokens'] ?? 1000);
-        $maxTokens = (\is_int($maxRaw) || \is_numeric($maxRaw)) ? (int)$maxRaw : 1000;
+        if (
+            (!\is_int($maxRaw) && !\is_string($maxRaw))
+            || filter_var($maxRaw, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) === false
+        ) {
+            throw new \InvalidArgumentException('maxTokens must be a positive integer');
+        }
+        $maxTokens = (int)$maxRaw;
 
         $model = \is_string($defaults['model'] ?? null)
             ? $defaults['model']
@@ -70,10 +77,9 @@ class AnthropicDriver implements ModelDriverInterface
             ? (string)$defaults['target_lang']
             : 'EN';
 
-        $tempRaw = $options['temperature'] ?? ($defaults['temperature'] ?? 0.0);
-        $temperature = (\is_float($tempRaw) || \is_int($tempRaw) || \is_numeric($tempRaw))
-            ? (float)$tempRaw
-            : 0.0;
+        $settings = array_replace($defaults, $options);
+        $tempRaw = \array_key_exists('temperature', $settings) ? $settings['temperature'] : 0.0;
+        $temperature = $tempRaw === null ? null : (\is_numeric($tempRaw) ? (float)$tempRaw : 0.0);
 
         // Render system prompt
         $systemPrompt = Prompts::render(
@@ -90,17 +96,22 @@ class AnthropicDriver implements ModelDriverInterface
 
         // Compose chat messages
         $messages = [
-            ['role' => 'system', 'content' => $systemPrompt],
             ['role' => 'user',   'content' => self::START . "\n" . $text . "\n" . self::END],
         ];
 
         // Prepare payload
         $payload = [
             'model' => $model,
+            'system' => $systemPrompt,
             'messages' => $messages,
             'max_tokens' => $maxTokens,
-            'temperature' => (float)$temperature,
         ];
+        if ($temperature !== null) {
+            $payload['temperature'] = $temperature;
+        }
+        if (\is_string($settings['effort'] ?? null)) {
+            $payload['output_config'] = ['effort' => $settings['effort']];
+        }
 
         // Normalize return shape and types
         $url = \is_string($config['endpoint'] ?? null) ? (string)$config['endpoint'] : '';
@@ -148,44 +159,30 @@ class AnthropicDriver implements ModelDriverInterface
             $message = \is_string($error['message'] ?? null)
                 ? $error['message']
                 : (\json_encode($error, JSON_UNESCAPED_UNICODE) ?: 'unknown error');
-            // Specific handling for max_tokens errors (avoid using mixed in message)
-            if (\strpos($message, 'max_tokens') !== false) {
-                throw new \RuntimeException(
-                    "Requested max_tokens exceeds model limit. "
-                    . "Please reduce to at most the allowed number.\n\nResponse: {$message}"
-                );
-            }
             throw new \RuntimeException("Anthropic API error: {$message}");
         }
 
-        // Extract raw content early (may be partial when truncated)
-        $first = null;
-        $choices = $data['choices'] ?? null;
-        if (\is_array($choices) && isset($choices[0]) && \is_array($choices[0])) {
-            $first = $choices[0];
-        }
-        $contentRaw = '';
-        if (\is_array($first) && \is_array($first['message'] ?? null)) {
-            $contentRaw = $first['message']['content'] ?? '';
-        }
-        $contentRaw = \is_string($contentRaw) ? $contentRaw : '';
-
-        // If Anthropic cut output by tokens, fail with a clear message before marker search
-        $finishReason = null;
-        if (\is_array($first) && \is_string($first['finish_reason'] ?? null)) {
-            $finishReason = $first['finish_reason'];
-        }
-        if ($finishReason === 'length') {
+        $stopReason = \is_string($data['stop_reason'] ?? null) ? $data['stop_reason'] : '';
+        if ($stopReason === 'max_tokens' || $stopReason === 'model_context_window_exceeded') {
             throw new \RuntimeException(
-                "Anthropic: translation was truncated (finish_reason=length) — "
-                . "increase max_tokens or split input."
+                "Anthropic: translation was truncated (stop_reason={$stopReason}) — "
+                . "increase maxTokens or split input."
             );
         }
+        if ($stopReason !== 'end_turn') {
+            throw new \RuntimeException("Anthropic: unexpected stop_reason '{$stopReason}'");
+        }
 
-        // Validate content
-        $content = $contentRaw;
+        // Ignore thinking/tool blocks; only text blocks belong to the translation.
+        $content = '';
+        $blocks = \is_array($data['content'] ?? null) ? $data['content'] : [];
+        foreach ($blocks as $block) {
+            if (\is_array($block) && ($block['type'] ?? null) === 'text' && \is_string($block['text'] ?? null)) {
+                $content .= $block['text'];
+            }
+        }
         if ($content === '') {
-            throw new \RuntimeException("Anthropic translation failed: {$responseBody}");
+            throw new \RuntimeException('Anthropic translation failed: response has no text blocks');
         }
 
         // Extract between markers
@@ -208,6 +205,14 @@ class AnthropicDriver implements ModelDriverInterface
                     $typed[$k] = $v;
                 }
             }
+            // Messages has no total_tokens field. Cached input is reported separately.
+            $total = 0;
+            $tokenFields = ['input_tokens', 'output_tokens', 'cache_creation_input_tokens', 'cache_read_input_tokens'];
+            foreach ($tokenFields as $field) {
+                $value = $typed[$field] ?? 0;
+                $total += \is_numeric($value) ? (int)$value : 0;
+            }
+            $typed['total_tokens'] = $total;
             $usage = $typed;
         }
 
