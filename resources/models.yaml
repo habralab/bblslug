@@ -69,29 +69,6 @@ anthropic:
         estimated_max_chars: 4000000
       notes: 'Current capable Claude model for demanding translation.'
 
-    # Legacy keys retained for existing callers; providers may no longer serve these models.
-    claude-haiku-3.5:
-      defaults:
-        model: claude-3-5-haiku-latest
-        max_tokens: 8192
-      notes: 'Legacy model, absent from the account model list checked on 2026-10-22; prefer claude-haiku-5.5.'
-
-    claude-opus-4:
-      defaults:
-        model: claude-opus-4-20250514
-        max_tokens: 32000
-      limits:
-        estimated_max_chars: 800000
-      notes: 'Legacy model, absent from the account model list checked on 2026-10-22; prefer claude-opus-5.5.'
-
-    claude-sonnet-4:
-      defaults:
-        model: claude-sonnet-4-20250514
-        max_tokens: 64000
-      limits:
-        estimated_max_chars: 800000
-      notes: 'Legacy model, absent from the account model list checked on 2026-10-22; prefer claude-sonnet-5.5.'
-
 
 # -------------------------------------------------------------------
 # DeepL
@@ -203,17 +180,6 @@ google:
         token_estimator: gpt
         estimated_max_chars: 1048576
       notes: 'Top-tier Pro model for longest contexts and highest accuracy.'
-
-    gemini-2.0-flash:
-      name: 'Gemini 2.0 Flash'
-      endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent'
-      defaults:
-        model: gemini-2.0-flash
-      limits:
-        max_tokens: 131072
-        token_estimator: gpt
-        estimated_max_chars: 524288
-      notes: 'Low-latency Flash model, balanced cost and performance.'
 
 
 # -------------------------------------------------------------------

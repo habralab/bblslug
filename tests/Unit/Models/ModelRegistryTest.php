@@ -19,12 +19,11 @@ class ModelRegistryTest extends TestCase
      * Flat list of all expected model keys for reuse across tests.
      */
     private const EXPECTED_MODELS = [
-        'anthropic:claude-haiku-3.5',
-        'anthropic:claude-opus-4',
-        'anthropic:claude-sonnet-4',
+        'anthropic:claude-haiku-5.5',
+        'anthropic:claude-opus-5.5',
+        'anthropic:claude-sonnet-5.5',
         'deepl:free',
         'deepl:pro',
-        'google:gemini-2.0-flash',
         'google:gemini-2.5-flash',
         'google:gemini-2.5-flash-lite',
         'google:gemini-2.5-pro',
@@ -120,12 +119,11 @@ class ModelRegistryTest extends TestCase
     public function itReturnsExpectedAuthEnvForEachModel(): void
     {
         $expected = [
-            'anthropic:claude-haiku-3.5'   => 'ANTHROPIC_API_KEY',
-            'anthropic:claude-opus-4'      => 'ANTHROPIC_API_KEY',
-            'anthropic:claude-sonnet-4'    => 'ANTHROPIC_API_KEY',
+            'anthropic:claude-haiku-5.5'   => 'ANTHROPIC_API_KEY',
+            'anthropic:claude-opus-5.5'      => 'ANTHROPIC_API_KEY',
+            'anthropic:claude-sonnet-5.5'    => 'ANTHROPIC_API_KEY',
             'deepl:free'                   => 'DEEPL_FREE_API_KEY',
             'deepl:pro'                    => 'DEEPL_PRO_API_KEY',
-            'google:gemini-2.0-flash'      => 'GOOGLE_API_KEY',
             'google:gemini-2.5-flash'      => 'GOOGLE_API_KEY',
             'google:gemini-2.5-flash-lite' => 'GOOGLE_API_KEY',
             'google:gemini-2.5-pro'        => 'GOOGLE_API_KEY',
@@ -182,12 +180,11 @@ class ModelRegistryTest extends TestCase
     public function itReturnsExpectedHelpUrlForEachModel(): void
     {
         $expected = [
-            'anthropic:claude-haiku-3.5'   => 'console.anthropic.com',
-            'anthropic:claude-opus-4'      => 'console.anthropic.com',
-            'anthropic:claude-sonnet-4'    => 'console.anthropic.com',
+            'anthropic:claude-haiku-5.5'   => 'console.anthropic.com',
+            'anthropic:claude-opus-5.5'      => 'console.anthropic.com',
+            'anthropic:claude-sonnet-5.5'    => 'console.anthropic.com',
             'deepl:free'                   => 'deepl.com/account/summary',
             'deepl:pro'                    => 'deepl.com/account/summary',
-            'google:gemini-2.0-flash'      => 'makersuite.google.com/app/apikey',
             'google:gemini-2.5-flash'      => 'makersuite.google.com/app/apikey',
             'google:gemini-2.5-flash-lite' => 'makersuite.google.com/app/apikey',
             'google:gemini-2.5-pro'        => 'makersuite.google.com/app/apikey',
@@ -248,12 +245,11 @@ class ModelRegistryTest extends TestCase
     public function itInstantiatesCorrectDriverForEachModel(): void
     {
         $map = [
-            'anthropic:claude-haiku-3.5'   => AnthropicDriver::class,
-            'anthropic:claude-opus-4'      => AnthropicDriver::class,
-            'anthropic:claude-sonnet-4'    => AnthropicDriver::class,
+            'anthropic:claude-haiku-5.5'   => AnthropicDriver::class,
+            'anthropic:claude-opus-5.5'      => AnthropicDriver::class,
+            'anthropic:claude-sonnet-5.5'    => AnthropicDriver::class,
             'deepl:free'                   => DeepLDriver::class,
             'deepl:pro'                    => DeepLDriver::class,
-            'google:gemini-2.0-flash'      => GoogleDriver::class,
             'google:gemini-2.5-flash'      => GoogleDriver::class,
             'google:gemini-2.5-flash-lite' => GoogleDriver::class,
             'google:gemini-2.5-pro'        => GoogleDriver::class,
@@ -288,8 +284,8 @@ class ModelRegistryTest extends TestCase
     /** @test */
     public function itThrowsOnUnsupportedGoogleModel(): void
     {
-        // Assuming 'gemini-1.5-pro' uses vendor 'google'
+        // Retired models must not resolve to a driver.
         $this->expectException(\InvalidArgumentException::class);
-        $this->registry->getDriver('google:gemini-1.5-pro');
+        $this->registry->getDriver('google:gemini-2.0-flash');
     }
 }

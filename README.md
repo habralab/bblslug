@@ -10,9 +10,6 @@ APIs supported:
   - `anthropic:claude-haiku-5.5` - Claude Haiku 5.5 (low effort)
   - `anthropic:claude-sonnet-5.5` - Claude Sonnet 5.5 (low effort)
   - `anthropic:claude-opus-5.5` - Claude Opus 5.5 (low effort)
-  - `anthropic:claude-haiku-3.5` - Claude Haiku 3.5 (legacy)
-  - `anthropic:claude-opus-4` - Claude Opus 4 (legacy, 20250514)
-  - `anthropic:claude-sonnet-4` - Claude Sonnet 4 (legacy, 20250514)
 - DeepL:
   - `deepl:free` - DeepL free tier
   - `deepl:pro` - DeepL pro tier
@@ -20,7 +17,6 @@ APIs supported:
   - `google:gemini-2.5-flash` - Gemini 2.5 Flash
   - `google:gemini-2.5-flash-lite` - Gemini 2.5 Flash Lite
   - `google:gemini-2.5-pro` - Gemini 2.5 Pro
-  - `google:gemini-2.0-flash` - Gemini 2.0 Flash
 - OpenAI (GPT):
   - `openai:gpt-6-luna` - GPT-6 Luna (efficient, low reasoning effort)
   - `openai:gpt-6.1-sol` - GPT-6.1 Sol (general purpose, low reasoning effort)
@@ -55,12 +51,14 @@ APIs supported:
 
 The GPT-6 entries were checked against [official OpenAI documentation](https://developers.openai.com/api/docs/guides/latest-model) on 2026-10-22.
 They use Chat Completions with `reasoning_effort=low` and omit `temperature`, which is unsupported with reasoning enabled.
-Older model identifiers remain available for existing integrations; registry presence does not guarantee access for your API account.
+Older OpenAI model identifiers remain available for existing integrations; registry presence does not guarantee access for your API account.
 
 The Claude 5.5 entries use the [Anthropic Messages API](https://platform.claude.com/docs/en/api/messages/create)
 with `effort=low`, no `temperature`, and an initial output budget of 4096 tokens.
 Use `--variables=maxTokens=8192,effort=low` to override that budget and effort.
-Legacy Claude identifiers are retained without redirecting them to newer models.
+Retired Claude 3.5/4 and Gemini 2.0 model keys have been removed, rather than redirected
+to different models. Their retirement is documented by [Anthropic](https://platform.claude.com/docs/en/about-claude/model-deprecations)
+and [Google](https://ai.google.dev/gemini-api/docs/deprecations).
 
 ## Installation
 

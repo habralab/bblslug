@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Removed
+- Retired model keys `anthropic:claude-haiku-3.5`, `anthropic:claude-opus-4`,
+  `anthropic:claude-sonnet-4`, and `google:gemini-2.0-flash` from the registry and CLI list.
+  These models are no longer served by their providers. Removed keys now fail locally
+  as unknown models; existing calls are not silently routed to different models.
+
 ## [0.7.0] – 2025-08-09
 
 ### Added
