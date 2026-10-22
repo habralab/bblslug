@@ -89,6 +89,11 @@ chmod +x vendor/bin/bblslug
 
   **NB!** Some vendors require additional parameters, e.g. `YANDEX_FOLDER_ID`.
 
+  To use a credential-specific prefix, set `BBLSLUG_` before the usual environment
+  variable name (for example, `BBLSLUG_OPENAI_API_KEY` and
+  `BBLSLUG_YANDEX_FOLDER_ID`). A non-empty prefixed value takes precedence; the
+  unprefixed variable remains a fallback.
+
 3. **Input / output**:
 
   - If `--source` is omitted, Bblslug reads from **STDIN**.
@@ -408,6 +413,25 @@ try {
 
 
 ## Samples
+
+### Local live smoke checks
+
+Run the live suite with an exact `BBLSLUG_LIVE_MODEL`, or `all` for the first model
+of each vendor with credentials. Use `deepl:pro` to check the Pro tier separately.
+Credentials use the `BBLSLUG_` prefix first, with unprefixed names as a fallback.
+Yandex also requires `BBLSLUG_YANDEX_FOLDER_ID` or `YANDEX_FOLDER_ID`.
+The JSON sample includes a JSON-encoded string with backslashes and quotes.
+These checks call paid APIs and verify basic translation and container invariants;
+they are not a translation-quality benchmark.
+
+Locally, with the corresponding environment variables configured:
+
+```bash
+RUN_LIVE_TESTS=1 BBLSLUG_LIVE_MODEL=openai:gpt-6-luna \
+  vendor/bin/phpunit --testsuite integration --testdox
+```
+
+### Input samples
 
 You can find sample input files under the `samples/` directory.
 

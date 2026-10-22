@@ -6,29 +6,22 @@ namespace Bblslug\Tests\Integration;
 
 use PHPUnit\Framework\TestCase;
 use Bblslug\Bblslug;
+use Bblslug\Models\ModelRegistry;
 
 /**
  * Live integration tests against real vendors.
  *
  * Control flags:
  * - RUN_LIVE_TESTS=1      — enable this suite
+ * - BBLSLUG_{VENDOR}_API_KEY — preferred per-vendor API keys; unprefixed names remain supported
  * - {VENDOR}_API_KEY      — per-vendor API keys (OPENAI_API_KEY, ANTHROPIC_API_KEY, GOOGLE_API_KEY,
- *                           XAI_API_KEY, YANDEX_API_KEY, DEEPL_API_KEY)
- * - YANDEX_FOLDER_ID      — required for Yandex
+ *                           XAI_API_KEY, YANDEX_API_KEY, DEEPL_FREE_API_KEY, DEEPL_PRO_API_KEY)
+ * - BBLSLUG_LIVE_MODEL   — optional exact model key; default: first model per vendor
+ * - BBLSLUG_YANDEX_FOLDER_ID or YANDEX_FOLDER_ID — required for Yandex
  * - BBLSLUG_PROXY         — optional proxy (http://..., socks5h://...)
  */
 final class LiveTranslatePerVendorTest extends TestCase
 {
-    /** Map vendor => required ENV for API key */
-    private const KEY_ENV = [
-        'openai'    => 'OPENAI_API_KEY',
-        'anthropic' => 'ANTHROPIC_API_KEY',
-        'google'    => 'GOOGLE_API_KEY',
-        'xai'       => 'XAI_API_KEY',
-        'yandex'    => 'YANDEX_API_KEY',
-        'deepl'     => 'DEEPL_API_KEY',
-    ];
-
     protected function setUp(): void
     {
         if (!getenv('RUN_LIVE_TESTS')) {
@@ -46,29 +39,44 @@ final class LiveTranslatePerVendorTest extends TestCase
     {
         $cases = [];
         $modelsByVendor = Bblslug::listModels();
+        $registry = new ModelRegistry();
+        $selectedModel = getenv('BBLSLUG_LIVE_MODEL') ?: null;
+        if ($selectedModel === 'all') {
+            $selectedModel = null;
+        }
+        if ($selectedModel !== null && !$registry->has($selectedModel)) {
+            throw new \InvalidArgumentException('Unknown BBLSLUG_LIVE_MODEL');
+        }
 
         foreach ($modelsByVendor as $vendor => $models) {
-            if (!isset(self::KEY_ENV[$vendor])) {
-                continue; // unknown/unsupported vendor in this test
-            }
-            $apiEnv = self::KEY_ENV[$vendor];
-            $apiKey = (string) getenv($apiEnv);
-
-            if ($apiKey === '') {
-                continue; // no credentials => skip vendor
-            }
-
             // pick the first model key for this vendor
             $modelKeys = array_keys($models);
             if (empty($modelKeys)) {
                 continue;
             }
-            $modelKey = $modelKeys[0];
+            $modelKey = $selectedModel ?? $modelKeys[0];
+            if (!isset($models[$modelKey])) {
+                continue;
+            }
+            $apiEnv = $registry->getAuthEnv($modelKey);
+            $apiKey = $apiEnv !== null ? (string) self::getEnvironmentValue($apiEnv) : '';
+            if ($apiKey === '') {
+                if ($selectedModel !== null) {
+                    throw new \RuntimeException('Missing API key for selected model ' . $modelKey);
+                }
+                continue;
+            }
 
             $vars = [];
+            if ($vendor === 'openai') {
+                $vars['max_completion_tokens'] = 4096;
+            }
             if ($vendor === 'yandex') {
-                $folderId = (string) getenv('YANDEX_FOLDER_ID');
+                $folderId = (string) self::getEnvironmentValue('YANDEX_FOLDER_ID');
                 if ($folderId === '') {
+                    if ($selectedModel !== null) {
+                        throw new \RuntimeException('Missing YANDEX_FOLDER_ID for selected model');
+                    }
                     // cannot test Yandex without folder id
                     continue;
                 }
@@ -84,6 +92,19 @@ final class LiveTranslatePerVendorTest extends TestCase
         }
 
         return $cases;
+    }
+
+    /**
+     * @return string|false
+     */
+    private static function getEnvironmentValue(string $name)
+    {
+        $prefixed = getenv('BBLSLUG_' . $name);
+        if ($prefixed !== false && $prefixed !== '') {
+            return $prefixed;
+        }
+
+        return getenv($name);
     }
 
     /**
@@ -126,6 +147,8 @@ final class LiveTranslatePerVendorTest extends TestCase
         $this->assertGreaterThanOrEqual(200, $res['httpStatus']);
         $this->assertLessThan(300, $res['httpStatus']);
         $this->assertIsString($res['result']);
+        $this->assertNotSame('', trim($res['result']));
+        $this->assertNotSame('Hello world', trim($res['result']), 'Source text was not translated');
         $this->assertNotSame('', $res['rawResponseBody']);
 
         // API key must be masked in logs
@@ -146,7 +169,9 @@ final class LiveTranslatePerVendorTest extends TestCase
     {
         $proxy = getenv('BBLSLUG_PROXY') ?: null;
 
-        $html = '<div class="wrap"><p>Hi <strong>there</strong>!</p></div>';
+        $html = '<div class="wrap"><p>Hi <strong>there</strong>!</p>'
+            . '<a href="https://example.org/docs?a=1&amp;b=2">Documentation</a>'
+            . '<pre><code>echo "a\\b";</code></pre></div>';
 
         $res = Bblslug::translate(
             apiKey:     $apiKey,
@@ -155,7 +180,7 @@ final class LiveTranslatePerVendorTest extends TestCase
             text:       $html,
             context:    'Translate as a professional technical translator',
             dryRun:     false,
-            filters:    [],
+            filters:    ['url', 'html_pre'],
             onFeedback: null,
             proxy:      $proxy ?: null,
             sourceLang: 'EN',
@@ -174,6 +199,14 @@ final class LiveTranslatePerVendorTest extends TestCase
         $this->assertStringContainsString('<div', $res['result']);
         $this->assertStringContainsString('<p', $res['result']);
         $this->assertStringContainsString('<strong', $res['result']);
+        $this->assertStringNotContainsString('```', $res['result'], 'Unexpected Markdown around HTML');
+        $this->assertStringContainsString('https://example.org/docs?a=1&amp;b=2', $res['result']);
+        $this->assertStringContainsString('<pre><code>echo "a\\b";</code></pre>', $res['result']);
+        $dom = new \DOMDocument();
+        $dom->loadHTML($res['result'], LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+        $xpath = new \DOMXPath($dom);
+        $this->assertSame(1, (int) $xpath->evaluate('count(/div/a)'), 'Link moved in HTML tree');
+        $this->assertSame(1, (int) $xpath->evaluate('count(/div/pre/code)'), 'Code moved in HTML tree');
 
         $this->assertStringNotContainsString($apiKey, $res['debugRequest']);
         $this->assertStringNotContainsString($apiKey, $res['debugResponse']);
@@ -203,7 +236,12 @@ final class LiveTranslatePerVendorTest extends TestCase
             'article' => [
                 'title' => 'Hello',
                 'meta'  => ['desc' => 'Short text'],
+                'body' => '<p title="Greeting">Hello <strong>world</strong>!</p>',
             ],
+            'id' => 123,
+            'enabled' => true,
+            'optional' => null,
+            'embeddedJson' => json_encode(['message' => 'Hello', 'path' => 'C:\\tmp\\"x"']),
         ], JSON_UNESCAPED_UNICODE);
 
         $res = Bblslug::translate(
@@ -235,6 +273,13 @@ final class LiveTranslatePerVendorTest extends TestCase
         $this->assertArrayHasKey('title', $decoded['article']);
         $this->assertArrayHasKey('meta', $decoded['article']);
         $this->assertArrayHasKey('desc', $decoded['article']['meta']);
+        $this->assertNotSame('Hello', $decoded['article']['title']);
+        $this->assertSame(123, $decoded['id']);
+        $this->assertTrue($decoded['enabled']);
+        $this->assertArrayHasKey('optional', $decoded);
+        $this->assertNull($decoded['optional']);
+        $embedded = json_decode($decoded['embeddedJson'], true, 512, JSON_THROW_ON_ERROR);
+        $this->assertSame('C:\\tmp\\"x"', $embedded['path']);
 
         $this->assertStringNotContainsString($apiKey, $res['debugRequest']);
         $this->assertStringNotContainsString($apiKey, $res['debugResponse']);

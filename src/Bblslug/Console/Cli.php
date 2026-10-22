@@ -131,7 +131,7 @@ class Cli
 
         // Load API key
         $envVar  = $registry->getAuthEnv($modelKey);
-        $apiKey  = $envVar ? (getenv($envVar) ?: '') : '';
+        $apiKey  = $envVar ? (self::getEnvironmentValue($envVar) ?: '') : '';
         $helpUrl = $registry->getHelpUrl($modelKey) ?? '';
 
         if (!$apiKey) {
@@ -223,7 +223,7 @@ class Cli
         // Collect any model-specific variables
         $variables = [];
         foreach ($registry->getVariables($modelKey) as $name => $envVar) {
-            $val = getenv($envVar);
+            $val = self::getEnvironmentValue($envVar);
             if ($val === false) {
                 Help::error("Missing required env var {$envVar} for model {$modelKey}");
             }
@@ -373,5 +373,20 @@ class Cli
 
         fwrite($stderr, $reset);
         fclose($stderr);
+    }
+
+    /**
+     * Read a prefixed environment variable first, then its original name.
+     *
+     * @return string|false
+     */
+    private static function getEnvironmentValue(string $name)
+    {
+        $prefixed = getenv('BBLSLUG_' . $name);
+        if ($prefixed !== false && $prefixed !== '') {
+            return $prefixed;
+        }
+
+        return getenv($name);
     }
 }
