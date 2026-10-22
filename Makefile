@@ -5,8 +5,15 @@
 install:
 	composer install --no-interaction --optimize-autoloader
 
-lint:
-	composer run lint
+test: test-phplint test-phpunit test-phpstan
 
-test:
-	composer run phpunit
+lint: test-phplint
+
+test-phplint:
+	composer run test:phplint
+
+test-phpunit:
+	composer run test:phpunit
+
+test-phpstan:
+	composer run test:phpstan

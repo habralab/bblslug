@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Bblslug\Validation;
 
 use Bblslug\Validation\ValidationResult;

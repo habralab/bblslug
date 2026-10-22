@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Bblslug\Console;
 
 use Bblslug\Bblslug;
@@ -30,13 +32,14 @@ class Cli
             "context:",      // extra context prompt
             "dry-run",       // placeholders only
             "filters:",      // comma-separated filter list
-            "format:",       // "text", "html" or "json"
+            "format:",       // text, HTML or a JSON format
             "help",          // show help and exit
             "list-models",   // show models and exit
             "list-prompts",  // show available prompt templates and exit
             "model:",        // model key
             "no-validate",   // disable pre- and post-validation of container syntax
             "prompt-key:",   // prompt template key (from prompts.yaml)
+            "response-schema:", // JSON Schema file for native JSON output
             "proxy:",        // optional proxy URI
             "source:",       // input file (default = STDIN)
             "source-lang:",  // override source language
@@ -66,26 +69,56 @@ class Cli
         }
 
         // Extract params
-        $context    = $options['context'] ?? null;
+        $context    = isset($options['context']) && is_string($options['context'])
+                        ? $options['context'] : null;
         $dryRun     = isset($options['dry-run']);
-        $format     = $options['format'] ?? null;
-        $filters    = isset($options['filters'])
+        $format     = isset($options['format']) && is_string($options['format'])
+                        ? $options['format'] : null;
+        $filters    = isset($options['filters']) && is_string($options['filters'])
                         ? array_map('trim', explode(',', $options['filters']))
                         : [];
-        $modelKey   = $options['model'] ?? null;
-        $outFile    = $options['translated'] ?? null;
-        $promptKey  = $options['prompt-key'] ?? 'translator';
-        $sourceFile = $options['source'] ?? null;
-        $sourceLang = $options['source-lang'] ?? null;
-        $targetLang = $options['target-lang'] ?? null;
+        $modelKey   = isset($options['model']) && is_string($options['model'])
+                        ? $options['model']
+                        : null;
+        $outFile    = isset($options['translated']) && is_string($options['translated'])
+                        ? $options['translated']
+                        : null;
+        $promptKey  = isset($options['prompt-key']) && is_string($options['prompt-key'])
+                        ? $options['prompt-key']
+                        : 'translator';
+        $sourceFile = isset($options['source']) && is_string($options['source'])
+                        ? $options['source']
+                        : null;
+        $sourceLang = isset($options['source-lang']) && is_string($options['source-lang'])
+                        ? $options['source-lang']
+                        : null;
+        $targetLang = isset($options['target-lang']) && is_string($options['target-lang'])
+                        ? $options['target-lang']
+                        : null;
         $validate   = ! isset($options['no-validate']);
         $verbose    = isset($options['verbose']);
 
-        if (!$modelKey) {
+        if ($modelKey === null || $modelKey === '') {
             Help::error(
                 "No model selected. Use --model to specify a model or --list-models to view available models."
             );
         }
+
+        // From this point $modelKey is a string (Help::error() never returns)
+        /** @var non-empty-string $modelKey */
+
+        // Format must be provided explicitly and valid
+        if ($format === null) {
+            Help::error(
+                "Missing required option --format. Allowed values: text, html, json, structured_json, linedJson."
+            );
+        }
+
+        if (!in_array($format, ['text', 'html', 'json', 'structured_json', 'linedJson'], true)) {
+            Help::error("Invalid format: '{$format}'. Allowed: text, html, json, structured_json, linedJson.");
+        }
+        /** @var 'text'|'html'|'json'|'structured_json'|'linedJson' $format */
+
 
         if (!$registry->has($modelKey)) {
             Help::error(
@@ -99,13 +132,9 @@ class Cli
             );
         }
 
-        if (!in_array($format, ['text','html','json'], true)) {
-            Help::error("Invalid format: '{$format}'. Allowed: text, html, json.");
-        }
-
         // Load API key
         $envVar  = $registry->getAuthEnv($modelKey);
-        $apiKey  = $envVar ? getenv($envVar) : '';
+        $apiKey  = $envVar ? (self::getEnvironmentValue($envVar) ?: '') : '';
         $helpUrl = $registry->getHelpUrl($modelKey) ?? '';
 
         if (!$apiKey) {
@@ -118,9 +147,13 @@ class Cli
 
         // Parse --variables into key=value overrides
         $cliVars = [];
-        if (!empty($options['variables'])) {
+        if (isset($options['variables']) && is_string($options['variables']) && $options['variables'] !== '') {
             foreach (explode(',', $options['variables']) as $pair) {
-                list($k, $v) = array_map('trim', explode('=', $pair, 2)) + [null, null];
+                $pair = trim($pair);
+                if ($pair == '') {
+                    continue;
+                }
+                [$k, $v] = array_map('trim', explode('=', $pair, 2)) + [null, null];
                 if ($k !== null && $v !== null) {
                     $cliVars[$k] = $v;
                 } else {
@@ -136,6 +169,32 @@ class Cli
             Help::warning("Reading from STDIN; press Ctrl-D to finish input and continue.");
         }
 
+        if ($format === 'structured_json' && !isset($options['response-schema'])) {
+            Help::error('structured_json requires --response-schema=FILE.');
+        }
+        if (isset($options['response-schema'])) {
+            if (!\in_array($format, ['json', 'structured_json', 'linedJson'], true)) {
+                Help::error('--response-schema requires a JSON format.');
+            }
+            if (!\in_array($registry->get($modelKey)['vendor'] ?? null, ['openai', 'google'], true)) {
+                Help::error('Native JSON schema output is supported only by OpenAI and Google.');
+            }
+            $schemaPath = $options['response-schema'];
+            $schemaJson = \is_string($schemaPath) ? @\file_get_contents($schemaPath) : false;
+            if ($schemaJson === false) {
+                Help::error('Cannot read --response-schema file.');
+            }
+            try {
+                $schema = \json_decode($schemaJson, false, 512, JSON_THROW_ON_ERROR);
+            } catch (\JsonException $exception) {
+                Help::error('Invalid JSON in --response-schema file: ' . $exception->getMessage());
+            }
+            if (!$schema instanceof \stdClass || \get_object_vars($schema) === []) {
+                Help::error('--response-schema must contain a nonempty JSON Schema object.');
+            }
+            $cliVars['response_schema'] = \get_object_vars($schema);
+        }
+
         // read input text (file or STDIN)
         if ($sourceFile !== null) {
             if (!is_readable($sourceFile)) {
@@ -146,19 +205,12 @@ class Cli
                 Help::error("Failed to read source file: {$sourceFile}");
             }
         } else {
-            // read from stdin
-            $text = '';
-            // if stdin is a terminal and no --source, error immediately
-            if (ftell(STDIN) === 0 && posix_isatty(STDIN)) {
-                Help::error(
-                    "No input provided.\n\n" .
-                    "Please specify an input file via --source, or pipe text into stdin."
-                );
+            // read whole STDIN safely
+            $stdin = fopen('php://stdin', 'r');
+            $text = $stdin !== false ? (stream_get_contents($stdin) ?: '') : '';
+            if ($stdin !== false) {
+                fclose($stdin);
             }
-            while (!feof(STDIN)) {
-                $text .= fgets(STDIN);
-            }
-            // still empty?
             if (trim($text) === '') {
                 Help::error(
                     "No input provided.\n\n" .
@@ -179,7 +231,9 @@ class Cli
         if ($dryRun) {
             $prepared = (new FilterManager($filters))->apply($text);
             if ($sourceFile !== null) {
-                file_put_contents($sourceFile . '.prepared', $prepared);
+                if (@file_put_contents($sourceFile . '.prepared', $prepared) !== strlen($prepared)) {
+                    Help::error("Failed to write prepared file: {$sourceFile}.prepared");
+                }
                 Help::info("Dry-run: saved prepared file as {$sourceFile}.prepared");
             } else {
                 echo $prepared;
@@ -188,12 +242,19 @@ class Cli
         }
 
         // Read optional proxy setting (CLI flag has priority)
-        $proxy = $options['proxy'] ?? getenv('BBLSLUG_PROXY') ?: null;
+        $proxy = isset($options['proxy']) && is_string($options['proxy'])
+                   ? $options['proxy']
+                   : null;
+
+        if ($proxy === null) {
+            $envProxy = getenv('BBLSLUG_PROXY');
+            $proxy = $envProxy === false ? null : (string)$envProxy;
+        }
 
         // Collect any model-specific variables
         $variables = [];
         foreach ($registry->getVariables($modelKey) as $name => $envVar) {
-            $val = getenv($envVar);
+            $val = self::getEnvironmentValue($envVar);
             if ($val === false) {
                 Help::error("Missing required env var {$envVar} for model {$modelKey}");
             }
@@ -202,17 +263,60 @@ class Cli
         // Override by CLI
         $variables = array_merge($variables, $cliVars);
 
+        // Feedback handler for progress messages.
+        /**
+         * @param 'info'|'warning'|'error' $level
+         * @return void
+         */
+        $feedback = function (string $message, string $level = 'info'): void {
+            switch ($level) {
+                case 'warning':
+                    Help::warning($message);
+                    break;
+                case 'error':
+                    Help::error($message);
+                    // No break because exit already performed in Help::error
+                default:
+                    Help::info($message);
+            }
+        };
+
         // Perform translation
-        $res = [];
+        /** @var array{
+         *   original:string, prepared:string, result:string,
+         *   httpStatus:int, debugRequest:string, debugResponse:string,
+         *   rawResponseBody:string,
+         *   consumed: array<string,mixed>,
+         *   lengths: array{original:int, prepared:int, translated:int},
+         *   filterStats: array<int, array{filter:string, count:int}>
+         * } $res
+         */
+        $res = [
+            'original' => '',
+            'prepared' => '',
+            'result' => '',
+            'httpStatus' => 0,
+            'debugRequest' => '',
+            'debugResponse' => '',
+            'rawResponseBody' => '',
+            'consumed' => [],
+            'lengths' => [
+                'original' => 0,
+                'prepared' => 0,
+                'translated' => 0
+            ],
+            'filterStats' => [],
+        ];
         try {
             $res = Bblslug::translate(
-                apiKey: $apiKey,
+                apiKey: (string)$apiKey,
                 format: $format,
                 modelKey: $modelKey,
                 text: $text,
                 context: $context,
                 dryRun: $dryRun,
                 filters: $filters,
+                onFeedback: $verbose ? $feedback : null,
                 promptKey: $promptKey,
                 proxy: $proxy,
                 sourceLang: $sourceLang,
@@ -225,12 +329,13 @@ class Cli
             Help::error($e->getMessage());
         }
 
-        if (PHP_SAPI === 'cli' && ($verbose || $dryRun)) {
+        // at this point $dryRun already exited above, so only $verbose matters
+        if (PHP_SAPI === 'cli' && ($verbose)) {
             file_put_contents('php://stderr', $res['debugRequest'], FILE_APPEND);
             file_put_contents('php://stderr', $res['debugResponse'], FILE_APPEND);
         }
 
-        if (!empty($res['httpStatus']) && $res['httpStatus'] >= 400) {
+        if ($res['httpStatus'] >= 400) {
             Help::error(
                 "HTTP {$res['httpStatus']} error from request: {$res['rawResponseBody']}"
             );
@@ -238,7 +343,9 @@ class Cli
 
         // Write output (file or STDOUT)
         if ($outFile !== null) {
-            file_put_contents($outFile, $res['result']);
+            if (@file_put_contents($outFile, $res['result']) !== strlen($res['result'])) {
+                Help::error("Failed to write translation file: {$outFile}");
+            }
             Help::info("Translation complete: {$outFile}");
         } else {
             echo $res["result"];
@@ -247,8 +354,13 @@ class Cli
         // emit stats
         $bold = "\033[1m";
         $reset = "\033[0m";
-        $lh   = $res['lengths'];
+        $lh    = $res['lengths'];
         $stderr = fopen('php://stderr', 'w');
+        if ($stderr === false) {
+            // As a last resort, write to STDOUT (shouldn't normally happen)
+            echo $reset;
+            return;
+        }
         // Characters processed visualization
         fwrite($stderr, "\n{$bold}Characters processed:{$reset}\n");
         fwrite($stderr, "\t{$bold}Original:{$reset}    {$lh['original']}\n");
@@ -264,7 +376,8 @@ class Cli
             }
         }
         // Usage visualization
-        $consumed = $res['consumed'] ?? [];
+        /** @var array<string, array{total?: int, breakdown?: array<string,int>}> $consumed */
+        $consumed = $res['consumed'];
 
         fwrite($stderr, "\n{$bold}Usage metrics:{$reset}\n");
         if (empty($consumed)) {
@@ -272,18 +385,20 @@ class Cli
         } else {
             foreach ($consumed as $category => $metrics) {
                 // Category header, e.g. "Tokens:"
-                fwrite($stderr, "\t" . ucfirst($category) . ":\n");
+                fwrite($stderr, "\t" . ucfirst((string)$category) . ":\n");
                 // Total line
-                $total = $metrics['total'] ?? 0;
+                $total = isset($metrics['total']) ? (int)$metrics['total'] : 0;
                 fwrite($stderr, sprintf("\t\t%-12s %d\n", 'Total:', $total));
                 // Separator line of appropriate length
                 $sepLen = 12 + 1 + strlen((string)$total);
                 $sep    = str_repeat('-', $sepLen);
                 fwrite($stderr, "\t\t{$sep}\n");
                 // Breakdown lines, e.g. Prompt, Completion
-                if (!empty($metrics['breakdown']) && is_array($metrics['breakdown'])) {
-                    foreach ($metrics['breakdown'] as $label => $cnt) {
-                        fwrite($stderr, sprintf("\t\t%-12s %d\n", ucfirst($label) . ':', $cnt));
+                if (isset($metrics['breakdown'])) {
+                    /** @var array<string,int> $bd */
+                    $bd = $metrics['breakdown'];
+                    foreach ($bd as $label => $cnt) {
+                        fwrite($stderr, sprintf("\t\t%-12s %d\n", ucfirst((string)$label) . ':', (int)$cnt));
                     }
                 }
             }
@@ -291,5 +406,20 @@ class Cli
 
         fwrite($stderr, $reset);
         fclose($stderr);
+    }
+
+    /**
+     * Read a prefixed environment variable first, then its original name.
+     *
+     * @return string|false
+     */
+    private static function getEnvironmentValue(string $name)
+    {
+        $prefixed = getenv('BBLSLUG_' . $name);
+        if ($prefixed !== false && $prefixed !== '') {
+            return $prefixed;
+        }
+
+        return getenv($name);
     }
 }

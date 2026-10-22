@@ -4,6 +4,123 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] – 2026-10-23
+
+This release replaces the earlier, withdrawn `v0.8.0` tag; it is not the same
+source revision. See the upgrade notes below.
+
+### Added
+
+- Integrated the developer's generic JSON prototypes: `structured_json` uses an
+  explicit caller-provided `response_schema` with OpenAI Chat Completions/Responses
+  or Gemini native schema output; `linedJson` selects an alternative prompt with
+  ordinary JSON container validation. Neither mode assumes application field names.
+- Added CLI `--response-schema=FILE` for native structured JSON. Native responses
+  do not use translation markers. Gemini thought parts are excluded from output.
+- Expanded the six-provider registry to 132 entries as checked on 2026-10-22:
+  72 OpenAI, 17 Anthropic, 17 Google, 16 Yandex, eight xAI models, and two DeepL
+  service tiers. Includes served legacy models, previews, dated snapshots, and
+  restricted-access models. Availability remains dependent on the provider and account.
+- Added `resources/model-catalog.json` with provider API identifiers, source links,
+  exclusions, and results of plain-text translation checks.
+- Added OpenAI and xAI Responses API requests and response parsing, legacy OpenAI
+  Completions requests, and Yandex OpenAI-compatible requests alongside the
+  Foundation API. The registry selects the API required by each model.
+- Added model-specific reasoning settings for OpenAI, Claude adaptive thinking and
+  effort, Gemini thinking levels, and DeepL engine selection through `model_type`.
+- Added the optional `onFeedback` translation progress callback, wired to verbose
+  CLI output. It was described in the 0.7.0 notes but absent from that tagged code.
+- CLI credentials and required model variables accept non-empty `BBLSLUG_` prefixed
+  environment variables before their unprefixed equivalents; explicit CLI values win.
+- Added unit tests for translation, drivers, validation, filters, HTTP, CLI output,
+  and registry/documentation consistency. Live integration tests are opt-in and
+  can select an exact model with `BBLSLUG_LIVE_MODEL`.
+
+### Fixed
+
+- Anthropic now uses the Messages API. DeepL now uses header authentication and
+  the correct Pro endpoint.
+- OpenAI and xAI response parsing handles the corresponding API response shapes,
+  refusals, and incomplete responses rather than accepting them as translations.
+- JSON validation checks the actual returned document. Missing fields or list
+  elements, including `null`, are rejected rather than silently validating a
+  repaired tree while returning incomplete output.
+- The alternative JSON prompt now requires consistent output markers rather than
+  simultaneously requesting marked output and JSON alone. Test YAML files use
+  unique names so concurrent test runs do not overwrite each other's fixtures.
+- JSON structure checks distinguish objects from arrays, including empty
+  containers and objects with numeric keys.
+- Translation HTTP and provider parsing errors mask API keys in URLs, response
+  bodies, and diagnostic logs, including encoded and JSON-escaped forms.
+- HTTP request logs mask URL credentials in verbose and dry-run modes. Requests
+  have configurable connection and total timeouts, defaulting to 10 and 120
+  seconds; network exceptions preserve the cURL error code.
+- CLI exits with an error when translated or dry-run prepared output cannot be
+  fully written.
+- Composer distributions include the CLI executable. Composer binary proxies use
+  the consuming project's autoloader.
+- README examples and CLI help describe credential precedence, prompt selection,
+  dry-run behavior, and validation limits. Removed duplicated provider guidance.
+
+### Compatibility and upgrade notes
+
+- PHP **8.2 or newer**, cURL, DOM, and mbstring are required. The PHP floor matches
+  the existing Symfony YAML dependency; older manifests understated it.
+- `onFeedback` is appended to `Bblslug::translate()` so the original positional
+  argument order is preserved. Named callback arguments remain supported.
+- `ModelDriverInterface::parseResponse()` accepts an optional third
+  `array $options = []` argument. Update custom driver implementations to that
+  signature; direct two-argument calls to built-in drivers remain supported.
+- Compared with the withdrawn tag, `structured_json` now requires an explicit
+  schema and is limited to the two implemented providers; the CLI can supply it
+  with `--response-schema`. Translation input remains a string. The old array
+  input declaration did not provide a working array translation path.
+- `linedJson` rejects malformed or structurally incomplete output instead of
+  attempting to repair quotes with a regular expression. It is not JSON Lines.
+- Removed retired or invalid keys: `anthropic:claude-haiku-3.5`,
+  `anthropic:claude-opus-4`, `anthropic:claude-sonnet-4`,
+  `google:gemini-2.0-flash`, `yandex:llama`, and `yandex:llama-lite`.
+  Removed compatibility redirects `xai:grok-4`, `xai:grok-3`, and
+  `xai:grok-3-mini`, which no longer select those models at the provider.
+  Removed keys fail locally; the library does not silently substitute a model.
+- JSON outputs accepted by earlier structure checks can now fail validation if
+  they omit values or change an object into an array. Object key order is still
+  compared strictly.
+- Requests that previously waited indefinitely can now time out. Override
+  `BBLSLUG_HTTP_CONNECT_TIMEOUT` and `BBLSLUG_HTTP_TIMEOUT` when needed. Invalid
+  timeout settings fail locally. Requests are not automatically retried.
+- Reusing `v0.8.0` does not update an existing `composer.lock`. After the replacement
+  tag is published and repository metadata is refreshed, run
+  `composer update habr/bblslug`, review the new source/dist reference in the lock
+  file, and commit it. If the old reference is retained, refresh Composer metadata
+  and resolve the dependency again; `composer install` alone uses the locked copy.
+  Verify application compatibility before deployment.
+
+### Verification and known limitations
+
+- The release candidate passes 209 unit tests with 2,073 assertions on PHP 8.2,
+  8.3, 8.4, and 8.5. PHP_CodeSniffer and PHPStan at maximum level pass. PHP 8.5
+  emits deprecation notices for existing cURL cleanup and test reflection calls.
+- Live checks on 2026-10-23 confirmed nested JSON translation through OpenAI Chat
+  Completions, OpenAI Responses, and Gemini native schema output. `linedJson`
+  passed small JSON translations with OpenAI and Gemini after correcting its
+  contradictory marker instructions. These checks cover representative models,
+  not every registered model or arbitrary production input.
+- Provider checks recorded on 2026-10-22 confirmed plain-text translation for 123
+  registry entries. Eight entries were unavailable to the test credentials, and
+  `openai:gpt-5-pro` timed out. Registry presence is not a successful live test.
+- HTML and JSON have not been verified across every model. DeepL JSON and Yandex
+  HTML/JSON remain known problem areas from earlier live checks. This release
+  does not promise reliable structured-content translation with every provider.
+- JSON checks cover syntax and captured structure, not translation quality or
+  preservation of numeric and boolean values. JSON encoded inside a string is not validated
+  independently. Escaping and placeholder restoration can still produce invalid
+  output, which validation rejects instead of repairing.
+- HTML validation checks parsing, not preservation of the original DOM tree.
+  Placeholder loss and duplication are not checked automatically.
+- Model retirement dates and access restrictions still apply after release;
+  the catalog is a dated record, not a guarantee of continuing availability.
+
 ## [0.7.0] – 2025-08-09
 
 ### Added

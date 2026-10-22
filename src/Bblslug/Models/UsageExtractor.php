@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Bblslug\Models;
 
 /**
@@ -25,28 +27,35 @@ class UsageExtractor
      *
      * @param array<string,mixed>        $modelConfig Model configuration (must include 'vendor').
      * @param array<string,mixed>|null   $rawUsage    Raw usage data as returned by the driver, or null.
-     * @return array<string,mixed>                   Normalized usage metrics (empty if unsupported or no data).
+     * @return array<string, array{total?: int, breakdown?: array<string,int>}>
+     *                   Normalized usage metrics (empty if unsupported or no data).
      */
     public static function extract(array $modelConfig, ?array $rawUsage): array
     {
-        $map = $modelConfig['usage'] ?? [];
-        if (!$map || $rawUsage === null) {
+        $usageMap = $modelConfig['usage'] ?? null;
+        if (!is_array($usageMap) || $rawUsage === null) {
             return [];
         }
 
+        /** @var array<string, array{total?: string, breakdown?: array<string,string>}> $usageMap */
+        /** @var array<string, array{total?: int, breakdown?: array<string,int>}> $result */
         $result = [];
 
-        foreach ($map as $category => $spec) {
+        foreach ($usageMap as $category => $spec) {
             // e.g. $category = 'tokens', $spec = [ 'total' => 'usage.total_tokens', 'breakdown' => […] ]
+
+            /** @var array{total?: int, breakdown?: array<string,int>} $entry */
             $entry = [];
 
             // extract total if present
             if (isset($spec['total'])) {
-                $entry['total'] = self::getInt($rawUsage, $spec['total']);
+                /** @var string $totalPath */
+                $totalPath = $spec['total'];
+                $entry['total'] = self::getInt($rawUsage, $totalPath);
             }
 
             // extract breakdown if present
-            if (!empty($spec['breakdown']) && is_array($spec['breakdown'])) {
+            if (isset($spec['breakdown'])) {
                 $bd = [];
                 foreach ($spec['breakdown'] as $subKey => $path) {
                     $bd[$subKey] = self::getInt($rawUsage, $path);

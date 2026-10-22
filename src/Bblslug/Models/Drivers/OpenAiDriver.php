@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Bblslug\Models\Drivers;
 
 use Bblslug\Models\ModelDriverInterface;
@@ -8,7 +10,7 @@ use Bblslug\Models\Prompts;
 /**
  * OpenAI GPT translation driver.
  *
- * Builds requests and parses responses for the OpenAI Chat Completions API.
+ * Builds requests and parses responses for OpenAI text-generation APIs.
  */
 class OpenAiDriver implements ModelDriverInterface
 {
@@ -25,26 +27,77 @@ class OpenAiDriver implements ModelDriverInterface
      *     - dryRun      (bool)        Skip API call (ignored here).
      *     - format      (string)      Indicates which prompt format to use.
      *     - promptKey   (string)      Key of the prompt template in prompts.yaml.
-     *     - temperature (float)       Sampling temperature.
+     *     - reasoning_effort (string) Reasoning effort supported by the selected model.
+     *     - max_completion_tokens (int) Optional output budget, including reasoning tokens.
+     *     - temperature (float|null) Sampling temperature; null omits the parameter.
+     *     - response_schema (array) Native structured output JSON schema.
+     *     - response_schema_name (string) Native schema name (default: anonymous).
+     *     - strict (bool) Whether native structured output is strict (default: true).
      *     - verbose     (bool)        Include debug logs (ignored here).
      *
      * @return array{url:string, headers:string[], body:string}
      */
     public function buildRequest(array $config, string $text, array $options): array
     {
-        $defaults = $config['defaults'] ?? [];
-        $context = trim((string) ($options['context'] ?? $defaults['context'] ?? ''));
-        $format = $options['format'] ?? $defaults['format'] ?? 'text';
-        $model = $defaults['model'] ?? throw new \RuntimeException('Missing OpenAI model name');
-        $promptKey = $options['promptKey'] ?? 'translator';
-        $sourceLang = $defaults['source_lang'] ?? 'auto';
-        $targetLang = $defaults['target_lang'] ?? 'EN';
-        $temperature = $options['temperature'] ?? $defaults['temperature'] ?? 0.0;
+        $defaults = \is_array($config['defaults'] ?? null) ? $config['defaults'] : [];
+
+        $ctxRaw = $options['context'] ?? ($defaults['context'] ?? '');
+        $context = (\is_scalar($ctxRaw) || ($ctxRaw instanceof \Stringable))
+            ? \trim((string)$ctxRaw)
+            : '';
+
+        $format = \is_string($options['format'] ?? null)
+            ? $options['format']
+            : (\is_string($defaults['format'] ?? null)
+                ? $defaults['format']
+                : 'text');
+
+        $model = \is_string($defaults['model'] ?? null)
+            ? $defaults['model']
+            : throw new \RuntimeException('Missing OpenAI model name');
+
+        $promptKey = \is_string($options['promptKey'] ?? null)
+            ? $options['promptKey']
+            : 'translator';
+
+        $sourceLang = \is_string($defaults['source_lang'] ?? null)
+            ? $defaults['source_lang']
+            : 'auto';
+
+        $targetLang = \is_string($defaults['target_lang'] ?? null)
+            ? $defaults['target_lang']
+            : 'EN';
+
+        $settings = array_replace($defaults, $options);
+        $hasSchema = \array_key_exists('response_schema', $settings);
+        $schema = $settings['response_schema'] ?? null;
+        $native = $hasSchema;
+        if ($native && (!\is_array($schema) || $schema === [] || \array_is_list($schema))) {
+            throw new \InvalidArgumentException('response_schema must be a non-empty associative array');
+        }
+        if ($format === 'structured_json' && !$native) {
+            throw new \InvalidArgumentException('format=structured_json requires response_schema');
+        }
+        if ($native && !\in_array($format, ['json', 'structured_json', 'linedJson'], true)) {
+            throw new \InvalidArgumentException('response_schema requires format json, structured_json, or linedJson');
+        }
+        $schemaName = $settings['response_schema_name'] ?? 'anonymous';
+        $strict = $settings['strict'] ?? true;
+        if ($native) {
+            if (!\is_string($schemaName) || !\preg_match('/^[A-Za-z0-9_-]{1,64}$/', $schemaName)) {
+                throw new \InvalidArgumentException('response_schema_name must match [A-Za-z0-9_-]{1,64}');
+            }
+            if (!\is_bool($strict)) {
+                throw new \InvalidArgumentException('strict must be a boolean');
+            }
+        }
+        $tempRaw = \array_key_exists('temperature', $settings) ? $settings['temperature'] : 0.0;
+        $temperature = $tempRaw === null ? null : (\is_numeric($tempRaw) ? (float)$tempRaw : 0.0);
 
         // Render system prompt from YAML templates
         $systemPrompt = Prompts::render(
             $promptKey,
-            $format,
+            $native ? 'structured_json' : $format,
             [
                 'source'  => $sourceLang,
                 'target'  => $targetLang,
@@ -57,19 +110,88 @@ class OpenAiDriver implements ModelDriverInterface
         // Compose chat messages
         $messages = [
             ['role' => 'system', 'content' => $systemPrompt],
-            ['role' => 'user',   'content' => self::START . "\n{$text}\n" . self::END],
+            ['role' => 'user',   'content' => $native ? $text : self::START . "\n{$text}\n" . self::END],
         ];
 
-        $payload = [
-            'model'       => $model,
-            'messages'    => $messages,
-            'temperature' => (float) $temperature,
-        ];
+        $apiType = \is_string($config['api_type'] ?? null)
+            ? \strtolower($config['api_type'])
+            : 'chat_completions';
+        if (!\in_array($apiType, ['chat_completions', 'responses', 'completions'], true)) {
+            throw new \InvalidArgumentException("Unsupported OpenAI API type '{$apiType}'");
+        }
+        if ($native && $apiType === 'completions') {
+            throw new \InvalidArgumentException(
+                'Native structured outputs are unsupported by the legacy completions API'
+            );
+        }
+
+        $payload = match ($apiType) {
+            'responses' => [
+                'model' => $model,
+                'input' => $messages,
+            ],
+            'completions' => [
+                'model' => $model,
+                'prompt' => $systemPrompt . "\n\n" . self::START . "\n{$text}\n" . self::END,
+            ],
+            default => [
+                'model' => $model,
+                'messages' => $messages,
+            ],
+        };
+        if ($native) {
+            if ($apiType === 'responses') {
+                $payload['text'] = ['format' => [
+                    'type' => 'json_schema', 'name' => $schemaName, 'strict' => $strict, 'schema' => $schema,
+                ]];
+            } else {
+                $payload['response_format'] = ['type' => 'json_schema', 'json_schema' => [
+                    'name' => $schemaName, 'strict' => $strict, 'schema' => $schema,
+                ]];
+            }
+        }
+        if ($temperature !== null) {
+            $payload['temperature'] = $temperature;
+        }
+        if (\is_string($settings['reasoning_effort'] ?? null)) {
+            if ($apiType === 'responses') {
+                $payload['reasoning'] = ['effort' => $settings['reasoning_effort']];
+            } else {
+                $payload['reasoning_effort'] = $settings['reasoning_effort'];
+            }
+        }
+        if (isset($settings['max_completion_tokens'])) {
+            $budget = $settings['max_completion_tokens'];
+            if (
+                (!\is_int($budget) && !\is_string($budget))
+                || filter_var($budget, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) === false
+            ) {
+                throw new \InvalidArgumentException('max_completion_tokens must be a positive integer');
+            }
+            $budgetKey = match ($apiType) {
+                'responses' => 'max_output_tokens',
+                'completions' => 'max_tokens',
+                default => 'max_completion_tokens',
+            };
+            $payload[$budgetKey] = (int)$budget;
+        }
+
+        // Normalize return shape and types
+        $url = \is_string($config['endpoint'] ?? null) ? (string)$config['endpoint'] : '';
+        $headers = [];
+        $req = \is_array($config['requirements'] ?? null) ? $config['requirements'] : null;
+        $headersSrc = \is_array($req['headers'] ?? null) ? $req['headers'] : [];
+        foreach ((array)$headersSrc as $h) {
+            if (\is_string($h)) {
+                $headers[] = $h;
+            }
+        }
+        $body = \json_encode($payload, JSON_UNESCAPED_UNICODE);
 
         return [
-            'url'     => $config['endpoint'],
-            'headers' => $config['requirements']['headers'] ?? [],
-            'body'    => json_encode($payload, JSON_UNESCAPED_UNICODE),
+            'url'     => $url,
+            'headers' => $headers,
+            'body'    => \is_string($body) ? $body : '{}',
         ];
     }
 
@@ -81,27 +203,57 @@ class OpenAiDriver implements ModelDriverInterface
      *
      * @param array<string,mixed> $config       Model configuration (unused).
      * @param string              $responseBody Raw HTTP response body.
+     * @param array<string,mixed> $options      Request options used to build the request.
      *
      * @return array{text:string, usage:array<string,mixed>|null}
      *
      * @throws \RuntimeException If the response is malformed or markers are missing.
      */
-    public function parseResponse(array $config, string $responseBody): array
+    public function parseResponse(array $config, string $responseBody, array $options = []): array
     {
-        $data = json_decode($responseBody, true);
+        $data = \json_decode($responseBody, true);
         if (!is_array($data)) {
             throw new \RuntimeException("Invalid JSON response: {$responseBody}");
         }
+        /** @var array<string,mixed> $data */
 
-        // Extract raw content early
-        $contentRaw = $data['choices'][0]['message']['content'] ?? '';
-        $contentRaw = is_string($contentRaw) ? $contentRaw : '';
+        if (($data['status'] ?? null) === 'incomplete' || ($data['status'] ?? null) === 'failed') {
+            $status = (string)$data['status'];
+            $reason = \is_array($data['incomplete_details'] ?? null)
+                ? ($data['incomplete_details']['reason'] ?? null)
+                : null;
+            $detail = \is_string($reason) ? $reason : '';
+            throw new \RuntimeException("OpenAI response is {$status}" . ($detail !== '' ? ": {$detail}" : ''));
+        }
+        if (\is_array($data['error'] ?? null) && \is_string($data['error']['message'] ?? null)) {
+            throw new \RuntimeException('OpenAI API error: ' . $data['error']['message']);
+        }
+        if (isset($data['incomplete_details'])) {
+            throw new \RuntimeException("OpenAI response did not complete: {$responseBody}");
+        }
+
+        $refusal = $this->extractRefusal($data);
+        if ($refusal !== null) {
+            throw new \RuntimeException('OpenAI response refused: ' . $refusal);
+        }
+
+        $contentRaw = $this->extractText($data);
+
+        $first = null;
+        $choices = $data['choices'] ?? null;
+        if (\is_array($choices) && isset($choices[0]) && \is_array($choices[0])) {
+            $first = $choices[0];
+        }
 
         // If OpenAI cut output by tokens, fail with a clear message before marker search
-        $finishReason = $data['choices'][0]['finish_reason'] ?? null;
+        $finishReason = null;
+        if (\is_array($first) && \is_string($first['finish_reason'] ?? null)) {
+            $finishReason = $first['finish_reason'];
+        }
         if ($finishReason === 'length') {
             throw new \RuntimeException(
-                "OpenAI: translation was truncated (finish_reason=length) — increase max_tokens or split input. "
+                "OpenAI: translation was truncated (finish_reason=length) — "
+                . "increase max_tokens or split input."
             );
         }
 
@@ -111,6 +263,26 @@ class OpenAiDriver implements ModelDriverInterface
             throw new \RuntimeException("OpenAI translation failed: {$responseBody}");
         }
 
+        // Usage statistics
+        $usage = null;
+        $u = $data['usage'] ?? null;
+        if (\is_array($u)) {
+            /** @var array<string,mixed> $typed */
+            $typed = [];
+            foreach ($u as $k => $v) {
+                if (\is_string($k)) {
+                    $typed[$k] = $v;
+                }
+            }
+            $usage = $typed;
+        }
+
+        $native = \array_key_exists('response_schema', $options)
+            || (($options['format'] ?? null) === 'structured_json');
+        if ($native) {
+            return ['text' => \trim($content), 'usage' => $usage];
+        }
+
         // Extract between markers
         $pattern = '/' . preg_quote(self::START, '/') . '(.*?)' . preg_quote(self::END, '/') . '/s';
         if (!preg_match($pattern, $content, $matches)) {
@@ -118,9 +290,81 @@ class OpenAiDriver implements ModelDriverInterface
         }
         $text = trim($matches[1]);
 
-        // Usage statistics
-        $usage = $data['usage'] ?? null;
-
         return ['text' => $text, 'usage' => $usage];
+    }
+
+    /** @param array<string,mixed> $data */
+    private function extractText(array $data): string
+    {
+        if (\is_string($data['output_text'] ?? null)) {
+            return $data['output_text'];
+        }
+
+        $output = $data['output'] ?? null;
+        if (\is_array($output)) {
+            $parts = '';
+            foreach ($output as $item) {
+                if (!\is_array($item) || !\is_array($item['content'] ?? null)) {
+                    continue;
+                }
+                foreach ($item['content'] as $part) {
+                    if (\is_array($part) && \is_string($part['text'] ?? null)) {
+                        $parts .= $part['text'];
+                    }
+                }
+            }
+            if ($parts !== '') {
+                return $parts;
+            }
+        }
+
+        $choices = $data['choices'] ?? null;
+        if (\is_array($choices) && isset($choices[0]) && \is_array($choices[0])) {
+            $choice = $choices[0];
+            if (\is_string($choice['text'] ?? null)) {
+                return $choice['text'];
+            }
+            if (\is_array($choice['message'] ?? null) && \is_string($choice['message']['content'] ?? null)) {
+                return $choice['message']['content'];
+            }
+            if (\is_array($choice['message'] ?? null) && \is_array($choice['message']['content'] ?? null)) {
+                $parts = '';
+                foreach ($choice['message']['content'] as $part) {
+                    if (\is_array($part) && \is_string($part['text'] ?? null)) {
+                        $parts .= $part['text'];
+                    }
+                }
+                return $parts;
+            }
+        }
+
+        return '';
+    }
+
+    /** @param array<string,mixed> $data */
+    private function extractRefusal(array $data): ?string
+    {
+        $choices = $data['choices'] ?? null;
+        if (\is_array($choices) && isset($choices[0]) && \is_array($choices[0])) {
+            $message = $choices[0]['message'] ?? null;
+            if (\is_array($message) && \is_string($message['refusal'] ?? null)) {
+                return $message['refusal'];
+            }
+        }
+        $output = $data['output'] ?? null;
+        if (!\is_array($output)) {
+            return null;
+        }
+        foreach ($output as $item) {
+            if (!\is_array($item) || !\is_array($item['content'] ?? null)) {
+                continue;
+            }
+            foreach ($item['content'] as $part) {
+                if (\is_array($part) && \is_string($part['refusal'] ?? null)) {
+                    return $part['refusal'];
+                }
+            }
+        }
+        return null;
     }
 }

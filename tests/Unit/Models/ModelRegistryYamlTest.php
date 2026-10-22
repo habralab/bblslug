@@ -11,7 +11,7 @@ class ModelRegistryYamlTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->tmpFile = sys_get_temp_dir() . '/bblslug_models_test.yaml';
+        $this->tmpFile = sys_get_temp_dir() . '/bblslug_models_test_' . bin2hex(random_bytes(8)) . '.yaml';
         file_put_contents($this->tmpFile, <<<YAML
 ---
 foo:

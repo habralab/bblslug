@@ -1,12 +1,11 @@
----
-# -------------------------------------------------------------------
-# Anthropic (Claude)
-# -------------------------------------------------------------------
+# Provider text-generation catalogue checked 2026-10-22.
+# Includes served legacy/preview/snapshot models; excludes retired compatibility redirects.
+# Provenance and exclusions: resources/model-catalog.json.
 anthropic:
-  endpoint: 'https://api.anthropic.com/v1/chat/completions'
+  endpoint: 'https://api.anthropic.com/v1/messages'
   format: text
   defaults:
-    temperature: 0.0
+    temperature: 0
     source_lang: auto
     target_lang: EN
   requirements:
@@ -25,36 +24,223 @@ anthropic:
     tokens:
       total: total_tokens
       breakdown:
-        prompt: prompt_tokens
-        completion: completion_tokens
-
+        prompt: input_tokens
+        completion: output_tokens
+        cache_creation: cache_creation_input_tokens
+        cache_read: cache_read_input_tokens
   models:
-    claude-haiku-3.5:
+    claude-haiku-5.5:
       defaults:
-        model: claude-3-5-haiku-latest
-        max_tokens: 8192
-      notes: 'A lightweight, low-latency model ideal for simple and quick translation tasks.'
-
-    claude-opus-4:
-      defaults:
-        model: claude-opus-4-20250514
-        max_tokens: 32000
+        model: claude-haiku-5-5
+        max_tokens: 4096
+        temperature: null
+        effort: low
+        thinking: adaptive
       limits:
-        estimated_max_chars: 800000
-      notes: 'The most capable Claude model, with the largest context window.'
-
-    claude-sonnet-4:
+        max_tokens: 1000000
+        max_output_tokens: 128000
+        estimated_max_chars: 4000000
+      notes: 'Current efficient Claude model for high-volume translation.'
+      name: claude-haiku-5.5
+    claude-sonnet-5.5:
       defaults:
-        model: claude-sonnet-4-20250514
-        max_tokens: 64000
+        model: claude-sonnet-5-5
+        max_tokens: 4096
+        temperature: null
+        effort: low
+        thinking: adaptive
       limits:
+        max_tokens: 1000000
+        max_output_tokens: 128000
+        estimated_max_chars: 4000000
+      notes: 'Current balanced Claude model for translation.'
+      name: claude-sonnet-5.5
+    claude-opus-5.5:
+      defaults:
+        model: claude-opus-5-5
+        max_tokens: 4096
+        temperature: null
+        effort: low
+        thinking: adaptive
+      limits:
+        max_tokens: 1000000
+        max_output_tokens: 128000
+        estimated_max_chars: 4000000
+      notes: 'Current capable Claude model for demanding translation.'
+      name: claude-opus-5.5
+    claude-fable-5.1:
+      defaults:
+        model: claude-fable-5-1
+        max_tokens: 4096
+        temperature: null
+        thinking: adaptive
+        effort: low
+      limits:
+        max_tokens: 1000000
+        max_output_tokens: 128000
+        estimated_max_chars: 4000000
+      name: claude-fable-5.1
+      notes: 'Provider text-generation model; account access may vary.'
+    claude-opus-5:
+      defaults:
+        model: claude-opus-5
+        max_tokens: 4096
+        temperature: null
+        thinking: adaptive
+        effort: low
+      limits:
+        max_tokens: 1000000
+        max_output_tokens: 128000
+        estimated_max_chars: 4000000
+      name: claude-opus-5
+      notes: 'Provider text-generation model; account access may vary.'
+    claude-sonnet-5:
+      defaults:
+        model: claude-sonnet-5
+        max_tokens: 4096
+        temperature: null
+        thinking: adaptive
+        effort: low
+      limits:
+        max_tokens: 1000000
+        max_output_tokens: 128000
+        estimated_max_chars: 4000000
+      name: claude-sonnet-5
+      notes: 'Provider text-generation model; account access may vary.'
+    claude-fable-5:
+      defaults:
+        model: claude-fable-5
+        max_tokens: 4096
+        temperature: null
+        thinking: adaptive
+        effort: low
+      limits:
+        max_tokens: 1000000
+        max_output_tokens: 128000
+        estimated_max_chars: 4000000
+      name: claude-fable-5
+      notes: 'Provider text-generation model; account access may vary.'
+    claude-opus-4.8:
+      defaults:
+        model: claude-opus-4-8
+        max_tokens: 4096
+        temperature: null
+        thinking: adaptive
+        effort: low
+      limits:
+        max_tokens: 1000000
+        max_output_tokens: 128000
+        estimated_max_chars: 4000000
+      name: claude-opus-4.8
+      notes: 'Provider text-generation model; account access may vary.'
+    claude-opus-4.7:
+      defaults:
+        model: claude-opus-4-7
+        max_tokens: 4096
+        temperature: null
+        thinking: adaptive
+        effort: low
+      limits:
+        max_tokens: 1000000
+        max_output_tokens: 128000
+        estimated_max_chars: 4000000
+      name: claude-opus-4.7
+      notes: 'Provider text-generation model; account access may vary.'
+    claude-sonnet-4.6:
+      defaults:
+        model: claude-sonnet-4-6
+        max_tokens: 4096
+        temperature: null
+        thinking: adaptive
+        effort: low
+      limits:
+        max_tokens: 1000000
+        max_output_tokens: 128000
+        estimated_max_chars: 4000000
+      name: claude-sonnet-4.6
+      notes: 'Provider text-generation model; account access may vary.'
+    claude-opus-4.6:
+      defaults:
+        model: claude-opus-4-6
+        max_tokens: 4096
+        temperature: null
+        thinking: adaptive
+        effort: low
+      limits:
+        max_tokens: 1000000
+        max_output_tokens: 128000
+        estimated_max_chars: 4000000
+      name: claude-opus-4.6
+      notes: 'Provider text-generation model; account access may vary.'
+    claude-opus-4.5-20251101:
+      defaults:
+        model: claude-opus-4-5-20251101
+        max_tokens: 4096
+        temperature: 0.0
+      limits:
+        max_tokens: 200000
+        max_output_tokens: 64000
         estimated_max_chars: 800000
-      notes: 'A balanced model offering strong quality with lower latency and cost compared to Opus.'
-
-
-# -------------------------------------------------------------------
-# DeepL
-# -------------------------------------------------------------------
+      name: claude-opus-4.5-20251101
+      notes: 'Provider text-generation model; account access may vary.'
+    claude-haiku-4.5-20251001:
+      defaults:
+        model: claude-haiku-4-5-20251001
+        max_tokens: 4096
+        temperature: 0.0
+      limits:
+        max_tokens: 200000
+        max_output_tokens: 64000
+        estimated_max_chars: 800000
+      name: claude-haiku-4.5-20251001
+      notes: 'Provider text-generation model; account access may vary.'
+    claude-sonnet-4.5-20250929:
+      defaults:
+        model: claude-sonnet-4-5-20250929
+        max_tokens: 4096
+        temperature: 0.0
+      limits:
+        max_tokens: 200000
+        max_output_tokens: 64000
+        estimated_max_chars: 800000
+      name: claude-sonnet-4.5-20250929
+      notes: 'Provider text-generation model; account access may vary.'
+    claude-mythos-5:
+      defaults:
+        model: claude-mythos-5
+        max_tokens: 4096
+        temperature: null
+        thinking: adaptive
+      limits:
+        max_tokens: 1000000
+        max_output_tokens: 128000
+        estimated_max_chars: 4000000
+      notes: 'Restricted Project Glasswing model; direct API access requires approval.'
+      name: claude-mythos-5
+    claude-mythos-preview:
+      defaults:
+        model: claude-mythos-preview
+        max_tokens: 4096
+        temperature: null
+        thinking: adaptive
+      limits:
+        max_tokens: 1000000
+        max_output_tokens: 128000
+        estimated_max_chars: 4000000
+      notes: 'Deprecated research preview; still documented as a served migration source, invite-only.'
+      name: claude-mythos-preview
+    claude-mythos-5.1:
+      defaults:
+        model: claude-mythos-5-1
+        max_tokens: 4096
+        temperature: null
+        thinking: adaptive
+      limits:
+        max_tokens: 1000000
+        max_output_tokens: 128000
+        estimated_max_chars: 4000000
+      notes: 'Restricted-access model; availability depends on provider approval.'
+      name: claude-mythos-5.1
 deepl:
   endpoint: 'https://api-free.deepl.com/v2/translate'
   format: text|html
@@ -63,8 +249,9 @@ deepl:
     formality: prefer_more
   requirements:
     auth:
-      type: form
-      key_name: auth_key
+      type: header
+      key_name: Authorization
+      prefix: DeepL-Auth-Key
       help_url: 'https://www.deepl.com/account/summary'
     headers:
       - 'Content-Type: application/x-www-form-urlencoded'
@@ -74,7 +261,6 @@ deepl:
       - target_lang
   limits:
     estimated_max_chars: 30000
-
   models:
     free:
       name: 'DeepL API Free'
@@ -82,22 +268,17 @@ deepl:
         auth:
           env: DEEPL_FREE_API_KEY
       notes: 'Best for structured HTML or plain text, with a limited monthly quota (free tier).'
-
     pro:
       name: 'DeepL API Pro'
+      endpoint: 'https://api.deepl.com/v2/translate'
       requirements:
         auth:
           env: DEEPL_PRO_API_KEY
       notes: 'Reliable structured translation for production use, requires paid subscription.'
-
-
-# -------------------------------------------------------------------
-# Google Gemini
-# -------------------------------------------------------------------
 google:
   format: text
   defaults:
-    temperature: 0.0
+    temperature: 0
     candidateCount: 1
     maxOutputTokens: null
   requirements:
@@ -120,7 +301,6 @@ google:
         prompt: promptTokenCount
         candidates: candidatesTokenCount
         thoughts: thoughtsTokenCount
-
   models:
     gemini-2.5-flash:
       name: 'Gemini 2.5 Flash'
@@ -130,24 +310,11 @@ google:
         thinkingBudget: null
         includeThoughts: null
       limits:
-        max_tokens: 131072
+        max_tokens: 1048576
         token_estimator: gpt
-        estimated_max_chars: 524288
+        estimated_max_chars: 4194304
+        max_output_tokens: 65536
       notes: 'High-performance Flash model with chain-of-thought support.'
-
-    gemini-2.5-flash-lite:
-      name: 'Gemini 2.5 Flash-Lite'
-      endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent'
-      defaults:
-        model: gemini-2.5-flash-lite
-        thinkingBudget: null
-        includeThoughts: null
-      limits:
-        max_tokens: 131072
-        token_estimator: gpt
-        estimated_max_chars: 524288
-      notes: 'Ultra-fast, cost-optimized Flash-Lite variant.'
-
     gemini-2.5-pro:
       name: 'Gemini 2.5 Pro'
       endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent'
@@ -156,30 +323,202 @@ google:
         thinkingBudget: null
         includeThoughts: null
       limits:
-        max_tokens: 262144
+        max_tokens: 1048576
         token_estimator: gpt
-        estimated_max_chars: 1048576
+        estimated_max_chars: 4194304
+        max_output_tokens: 65536
       notes: 'Top-tier Pro model for longest contexts and highest accuracy.'
-
-    gemini-2.0-flash:
-      name: 'Gemini 2.0 Flash'
-      endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent'
+    gemma-4-26b-a4b-it:
       defaults:
-        model: gemini-2.0-flash
+        model: gemma-4-26b-a4b-it
+        thinkingBudget: null
+        temperature: 1.0
       limits:
-        max_tokens: 131072
+        max_tokens: 262144
+        max_output_tokens: 32768
+        estimated_max_chars: 1048576
+      endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemma-4-26b-a4b-it:generateContent'
+      name: gemma-4-26b-a4b-it
+      notes: 'Provider text-generation model; account access may vary.'
+    gemma-4-31b-it:
+      defaults:
+        model: gemma-4-31b-it
+        thinkingBudget: null
+        temperature: 1.0
+      limits:
+        max_tokens: 262144
+        max_output_tokens: 32768
+        estimated_max_chars: 1048576
+      endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemma-4-31b-it:generateContent'
+      name: gemma-4-31b-it
+      notes: 'Provider text-generation model; account access may vary.'
+    gemini-flash-latest:
+      defaults:
+        model: gemini-flash-latest
+        thinkingBudget: null
+      limits:
+        max_tokens: 1048576
+        max_output_tokens: 65536
+        estimated_max_chars: 4194304
+      endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent'
+      name: gemini-flash-latest
+      notes: 'Provider text-generation model; account access may vary.'
+    gemini-flash-lite-latest:
+      defaults:
+        model: gemini-flash-lite-latest
+        thinkingBudget: null
+      limits:
+        max_tokens: 1048576
+        max_output_tokens: 65536
+        estimated_max_chars: 4194304
+      endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-lite-latest:generateContent'
+      name: gemini-flash-lite-latest
+      notes: 'Provider text-generation model; account access may vary.'
+    gemini-pro-latest:
+      defaults:
+        model: gemini-pro-latest
+        thinkingBudget: null
+      limits:
+        max_tokens: 1048576
+        max_output_tokens: 65536
+        estimated_max_chars: 4194304
+      endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-latest:generateContent'
+      name: gemini-pro-latest
+      notes: 'Provider text-generation model; account access may vary.'
+    gemini-2.5-flash-lite:
+      name: 'Gemini 2.5 Flash-Lite'
+      endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent'
+      defaults:
+        model: gemini-2.5-flash-lite
+        thinkingBudget: null
+        includeThoughts: null
+      limits:
+        max_tokens: 1048576
         token_estimator: gpt
-        estimated_max_chars: 524288
-      notes: 'Low-latency Flash model, balanced cost and performance.'
-
-
-# -------------------------------------------------------------------
-# OpenAI GPT
-# -------------------------------------------------------------------
+        estimated_max_chars: 4194304
+        max_output_tokens: 65536
+      notes: 'Ultra-fast, cost-optimized Flash-Lite variant.'
+    gemini-3-flash-preview:
+      defaults:
+        model: gemini-3-flash-preview
+        thinkingLevel: low
+        includeThoughts: false
+        temperature: 1.0
+      limits:
+        max_tokens: 1048576
+        max_output_tokens: 65536
+        estimated_max_chars: 4194304
+      endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent'
+      name: gemini-3-flash-preview
+      notes: 'Provider text-generation model; account access may vary.'
+    gemini-3.1-pro-preview:
+      defaults:
+        model: gemini-3.1-pro-preview
+        thinkingLevel: low
+        includeThoughts: false
+        temperature: 1.0
+      limits:
+        max_tokens: 1048576
+        max_output_tokens: 65536
+        estimated_max_chars: 4194304
+      endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-pro-preview:generateContent'
+      name: gemini-3.1-pro-preview
+      notes: 'Provider text-generation model; account access may vary.'
+    gemini-3.1-pro-preview-customtools:
+      defaults:
+        model: gemini-3.1-pro-preview-customtools
+        thinkingLevel: low
+        includeThoughts: false
+        temperature: 1.0
+      limits:
+        max_tokens: 1048576
+        max_output_tokens: 65536
+        estimated_max_chars: 4194304
+      endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-pro-preview-customtools:generateContent'
+      name: gemini-3.1-pro-preview-customtools
+      notes: 'Provider text-generation model; account access may vary.'
+    gemini-3.1-flash-lite-preview:
+      defaults:
+        model: gemini-3.1-flash-lite-preview
+        thinkingLevel: low
+        includeThoughts: false
+        temperature: 1.0
+      limits:
+        max_tokens: 1048576
+        max_output_tokens: 65536
+        estimated_max_chars: 4194304
+      endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent'
+      name: gemini-3.1-flash-lite-preview
+      notes: 'Provider text-generation model; account access may vary.'
+    gemini-3.1-flash-lite:
+      defaults:
+        model: gemini-3.1-flash-lite
+        thinkingLevel: low
+        includeThoughts: false
+        temperature: 1.0
+      limits:
+        max_tokens: 1048576
+        max_output_tokens: 65536
+        estimated_max_chars: 4194304
+      endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent'
+      name: gemini-3.1-flash-lite
+      notes: 'Provider text-generation model; account access may vary.'
+    gemini-3.5-flash-lite:
+      defaults:
+        model: gemini-3.5-flash-lite
+        thinkingLevel: low
+        includeThoughts: false
+        temperature: 1.0
+      limits:
+        max_tokens: 1048576
+        max_output_tokens: 65536
+        estimated_max_chars: 4194304
+      endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent'
+      name: gemini-3.5-flash-lite
+      notes: 'Provider text-generation model; account access may vary.'
+    gemini-3.6-flash:
+      defaults:
+        model: gemini-3.6-flash
+        thinkingLevel: low
+        includeThoughts: false
+        temperature: 1.0
+      limits:
+        max_tokens: 1048576
+        max_output_tokens: 65536
+        estimated_max_chars: 4194304
+      endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent'
+      name: gemini-3.6-flash
+      notes: 'Provider text-generation model; account access may vary.'
+    gemini-3.8-flash:
+      defaults:
+        model: gemini-3.8-flash
+        thinkingLevel: low
+        includeThoughts: false
+        temperature: 1.0
+      limits:
+        max_tokens: 1048576
+        max_output_tokens: 65536
+        estimated_max_chars: 4194304
+      endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent'
+      name: gemini-3.8-flash
+      notes: 'Provider text-generation model; account access may vary.'
+    gemini-4-argon:
+      defaults:
+        model: gemini-4-argon
+        thinkingLevel: low
+        includeThoughts: false
+        temperature: 1.0
+      limits:
+        max_tokens: 1048576
+        max_output_tokens: 32768
+        estimated_max_chars: 4194304
+      endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-4-argon:generateContent'
+      name: gemini-4-argon
+      notes: 'Provider text-generation model; account access may vary.'
 openai:
   endpoint: 'https://api.openai.com/v1/chat/completions'
   defaults:
-    temperature: 0.0
+    temperature: 0
   requirements:
     auth:
       type: header
@@ -198,88 +537,1103 @@ openai:
         prompt: prompt_tokens
         completion: completion_tokens
         reasoning: completion_tokens_details.reasoning_tokens
-
   models:
-    gpt-5:
-      name: 'OpenAI GPT-5'
+    gpt-4-turbo-2024-04-09:
+      api_type: chat_completions
+      endpoint: 'https://api.openai.com/v1/chat/completions'
       defaults:
-        model: gpt-5
-        temperature: 1
-      limits:
-        max_tokens: 400000
-        max_output_tokens: 128000
-        estimated_max_chars: 1600000   # 400k * 4
-      notes: 'Flagship model with enhanced reasoning, multimodal capabilities, and extended context support.'
-
-    gpt-5-mini:
-      name: 'OpenAI GPT-5 Mini'
+        model: gpt-4-turbo-2024-04-09
+        max_completion_tokens: 2048
+        temperature: 0.0
+      limits: {  }
+      status: scheduled_shutdown
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      shutdown_date: '2026-10-23'
+      name: gpt-4-turbo-2024-04-09
+      notes: 'Provider text-generation model; account access may vary. Scheduled shutdown 2026-10-23.'
+    gpt-5.6-luna:
+      api_type: chat_completions
+      endpoint: 'https://api.openai.com/v1/chat/completions'
       defaults:
-        model: gpt-5-mini
-        temperature: 1
-      limits:
-        max_tokens: 400000
-        max_output_tokens: 128000
-        estimated_max_chars: 1600000
-      notes: 'Compact, cost-efficient GPT-5 variant suitable for high-volume or latency-sensitive translation tasks.'
-
+        model: gpt-5.6-luna
+        max_completion_tokens: 2048
+        reasoning_effort: low
+        temperature: null
+      limits: {  }
+      status: available
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      name: gpt-5.6-luna
+      notes: 'Provider text-generation model; account access may vary.'
+    gpt-5-search-api:
+      api_type: chat_completions
+      endpoint: 'https://api.openai.com/v1/chat/completions'
+      defaults:
+        model: gpt-5-search-api
+        max_completion_tokens: 2048
+        reasoning_effort: null
+        temperature: null
+      limits: {  }
+      status: available
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      name: gpt-5-search-api
+      notes: 'Provider text-generation model; account access may vary.'
+    gpt-5.5-2026-04-23:
+      api_type: chat_completions
+      endpoint: 'https://api.openai.com/v1/chat/completions'
+      defaults:
+        model: gpt-5.5-2026-04-23
+        max_completion_tokens: 2048
+        reasoning_effort: low
+        temperature: null
+      limits: {  }
+      status: available
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      name: gpt-5.5-2026-04-23
+      notes: 'Provider text-generation model; account access may vary.'
+    gpt-5.4-2026-03-05:
+      api_type: chat_completions
+      endpoint: 'https://api.openai.com/v1/chat/completions'
+      defaults:
+        model: gpt-5.4-2026-03-05
+        max_completion_tokens: 2048
+        reasoning_effort: low
+        temperature: null
+      limits: {  }
+      status: available
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      name: gpt-5.4-2026-03-05
+      notes: 'Provider text-generation model; account access may vary.'
+    gpt-3.5-turbo-0125:
+      api_type: chat_completions
+      endpoint: 'https://api.openai.com/v1/chat/completions'
+      defaults:
+        model: gpt-3.5-turbo-0125
+        max_completion_tokens: 2048
+        temperature: 0.0
+      limits: {  }
+      status: scheduled_shutdown
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      shutdown_date: '2026-10-23'
+      name: gpt-3.5-turbo-0125
+      notes: 'Provider text-generation model; account access may vary. Scheduled shutdown 2026-10-23.'
     gpt-5-nano:
       name: 'OpenAI GPT-5 Nano'
       defaults:
         model: gpt-5-nano
-        temperature: 1
+        temperature: null
+        max_completion_tokens: 2048
+        reasoning_effort: low
       limits:
         max_tokens: 400000
         max_output_tokens: 128000
         estimated_max_chars: 1600000
       notes: 'Ultra-fast GPT-5 variant optimized for small-scale and real-time translation tasks.'
-
-    gpt-4o:
-      name: 'OpenAI GPT-4o'
+      api_type: chat_completions
+      endpoint: 'https://api.openai.com/v1/chat/completions'
+      status: available
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+    gpt-5.4-mini:
+      api_type: chat_completions
+      endpoint: 'https://api.openai.com/v1/chat/completions'
       defaults:
-        model: gpt-4o
-      limits:
-        max_tokens: 128000
-        max_output_tokens: 16384
-        estimated_max_chars: 512000
-      notes: 'Highly accurate with flexible prompts, ideal for AI-assisted adaptive translation.'
-
-    gpt-4o-mini:
-      name: 'OpenAI GPT-4o Mini'
+        model: gpt-5.4-mini
+        max_completion_tokens: 2048
+        reasoning_effort: low
+        temperature: null
+      limits: {  }
+      status: available
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      name: gpt-5.4-mini
+      notes: 'Provider text-generation model; account access may vary.'
+    o1-pro:
+      api_type: responses
+      endpoint: 'https://api.openai.com/v1/responses'
       defaults:
-        model: gpt-4o-mini
-      limits:
-        max_tokens: 128000
-        max_output_tokens: 16384
-        estimated_max_chars: 512000
-      notes: 'Lightweight GPT-4o: lower latency/cost.'
-
-    gpt-4:
-      name: 'OpenAI GPT-4'
+        model: o1-pro
+        max_completion_tokens: 2048
+        reasoning_effort: high
+        temperature: null
+      limits: {  }
+      status: scheduled_shutdown
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      shutdown_date: '2026-10-23'
+      name: o1-pro
+      notes: 'Provider text-generation model; account access may vary. Scheduled shutdown 2026-10-23.'
+      usage:
+        tokens:
+          total: total_tokens
+          breakdown:
+            prompt: input_tokens
+            completion: output_tokens
+            reasoning: output_tokens_details.reasoning_tokens
+    gpt-5-mini:
+      name: 'OpenAI GPT-5 Mini'
       defaults:
-        model: gpt-4
+        model: gpt-5-mini
+        temperature: null
+        max_completion_tokens: 2048
+        reasoning_effort: low
       limits:
-        max_tokens: 8192
-        estimated_max_chars: 32768
-      notes: 'Classic GPT-4 model: highest reliability.'
-
+        max_tokens: 400000
+        max_output_tokens: 128000
+        estimated_max_chars: 1600000
+      notes: 'Compact, cost-efficient GPT-5 variant suitable for high-volume or latency-sensitive translation tasks.'
+      api_type: chat_completions
+      endpoint: 'https://api.openai.com/v1/chat/completions'
+      status: available
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+    gpt-5-mini-2025-08-07:
+      api_type: chat_completions
+      endpoint: 'https://api.openai.com/v1/chat/completions'
+      defaults:
+        model: gpt-5-mini-2025-08-07
+        max_completion_tokens: 2048
+        reasoning_effort: low
+        temperature: null
+      limits: {  }
+      status: scheduled_shutdown
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      shutdown_date: '2026-12-11'
+      name: gpt-5-mini-2025-08-07
+      notes: 'Provider text-generation model; account access may vary. Scheduled shutdown 2026-12-11.'
+    o4-mini-2025-04-16:
+      api_type: chat_completions
+      endpoint: 'https://api.openai.com/v1/chat/completions'
+      defaults:
+        model: o4-mini-2025-04-16
+        max_completion_tokens: 2048
+        reasoning_effort: low
+        temperature: null
+      limits: {  }
+      status: scheduled_shutdown
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      shutdown_date: '2026-10-23'
+      name: o4-mini-2025-04-16
+      notes: 'Provider text-generation model; account access may vary. Scheduled shutdown 2026-10-23.'
+    gpt-5.2-pro:
+      api_type: responses
+      endpoint: 'https://api.openai.com/v1/responses'
+      defaults:
+        model: gpt-5.2-pro
+        max_completion_tokens: 2048
+        reasoning_effort: high
+        temperature: null
+      limits: {  }
+      status: available
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      name: gpt-5.2-pro
+      notes: 'Provider text-generation model; account access may vary.'
+      usage:
+        tokens:
+          total: total_tokens
+          breakdown:
+            prompt: input_tokens
+            completion: output_tokens
+            reasoning: output_tokens_details.reasoning_tokens
+    gpt-5-pro-2025-10-06:
+      api_type: responses
+      endpoint: 'https://api.openai.com/v1/responses'
+      defaults:
+        model: gpt-5-pro-2025-10-06
+        max_completion_tokens: 2048
+        reasoning_effort: high
+        temperature: null
+      limits: {  }
+      status: scheduled_shutdown
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      shutdown_date: '2026-12-11'
+      name: gpt-5-pro-2025-10-06
+      notes: 'Provider text-generation model; account access may vary. Scheduled shutdown 2026-12-11.'
+      usage:
+        tokens:
+          total: total_tokens
+          breakdown:
+            prompt: input_tokens
+            completion: output_tokens
+            reasoning: output_tokens_details.reasoning_tokens
+    gpt-5.6-sol:
+      api_type: chat_completions
+      endpoint: 'https://api.openai.com/v1/chat/completions'
+      defaults:
+        model: gpt-5.6-sol
+        max_completion_tokens: 2048
+        reasoning_effort: low
+        temperature: null
+      limits: {  }
+      status: available
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      name: gpt-5.6-sol
+      notes: 'Provider text-generation model; account access may vary.'
+    gpt-5.5-pro:
+      api_type: responses
+      endpoint: 'https://api.openai.com/v1/responses'
+      defaults:
+        model: gpt-5.5-pro
+        max_completion_tokens: 2048
+        reasoning_effort: high
+        temperature: null
+      limits: {  }
+      status: available
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      name: gpt-5.5-pro
+      notes: 'Provider text-generation model; account access may vary.'
+      usage:
+        tokens:
+          total: total_tokens
+          breakdown:
+            prompt: input_tokens
+            completion: output_tokens
+            reasoning: output_tokens_details.reasoning_tokens
+    gpt-5-2025-08-07:
+      api_type: chat_completions
+      endpoint: 'https://api.openai.com/v1/chat/completions'
+      defaults:
+        model: gpt-5-2025-08-07
+        max_completion_tokens: 2048
+        reasoning_effort: low
+        temperature: null
+      limits: {  }
+      status: scheduled_shutdown
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      shutdown_date: '2026-12-11'
+      name: gpt-5-2025-08-07
+      notes: 'Provider text-generation model; account access may vary. Scheduled shutdown 2026-12-11.'
+    gpt-5.2-pro-2025-12-11:
+      api_type: responses
+      endpoint: 'https://api.openai.com/v1/responses'
+      defaults:
+        model: gpt-5.2-pro-2025-12-11
+        max_completion_tokens: 2048
+        reasoning_effort: high
+        temperature: null
+      limits: {  }
+      status: available
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      name: gpt-5.2-pro-2025-12-11
+      notes: 'Provider text-generation model; account access may vary.'
+      usage:
+        tokens:
+          total: total_tokens
+          breakdown:
+            prompt: input_tokens
+            completion: output_tokens
+            reasoning: output_tokens_details.reasoning_tokens
+    gpt-5.5-pro-2026-04-23:
+      api_type: responses
+      endpoint: 'https://api.openai.com/v1/responses'
+      defaults:
+        model: gpt-5.5-pro-2026-04-23
+        max_completion_tokens: 2048
+        reasoning_effort: high
+        temperature: null
+      limits: {  }
+      status: available
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      name: gpt-5.5-pro-2026-04-23
+      notes: 'Provider text-generation model; account access may vary.'
+      usage:
+        tokens:
+          total: total_tokens
+          breakdown:
+            prompt: input_tokens
+            completion: output_tokens
+            reasoning: output_tokens_details.reasoning_tokens
+    gpt-5.4-pro:
+      api_type: responses
+      endpoint: 'https://api.openai.com/v1/responses'
+      defaults:
+        model: gpt-5.4-pro
+        max_completion_tokens: 2048
+        reasoning_effort: high
+        temperature: null
+      limits: {  }
+      status: available
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      name: gpt-5.4-pro
+      notes: 'Provider text-generation model; account access may vary.'
+      usage:
+        tokens:
+          total: total_tokens
+          breakdown:
+            prompt: input_tokens
+            completion: output_tokens
+            reasoning: output_tokens_details.reasoning_tokens
+    gpt-4o-2024-11-20:
+      api_type: chat_completions
+      endpoint: 'https://api.openai.com/v1/chat/completions'
+      defaults:
+        model: gpt-4o-2024-11-20
+        max_completion_tokens: 2048
+        temperature: 0.0
+      limits: {  }
+      status: scheduled_shutdown
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      shutdown_date: '2027-01-14'
+      name: gpt-4o-2024-11-20
+      notes: 'Provider text-generation model; account access may vary. Scheduled shutdown 2027-01-14.'
+    gpt-5.1:
+      api_type: chat_completions
+      endpoint: 'https://api.openai.com/v1/chat/completions'
+      defaults:
+        model: gpt-5.1
+        max_completion_tokens: 2048
+        reasoning_effort: low
+        temperature: null
+      limits: {  }
+      status: scheduled_shutdown
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      shutdown_date: '2027-04-01'
+      name: gpt-5.1
+      notes: 'Provider text-generation model; account access may vary. Scheduled shutdown 2027-04-01.'
+    gpt-5-pro:
+      api_type: responses
+      endpoint: 'https://api.openai.com/v1/responses'
+      defaults:
+        model: gpt-5-pro
+        max_completion_tokens: 2048
+        reasoning_effort: high
+        temperature: null
+      limits: {  }
+      status: available
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      name: gpt-5-pro
+      notes: 'Provider text-generation model; account access may vary.'
+      usage:
+        tokens:
+          total: total_tokens
+          breakdown:
+            prompt: input_tokens
+            completion: output_tokens
+            reasoning: output_tokens_details.reasoning_tokens
+    gpt-5.4-mini-2026-03-17:
+      api_type: chat_completions
+      endpoint: 'https://api.openai.com/v1/chat/completions'
+      defaults:
+        model: gpt-5.4-mini-2026-03-17
+        max_completion_tokens: 2048
+        reasoning_effort: low
+        temperature: null
+      limits: {  }
+      status: available
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      name: gpt-5.4-mini-2026-03-17
+      notes: 'Provider text-generation model; account access may vary.'
+    gpt-5.4:
+      api_type: chat_completions
+      endpoint: 'https://api.openai.com/v1/chat/completions'
+      defaults:
+        model: gpt-5.4
+        max_completion_tokens: 2048
+        reasoning_effort: low
+        temperature: null
+      limits: {  }
+      status: available
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      name: gpt-5.4
+      notes: 'Provider text-generation model; account access may vary.'
+    gpt-4.1-nano:
+      api_type: chat_completions
+      endpoint: 'https://api.openai.com/v1/chat/completions'
+      defaults:
+        model: gpt-4.1-nano
+        max_completion_tokens: 2048
+        temperature: 0.0
+      limits: {  }
+      status: scheduled_shutdown
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      shutdown_date: '2026-10-23'
+      name: gpt-4.1-nano
+      notes: 'Provider text-generation model; account access may vary. Scheduled shutdown 2026-10-23.'
+    gpt-3.5-turbo-16k:
+      api_type: chat_completions
+      endpoint: 'https://api.openai.com/v1/chat/completions'
+      defaults:
+        model: gpt-3.5-turbo-16k
+        max_completion_tokens: 2048
+        temperature: 0.0
+      limits: {  }
+      status: available
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      name: gpt-3.5-turbo-16k
+      notes: 'Provider text-generation model; account access may vary.'
+    gpt-4.1:
+      api_type: chat_completions
+      endpoint: 'https://api.openai.com/v1/chat/completions'
+      defaults:
+        model: gpt-4.1
+        max_completion_tokens: 2048
+        temperature: 0.0
+      limits: {  }
+      status: scheduled_shutdown
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      shutdown_date: '2027-01-14'
+      name: gpt-4.1
+      notes: 'Provider text-generation model; account access may vary. Scheduled shutdown 2027-01-14.'
+    gpt-5.5:
+      api_type: chat_completions
+      endpoint: 'https://api.openai.com/v1/chat/completions'
+      defaults:
+        model: gpt-5.5
+        max_completion_tokens: 2048
+        reasoning_effort: low
+        temperature: null
+      limits: {  }
+      status: available
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      name: gpt-5.5
+      notes: 'Provider text-generation model; account access may vary.'
+    o3-pro-2025-06-10:
+      api_type: responses
+      endpoint: 'https://api.openai.com/v1/responses'
+      defaults:
+        model: o3-pro-2025-06-10
+        max_completion_tokens: 2048
+        reasoning_effort: high
+        temperature: null
+      limits: {  }
+      status: scheduled_shutdown
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      shutdown_date: '2026-12-11'
+      name: o3-pro-2025-06-10
+      notes: 'Provider text-generation model; account access may vary. Scheduled shutdown 2026-12-11.'
+      usage:
+        tokens:
+          total: total_tokens
+          breakdown:
+            prompt: input_tokens
+            completion: output_tokens
+            reasoning: output_tokens_details.reasoning_tokens
+    chat-latest:
+      api_type: chat_completions
+      endpoint: 'https://api.openai.com/v1/chat/completions'
+      defaults:
+        model: chat-latest
+        max_completion_tokens: 2048
+        temperature: null
+      limits: {  }
+      status: available
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      name: chat-latest
+      notes: 'Provider text-generation model; account access may vary.'
+    gpt-5.4-pro-2026-03-05:
+      api_type: responses
+      endpoint: 'https://api.openai.com/v1/responses'
+      defaults:
+        model: gpt-5.4-pro-2026-03-05
+        max_completion_tokens: 2048
+        reasoning_effort: high
+        temperature: null
+      limits: {  }
+      status: available
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      name: gpt-5.4-pro-2026-03-05
+      notes: 'Provider text-generation model; account access may vary.'
+      usage:
+        tokens:
+          total: total_tokens
+          breakdown:
+            prompt: input_tokens
+            completion: output_tokens
+            reasoning: output_tokens_details.reasoning_tokens
+    o3-2025-04-16:
+      api_type: chat_completions
+      endpoint: 'https://api.openai.com/v1/chat/completions'
+      defaults:
+        model: o3-2025-04-16
+        max_completion_tokens: 2048
+        reasoning_effort: low
+        temperature: null
+      limits: {  }
+      status: scheduled_shutdown
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      shutdown_date: '2026-12-11'
+      name: o3-2025-04-16
+      notes: 'Provider text-generation model; account access may vary. Scheduled shutdown 2026-12-11.'
+    gpt-5.2-2025-12-11:
+      api_type: chat_completions
+      endpoint: 'https://api.openai.com/v1/chat/completions'
+      defaults:
+        model: gpt-5.2-2025-12-11
+        max_completion_tokens: 2048
+        reasoning_effort: low
+        temperature: null
+      limits: {  }
+      status: available
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      name: gpt-5.2-2025-12-11
+      notes: 'Provider text-generation model; account access may vary.'
+    gpt-3.5-turbo:
+      api_type: chat_completions
+      endpoint: 'https://api.openai.com/v1/chat/completions'
+      defaults:
+        model: gpt-3.5-turbo
+        max_completion_tokens: 2048
+        temperature: 0.0
+      limits: {  }
+      status: scheduled_shutdown
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      shutdown_date: '2026-10-23'
+      name: gpt-3.5-turbo
+      notes: 'Provider text-generation model; account access may vary. Scheduled shutdown 2026-10-23.'
+    gpt-4o-2024-05-13:
+      api_type: chat_completions
+      endpoint: 'https://api.openai.com/v1/chat/completions'
+      defaults:
+        model: gpt-4o-2024-05-13
+        max_completion_tokens: 2048
+        temperature: 0.0
+      limits: {  }
+      status: scheduled_shutdown
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      shutdown_date: '2026-10-23'
+      name: gpt-4o-2024-05-13
+      notes: 'Provider text-generation model; account access may vary. Scheduled shutdown 2026-10-23.'
+    gpt-5.6-terra:
+      api_type: chat_completions
+      endpoint: 'https://api.openai.com/v1/chat/completions'
+      defaults:
+        model: gpt-5.6-terra
+        max_completion_tokens: 2048
+        reasoning_effort: low
+        temperature: null
+      limits: {  }
+      status: available
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      name: gpt-5.6-terra
+      notes: 'Provider text-generation model; account access may vary.'
+    o3-mini:
+      api_type: chat_completions
+      endpoint: 'https://api.openai.com/v1/chat/completions'
+      defaults:
+        model: o3-mini
+        max_completion_tokens: 2048
+        reasoning_effort: low
+        temperature: null
+      limits: {  }
+      status: scheduled_shutdown
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      shutdown_date: '2026-10-23'
+      name: o3-mini
+      notes: 'Provider text-generation model; account access may vary. Scheduled shutdown 2026-10-23.'
+    gpt-5.4-nano:
+      api_type: chat_completions
+      endpoint: 'https://api.openai.com/v1/chat/completions'
+      defaults:
+        model: gpt-5.4-nano
+        max_completion_tokens: 2048
+        reasoning_effort: low
+        temperature: null
+      limits: {  }
+      status: scheduled_shutdown
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      shutdown_date: '2027-04-01'
+      name: gpt-5.4-nano
+      notes: 'Provider text-generation model; account access may vary. Scheduled shutdown 2027-04-01.'
+    o1-pro-2025-03-19:
+      api_type: responses
+      endpoint: 'https://api.openai.com/v1/responses'
+      defaults:
+        model: o1-pro-2025-03-19
+        max_completion_tokens: 2048
+        reasoning_effort: high
+        temperature: null
+      limits: {  }
+      status: scheduled_shutdown
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      shutdown_date: '2026-10-23'
+      name: o1-pro-2025-03-19
+      notes: 'Provider text-generation model; account access may vary. Scheduled shutdown 2026-10-23.'
+      usage:
+        tokens:
+          total: total_tokens
+          breakdown:
+            prompt: input_tokens
+            completion: output_tokens
+            reasoning: output_tokens_details.reasoning_tokens
     gpt-4-turbo:
       name: 'OpenAI GPT-4 Turbo'
       defaults:
         model: gpt-4-turbo
+        max_completion_tokens: 2048
+        temperature: 0.0
       limits:
         max_tokens: 128000
         estimated_max_chars: 512000
-      notes: 'Fast & cost-effective GPT-4 quality.'
-
-
-# -------------------------------------------------------------------
-# Yandex Foundation Models
-# -------------------------------------------------------------------
+      notes: 'Fast & cost-effective GPT-4 quality. Scheduled shutdown 2026-10-23.'
+      api_type: chat_completions
+      endpoint: 'https://api.openai.com/v1/chat/completions'
+      status: scheduled_shutdown
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      shutdown_date: '2026-10-23'
+    o3-pro:
+      api_type: responses
+      endpoint: 'https://api.openai.com/v1/responses'
+      defaults:
+        model: o3-pro
+        max_completion_tokens: 2048
+        reasoning_effort: high
+        temperature: null
+      limits: {  }
+      status: available
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      name: o3-pro
+      notes: 'Provider text-generation model; account access may vary.'
+      usage:
+        tokens:
+          total: total_tokens
+          breakdown:
+            prompt: input_tokens
+            completion: output_tokens
+            reasoning: output_tokens_details.reasoning_tokens
+    gpt-4o-2024-08-06:
+      api_type: chat_completions
+      endpoint: 'https://api.openai.com/v1/chat/completions'
+      defaults:
+        model: gpt-4o-2024-08-06
+        max_completion_tokens: 2048
+        temperature: 0.0
+      limits: {  }
+      status: scheduled_shutdown
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      shutdown_date: '2027-01-14'
+      name: gpt-4o-2024-08-06
+      notes: 'Provider text-generation model; account access may vary. Scheduled shutdown 2027-01-14.'
+    o3:
+      api_type: chat_completions
+      endpoint: 'https://api.openai.com/v1/chat/completions'
+      defaults:
+        model: o3
+        max_completion_tokens: 2048
+        reasoning_effort: low
+        temperature: null
+      limits: {  }
+      status: available
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      name: o3
+      notes: 'Provider text-generation model; account access may vary.'
+    gpt-4.1-mini-2025-04-14:
+      api_type: chat_completions
+      endpoint: 'https://api.openai.com/v1/chat/completions'
+      defaults:
+        model: gpt-4.1-mini-2025-04-14
+        max_completion_tokens: 2048
+        temperature: 0.0
+      limits: {  }
+      status: scheduled_shutdown
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      shutdown_date: '2027-01-14'
+      name: gpt-4.1-mini-2025-04-14
+      notes: 'Provider text-generation model; account access may vary. Scheduled shutdown 2027-01-14.'
+    o3-mini-2025-01-31:
+      api_type: chat_completions
+      endpoint: 'https://api.openai.com/v1/chat/completions'
+      defaults:
+        model: o3-mini-2025-01-31
+        max_completion_tokens: 2048
+        reasoning_effort: low
+        temperature: null
+      limits: {  }
+      status: scheduled_shutdown
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      shutdown_date: '2026-10-23'
+      name: o3-mini-2025-01-31
+      notes: 'Provider text-generation model; account access may vary. Scheduled shutdown 2026-10-23.'
+    gpt-5.1-2025-11-13:
+      api_type: chat_completions
+      endpoint: 'https://api.openai.com/v1/chat/completions'
+      defaults:
+        model: gpt-5.1-2025-11-13
+        max_completion_tokens: 2048
+        reasoning_effort: low
+        temperature: null
+      limits: {  }
+      status: available
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      name: gpt-5.1-2025-11-13
+      notes: 'Provider text-generation model; account access may vary.'
+    gpt-4-0613:
+      api_type: chat_completions
+      endpoint: 'https://api.openai.com/v1/chat/completions'
+      defaults:
+        model: gpt-4-0613
+        max_completion_tokens: 2048
+        temperature: 0.0
+      limits: {  }
+      status: scheduled_shutdown
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      shutdown_date: '2026-10-23'
+      name: gpt-4-0613
+      notes: 'Provider text-generation model; account access may vary. Scheduled shutdown 2026-10-23.'
+    gpt-4o:
+      name: 'OpenAI GPT-4o'
+      defaults:
+        model: gpt-4o
+        max_completion_tokens: 2048
+        temperature: 0.0
+      limits:
+        max_tokens: 128000
+        max_output_tokens: 16384
+        estimated_max_chars: 512000
+      notes: 'Highly accurate with flexible prompts, ideal for AI-assisted adaptive translation. Scheduled shutdown 2027-01-14.'
+      api_type: chat_completions
+      endpoint: 'https://api.openai.com/v1/chat/completions'
+      status: scheduled_shutdown
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      shutdown_date: '2027-01-14'
+    gpt-4.1-mini:
+      api_type: chat_completions
+      endpoint: 'https://api.openai.com/v1/chat/completions'
+      defaults:
+        model: gpt-4.1-mini
+        max_completion_tokens: 2048
+        temperature: 0.0
+      limits: {  }
+      status: scheduled_shutdown
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      shutdown_date: '2027-01-14'
+      name: gpt-4.1-mini
+      notes: 'Provider text-generation model; account access may vary. Scheduled shutdown 2027-01-14.'
+    gpt-4o-mini:
+      name: 'OpenAI GPT-4o Mini'
+      defaults:
+        model: gpt-4o-mini
+        max_completion_tokens: 2048
+        temperature: 0.0
+      limits:
+        max_tokens: 128000
+        max_output_tokens: 16384
+        estimated_max_chars: 512000
+      notes: 'Lightweight GPT-4o: lower latency/cost. Scheduled shutdown 2027-01-14.'
+      api_type: chat_completions
+      endpoint: 'https://api.openai.com/v1/chat/completions'
+      status: scheduled_shutdown
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      shutdown_date: '2027-01-14'
+    gpt-6-sol:
+      api_type: chat_completions
+      endpoint: 'https://api.openai.com/v1/chat/completions'
+      defaults:
+        model: gpt-6-sol
+        max_completion_tokens: 2048
+        reasoning_effort: low
+        temperature: null
+      limits: {  }
+      status: available
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      name: gpt-6-sol
+      notes: 'Provider text-generation model; account access may vary.'
+    gpt-5.2:
+      api_type: chat_completions
+      endpoint: 'https://api.openai.com/v1/chat/completions'
+      defaults:
+        model: gpt-5.2
+        max_completion_tokens: 2048
+        reasoning_effort: low
+        temperature: null
+      limits: {  }
+      status: available
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      name: gpt-5.2
+      notes: 'Provider text-generation model; account access may vary.'
+    o1:
+      api_type: chat_completions
+      endpoint: 'https://api.openai.com/v1/chat/completions'
+      defaults:
+        model: o1
+        max_completion_tokens: 2048
+        reasoning_effort: low
+        temperature: null
+      limits: {  }
+      status: scheduled_shutdown
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      shutdown_date: '2026-10-23'
+      name: o1
+      notes: 'Provider text-generation model; account access may vary. Scheduled shutdown 2026-10-23.'
+    gpt-5.4-nano-2026-03-17:
+      api_type: chat_completions
+      endpoint: 'https://api.openai.com/v1/chat/completions'
+      defaults:
+        model: gpt-5.4-nano-2026-03-17
+        max_completion_tokens: 2048
+        reasoning_effort: low
+        temperature: null
+      limits: {  }
+      status: available
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      name: gpt-5.4-nano-2026-03-17
+      notes: 'Provider text-generation model; account access may vary.'
+    gpt-6.1-sol:
+      name: 'OpenAI GPT-6.1 Sol'
+      defaults:
+        model: gpt-6.1-sol
+        temperature: null
+        reasoning_effort: low
+        max_completion_tokens: 2048
+      limits:
+        max_tokens: 1050000
+        max_output_tokens: 128000
+        estimated_max_chars: 4200000
+      notes: 'Current general-purpose model for more demanding translation; low reasoning effort.'
+      api_type: chat_completions
+      endpoint: 'https://api.openai.com/v1/chat/completions'
+      status: available
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+    o1-2024-12-17:
+      api_type: chat_completions
+      endpoint: 'https://api.openai.com/v1/chat/completions'
+      defaults:
+        model: o1-2024-12-17
+        max_completion_tokens: 2048
+        reasoning_effort: low
+        temperature: null
+      limits: {  }
+      status: scheduled_shutdown
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      shutdown_date: '2026-10-23'
+      name: o1-2024-12-17
+      notes: 'Provider text-generation model; account access may vary. Scheduled shutdown 2026-10-23.'
+    gpt-5.3-codex:
+      api_type: responses
+      endpoint: 'https://api.openai.com/v1/responses'
+      defaults:
+        model: gpt-5.3-codex
+        max_completion_tokens: 2048
+        temperature: null
+      limits: {  }
+      status: scheduled_shutdown
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      shutdown_date: '2027-04-01'
+      name: gpt-5.3-codex
+      notes: 'Provider text-generation model; account access may vary. Scheduled shutdown 2027-04-01.'
+      usage:
+        tokens:
+          total: total_tokens
+          breakdown:
+            prompt: input_tokens
+            completion: output_tokens
+            reasoning: output_tokens_details.reasoning_tokens
+    gpt-5-search-api-2025-10-14:
+      api_type: chat_completions
+      endpoint: 'https://api.openai.com/v1/chat/completions'
+      defaults:
+        model: gpt-5-search-api-2025-10-14
+        max_completion_tokens: 2048
+        reasoning_effort: null
+        temperature: null
+      limits: {  }
+      status: available
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      name: gpt-5-search-api-2025-10-14
+      notes: 'Provider text-generation model; account access may vary.'
+    gpt-5:
+      name: 'OpenAI GPT-5'
+      defaults:
+        model: gpt-5
+        temperature: null
+        max_completion_tokens: 2048
+        reasoning_effort: low
+      limits:
+        max_tokens: 400000
+        max_output_tokens: 128000
+        estimated_max_chars: 1600000
+      notes: 'Flagship model with enhanced reasoning, multimodal capabilities, and extended context support.'
+      api_type: chat_completions
+      endpoint: 'https://api.openai.com/v1/chat/completions'
+      status: available
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+    gpt-4.1-nano-2025-04-14:
+      api_type: chat_completions
+      endpoint: 'https://api.openai.com/v1/chat/completions'
+      defaults:
+        model: gpt-4.1-nano-2025-04-14
+        max_completion_tokens: 2048
+        temperature: 0.0
+      limits: {  }
+      status: scheduled_shutdown
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      shutdown_date: '2026-10-23'
+      name: gpt-4.1-nano-2025-04-14
+      notes: 'Provider text-generation model; account access may vary. Scheduled shutdown 2026-10-23.'
+    gpt-4.1-2025-04-14:
+      api_type: chat_completions
+      endpoint: 'https://api.openai.com/v1/chat/completions'
+      defaults:
+        model: gpt-4.1-2025-04-14
+        max_completion_tokens: 2048
+        temperature: 0.0
+      limits: {  }
+      status: scheduled_shutdown
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      shutdown_date: '2027-01-14'
+      name: gpt-4.1-2025-04-14
+      notes: 'Provider text-generation model; account access may vary. Scheduled shutdown 2027-01-14.'
+    gpt-4o-mini-2024-07-18:
+      api_type: chat_completions
+      endpoint: 'https://api.openai.com/v1/chat/completions'
+      defaults:
+        model: gpt-4o-mini-2024-07-18
+        max_completion_tokens: 2048
+        temperature: 0.0
+      limits: {  }
+      status: scheduled_shutdown
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      shutdown_date: '2027-01-14'
+      name: gpt-4o-mini-2024-07-18
+      notes: 'Provider text-generation model; account access may vary. Scheduled shutdown 2027-01-14.'
+    gpt-4:
+      name: 'OpenAI GPT-4'
+      defaults:
+        model: gpt-4
+        max_completion_tokens: 2048
+        temperature: 0.0
+      limits:
+        max_tokens: 8192
+        estimated_max_chars: 32768
+      notes: 'Classic GPT-4 model: highest reliability. Scheduled shutdown 2026-10-23.'
+      api_type: chat_completions
+      endpoint: 'https://api.openai.com/v1/chat/completions'
+      status: scheduled_shutdown
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      shutdown_date: '2026-10-23'
+    gpt-5-nano-2025-08-07:
+      api_type: chat_completions
+      endpoint: 'https://api.openai.com/v1/chat/completions'
+      defaults:
+        model: gpt-5-nano-2025-08-07
+        max_completion_tokens: 2048
+        reasoning_effort: low
+        temperature: null
+      limits: {  }
+      status: scheduled_shutdown
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      shutdown_date: '2026-12-11'
+      name: gpt-5-nano-2025-08-07
+      notes: 'Provider text-generation model; account access may vary. Scheduled shutdown 2026-12-11.'
+    o4-mini:
+      api_type: chat_completions
+      endpoint: 'https://api.openai.com/v1/chat/completions'
+      defaults:
+        model: o4-mini
+        max_completion_tokens: 2048
+        reasoning_effort: low
+        temperature: null
+      limits: {  }
+      status: scheduled_shutdown
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      shutdown_date: '2026-10-23'
+      name: o4-mini
+      notes: 'Provider text-generation model; account access may vary. Scheduled shutdown 2026-10-23.'
+    gpt-6-astra:
+      name: 'OpenAI GPT-6 Astra'
+      defaults:
+        model: gpt-6-astra
+        temperature: null
+        reasoning_effort: low
+        max_completion_tokens: 2048
+      limits:
+        max_tokens: 1050000
+        max_output_tokens: 128000
+        estimated_max_chars: 4200000
+      notes: 'Current most capable model, with higher cost; low reasoning effort.'
+      api_type: chat_completions
+      endpoint: 'https://api.openai.com/v1/chat/completions'
+      status: available
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+    gpt-6-luna:
+      name: 'OpenAI GPT-6 Luna'
+      defaults:
+        model: gpt-6-luna
+        temperature: null
+        reasoning_effort: low
+        max_completion_tokens: 2048
+      limits:
+        max_tokens: 1050000
+        max_output_tokens: 128000
+        estimated_max_chars: 4200000
+      notes: 'Current efficient model for focused, high-volume translation; low reasoning effort.'
+      api_type: chat_completions
+      endpoint: 'https://api.openai.com/v1/chat/completions'
+      status: available
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+    gpt-5.6-cyber:
+      api_type: responses
+      endpoint: 'https://api.openai.com/v1/responses'
+      defaults:
+        model: gpt-5.6-cyber
+        temperature: null
+        max_completion_tokens: 2048
+      status: restricted
+      notes: 'Restricted-access text model; separate provider approval required.'
+      source: 'https://developers.openai.com/api/docs/pricing'
+      name: gpt-5.6-cyber
+      usage:
+        tokens:
+          total: total_tokens
+          breakdown:
+            prompt: input_tokens
+            completion: output_tokens
+            reasoning: output_tokens_details.reasoning_tokens
+      limits: {  }
+    gpt-rosalind-research:
+      api_type: responses
+      endpoint: 'https://api.openai.com/v1/responses'
+      defaults:
+        model: gpt-rosalind-research
+        temperature: null
+        max_completion_tokens: 2048
+        reasoning_effort: null
+      status: restricted
+      notes: 'Restricted-access text model; separate provider approval required.'
+      source: 'https://developers.openai.com/api/docs/pricing'
+      name: gpt-rosalind-research
+      usage:
+        tokens:
+          total: total_tokens
+          breakdown:
+            prompt: input_tokens
+            completion: output_tokens
+            reasoning: output_tokens_details.reasoning_tokens
+      limits: {  }
+    gpt-rosalind-discovery:
+      api_type: responses
+      endpoint: 'https://api.openai.com/v1/responses'
+      defaults:
+        model: gpt-rosalind-discovery
+        temperature: null
+        max_completion_tokens: 2048
+      status: restricted
+      notes: 'Restricted-access text model; separate provider approval required.'
+      source: 'https://developers.openai.com/api/docs/pricing'
+      name: gpt-rosalind-discovery
+      usage:
+        tokens:
+          total: total_tokens
+          breakdown:
+            prompt: input_tokens
+            completion: output_tokens
+            reasoning: output_tokens_details.reasoning_tokens
+      limits: {  }
+    gpt-4-1106-preview:
+      api_type: chat_completions
+      endpoint: 'https://api.openai.com/v1/chat/completions'
+      defaults:
+        model: gpt-4-1106-preview
+        temperature: 0.0
+        max_completion_tokens: 2048
+      limits:
+        max_tokens: 128000
+        max_output_tokens: 4096
+        estimated_max_chars: 512000
+      status: scheduled_shutdown
+      shutdown_date: '2026-10-23'
+      notes: 'Legacy GPT-4 preview. Scheduled shutdown 2026-10-23.'
+      source: 'https://developers.openai.com/api/docs/deprecations'
+      name: gpt-4-1106-preview
 yandex:
   endpoint: 'https://llm.api.cloud.yandex.net/foundationModels/v1/completion'
   format: text
   defaults:
-    temperature: 0.0
+    temperature: 0
     max_tokens: 8192
   requirements:
     auth:
@@ -303,20 +1657,17 @@ yandex:
       breakdown:
         input: inputTextTokens
         completion: completionTokens
-
   models:
     gpt-lite:
       name: 'Yandex GPT Lite'
       defaults:
         model: yandexgpt-lite/latest
       notes: 'Low-latency model with up to 8 k tokens sync or 32 k async.'
-
     gpt-pro:
       name: 'Yandex GPT Pro'
       defaults:
         model: yandexgpt/latest
       notes: 'High-capacity 5th-gen model, up to 8 k tokens sync or 32 k async.'
-
     gpt-32k:
       name: 'Yandex GPT Pro 32K'
       defaults:
@@ -326,28 +1677,193 @@ yandex:
         max_tokens: 32000
         estimated_max_chars: 128000
       notes: 'Extended-context model: up to 32 k tokens (sync only).'
-
-    llama-lite:
-      name: 'Llama 8 B (Lite)'
+    aliceai-llm:
       defaults:
-        model: llama-lite/latest
-      notes: 'Meta Llama 8 B variant, up to 8 k tokens sync or async.'
-
-    llama:
-      name: 'Llama 70 B'
+        model: aliceai-llm
+        max_tokens: 2048
+      limits:
+        max_tokens: 131072
+        estimated_max_chars: 524288
+      api_type: foundation
+      name: aliceai-llm
+      notes: 'Provider text-generation model; account access may vary.'
+    aliceai-llm-flash:
       defaults:
-        model: llama/latest
-      notes: 'Full-scale Meta Llama 70 B, up to 8 k tokens sync or async.'
-
-
-# -------------------------------------------------------------------
-# xAI (Grok)
-# -------------------------------------------------------------------
+        model: aliceai-llm-flash
+        max_tokens: 2048
+      limits:
+        max_tokens: 65536
+        estimated_max_chars: 262144
+      api_type: chat_completions
+      name: aliceai-llm-flash
+      notes: 'Provider text-generation model; account access may vary.'
+      endpoint: 'https://llm.api.cloud.yandex.net/v1/chat/completions'
+      usage:
+        tokens:
+          total: total_tokens
+          breakdown:
+            prompt: prompt_tokens
+            completion: completion_tokens
+    yandexgpt-5.1:
+      defaults:
+        model: yandexgpt-5.1
+        max_tokens: 2048
+      limits:
+        max_tokens: 32768
+        estimated_max_chars: 131072
+      api_type: foundation
+      name: yandexgpt-5.1
+      notes: 'Provider text-generation model; account access may vary.'
+    yandexgpt-5-pro:
+      defaults:
+        model: yandexgpt-5-pro
+        max_tokens: 2048
+      limits:
+        max_tokens: 32768
+        estimated_max_chars: 131072
+      api_type: foundation
+      name: yandexgpt-5-pro
+      notes: 'Provider text-generation model; account access may vary.'
+    yandexgpt-5-lite:
+      defaults:
+        model: yandexgpt-5-lite
+        max_tokens: 2048
+      limits:
+        max_tokens: 32768
+        estimated_max_chars: 131072
+      api_type: chat_completions
+      name: yandexgpt-5-lite
+      notes: 'Provider text-generation model; account access may vary.'
+      endpoint: 'https://llm.api.cloud.yandex.net/v1/chat/completions'
+      usage:
+        tokens:
+          total: total_tokens
+          breakdown:
+            prompt: prompt_tokens
+            completion: completion_tokens
+    deepseek-v4-flash:
+      defaults:
+        model: deepseek-v4-flash
+        max_tokens: 2048
+      limits:
+        max_tokens: 1048576
+        estimated_max_chars: 4194304
+      api_type: chat_completions
+      name: deepseek-v4-flash
+      notes: 'Provider text-generation model; account access may vary.'
+      endpoint: 'https://llm.api.cloud.yandex.net/v1/chat/completions'
+      usage:
+        tokens:
+          total: total_tokens
+          breakdown:
+            prompt: prompt_tokens
+            completion: completion_tokens
+    deepseek-v4.1-flash:
+      defaults:
+        model: deepseek-v4.1-flash
+        max_tokens: 2048
+      limits:
+        max_tokens: 1048576
+        estimated_max_chars: 4194304
+      api_type: chat_completions
+      name: deepseek-v4.1-flash
+      notes: 'Provider text-generation model; account access may vary.'
+      endpoint: 'https://llm.api.cloud.yandex.net/v1/chat/completions'
+      usage:
+        tokens:
+          total: total_tokens
+          breakdown:
+            prompt: prompt_tokens
+            completion: completion_tokens
+    qwen3-235b-a22b-fp8:
+      defaults:
+        model: qwen3-235b-a22b-fp8
+        max_tokens: 2048
+      limits:
+        max_tokens: 262144
+        estimated_max_chars: 1048576
+      api_type: chat_completions
+      name: qwen3-235b-a22b-fp8
+      notes: 'Provider text-generation model; account access may vary.'
+      endpoint: 'https://llm.api.cloud.yandex.net/v1/chat/completions'
+      usage:
+        tokens:
+          total: total_tokens
+          breakdown:
+            prompt: prompt_tokens
+            completion: completion_tokens
+    gpt-oss-120b:
+      defaults:
+        model: gpt-oss-120b
+        max_tokens: 2048
+      limits:
+        max_tokens: 131072
+        estimated_max_chars: 524288
+      api_type: chat_completions
+      name: gpt-oss-120b
+      notes: 'Provider text-generation model; account access may vary.'
+      endpoint: 'https://llm.api.cloud.yandex.net/v1/chat/completions'
+      usage:
+        tokens:
+          total: total_tokens
+          breakdown:
+            prompt: prompt_tokens
+            completion: completion_tokens
+    gpt-oss-20b:
+      defaults:
+        model: gpt-oss-20b
+        max_tokens: 2048
+      limits:
+        max_tokens: 131072
+        estimated_max_chars: 524288
+      api_type: chat_completions
+      name: gpt-oss-20b
+      notes: 'Provider text-generation model; account access may vary.'
+      endpoint: 'https://llm.api.cloud.yandex.net/v1/chat/completions'
+      usage:
+        tokens:
+          total: total_tokens
+          breakdown:
+            prompt: prompt_tokens
+            completion: completion_tokens
+    qwen3.6-35b-a3b:
+      defaults:
+        model: qwen3.6-35b-a3b
+        max_tokens: 2048
+      limits:
+        max_tokens: 262144
+        estimated_max_chars: 1048576
+      api_type: chat_completions
+      name: qwen3.6-35b-a3b
+      notes: 'Provider text-generation model; account access may vary.'
+      endpoint: 'https://llm.api.cloud.yandex.net/v1/chat/completions'
+      usage:
+        tokens:
+          total: total_tokens
+          breakdown:
+            prompt: prompt_tokens
+            completion: completion_tokens
+    yandexgpt-latest:
+      defaults:
+        model: yandexgpt/latest
+        max_tokens: 2048
+      api_type: foundation
+      name: yandexgpt-latest
+      notes: 'Provider text-generation model; account access may vary.'
+      limits: {  }
+    yandexgpt-rc:
+      defaults:
+        model: yandexgpt/rc
+        max_tokens: 2048
+      api_type: foundation
+      name: yandexgpt-rc
+      notes: 'Provider text-generation model; account access may vary.'
+      limits: {  }
 xai:
   endpoint: 'https://api.x.ai/v1/chat/completions'
   format: text
   defaults:
-    temperature: 0.0
+    temperature: 0
     source_lang: auto
     target_lang: EN
   requirements:
@@ -368,31 +1884,99 @@ xai:
         prompt: prompt_tokens
         completion: completion_tokens
         reasoning: completion_tokens_details.reasoning_tokens
-
   models:
-    grok-4:
-      name: 'Grok 4'
+    grok-4.20-0309-reasoning:
       defaults:
-        model: grok-4
+        model: grok-4.20-0309-reasoning
+        temperature: null
+        max_completion_tokens: 2048
+      limits:
+        max_tokens: 1000000
+        estimated_max_chars: 4000000
+      api_type: chat_completions
+      name: grok-4.20-0309-reasoning
+      notes: 'Provider text-generation model; account access may vary.'
+    grok-4.20-0309-non-reasoning:
+      defaults:
+        model: grok-4.20-0309-non-reasoning
+        temperature: null
+        max_completion_tokens: 2048
+      limits:
+        max_tokens: 1000000
+        estimated_max_chars: 4000000
+      api_type: chat_completions
+      name: grok-4.20-0309-non-reasoning
+      notes: 'Provider text-generation model; account access may vary.'
+    grok-4.20-multi-agent-0309:
+      defaults:
+        model: grok-4.20-multi-agent-0309
+        temperature: null
+        max_completion_tokens: 2048
+      limits:
+        max_tokens: 1000000
+        estimated_max_chars: 4000000
+      api_type: responses
+      endpoint: 'https://api.x.ai/v1/responses'
+      name: grok-4.20-multi-agent-0309
+      notes: 'Provider text-generation model; account access may vary.'
+      usage:
+        tokens:
+          total: total_tokens
+          breakdown:
+            prompt: input_tokens
+            completion: output_tokens
+    grok-4.3:
+      defaults:
+        model: grok-4.3
+        temperature: null
+        max_completion_tokens: 2048
+      limits:
+        max_tokens: 1000000
+        estimated_max_chars: 4000000
+      api_type: chat_completions
+      name: grok-4.3
+      notes: 'Provider text-generation model; account access may vary.'
+    grok-4.5:
+      defaults:
+        model: grok-4.5
+        temperature: null
+        max_completion_tokens: 2048
+      limits:
+        max_tokens: 500000
+        estimated_max_chars: 2000000
+      api_type: chat_completions
+      name: grok-4.5
+      notes: 'Provider text-generation model; account access may vary.'
+    grok-4.6:
+      defaults:
+        model: grok-4.6
+        temperature: null
+        max_completion_tokens: 2048
+      limits:
+        max_tokens: 500000
+        estimated_max_chars: 2000000
+      api_type: chat_completions
+      name: grok-4.6
+      notes: 'Provider text-generation model; account access may vary.'
+    grok-4.7:
+      defaults:
+        model: grok-4.7
+        temperature: null
+        max_completion_tokens: 2048
+      limits:
+        max_tokens: 500000
+        estimated_max_chars: 2000000
+      api_type: chat_completions
+      name: grok-4.7
+      notes: 'Provider text-generation model; account access may vary.'
+    grok-build-0.1:
+      defaults:
+        model: grok-build-0.1
+        temperature: null
+        max_completion_tokens: 2048
       limits:
         max_tokens: 256000
         estimated_max_chars: 1024000
-      notes: 'Scientist-grade reasoning, coding mode, and real-time internet understanding'
-
-    grok-3:
-      name: 'Grok 3'
-      defaults:
-        model: grok-3
-      limits:
-        max_tokens: 131072
-        estimated_max_chars: 524288
-      notes: 'Optimized for logical reasoning, math problem-solving, and real-time data with DeepSearch'
-
-    grok-3-mini:
-      name: 'Grok 3 Mini'
-      defaults:
-        model: grok-3-mini
-      limits:
-        max_tokens: 131072
-        estimated_max_chars: 524288
-      notes: 'Compact variant balancing Grok 3 performance and efficiency'
+      api_type: chat_completions
+      name: grok-build-0.1
+      notes: 'Provider text-generation model; account access may vary.'

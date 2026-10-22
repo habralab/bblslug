@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Bblslug\Models\Drivers;
 
 use Bblslug\Models\ModelDriverInterface;
@@ -27,30 +29,82 @@ class GoogleDriver implements ModelDriverInterface
      *     - includeThoughts (bool|null)   Include chain-of-thought reasoning (Gemini 2.5+).
      *     - maxOutputTokens (int|null)    Maximum tokens for output.
      *     - promptKey       (string)      Key of the prompt template in prompts.yaml.
+     *     - response_schema (array)       Gemini JSON schema for native structured output.
      *     - temperature     (float)       Sampling temperature.
      *     - thinkingBudget  (int|null)    Budget for internal reasoning (Gemini 2.5+).
+     *     - thinkingLevel   (string|null) Reasoning level for models that support it.
      *     - verbose         (bool)        Include debug logs (ignored here).
      *
      * @return array{url:string, headers:string[], body:string}
      */
     public function buildRequest(array $config, string $text, array $options): array
     {
-        $defaults = $config['defaults'] ?? [];
-        $candidateCount = $options['candidateCount'] ?? $defaults['candidateCount'] ?? 1;
-        $context = trim((string) ($options['context'] ?? $defaults['context'] ?? ''));
-        $format = $options['format'] ?? $defaults['format'] ?? 'text';
-        $includeThoughts = $options['includeThoughts'] ?? null;
-        $maxOutputTokens = $options['maxOutputTokens'] ?? $defaults['maxOutputTokens'] ?? null;
-        $promptKey = $options['promptKey'] ?? 'translator';
-        $sourceLang = $defaults['source_lang'] ?? 'auto';
-        $targetLang = $defaults['target_lang'] ?? 'EN';
-        $temperature = $options['temperature'] ?? $defaults['temperature'] ?? 0.0;
-        $thinkingBudget = $options['thinkingBudget'] ?? null;
+        $defaults = \is_array($config['defaults'] ?? null) ? $config['defaults'] : [];
+
+        $candRaw = $options['candidateCount'] ?? ($defaults['candidateCount'] ?? 1);
+        $candidateCount = (\is_int($candRaw) || \is_numeric($candRaw)) ? (int) $candRaw : 1;
+
+        $ctxRaw = $options['context'] ?? ($defaults['context'] ?? '');
+        $context = (\is_scalar($ctxRaw) || ($ctxRaw instanceof \Stringable))
+            ? \trim((string) $ctxRaw)
+            : '';
+
+        $format = \is_string($options['format'] ?? null)
+            ? $options['format']
+            : (\is_string($defaults['format'] ?? null) ? $defaults['format'] : 'text');
+
+        $hasResponseSchema = \array_key_exists('response_schema', $options);
+        $responseSchema = $hasResponseSchema ? $options['response_schema'] : null;
+        if (
+            $hasResponseSchema
+            && (!\is_array($responseSchema) || $responseSchema === [] || \array_is_list($responseSchema))
+        ) {
+            throw new \InvalidArgumentException('response_schema must be a non-empty associative array.');
+        }
+        if ($format === 'structured_json' && !$hasResponseSchema) {
+            throw new \InvalidArgumentException(
+                'format structured_json requires a non-empty associative response_schema.'
+            );
+        }
+        $nativeStructured = $hasResponseSchema;
+        if ($nativeStructured && !\in_array($format, ['json', 'structured_json', 'linedJson'], true)) {
+            throw new \InvalidArgumentException('response_schema requires format json, structured_json, or linedJson');
+        }
+
+        $includeThoughts = null;
+        if (\array_key_exists('includeThoughts', $options)) {
+            $includeThoughts = (bool) $options['includeThoughts'];
+        } elseif (\array_key_exists('includeThoughts', $defaults)) {
+            $includeThoughts = (bool) $defaults['includeThoughts'];
+        }
+
+        $motRaw = $options['maxOutputTokens'] ?? ($defaults['maxOutputTokens'] ?? null);
+        $maxOutputTokens = ($motRaw !== null && (\is_int($motRaw) || \is_numeric($motRaw)))
+            ? (int) $motRaw
+            : null;
+
+        $promptKey = \is_string($options['promptKey'] ?? null) ? $options['promptKey'] : 'translator';
+
+        $sourceLang = \is_string($defaults['source_lang'] ?? null) ? $defaults['source_lang'] : 'auto';
+        $targetLang = \is_string($defaults['target_lang'] ?? null) ? $defaults['target_lang'] : 'EN';
+
+        $tempRaw = $options['temperature'] ?? ($defaults['temperature'] ?? 0.0);
+        $temperature = (\is_float($tempRaw) || \is_int($tempRaw) || \is_numeric($tempRaw))
+            ? (float) $tempRaw
+            : 0.0;
+
+        $tbRaw = $options['thinkingBudget'] ?? ($defaults['thinkingBudget'] ?? null);
+        $thinkingBudget = ($tbRaw !== null && (\is_int($tbRaw) || \is_numeric($tbRaw)))
+            ? (int) $tbRaw
+            : null;
+
+        $levelRaw = $options['thinkingLevel'] ?? ($defaults['thinkingLevel'] ?? null);
+        $thinkingLevel = \is_string($levelRaw) && $levelRaw !== '' ? $levelRaw : null;
 
         // Render system prompt from YAML templates
         $systemText = Prompts::render(
             $promptKey,
-            $format,
+            $nativeStructured ? 'structured_json' : $format,
             [
                 'source'  => $sourceLang,
                 'target'  => $targetLang,
@@ -61,34 +115,57 @@ class GoogleDriver implements ModelDriverInterface
         );
 
         // Wrap user text in markers
-        $contentText = self::START . "\n" . $text . "\n" . self::END;
+        $contentText = $nativeStructured ? $text : self::START . "\n" . $text . "\n" . self::END;
 
         // Build JSON payload
-        $generationConfig = array_filter([
-            'temperature' => (float) $temperature,
-            'candidateCount' => (int) $candidateCount,
-            'maxOutputTokens' => $maxOutputTokens !== null ? (int) $maxOutputTokens : null,
-        ], fn($value) => $value !== null);
-
-        // Add optional thinking config
-        $thinkingConfig = array_filter([
-            'thinkingBudget'  => $thinkingBudget !== null ? (int) $thinkingBudget : null,
-            'includeThoughts' => $includeThoughts,
-        ], fn($value) => $value !== null);
-        if ($thinkingConfig) {
-            $generationConfig['thinkingConfig'] = $thinkingConfig;
+        /** @var array<string,mixed> $generationConfig */
+        $generationConfig = [
+            'temperature'    => $temperature,
+            'candidateCount' => $candidateCount,
+        ];
+        if ($maxOutputTokens !== null) {
+            $generationConfig['maxOutputTokens'] = $maxOutputTokens;
+        }
+        $thinking = [];
+        if ($thinkingLevel !== null) {
+            $thinking['thinkingLevel'] = $thinkingLevel;
+        } elseif ($thinkingBudget !== null) {
+            $thinking['thinkingBudget'] = $thinkingBudget;
+        }
+        if ($includeThoughts !== null) {
+            $thinking['includeThoughts'] = $includeThoughts;
+        }
+        if ($thinking !== []) {
+            $generationConfig['thinkingConfig'] = $thinking;
+        }
+        if ($nativeStructured) {
+            $generationConfig['responseMimeType'] = 'application/json';
+            $generationConfig['responseJsonSchema'] = $responseSchema;
         }
 
-        $body = [
+        $bodyArr = [
             'system_instruction' => ['parts' => [['text' => $systemText]]],
             'contents'           => [['parts' => [['text' => $contentText]]]],
             'generationConfig'   => $generationConfig,
         ];
 
+        // Normalize return shape and types
+        $url = \is_string($config['endpoint'] ?? null) ? (string) $config['endpoint'] : '';
+        $headers = [];
+        $req = \is_array($config['requirements'] ?? null) ? $config['requirements'] : null;
+        $headersSrc = \is_array($req['headers'] ?? null) ? $req['headers'] : [];
+        foreach ((array) $headersSrc as $h) {
+            if (\is_string($h)) {
+                $headers[] = $h;
+            }
+        }
+
+        $body = \json_encode($bodyArr, JSON_UNESCAPED_UNICODE);
+
         return [
-            'url'     => $config['endpoint'],
-            'headers' => $config['requirements']['headers'] ?? [],
-            'body'    => json_encode($body, JSON_UNESCAPED_UNICODE),
+            'url'     => $url,
+            'headers' => $headers,
+            'body'    => \is_string($body) ? $body : '{}',
         ];
     }
 
@@ -101,24 +178,37 @@ class GoogleDriver implements ModelDriverInterface
      * @param array<string,mixed> $config       Model configuration (unused).
      * @param string              $responseBody Raw HTTP response body.
      *
+     * @param array<string,mixed> $options Request options used to build the request.
+     *
      * @return array{text:string, usage:array<string,mixed>|null}
      *
      * @throws \RuntimeException If the response is malformed or markers are missing.
      */
-    public function parseResponse(array $config, string $responseBody): array
+    public function parseResponse(array $config, string $responseBody, array $options = []): array
     {
-        $data = json_decode($responseBody, true);
-        if (!is_array($data)) {
+        $data = \json_decode($responseBody, true);
+        if (!\is_array($data)) {
             throw new \RuntimeException("Invalid JSON response: {$responseBody}");
         }
 
-        $candidate = $data['candidates'][0] ?? null;
-        $finishReason = $candidate['finishReason'] ?? '';
+        // Pull first candidate safely
+        $candidate = null;
+        $cands = $data['candidates'] ?? null;
+        if (\is_array($cands) && isset($cands[0]) && \is_array($cands[0])) {
+            $candidate = $cands[0];
+        }
+        if (!\is_array($candidate)) {
+            throw new \RuntimeException("Gemini response has no candidates: {$responseBody}");
+        }
+
+        $finishReason = \is_string($candidate['finishReason'] ?? null)
+            ? $candidate['finishReason']
+            : '';
 
         if ($finishReason === 'MAX_TOKENS') {
             throw new \RuntimeException(
-                "Gemini: translation was truncated—reached model's max output tokens.\n" .
-                "Try increasing maxOutputTokens or splitting input into smaller chunks."
+                "Gemini: translation was truncated—reached model's max output tokens.\n"
+                . "Try increasing maxOutputTokens or splitting input into smaller chunks."
             );
         }
 
@@ -129,30 +219,58 @@ class GoogleDriver implements ModelDriverInterface
         }
 
         $contentWrap = $candidate['content'] ?? null;
+        if (!\is_array($contentWrap)) {
+            throw new \RuntimeException("Gemini translation failed: missing content wrapper.");
+        }
 
-        if (!isset($contentWrap['parts']) || !is_array($contentWrap['parts'])) {
-            throw new \RuntimeException("Gemini translation failed: no text parts in response: {$responseBody}");
+        $parts = $contentWrap['parts'] ?? null;
+        if (!\is_array($parts)) {
+            throw new \RuntimeException("Gemini translation failed: no text parts in response.");
         }
 
         $accumulated = '';
-
-        foreach ($contentWrap['parts'] as $part) {
-            if (isset($part['text']) && is_string($part['text'])) {
+        foreach ($parts as $part) {
+            if (\is_array($part) && ($part['thought'] ?? false) === true) {
+                continue;
+            }
+            if (\is_array($part) && \is_string($part['text'] ?? null)) {
                 $accumulated .= $part['text'];
             }
         }
 
-        // Extract between markers
-        $pattern = '/' . preg_quote(self::START, '/') . '(.*?)' . preg_quote(self::END, '/') . '/s';
+        // Usage metadata → array<string,mixed>|null
+        $usage = null;
+        $u = $data['usageMetadata'] ?? null;
+        if (\is_array($u)) {
+            /** @var array<string,mixed> $typed */
+            $typed = [];
+            foreach ($u as $k => $v) {
+                if (\is_string($k)) {
+                    $typed[$k] = $v;
+                }
+            }
+            $usage = $typed;
+        }
 
-        if (!preg_match($pattern, $accumulated, $matches)) {
+        if (\array_key_exists('response_schema', $options)) {
+            return [
+                'text'  => \trim($accumulated),
+                'usage' => $usage,
+            ];
+        }
+
+        // Extract between markers
+        $pattern = '/'
+            . \preg_quote(self::START, '/')
+            . '(.*?)'
+            . \preg_quote(self::END, '/')
+            . '/s';
+
+        if (!\preg_match($pattern, $accumulated, $matches)) {
             throw new \RuntimeException("Markers not found in Gemini response");
         }
 
-        $text = trim($matches[1]);
-
-        // Usage metadata
-        $usage = $data['usageMetadata'] ?? null;
+        $text = \trim($matches[1]);
 
         return [
             'text'  => $text,

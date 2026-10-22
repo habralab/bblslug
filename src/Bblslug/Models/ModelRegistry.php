@@ -1,5 +1,11 @@
 <?php
 
+/**
+ * @noinspection PhpDocMissingThrowsInspection
+ */
+
+declare(strict_types=1);
+
 namespace Bblslug\Models;
 
 use Bblslug\Models\Drivers\AnthropicDriver;
@@ -19,7 +25,8 @@ use Symfony\Component\Yaml\Yaml;
  */
 class ModelRegistry
 {
-    protected array $models;
+    /** @var array<string, array<string,mixed>> */
+    protected array $models = [];
 
     /**
      * Load the models registry from the given path (or default).
@@ -34,25 +41,39 @@ class ModelRegistry
         }
 
         $raw = Yaml::parseFile($path);
+        if (!\is_array($raw)) {
+            throw new \RuntimeException("Model registry must be a mapping array in {$path}");
+        }
+
+        /** @var array<string, array<string,mixed>> $flat */
         $flat = [];
 
         foreach ($raw as $key => $cfg) {
+            if (!\is_string($key) || !\is_array($cfg)) {
+                continue;
+            }
             // vendor‐level grouping?
-            if (isset($cfg['models']) && is_array($cfg['models'])) {
+            if (isset($cfg['models']) && \is_array($cfg['models'])) {
                 $vendor = $key;
                 $vendorDefaults = $cfg;
                 unset($vendorDefaults['models']);
 
                 foreach ($cfg['models'] as $modelName => $modelOverrides) {
+                    if (!\is_string($modelName) || !\is_array($modelOverrides)) {
+                        continue;
+                    }
+
                     // merge vendor-level + per-model (modelOverride wins)
+                    /** @var array<string,mixed> $merged */
                     $merged = array_replace_recursive($vendorDefaults, $modelOverrides);
+
                     // ensure we still know the vendor
                     $merged['vendor'] = $vendor;
                     $flat["{$vendor}:{$modelName}"] = $merged;
                 }
-
-            // flat (legacy) definition
             } else {
+                // flat (legacy) definition
+                /** @var array<string,mixed> $cfg */
                 $flat[$key] = $cfg;
             }
         }
@@ -100,7 +121,15 @@ class ModelRegistry
      */
     public function getEndpoint(string $key): ?string
     {
-        return $this->models[$key]['endpoint'] ?? null;
+        $cfg = $this->get($key);
+        if ($cfg === null) {
+            return null;
+        }
+        $endpoint = $cfg['endpoint'] ?? null;
+        if (\is_string($endpoint) && $endpoint !== '') {
+            return $endpoint;
+        }
+        return null;
     }
 
     /**
@@ -111,7 +140,15 @@ class ModelRegistry
      */
     public function getFormat(string $key): ?string
     {
-        return $this->models[$key]['format'] ?? null;
+        $cfg = $this->get($key);
+        if ($cfg === null) {
+            return null;
+        }
+        $format = $cfg['format'] ?? null;
+        if (\is_string($format) && $format !== '') {
+            return $format;
+        }
+        return null;
     }
 
     /**
@@ -122,7 +159,19 @@ class ModelRegistry
      */
     public function getCharLimit(string $key): ?int
     {
-        return $this->models[$key]['limits']['estimated_max_chars'] ?? null;
+        $cfg = $this->get($key);
+        if ($cfg === null) {
+            return null;
+        }
+        $limits = $cfg['limits'] ?? null;
+        if (!\is_array($limits)) {
+            return null;
+        }
+        $val = $limits['estimated_max_chars'] ?? null;
+        if (\is_int($val) || \is_string($val)) {
+            return (int)$val;
+        }
+        return null;
     }
 
     /**
@@ -133,7 +182,20 @@ class ModelRegistry
      */
     public function getAuthEnv(string $key): ?string
     {
-        return $this->models[$key]['requirements']['auth']['env'] ?? null;
+        $cfg = $this->get($key);
+        if ($cfg === null) {
+            return null;
+        }
+        $req = $cfg['requirements'] ?? null;
+        if (!\is_array($req)) {
+            return null;
+        }
+        $auth = $req['auth'] ?? null;
+        if (!\is_array($auth)) {
+            return null;
+        }
+        $env = $auth['env'] ?? null;
+        return \is_string($env) && $env !== '' ? $env : null;
     }
 
     /**
@@ -144,7 +206,24 @@ class ModelRegistry
      */
     public function getVariables(string $key): array
     {
-        return $this->models[$key]['requirements']['variables'] ?? [];
+        $cfg = $this->get($key);
+        if ($cfg === null) {
+            return [];
+        }
+        $req = $cfg['requirements'] ?? null;
+        if (!\is_array($req)) {
+            return [];
+        }
+        $vars = $req['variables'] ?? [];
+        $out  = [];
+        if (\is_array($vars)) {
+            foreach ($vars as $k => $v) {
+                if (\is_string($k) && \is_string($v)) {
+                    $out[$k] = $v;
+                }
+            }
+        }
+        return $out;
     }
 
     /**
@@ -155,7 +234,20 @@ class ModelRegistry
      */
     public function getHelpUrl(string $key): ?string
     {
-        return $this->models[$key]['requirements']['auth']['help_url'] ?? null;
+        $cfg = $this->get($key);
+        if ($cfg === null) {
+            return null;
+        }
+        $req = $cfg['requirements'] ?? null;
+        if (!\is_array($req)) {
+            return null;
+        }
+        $auth = $req['auth'] ?? null;
+        if (!\is_array($auth)) {
+            return null;
+        }
+        $url = $auth['help_url'] ?? null;
+        return \is_string($url) && $url !== '' ? $url : null;
     }
 
     /**
@@ -166,7 +258,16 @@ class ModelRegistry
      */
     public function getNotes(string $key): ?string
     {
-        return $this->models[$key]['notes'] ?? null;
+        $cfg = $this->get($key);
+        if ($cfg === null) {
+            return null;
+        }
+        $n = $cfg['notes'] ?? null;
+        if (\is_scalar($n) || (\is_object($n) && \method_exists($n, '__toString'))) {
+            $s = (string)$n;
+            return $s !== '' ? $s : null;
+        }
+        return null;
     }
 
     /**
@@ -189,7 +290,10 @@ class ModelRegistry
     public function getDriver(string $key): ModelDriverInterface
     {
         $model  = $this->get($key);
-        $vendor = $model['vendor'] ?? '';
+        if ($model === null) {
+            throw new \InvalidArgumentException("Unknown model key '{$key}'.");
+        }
+        $vendor = \is_string($model['vendor'] ?? null) ? $model['vendor'] : '';
 
         return match ($vendor) {
             'anthropic' => new AnthropicDriver(),

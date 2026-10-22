@@ -3,8 +3,11 @@
          colors="true"
          verbose="true">
     <testsuites>
-        <testsuite name="Bblslug Test Suite">
-            <directory>tests</directory>
+        <testsuite name="unit">
+            <directory>tests/Unit</directory>
+        </testsuite>
+        <testsuite name="integration">
+            <directory>tests/Integration</directory>
         </testsuite>
     </testsuites>
 </phpunit>

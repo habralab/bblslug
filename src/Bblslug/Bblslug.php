@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Bblslug;
 
 use Bblslug\Filters\FilterManager;
@@ -23,12 +25,21 @@ class Bblslug
     public static function listModels(): array
     {
         $registry = new ModelRegistry();
+        /** @var array<string, array<string,mixed>> $all */
         $all      = $registry->getAll();
 
+        /** @var array<string, array<string, array<string,mixed>>> $grouped */
         $grouped = [];
         foreach ($all as $key => $config) {
-            $vendor = $config['vendor'] ?? 'other';
-            $grouped[$vendor][$key] = $config;
+            $vendor = (isset($config['vendor']) && \is_string($config['vendor']))
+                ? $config['vendor']
+                : 'other';
+            if (!isset($grouped[$vendor])) {
+                $grouped[$vendor] = [];
+            }
+            /** @var string $modelKey */
+            $modelKey = (string) $key;
+            $grouped[$vendor][$modelKey] = $config;
         }
 
         return $grouped;
@@ -49,18 +60,20 @@ class Bblslug
      * Translate text, HTML or JSON via any registered model.
      *
      * @param string                $apiKey     API key for the model - mandatory.
-     * @param string                $format     "text", "html" or "json" - mandatory.
+     * @param string                $format     "text", "html", "json", "structured_json" or "linedJson".
      * @param string                $modelKey   Model ID (e.g. "deepl:pro") - mandatory.
      * @param string                $text       The source to be translated - mandatory.
      * @param string|null           $context    Optional context prompt.
      * @param bool                  $dryRun     If true: prepare placeholders only.
      * @param string[]              $filters    Placeholder filters to apply.
+     * @param ?callable(string,string=):void $onFeedback Optional feedback callback that
+     *        receives (message, level).
      * @param string                $promptKey  Prompt template key
      * @param string|null           $proxy      Optional proxy URL (from env or CLI).
      * @param string|null           $sourceLang Optional source language code.
      * @param string|null           $targetLang Optional target language code.
      * @param bool                  $validate   If true: perform container syntax validation.
-     * @param array<string,string>  $variables  Model-specific vars (e.g. ['some'=>'...'])
+     * @param array<string,mixed>   $variables  Model-specific vars (e.g. ['some'=>'...'])
      * @param bool                  $verbose    If true: include request/response logs.
      *
      * @return array{
@@ -94,11 +107,35 @@ class Bblslug
         ?string $targetLang = null,
         bool $validate = true,
         array $variables = [],
-        bool $verbose = false
+        bool $verbose = false,
+        ?callable $onFeedback = null
     ): array {
         // Prepare holders for validation debug
         $valLogPre  = '';
         $valLogPost = '';
+        /** @var array<string,mixed>|null $schemaIn */
+        $schemaIn = null;
+        /** @var array<string,mixed>|null $rawUsage */
+        $rawUsage = null;
+
+        // Feedback helper.
+        $say = static function (?callable $cb, string $msg, string $level = 'info'): void {
+            if (is_callable($cb)) {
+                try {
+                    $cb($msg, $level);
+                } catch (\Throwable $e) {
+                    /* swallow on purpose */
+                }
+            }
+        };
+
+        $say(
+            $onFeedback,
+            "Starting translation (model='{$modelKey}', format='{$format}', dryRun="
+            . ($dryRun ? 'true' : 'false')
+            . ")",
+            'info'
+        );
 
         // Validate model
         $registry = new ModelRegistry();
@@ -109,11 +146,25 @@ class Bblslug
         if (!$endpoint) {
             throw new \InvalidArgumentException("Model {$modelKey} missing required configuration.");
         }
+        /** @var array<string,mixed> $model */
         $model = $registry->get($modelKey);
         $driver = $registry->getDriver($modelKey);
 
+        if ($format === 'structured_json' || \array_key_exists('response_schema', $variables)) {
+            if (!\in_array($model['vendor'] ?? null, ['openai', 'google'], true)) {
+                throw new \InvalidArgumentException('Native JSON schema output is supported only by OpenAI and Google');
+            }
+            if (!\in_array($format, ['json', 'structured_json', 'linedJson'], true)) {
+                throw new \InvalidArgumentException('response_schema requires a JSON format');
+            }
+        }
+
         // Override defaults from CLI args if present
-        if ($targetLang !== null) {
+        if (!isset($model['defaults']) || !\is_array($model['defaults'])) {
+            $model['defaults'] = [];
+        }
+        if ($targetLang !== null && $targetLang !== '') {
+            /** @psalm-suppress MixedArrayOffset */
             $model['defaults']['target_lang'] = $targetLang;
         }
         if ($sourceLang !== null) {
@@ -125,50 +176,50 @@ class Bblslug
 
         // Measure original length
         $originalLength = mb_strlen($text);
+        $say($onFeedback, "Input received (length={$originalLength})", 'info');
 
         // Pre-validation (before filters)
-        if ($validate && $format !== 'text') {
-            switch ($format) {
-                case 'json':
-                    $jsonValidator = new JsonValidator();
-                    $preResult = $jsonValidator->validate($text);
-                    if (! $preResult->isValid()) {
-                        throw new \RuntimeException(
-                            "JSON syntax failed: " . implode('; ', $preResult->getErrors())
-                        );
-                    }
-                    $parsedIn = json_decode($text, true);
-                    $schemaIn = Schema::capture($parsedIn);
-                    if ($verbose) {
-                        $valLogPre = "[JSON schema captured]\n";
-                    }
-                    break;
-
-                case 'html':
-                    $htmlValidator = new HtmlValidator();
-                    $preResult = $htmlValidator->validate($text);
-                    if (! $preResult->isValid()) {
-                        throw new \RuntimeException(
-                            "HTML validation failed: " . implode('; ', $preResult->getErrors())
-                        );
-                    }
-                    if ($verbose) {
-                        $valLogPre = "[HTML validation pre-pass]\n";
-                    }
-                    break;
-
-                default:
-                    // Other formats: no container validation
-                    break;
-            }
+        if ($validate) {
+            $say($onFeedback, "Pre-validation started ({$format})", 'info');
+            if (\in_array($format, ['json', 'structured_json', 'linedJson'], true)) {
+                $jsonValidator = new JsonValidator();
+                $preResult = $jsonValidator->validate($text);
+                if (! $preResult->isValid()) {
+                    throw new \RuntimeException(
+                        "JSON syntax failed: " . implode('; ', $preResult->getErrors())
+                    );
+                }
+                $parsedIn = json_decode($text, false);
+                $schemaIn = Schema::capture($parsedIn);
+                if ($verbose) {
+                    $valLogPre = "[JSON schema captured]\n";
+                }
+            } elseif ($format === 'html') {
+                $htmlValidator = new HtmlValidator();
+                $preResult = $htmlValidator->validate($text);
+                if (! $preResult->isValid()) {
+                    throw new \RuntimeException(
+                        "HTML validation failed: " . implode('; ', $preResult->getErrors())
+                    );
+                }
+                if ($verbose) {
+                    $valLogPre = "[HTML validation pre-pass]\n";
+                }
+            } // other formats: no container validation
+            $say($onFeedback, "Pre-validation passed ({$format})", 'info');
         }
 
         // Apply placeholder filters
-        $filterManager = new FilterManager($filters);
+        /** @var array<int,string> $filtersList */
+        $filtersList = \array_values(\array_map('strval', $filters));
+        $filterManager = new FilterManager($filtersList);
+        $say($onFeedback, "Applying filters: " . (empty($filters) ? '(none)' : implode(', ', $filters)), 'info');
         $prepared = $filterManager->apply($text);
         $preparedLength = mb_strlen($prepared);
+        $say($onFeedback, "Filters applied (preparedLength={$preparedLength})", 'info');
 
         // Length guard: make sure prepared text fits model constraints
+        $say($onFeedback, "Checking model length limits", 'info');
         $lengthValidator = TextLengthValidator::fromModelConfig($model);
         $lenResult = $lengthValidator->validate($prepared);
         if (! $lenResult->isValid()) {
@@ -176,6 +227,7 @@ class Bblslug
                 "Input length exceeds model limits: " . implode('; ', $lenResult->getErrors())
             );
         }
+        $say($onFeedback, "Length check passed", 'info');
 
         // Prepare options for driver, merging in any CLI-provided variables
         $options = array_merge(
@@ -193,45 +245,63 @@ class Bblslug
         }
 
         // Build request
-        $req = $driver->buildRequest(
+        $say($onFeedback, "Building request for endpoint: {$endpoint}", 'info');
+        /** @var array{url:mixed, body:mixed, headers:mixed} $reqRaw */
+        $reqRaw = $driver->buildRequest(
             $model,
             $prepared,
             $options
         );
 
+        // Normalize request shape
+        $reqUrl = \is_string($reqRaw['url']  ?? null) ? (string)$reqRaw['url']  : '';
+        $reqBody = \is_string($reqRaw['body'] ?? null) ? (string)$reqRaw['body'] : '';
+        $reqHeaders = [];
+        foreach ((array)($reqRaw['headers'] ?? []) as $h) {
+            if (\is_string($h)) {
+                $reqHeaders[] = $h;
+            }
+        }
+
         // API auth key handling
-        $auth = $model['requirements']['auth'] ?? null;
-        if ($auth) {
+        $requirements = isset($model['requirements']) && \is_array($model['requirements'])
+            ? $model['requirements']
+            : null;
+        $auth = \is_array($requirements) ? ($requirements['auth'] ?? null) : null;
+        if (\is_array($auth)) {
             if (!$apiKey) {
                 throw new \InvalidArgumentException("API key is required for {$modelKey}");
             }
-            $keyName = $auth['key_name'];
-            $prefix = isset($auth['prefix']) && $auth['prefix'] !== ''
+            $say($onFeedback, "Injecting auth credentials", 'info');
+            $keyName = \is_string($auth['key_name'] ?? null) ? $auth['key_name'] : '';
+            $prefix  = (\is_string($auth['prefix'] ?? null) && $auth['prefix'] !== '')
                 ? $auth['prefix'] . ' '
                 : '';
-            switch ($auth['type'] ?? 'form') {
+            $type = \is_string($auth['type'] ?? null) ? $auth['type'] : 'form';
+            switch ($type) {
                 case 'header':
-                    $req['headers'][] = "{$keyName}: {$prefix}{$apiKey}";
+                    $reqHeaders[] = "{$keyName}: {$prefix}{$apiKey}";
                     break;
                 case 'form':
-                    $req['body'] .= '&' . urlencode($keyName) . '=' . urlencode($apiKey);
+                    $reqBody .= '&' . urlencode($keyName) . '=' . urlencode($apiKey);
                     break;
                 case 'query':
-                    $sep = str_contains($req['url'], '?') ? '&' : '?';
-                    $req['url'] .= $sep . http_build_query([$keyName => $apiKey]);
+                    $sep = \str_contains($reqUrl, '?') ? '&' : '?';
+                    $reqUrl .= $sep . http_build_query([$keyName => $apiKey]);
                     break;
                 default:
-                    throw new \RuntimeException("Unsupported auth type: {$auth['type']}");
+                    throw new \RuntimeException("Unsupported auth type: {$type}");
             }
         }
 
         // Perform HTTP request
+        $say($onFeedback, $dryRun ? "Dry-run: skipping HTTP request" : "Sending HTTP request", 'info');
         $http = HttpClient::request(
             method: 'POST',
-            url: $req['url'],
-            body: $req['body'],
+            url: $reqUrl,
+            body: $reqBody,
             dryRun: $dryRun,
-            headers: $req['headers'],
+            headers: $reqHeaders,
             maskPatterns: [
                 $apiKey,
             ],
@@ -244,85 +314,119 @@ class Bblslug
         $debugResponse = $http['debugResponse'];
         $raw = $http['body'];
 
+        $errorMaskPatterns = [$apiKey, rawurlencode($apiKey), urlencode($apiKey)];
+        $jsonApiKey = json_encode($apiKey);
+        if ($jsonApiKey !== false) {
+            $errorMaskPatterns[] = substr($jsonApiKey, 1, -1);
+        }
+
         // Parse response
         if ($dryRun) {
             $translated = $prepared;
             $rawUsage   = null;
+            $say($onFeedback, "Dry-run completed", 'info');
         } else {
-            if ($httpStatus >= 400 && empty($model['http_error_handling'])) {
+            $say($onFeedback, "HTTP response received (status={$httpStatus})", 'info');
+            $hasCustomHttpHandling = isset($model['http_error_handling']) && !empty($model['http_error_handling']);
+            if ($httpStatus >= 400 && !$hasCustomHttpHandling) {
                 throw new \RuntimeException(
-                    "HTTP {$httpStatus} error from {$req['url']}: {$raw}\n\n" .
-                    $debugRequest . $debugResponse
+                    str_replace(
+                        $errorMaskPatterns,
+                        '***',
+                        "HTTP {$httpStatus} error from {$reqUrl}: {$raw}\n\n" . $debugRequest . $debugResponse
+                    )
                 );
             }
+            $say($onFeedback, "Parsing provider response", 'info');
             try {
-                $parsed     = $driver->parseResponse($model, $raw);
+                /** @var array{text:string, usage?:array<string,mixed>|null} $parsed */
+                $parsed     = $driver->parseResponse($model, $raw, $options);
                 $translated = $parsed['text'];
+                /** @var array<string,mixed>|null $rawUsage */
                 $rawUsage   = $parsed['usage'] ?? null;
             } catch (\RuntimeException $e) {
                 throw new \RuntimeException(
-                    $e->getMessage() . "\n\n" . $debugRequest . $debugResponse
+                    str_replace(
+                        $errorMaskPatterns,
+                        '***',
+                        $e->getMessage() . "\n\n" . $debugRequest . $debugResponse
+                    )
                 );
             }
+            $say($onFeedback, "Provider response parsed", 'info');
         }
 
         $consumed = UsageExtractor::extract($model, $rawUsage);
 
         // Restore placeholders
+        $say($onFeedback, "Restoring placeholders", 'info');
         $result = $filterManager->restore($translated);
         $finalLength = mb_strlen($result);
+        $say($onFeedback, "Placeholders restored (translatedLength={$finalLength})", 'info');
 
         // Collect stats
         $filterStats = $filterManager->getStats();
 
         // Post-validation (after translation)
-        if ($validate && $format !== 'text') {
-            switch ($format) {
-                case 'json':
-                    $postResult = (new JsonValidator())->validate($result);
-                    if (! $postResult->isValid()) {
-                        throw new \RuntimeException(
-                            "JSON syntax broken: " . implode('; ', $postResult->getErrors()) .
-                            "\n\n" . $debugRequest . $debugResponse
-                        );
-                    }
-                    $parsedOut = json_decode($result, true);
-                    $schemaOut = Schema::capture($parsedOut);
-                    $schemaValidation = Schema::validate($schemaIn, $schemaOut);
-                    if (! $schemaValidation->isValid()) {
-                        throw new \RuntimeException(
-                            "Schema mismatch: " . implode('; ', $schemaValidation->getErrors()) .
-                            "\n\n" . $debugRequest . $debugResponse
-                        );
-                    }
-                    if ($verbose) {
-                        $valLogPost = "[JSON schema validated]\n";
-                    }
-                    break;
+        if ($validate) {
+            $say($onFeedback, "Post-validation started ({$format})", 'info');
 
-                case 'html':
-                    $htmlValidator = new HtmlValidator();
-                    $postResult = $htmlValidator->validate($result);
-                    if (! $postResult->isValid()) {
-                        throw new \RuntimeException(
-                            "HTML validation failed: " . implode('; ', $postResult->getErrors())
-                        );
-                    }
-                    if ($verbose) {
-                        $valLogPost = "[HTML validation post-pass]\n";
-                    }
-                    break;
+            if (\in_array($format, ['json', 'structured_json', 'linedJson'], true)) {
+                // Ensure we have input schema captured (head branch safeguard)
+                if ($schemaIn === null) {
+                    $schemaIn = Schema::capture(\json_decode($text, false));
+                }
 
-                default:
-                    // Other formats: no container validation
-                    break;
-            }
+                // JSON syntax check
+                $postResult = (new JsonValidator())->validate($result);
+                if (! $postResult->isValid()) {
+                    throw new \RuntimeException(
+                        "JSON syntax broken: " . implode('; ', $postResult->getErrors())
+                        . "\n\n" . $debugRequest . $debugResponse
+                    );
+                }
+
+                // Decode produced JSON
+                /** @var mixed $parsedOut */
+                $parsedOut = \json_decode($result, false);
+
+                // Validate the structure of the JSON that will actually be returned.
+                $schemaOut = Schema::capture($parsedOut);
+                $schemaValidation = Schema::validate($schemaIn, $schemaOut);
+
+                if (! $schemaValidation->isValid()) {
+                    throw new \RuntimeException(
+                        "Schema mismatch: "
+                        . implode('; ', $schemaValidation->getErrors())
+                        . "\n\n" . $debugRequest . $debugResponse
+                    );
+                }
+                if ($verbose) {
+                    $valLogPost .= "[JSON schema validated]\n";
+                }
+            } elseif ($format === 'html') {
+                $htmlValidator = new HtmlValidator();
+                $postResult = $htmlValidator->validate($result);
+                if (! $postResult->isValid()) {
+                    throw new \RuntimeException(
+                        "HTML validation failed: "
+                        . implode('; ', $postResult->getErrors())
+                    );
+                }
+                if ($verbose) {
+                    $valLogPost = "[HTML validation post-pass]\n";
+                }
+            } // other formats: no container validation
+
+            $say($onFeedback, "Post-validation passed ({$format})", 'info');
         }
 
         // Append post-validation log into response debug
         if ($verbose) {
             $debugResponse .= $valLogPost;
         }
+
+        $say($onFeedback, "Done", 'info');
 
         return [
             'original' => $text,

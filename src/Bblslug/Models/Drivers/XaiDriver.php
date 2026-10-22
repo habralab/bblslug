@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Bblslug\Models\Drivers;
 
 use Bblslug\Models\ModelDriverInterface;
@@ -25,7 +27,9 @@ class XaiDriver implements ModelDriverInterface
      *     - dryRun      (bool)        Skip API call (ignored here).
      *     - format      (string)      Indicates which prompt format to use.
      *     - promptKey   (string)      Key of the prompt template in prompts.yaml.
-     *     - temperature (float)       Sampling temperature.
+     *     - temperature (float|null)  Sampling temperature; null omits it.
+     *     - reasoning_effort (string) Reasoning effort for supported Grok models.
+     *     - max_completion_tokens (int) Optional output budget.
      *     - verbose     (bool)        Include debug logs (ignored here).
      *
      * @return array{url:string, headers:string[], body:string}
@@ -34,14 +38,38 @@ class XaiDriver implements ModelDriverInterface
      */
     public function buildRequest(array $config, string $text, array $options): array
     {
-        $defaults = $config['defaults'] ?? [];
-        $context = trim((string) ($options['context'] ?? $defaults['context'] ?? ''));
-        $format = $options['format'] ?? $defaults['format'] ?? 'text';
-        $model = $defaults['model'] ?? throw new \RuntimeException('Missing xAI model name');
-        $promptKey = $options['promptKey'] ?? 'translator';
-        $sourceLang = $defaults['source_lang'] ?? 'auto';
-        $targetLang = $defaults['target_lang'] ?? 'EN';
-        $temperature = (float) ($options['temperature'] ?? $defaults['temperature'] ?? 0.0);
+        $defaults = \is_array($config['defaults'] ?? null) ? $config['defaults'] : [];
+
+        $ctxRaw = $options['context'] ?? ($defaults['context'] ?? '');
+        $context = (\is_scalar($ctxRaw) || ($ctxRaw instanceof \Stringable))
+            ? \trim((string)$ctxRaw)
+            : '';
+
+        $format = \is_string($options['format'] ?? null)
+            ? $options['format']
+            : (\is_string($defaults['format'] ?? null)
+                ? $defaults['format']
+                : 'text');
+
+        $model = \is_string($defaults['model'] ?? null)
+            ? $defaults['model']
+            : throw new \RuntimeException('Missing xAI model name');
+
+        $promptKey = \is_string($options['promptKey'] ?? null)
+            ? $options['promptKey']
+            : 'translator';
+
+        $sourceLang = \is_string($defaults['source_lang'] ?? null)
+            ? $defaults['source_lang']
+            : 'auto';
+
+        $targetLang = \is_string($defaults['target_lang'] ?? null)
+            ? $defaults['target_lang']
+            : 'EN';
+
+        $settings = array_replace($defaults, $options);
+        $tempRaw = \array_key_exists('temperature', $settings) ? $settings['temperature'] : 0.0;
+        $temperature = $tempRaw === null ? null : (\is_numeric($tempRaw) ? (float)$tempRaw : 0.0);
 
         // Render system prompt
         $systemPrompt = Prompts::render(
@@ -64,15 +92,56 @@ class XaiDriver implements ModelDriverInterface
 
         $payload = [
             'model'       => $model,
-            'messages'    => $messages,
-            'temperature' => $temperature,
-            'stream'      => false,
         ];
+        $apiType = \is_string($config['api_type'] ?? null)
+            ? \strtolower($config['api_type'])
+            : 'chat_completions';
+        if (!\in_array($apiType, ['chat_completions', 'responses'], true)) {
+            throw new \InvalidArgumentException("Unsupported xAI API type '{$apiType}'");
+        }
+        if ($apiType === 'responses') {
+            $payload['input'] = $messages;
+        } else {
+            $payload['messages'] = $messages;
+            $payload['stream'] = false;
+        }
+        if ($temperature !== null) {
+            $payload['temperature'] = $temperature;
+        }
+        if (\is_string($settings['reasoning_effort'] ?? null)) {
+            if ($apiType === 'responses') {
+                $payload['reasoning'] = ['effort' => $settings['reasoning_effort']];
+            } else {
+                $payload['reasoning_effort'] = $settings['reasoning_effort'];
+            }
+        }
+        if (isset($settings['max_completion_tokens'])) {
+            $budget = $settings['max_completion_tokens'];
+            if (
+                (!\is_int($budget) && !\is_string($budget))
+                || filter_var($budget, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) === false
+            ) {
+                throw new \InvalidArgumentException('max_completion_tokens must be a positive integer');
+            }
+            $payload[$apiType === 'responses' ? 'max_output_tokens' : 'max_tokens'] = (int)$budget;
+        }
+
+        // Normalize return shape and types
+        $url = \is_string($config['endpoint'] ?? null) ? (string)$config['endpoint'] : '';
+        $headers = [];
+        $req = \is_array($config['requirements'] ?? null) ? $config['requirements'] : null;
+        $headersSrc = \is_array($req['headers'] ?? null) ? $req['headers'] : [];
+        foreach ((array)$headersSrc as $h) {
+            if (\is_string($h)) {
+                $headers[] = $h;
+            }
+        }
+        $body = \json_encode($payload, JSON_UNESCAPED_UNICODE);
 
         return [
-            'url'     => $config['endpoint'],
-            'headers' => $config['requirements']['headers'] ?? [],
-            'body'    => json_encode($payload, JSON_UNESCAPED_UNICODE),
+            'url'     => $url,
+            'headers' => $headers,
+            'body'    => \is_string($body) ? $body : '{}',
         ];
     }
 
@@ -84,29 +153,110 @@ class XaiDriver implements ModelDriverInterface
      *
      * @param array<string,mixed> $config       Model configuration (unused).
      * @param string              $responseBody Raw HTTP response body.
+     * @param array<string,mixed> $options Request options (unused).
      *
      * @return array{text:string, usage:array<string,mixed>|null}
      *
      * @throws \RuntimeException If the response is malformed or markers are missing.
      */
-    public function parseResponse(array $config, string $responseBody): array
+    public function parseResponse(array $config, string $responseBody, array $options = []): array
     {
-        $data = json_decode($responseBody, true);
+        $data = \json_decode($responseBody, true);
 
         if (!is_array($data)) {
             throw new \RuntimeException("Invalid JSON response: {$responseBody}");
         }
 
         // xAI error payload (model not found, auth, etc.)
-        if (isset($data['error'])) {
-            $code = $data['code'] ?? 'unknown_error';
-            throw new \RuntimeException("Grok API error [{$code}]: {$data['error']}");
+        if (\is_array($data['error'] ?? null) || \is_string($data['error'] ?? null)) {
+            $code = \is_string($data['code'] ?? null) ? $data['code'] : 'unknown_error';
+            $err  = $data['error'];
+            $msg  = \is_string($err)
+                ? $err
+                : (\json_encode($err, JSON_UNESCAPED_UNICODE) ?: 'unknown error');
+            throw new \RuntimeException("Grok API error [{$code}]: {$msg}");
         }
 
-        // Normal completion path
-        $content = $data['choices'][0]['message']['content'] ?? null;
-        if (!is_string($content)) {
+        $isResponses = \array_key_exists('output', $data);
+        if (
+            $isResponses && \is_string($data['status'] ?? null)
+            && $data['status'] !== 'completed'
+        ) {
+            throw new \RuntimeException(
+                "Grok Responses API did not complete the request: {$data['status']}"
+            );
+        }
+
+        // Extract the first choice safely
+        $first = null;
+        $choices = $data['choices'] ?? null;
+        if (\is_array($choices) && isset($choices[0]) && \is_array($choices[0])) {
+            $first = $choices[0];
+        }
+
+        // Normal completion path: content string at choices[0].message.content
+        $content = null;
+        if (\is_array($first) && \is_array($first['message'] ?? null)) {
+            $content = $first['message']['content'] ?? null;
+        }
+        if (!\is_string($content)) {
+            $output = $data['output'] ?? null;
+            if (\is_array($output)) {
+                $outputText = '';
+                foreach ($output as $item) {
+                    if (!\is_array($item)) {
+                        continue;
+                    }
+                    if (
+                        ($item['type'] ?? null) === 'refusal'
+                        || \is_string($item['refusal'] ?? null)
+                    ) {
+                        throw new \RuntimeException('Grok Responses API returned a refusal');
+                    }
+                    if (($item['type'] ?? null) !== 'message') {
+                        continue;
+                    }
+                    $parts = $item['content'] ?? null;
+                    if (!\is_array($parts)) {
+                        continue;
+                    }
+                    foreach ($parts as $part) {
+                        if (!\is_array($part)) {
+                            continue;
+                        }
+                        if (
+                            ($part['type'] ?? null) === 'refusal'
+                            || \is_string($part['refusal'] ?? null)
+                        ) {
+                            throw new \RuntimeException('Grok Responses API returned a refusal');
+                        }
+                        if (
+                            ($part['type'] ?? null) === 'output_text'
+                            && \is_string($part['text'] ?? null)
+                        ) {
+                            $outputText .= $part['text'];
+                        }
+                    }
+                }
+                if ($outputText !== '') {
+                    $content = $outputText;
+                }
+            }
+        }
+        if (!\is_string($content)) {
             throw new \RuntimeException("Grok translation failed: {$responseBody}");
+        }
+
+        // If truncated by tokens (if API mirrors OpenAI), check finish_reason
+        $finishReason = null;
+        if (\is_array($first) && \is_string($first['finish_reason'] ?? null)) {
+            $finishReason = $first['finish_reason'];
+        }
+        if ($finishReason === 'length') {
+            throw new \RuntimeException(
+                "Grok: translation was truncated (finish_reason=length) — "
+                . "increase max_tokens or split input."
+            );
         }
 
         $pattern = '/' . preg_quote(self::START, '/') . '(.*?)' . preg_quote(self::END, '/') . '/s';
@@ -115,7 +265,19 @@ class XaiDriver implements ModelDriverInterface
         }
 
         $text  = trim($matches[1]);
-        $usage = $data['usage'] ?? null;
+        // Usage statistics normalized to array<string,mixed>|null
+        $usage = null;
+        $u = $data['usage'] ?? null;
+        if (\is_array($u)) {
+            /** @var array<string,mixed> $typed */
+            $typed = [];
+            foreach ($u as $k => $v) {
+                if (\is_string($k)) {
+                    $typed[$k] = $v;
+                }
+            }
+            $usage = $typed;
+        }
 
         return ['text' => $text, 'usage' => $usage];
     }

@@ -1,0 +1,1646 @@
+{
+  "checked_at": "2026-10-22",
+  "scope": "Provider-hosted text generation, including available legacy, preview and pinned snapshots; retired compatibility redirects excluded. Account availability is separate from registration.",
+  "vendors": {
+    "anthropic": {
+      "sources": [
+        "https://docs.anthropic.com/en/api/models",
+        "https://docs.anthropic.com/en/docs/about-claude/model-deprecations",
+        "https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/prompt-templates-and-variables",
+        "https://docs.anthropic.com/en/docs/about-claude/models/migrating-to-claude-4"
+      ],
+      "models": {
+        "claude-haiku-5.5": "claude-haiku-5-5",
+        "claude-sonnet-5.5": "claude-sonnet-5-5",
+        "claude-opus-5.5": "claude-opus-5-5",
+        "claude-fable-5.1": "claude-fable-5-1",
+        "claude-opus-5": "claude-opus-5",
+        "claude-sonnet-5": "claude-sonnet-5",
+        "claude-fable-5": "claude-fable-5",
+        "claude-opus-4.8": "claude-opus-4-8",
+        "claude-opus-4.7": "claude-opus-4-7",
+        "claude-sonnet-4.6": "claude-sonnet-4-6",
+        "claude-opus-4.6": "claude-opus-4-6",
+        "claude-opus-4.5-20251101": "claude-opus-4-5-20251101",
+        "claude-haiku-4.5-20251001": "claude-haiku-4-5-20251001",
+        "claude-sonnet-4.5-20250929": "claude-sonnet-4-5-20250929",
+        "claude-mythos-5": "claude-mythos-5",
+        "claude-mythos-preview": "claude-mythos-preview",
+        "claude-mythos-5.1": "claude-mythos-5-1"
+      },
+      "exclusions": [
+        {
+          "id": "claude-opus-4-1-20250805",
+          "reason": "retired or shut down according to Anthropic model lifecycle; direct API requests fail"
+        },
+        {
+          "id": "claude-opus-4-20250514",
+          "reason": "retired or shut down according to Anthropic model lifecycle; direct API requests fail"
+        },
+        {
+          "id": "claude-sonnet-4-20250514",
+          "reason": "retired or shut down according to Anthropic model lifecycle; direct API requests fail"
+        },
+        {
+          "id": "claude-3-7-sonnet-20250219",
+          "reason": "retired or shut down according to Anthropic model lifecycle; direct API requests fail"
+        },
+        {
+          "id": "claude-3-5-haiku-20241022",
+          "reason": "retired or shut down according to Anthropic model lifecycle; direct API requests fail"
+        },
+        {
+          "id": "claude-3-haiku-20240307",
+          "reason": "retired or shut down according to Anthropic model lifecycle; direct API requests fail"
+        }
+      ],
+      "live_confirmed_exclusions": [],
+      "text_smoke": {
+        "claude-haiku-5.5": {
+          "status": "translated",
+          "served_model": "claude-haiku-5-5"
+        },
+        "claude-sonnet-5.5": {
+          "status": "translated",
+          "served_model": "claude-sonnet-5-5"
+        },
+        "claude-opus-5.5": {
+          "status": "translated",
+          "served_model": "claude-opus-5-5"
+        },
+        "claude-fable-5.1": {
+          "status": "translated",
+          "served_model": "claude-fable-5-1"
+        },
+        "claude-opus-5": {
+          "status": "translated",
+          "served_model": "claude-opus-5"
+        },
+        "claude-sonnet-5": {
+          "status": "translated",
+          "served_model": "claude-sonnet-5"
+        },
+        "claude-fable-5": {
+          "status": "translated",
+          "served_model": "claude-fable-5"
+        },
+        "claude-opus-4.8": {
+          "status": "translated",
+          "served_model": "claude-opus-4-8"
+        },
+        "claude-opus-4.7": {
+          "status": "translated",
+          "served_model": "claude-opus-4-7"
+        },
+        "claude-sonnet-4.6": {
+          "status": "translated",
+          "served_model": "claude-sonnet-4-6"
+        },
+        "claude-opus-4.6": {
+          "status": "translated",
+          "served_model": "claude-opus-4-6"
+        },
+        "claude-opus-4.5-20251101": {
+          "status": "translated",
+          "served_model": "claude-opus-4-5-20251101"
+        },
+        "claude-haiku-4.5-20251001": {
+          "status": "translated",
+          "served_model": "claude-haiku-4-5-20251001"
+        },
+        "claude-sonnet-4.5-20250929": {
+          "status": "translated",
+          "served_model": "claude-sonnet-4-5-20250929"
+        },
+        "claude-mythos-5": {
+          "status": "not_available_to_test_credentials"
+        },
+        "claude-mythos-preview": {
+          "status": "not_available_to_test_credentials"
+        },
+        "claude-mythos-5.1": {
+          "status": "not_available_to_test_credentials"
+        }
+      },
+      "observed_api_catalog_count": 14,
+      "observed_but_excluded": []
+    },
+    "google": {
+      "sources": [
+        "https://ai.google.dev/gemini-api/docs/models",
+        "https://ai.google.dev/gemini-api/docs/deprecations",
+        "https://ai.google.dev/gemini-api/docs/generate-content/gemini-3",
+        "https://ai.google.dev/gemma/docs/core/gemma_on_gemini_api",
+        "https://ai.google.dev/gemini-api/docs/thinking"
+      ],
+      "models": {
+        "gemini-2.5-flash": "gemini-2.5-flash",
+        "gemini-2.5-pro": "gemini-2.5-pro",
+        "gemma-4-26b-a4b-it": "gemma-4-26b-a4b-it",
+        "gemma-4-31b-it": "gemma-4-31b-it",
+        "gemini-flash-latest": "gemini-flash-latest",
+        "gemini-flash-lite-latest": "gemini-flash-lite-latest",
+        "gemini-pro-latest": "gemini-pro-latest",
+        "gemini-2.5-flash-lite": "gemini-2.5-flash-lite",
+        "gemini-3-flash-preview": "gemini-3-flash-preview",
+        "gemini-3.1-pro-preview": "gemini-3.1-pro-preview",
+        "gemini-3.1-pro-preview-customtools": "gemini-3.1-pro-preview-customtools",
+        "gemini-3.1-flash-lite-preview": "gemini-3.1-flash-lite-preview",
+        "gemini-3.1-flash-lite": "gemini-3.1-flash-lite",
+        "gemini-3.5-flash-lite": "gemini-3.5-flash-lite",
+        "gemini-3.6-flash": "gemini-3.6-flash",
+        "gemini-3.8-flash": "gemini-3.8-flash",
+        "gemini-4-argon": "gemini-4-argon"
+      },
+      "exclusions": [
+        {
+          "id": "gemini-2.5-flash-preview-tts",
+          "reason": "specialized image/audio/embedding/robotics model, not general text translation",
+          "source": "https://ai.google.dev/gemini-api/docs/models"
+        },
+        {
+          "id": "gemini-2.5-pro-preview-tts",
+          "reason": "specialized image/audio/embedding/robotics model, not general text translation",
+          "source": "https://ai.google.dev/gemini-api/docs/models"
+        },
+        {
+          "id": "gemini-2.5-flash-image",
+          "reason": "specialized image/audio/embedding/robotics model, not general text translation",
+          "source": "https://ai.google.dev/gemini-api/docs/models"
+        },
+        {
+          "id": "gemini-3-pro-image-preview",
+          "reason": "specialized image/audio/embedding/robotics model, not general text translation",
+          "source": "https://ai.google.dev/gemini-api/docs/models"
+        },
+        {
+          "id": "gemini-3-pro-image",
+          "reason": "specialized image/audio/embedding/robotics model, not general text translation",
+          "source": "https://ai.google.dev/gemini-api/docs/models"
+        },
+        {
+          "id": "nano-banana-pro-preview",
+          "reason": "specialized image/audio/embedding/robotics model, not general text translation",
+          "source": "https://ai.google.dev/gemini-api/docs/models"
+        },
+        {
+          "id": "gemini-3.1-flash-image-preview",
+          "reason": "specialized image/audio/embedding/robotics model, not general text translation",
+          "source": "https://ai.google.dev/gemini-api/docs/models"
+        },
+        {
+          "id": "gemini-3.1-flash-image",
+          "reason": "specialized image/audio/embedding/robotics model, not general text translation",
+          "source": "https://ai.google.dev/gemini-api/docs/models"
+        },
+        {
+          "id": "gemini-3.1-flash-lite-image",
+          "reason": "specialized image/audio/embedding/robotics model, not general text translation",
+          "source": "https://ai.google.dev/gemini-api/docs/models"
+        },
+        {
+          "id": "gemini-nano-banana-2.1",
+          "reason": "specialized image/audio/embedding/robotics model, not general text translation",
+          "source": "https://ai.google.dev/gemini-api/docs/models"
+        },
+        {
+          "id": "gemini-3.5-flash",
+          "reason": "compatibility redirect; Google routes requests to a replacement model",
+          "source": "https://ai.google.dev/gemini-api/docs/deprecations"
+        },
+        {
+          "id": "gemini-omni-flash-preview",
+          "reason": "specialized image/audio/embedding/robotics model, not general text translation",
+          "source": "https://ai.google.dev/gemini-api/docs/models"
+        },
+        {
+          "id": "gemini-omni-1.1-flash",
+          "reason": "specialized image/audio/embedding/robotics model, not general text translation",
+          "source": "https://ai.google.dev/gemini-api/docs/models"
+        },
+        {
+          "id": "gemini-3.5-transcribe",
+          "reason": "specialized image/audio/embedding/robotics model, not general text translation",
+          "source": "https://ai.google.dev/gemini-api/docs/models"
+        },
+        {
+          "id": "gemini-3.7-flash",
+          "reason": "compatibility redirect; Google routes requests to a replacement model",
+          "source": "https://ai.google.dev/gemini-api/docs/deprecations"
+        },
+        {
+          "id": "lyria-3-clip-preview",
+          "reason": "specialized image/audio/embedding/robotics model, not general text translation",
+          "source": "https://ai.google.dev/gemini-api/docs/models"
+        },
+        {
+          "id": "lyria-3-pro-preview",
+          "reason": "specialized image/audio/embedding/robotics model, not general text translation",
+          "source": "https://ai.google.dev/gemini-api/docs/models"
+        },
+        {
+          "id": "lyria-3.5",
+          "reason": "specialized image/audio/embedding/robotics model, not general text translation",
+          "source": "https://ai.google.dev/gemini-api/docs/models"
+        },
+        {
+          "id": "gemini-3.1-flash-tts-preview",
+          "reason": "specialized image/audio/embedding/robotics model, not general text translation",
+          "source": "https://ai.google.dev/gemini-api/docs/models"
+        },
+        {
+          "id": "gemini-3.8-flash-tts",
+          "reason": "specialized image/audio/embedding/robotics model, not general text translation",
+          "source": "https://ai.google.dev/gemini-api/docs/models"
+        },
+        {
+          "id": "gemini-3.8-flash-lite-tts",
+          "reason": "specialized image/audio/embedding/robotics model, not general text translation",
+          "source": "https://ai.google.dev/gemini-api/docs/models"
+        },
+        {
+          "id": "gemini-robotics-er-2-preview",
+          "reason": "specialized image/audio/embedding/robotics model, not general text translation",
+          "source": "https://ai.google.dev/gemini-api/docs/models"
+        },
+        {
+          "id": "antigravity-preview-05-2026",
+          "reason": "managed agent model, not direct text generation model",
+          "source": "https://ai.google.dev/gemini-api/docs/models"
+        },
+        {
+          "id": "antigravity-preview-09-2026",
+          "reason": "managed agent model, not direct text generation model",
+          "source": "https://ai.google.dev/gemini-api/docs/models"
+        },
+        {
+          "id": "antigravity-preview-latest",
+          "reason": "managed agent model, not direct text generation model",
+          "source": "https://ai.google.dev/gemini-api/docs/models"
+        },
+        {
+          "id": "deep-research-max-preview-04-2026",
+          "reason": "managed agent model, not direct text generation model",
+          "source": "https://ai.google.dev/gemini-api/docs/models"
+        },
+        {
+          "id": "deep-research-preview-04-2026",
+          "reason": "managed agent model, not direct text generation model",
+          "source": "https://ai.google.dev/gemini-api/docs/models"
+        },
+        {
+          "id": "deep-research-pro-preview-12-2025",
+          "reason": "managed agent model, not direct text generation model",
+          "source": "https://ai.google.dev/gemini-api/docs/models"
+        },
+        {
+          "id": "gemini-embedding-001",
+          "reason": "specialized image/audio/embedding/robotics model, not general text translation",
+          "source": "https://ai.google.dev/gemini-api/docs/models"
+        },
+        {
+          "id": "gemini-embedding-2-preview",
+          "reason": "specialized image/audio/embedding/robotics model, not general text translation",
+          "source": "https://ai.google.dev/gemini-api/docs/models"
+        },
+        {
+          "id": "gemini-embedding-2",
+          "reason": "specialized image/audio/embedding/robotics model, not general text translation",
+          "source": "https://ai.google.dev/gemini-api/docs/models"
+        },
+        {
+          "id": "aqa",
+          "reason": "specialized image/audio/embedding/robotics model, not general text translation",
+          "source": "https://ai.google.dev/gemini-api/docs/models"
+        },
+        {
+          "id": "gemini-3.5-transcribe-live",
+          "reason": "specialized image/audio/embedding/robotics model, not general text translation",
+          "source": "https://ai.google.dev/gemini-api/docs/models"
+        },
+        {
+          "id": "gemini-2.5-flash-native-audio-latest",
+          "reason": "specialized image/audio/embedding/robotics model, not general text translation",
+          "source": "https://ai.google.dev/gemini-api/docs/models"
+        },
+        {
+          "id": "gemini-2.5-flash-native-audio-preview-09-2025",
+          "reason": "specialized image/audio/embedding/robotics model, not general text translation",
+          "source": "https://ai.google.dev/gemini-api/docs/models"
+        },
+        {
+          "id": "gemini-2.5-flash-native-audio-preview-12-2025",
+          "reason": "specialized image/audio/embedding/robotics model, not general text translation",
+          "source": "https://ai.google.dev/gemini-api/docs/models"
+        },
+        {
+          "id": "gemini-3.1-flash-live-preview",
+          "reason": "specialized image/audio/embedding/robotics model, not general text translation",
+          "source": "https://ai.google.dev/gemini-api/docs/models"
+        },
+        {
+          "id": "gemini-3.8-live",
+          "reason": "specialized image/audio/embedding/robotics model, not general text translation",
+          "source": "https://ai.google.dev/gemini-api/docs/models"
+        },
+        {
+          "id": "gemini-3.8-live-extended-thinking",
+          "reason": "specialized image/audio/embedding/robotics model, not general text translation",
+          "source": "https://ai.google.dev/gemini-api/docs/models"
+        },
+        {
+          "id": "gemini-robotics-er-2-streaming-preview",
+          "reason": "specialized image/audio/embedding/robotics model, not general text translation",
+          "source": "https://ai.google.dev/gemini-api/docs/models"
+        },
+        {
+          "id": "gemini-3.5-live-translate-preview",
+          "reason": "specialized image/audio/embedding/robotics model, not general text translation",
+          "source": "https://ai.google.dev/gemini-api/docs/models"
+        },
+        {
+          "id": "lyria-realtime-exp",
+          "reason": "specialized image/audio/embedding/robotics model, not general text translation",
+          "source": "https://ai.google.dev/gemini-api/docs/models"
+        },
+        {
+          "id": "gemini-2.5-computer-use-preview-10-2025",
+          "reason": "retired 2026-07-28",
+          "source": "https://ai.google.dev/gemini-api/docs/deprecations"
+        }
+      ],
+      "live_confirmed_exclusions": [],
+      "text_smoke": {
+        "gemini-2.5-flash": {
+          "status": "translated",
+          "served_model": "gemini-2.5-flash"
+        },
+        "gemini-2.5-pro": {
+          "status": "translated",
+          "served_model": "gemini-2.5-pro"
+        },
+        "gemma-4-26b-a4b-it": {
+          "status": "translated",
+          "served_model": "gemma-4-26b-a4b-it"
+        },
+        "gemma-4-31b-it": {
+          "status": "translated",
+          "served_model": "gemma-4-31b-it"
+        },
+        "gemini-flash-latest": {
+          "status": "translated",
+          "served_model": "gemini-3.8-flash"
+        },
+        "gemini-flash-lite-latest": {
+          "status": "translated",
+          "served_model": "gemini-3.5-flash-lite"
+        },
+        "gemini-pro-latest": {
+          "status": "translated",
+          "served_model": "gemini-3.1-pro-preview"
+        },
+        "gemini-2.5-flash-lite": {
+          "status": "translated",
+          "served_model": "gemini-2.5-flash-lite"
+        },
+        "gemini-3-flash-preview": {
+          "status": "translated",
+          "served_model": "gemini-3-flash-preview"
+        },
+        "gemini-3.1-pro-preview": {
+          "status": "translated",
+          "served_model": "gemini-3.1-pro-preview"
+        },
+        "gemini-3.1-pro-preview-customtools": {
+          "status": "translated",
+          "served_model": "gemini-3.1-pro-preview-customtools"
+        },
+        "gemini-3.1-flash-lite-preview": {
+          "status": "translated",
+          "served_model": "gemini-3.1-flash-lite"
+        },
+        "gemini-3.1-flash-lite": {
+          "status": "translated",
+          "served_model": "gemini-3.1-flash-lite"
+        },
+        "gemini-3.5-flash-lite": {
+          "status": "translated",
+          "served_model": "gemini-3.5-flash-lite"
+        },
+        "gemini-3.6-flash": {
+          "status": "translated",
+          "served_model": "gemini-3.6-flash"
+        },
+        "gemini-3.8-flash": {
+          "status": "translated",
+          "served_model": "gemini-3.8-flash"
+        },
+        "gemini-4-argon": {
+          "status": "translated",
+          "served_model": "gemini-4-argon"
+        }
+      },
+      "observed_api_catalog_count": 60,
+      "observed_but_excluded": [
+        {
+          "id": "gemini-2.5-flash-preview-tts",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "gemini-2.5-pro-preview-tts",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "gemini-2.5-flash-image",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "gemini-3-pro-image-preview",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "gemini-3-pro-image",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "nano-banana-pro-preview",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "gemini-3.1-flash-image-preview",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "gemini-3.1-flash-image",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "gemini-3.1-flash-lite-image",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "gemini-nano-banana-2.1",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "gemini-3.5-flash",
+          "reason": "documented compatibility redirect to a replacement model"
+        },
+        {
+          "id": "gemini-omni-flash-preview",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "gemini-omni-1.1-flash",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "gemini-3.5-transcribe",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "gemini-3.7-flash",
+          "reason": "documented compatibility redirect to a replacement model"
+        },
+        {
+          "id": "lyria-3-clip-preview",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "lyria-3-pro-preview",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "lyria-3.5",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "gemini-3.1-flash-tts-preview",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "gemini-3.8-flash-tts",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "gemini-3.8-flash-lite-tts",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "gemini-robotics-er-2-preview",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "gemini-2.5-computer-use-preview-10-2025",
+          "reason": "shutdown 2026-07-28"
+        },
+        {
+          "id": "antigravity-preview-05-2026",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "antigravity-preview-09-2026",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "antigravity-preview-latest",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "deep-research-max-preview-04-2026",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "deep-research-preview-04-2026",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "deep-research-pro-preview-12-2025",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "gemini-embedding-001",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "gemini-embedding-2-preview",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "gemini-embedding-2",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "aqa",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "gemini-3.5-transcribe-live",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "gemini-2.5-flash-native-audio-latest",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "gemini-2.5-flash-native-audio-preview-09-2025",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "gemini-2.5-flash-native-audio-preview-12-2025",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "gemini-3.1-flash-live-preview",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "gemini-3.8-live",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "gemini-3.8-live-extended-thinking",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "gemini-robotics-er-2-streaming-preview",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "gemini-3.5-live-translate-preview",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "lyria-realtime-exp",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        }
+      ]
+    },
+    "openai": {
+      "sources": [
+        {
+          "url": "https://platform.openai.com/docs/models",
+          "checked": "2026-10-22"
+        },
+        {
+          "url": "https://platform.openai.com/docs/api-reference/chat",
+          "checked": "2026-10-22"
+        },
+        {
+          "url": "https://platform.openai.com/docs/api-reference/responses",
+          "checked": "2026-10-22"
+        },
+        {
+          "url": "https://platform.openai.com/docs/deprecations",
+          "checked": "2026-10-22"
+        },
+        {
+          "url": "GET /v1/models",
+          "checked": "2026-10-22"
+        },
+        "https://developers.openai.com/api/reference/resources/responses/methods/create",
+        "https://developers.openai.com/api/docs/pricing"
+      ],
+      "models": {
+        "gpt-4-turbo-2024-04-09": "gpt-4-turbo-2024-04-09",
+        "gpt-5.6-luna": "gpt-5.6-luna",
+        "gpt-5-search-api": "gpt-5-search-api",
+        "gpt-5.5-2026-04-23": "gpt-5.5-2026-04-23",
+        "gpt-5.4-2026-03-05": "gpt-5.4-2026-03-05",
+        "gpt-3.5-turbo-0125": "gpt-3.5-turbo-0125",
+        "gpt-5-nano": "gpt-5-nano",
+        "gpt-5.4-mini": "gpt-5.4-mini",
+        "o1-pro": "o1-pro",
+        "gpt-5-mini": "gpt-5-mini",
+        "gpt-5-mini-2025-08-07": "gpt-5-mini-2025-08-07",
+        "o4-mini-2025-04-16": "o4-mini-2025-04-16",
+        "gpt-5.2-pro": "gpt-5.2-pro",
+        "gpt-5-pro-2025-10-06": "gpt-5-pro-2025-10-06",
+        "gpt-5.6-sol": "gpt-5.6-sol",
+        "gpt-5.5-pro": "gpt-5.5-pro",
+        "gpt-5-2025-08-07": "gpt-5-2025-08-07",
+        "gpt-5.2-pro-2025-12-11": "gpt-5.2-pro-2025-12-11",
+        "gpt-5.5-pro-2026-04-23": "gpt-5.5-pro-2026-04-23",
+        "gpt-5.4-pro": "gpt-5.4-pro",
+        "gpt-4o-2024-11-20": "gpt-4o-2024-11-20",
+        "gpt-5.1": "gpt-5.1",
+        "gpt-5-pro": "gpt-5-pro",
+        "gpt-5.4-mini-2026-03-17": "gpt-5.4-mini-2026-03-17",
+        "gpt-5.4": "gpt-5.4",
+        "gpt-4.1-nano": "gpt-4.1-nano",
+        "gpt-3.5-turbo-16k": "gpt-3.5-turbo-16k",
+        "gpt-4.1": "gpt-4.1",
+        "gpt-5.5": "gpt-5.5",
+        "o3-pro-2025-06-10": "o3-pro-2025-06-10",
+        "chat-latest": "chat-latest",
+        "gpt-5.4-pro-2026-03-05": "gpt-5.4-pro-2026-03-05",
+        "o3-2025-04-16": "o3-2025-04-16",
+        "gpt-5.2-2025-12-11": "gpt-5.2-2025-12-11",
+        "gpt-3.5-turbo": "gpt-3.5-turbo",
+        "gpt-4o-2024-05-13": "gpt-4o-2024-05-13",
+        "gpt-5.6-terra": "gpt-5.6-terra",
+        "o3-mini": "o3-mini",
+        "gpt-5.4-nano": "gpt-5.4-nano",
+        "o1-pro-2025-03-19": "o1-pro-2025-03-19",
+        "gpt-4-turbo": "gpt-4-turbo",
+        "o3-pro": "o3-pro",
+        "gpt-4o-2024-08-06": "gpt-4o-2024-08-06",
+        "o3": "o3",
+        "gpt-4.1-mini-2025-04-14": "gpt-4.1-mini-2025-04-14",
+        "o3-mini-2025-01-31": "o3-mini-2025-01-31",
+        "gpt-5.1-2025-11-13": "gpt-5.1-2025-11-13",
+        "gpt-4-0613": "gpt-4-0613",
+        "gpt-4o": "gpt-4o",
+        "gpt-4.1-mini": "gpt-4.1-mini",
+        "gpt-4o-mini": "gpt-4o-mini",
+        "gpt-6-sol": "gpt-6-sol",
+        "gpt-5.2": "gpt-5.2",
+        "o1": "o1",
+        "gpt-5.4-nano-2026-03-17": "gpt-5.4-nano-2026-03-17",
+        "gpt-6.1-sol": "gpt-6.1-sol",
+        "o1-2024-12-17": "o1-2024-12-17",
+        "gpt-5.3-codex": "gpt-5.3-codex",
+        "gpt-5-search-api-2025-10-14": "gpt-5-search-api-2025-10-14",
+        "gpt-5": "gpt-5",
+        "gpt-4.1-nano-2025-04-14": "gpt-4.1-nano-2025-04-14",
+        "gpt-4.1-2025-04-14": "gpt-4.1-2025-04-14",
+        "gpt-4o-mini-2024-07-18": "gpt-4o-mini-2024-07-18",
+        "gpt-4": "gpt-4",
+        "gpt-5-nano-2025-08-07": "gpt-5-nano-2025-08-07",
+        "o4-mini": "o4-mini",
+        "gpt-6-astra": "gpt-6-astra",
+        "gpt-6-luna": "gpt-6-luna",
+        "gpt-5.6-cyber": "gpt-5.6-cyber",
+        "gpt-rosalind-research": "gpt-rosalind-research",
+        "gpt-rosalind-discovery": "gpt-rosalind-discovery",
+        "gpt-4-1106-preview": "gpt-4-1106-preview"
+      },
+      "exclusions": {
+        "non_text_generation": [
+          "chatgpt-image-latest",
+          "computer-use-preview",
+          "computer-use-preview-2025-03-11",
+          "gpt-4o-mini-transcribe",
+          "gpt-4o-mini-transcribe-2025-03-20",
+          "gpt-4o-mini-transcribe-2025-12-15",
+          "gpt-4o-mini-tts",
+          "gpt-4o-mini-tts-2025-03-20",
+          "gpt-4o-mini-tts-2025-12-15",
+          "gpt-4o-transcribe",
+          "gpt-4o-transcribe-diarize",
+          "gpt-audio",
+          "gpt-audio-1.5",
+          "gpt-audio-2025-08-28",
+          "gpt-audio-mini",
+          "gpt-audio-mini-2025-10-06",
+          "gpt-audio-mini-2025-12-15",
+          "gpt-image-1",
+          "gpt-image-1-mini",
+          "gpt-image-1.5",
+          "gpt-image-2",
+          "gpt-image-2-2026-04-21",
+          "gpt-image-2.5-flare",
+          "gpt-image-2.5-flare-2026-09-08",
+          "gpt-image-2.5-sunburst",
+          "gpt-image-2.5-sunburst-2026-09-08",
+          "gpt-live-1",
+          "gpt-live-transcribe",
+          "gpt-realtime",
+          "gpt-realtime-1.5",
+          "gpt-realtime-2",
+          "gpt-realtime-2.1",
+          "gpt-realtime-2.1-mini",
+          "gpt-realtime-2025-08-28",
+          "gpt-realtime-mini",
+          "gpt-realtime-mini-2025-12-15",
+          "gpt-realtime-translate",
+          "gpt-realtime-whisper",
+          "gpt-transcribe",
+          "omni-moderation-2024-09-26",
+          "omni-moderation-latest",
+          "sora-2",
+          "sora-2-pro",
+          "text-embedding-3-large",
+          "text-embedding-3-small",
+          "text-embedding-ada-002",
+          "tts-1",
+          "tts-1-1106",
+          "tts-1-hd",
+          "tts-1-hd-1106",
+          "whisper-1"
+        ],
+        "shutdown_on_or_before_2026-10-22": [
+          "babbage-002",
+          "computer-use-preview",
+          "computer-use-preview-2025-03-11",
+          "davinci-002",
+          "gpt-3.5-turbo-1106",
+          "gpt-3.5-turbo-instruct",
+          "gpt-4o-mini-search-preview-2025-03-11",
+          "gpt-4o-search-preview-2025-03-11",
+          "gpt-5-chat-latest",
+          "gpt-5-codex",
+          "gpt-5.1-chat-latest",
+          "gpt-5.1-codex",
+          "gpt-5.1-codex-max",
+          "gpt-5.1-codex-mini",
+          "gpt-5.2-chat-latest",
+          "gpt-5.2-codex",
+          "gpt-5.3-chat-latest",
+          "gpt-audio-mini-2025-10-06",
+          "o3-deep-research",
+          "o3-deep-research-2025-06-26",
+          "o4-mini-deep-research",
+          "o4-mini-deep-research-2025-06-26",
+          "sora-2",
+          "sora-2-pro"
+        ],
+        "compatibility_redirects": [],
+        "notes": [
+          "All account-visible text IDs with shutdown after 2026-10-22 or no shutdown are retained, including dated snapshots and legacy IDs.",
+          "Normal GPT-4 and GPT-3.5 text models use Chat Completions. Legacy instruct/base IDs use Completions. Pro and Codex families use Responses metadata where the official family reference requires it.",
+          "Reasoning models omit temperature; Pro models use high reasoning effort. Search preview models omit temperature. Empty limits mean the account inventory did not establish a safe translation limit."
+        ]
+      },
+      "live_confirmed_exclusions": [
+        {
+          "id": "gpt-4o-search-preview",
+          "reason": "API returned 404 model_not_found: model deprecated on 2026-10-22"
+        },
+        {
+          "id": "gpt-4o-mini-search-preview",
+          "reason": "API returned 404 model_not_found: model deprecated on 2026-10-22"
+        },
+        {
+          "id": "gpt-3.5-turbo-instruct-0914",
+          "reason": "API returned 404 model_not_found: model deprecated on 2026-10-22"
+        }
+      ],
+      "text_smoke": {
+        "gpt-4-turbo-2024-04-09": {
+          "status": "translated",
+          "served_model": "gpt-4-turbo-2024-04-09"
+        },
+        "gpt-5.6-luna": {
+          "status": "translated",
+          "served_model": "gpt-5.6-luna"
+        },
+        "gpt-5-search-api": {
+          "status": "translated",
+          "served_model": "gpt-5-search-api-2025-10-14"
+        },
+        "gpt-5.5-2026-04-23": {
+          "status": "translated",
+          "served_model": "gpt-5.5-2026-04-23"
+        },
+        "gpt-5.4-2026-03-05": {
+          "status": "translated",
+          "served_model": "gpt-5.4-2026-03-05"
+        },
+        "gpt-3.5-turbo-0125": {
+          "status": "translated",
+          "served_model": "gpt-3.5-turbo-0125"
+        },
+        "gpt-5-nano": {
+          "status": "translated",
+          "served_model": "gpt-5-nano-2025-08-07"
+        },
+        "gpt-5.4-mini": {
+          "status": "translated",
+          "served_model": "gpt-5.4-mini-2026-03-17"
+        },
+        "o1-pro": {
+          "status": "translated",
+          "served_model": "o1-pro-2025-03-19"
+        },
+        "gpt-5-mini": {
+          "status": "translated",
+          "served_model": "gpt-5-mini-2025-08-07"
+        },
+        "gpt-5-mini-2025-08-07": {
+          "status": "translated",
+          "served_model": "gpt-5-mini-2025-08-07"
+        },
+        "o4-mini-2025-04-16": {
+          "status": "translated",
+          "served_model": "o4-mini-2025-04-16"
+        },
+        "gpt-5.2-pro": {
+          "status": "translated",
+          "served_model": "gpt-5.2-pro-2025-12-11"
+        },
+        "gpt-5-pro-2025-10-06": {
+          "status": "translated",
+          "served_model": "gpt-5-pro-2025-10-06"
+        },
+        "gpt-5.6-sol": {
+          "status": "translated",
+          "served_model": "gpt-5.6-sol"
+        },
+        "gpt-5.5-pro": {
+          "status": "translated",
+          "served_model": "gpt-5.5-pro-2026-04-23"
+        },
+        "gpt-5-2025-08-07": {
+          "status": "translated",
+          "served_model": "gpt-5-2025-08-07"
+        },
+        "gpt-5.2-pro-2025-12-11": {
+          "status": "translated",
+          "served_model": "gpt-5.2-pro-2025-12-11"
+        },
+        "gpt-5.5-pro-2026-04-23": {
+          "status": "translated",
+          "served_model": "gpt-5.5-pro-2026-04-23"
+        },
+        "gpt-5.4-pro": {
+          "status": "translated",
+          "served_model": "gpt-5.4-pro-2026-03-05"
+        },
+        "gpt-4o-2024-11-20": {
+          "status": "translated",
+          "served_model": "gpt-4o-2024-11-20"
+        },
+        "gpt-5.1": {
+          "status": "translated",
+          "served_model": "gpt-5.1-2025-11-13"
+        },
+        "gpt-5-pro": {
+          "status": "timeout"
+        },
+        "gpt-5.4-mini-2026-03-17": {
+          "status": "translated",
+          "served_model": "gpt-5.4-mini-2026-03-17"
+        },
+        "gpt-5.4": {
+          "status": "translated",
+          "served_model": "gpt-5.4-2026-03-05"
+        },
+        "gpt-4.1-nano": {
+          "status": "translated",
+          "served_model": "gpt-4.1-nano-2025-04-14"
+        },
+        "gpt-3.5-turbo-16k": {
+          "status": "translated",
+          "served_model": "gpt-3.5-turbo-0125"
+        },
+        "gpt-4.1": {
+          "status": "translated",
+          "served_model": "gpt-4.1-2025-04-14"
+        },
+        "gpt-5.5": {
+          "status": "translated",
+          "served_model": "gpt-5.5-2026-04-23"
+        },
+        "o3-pro-2025-06-10": {
+          "status": "translated",
+          "served_model": "o3-pro-2025-06-10"
+        },
+        "chat-latest": {
+          "status": "translated",
+          "served_model": "chat-latest"
+        },
+        "gpt-5.4-pro-2026-03-05": {
+          "status": "translated",
+          "served_model": "gpt-5.4-pro-2026-03-05"
+        },
+        "o3-2025-04-16": {
+          "status": "translated",
+          "served_model": "o3-2025-04-16"
+        },
+        "gpt-5.2-2025-12-11": {
+          "status": "translated",
+          "served_model": "gpt-5.2-2025-12-11"
+        },
+        "gpt-3.5-turbo": {
+          "status": "translated",
+          "served_model": "gpt-3.5-turbo-0125"
+        },
+        "gpt-4o-2024-05-13": {
+          "status": "translated",
+          "served_model": "gpt-4o-2024-05-13"
+        },
+        "gpt-5.6-terra": {
+          "status": "translated",
+          "served_model": "gpt-5.6-terra"
+        },
+        "o3-mini": {
+          "status": "translated",
+          "served_model": "o3-mini-2025-01-31"
+        },
+        "gpt-5.4-nano": {
+          "status": "translated",
+          "served_model": "gpt-5.4-nano-2026-03-17"
+        },
+        "o1-pro-2025-03-19": {
+          "status": "translated",
+          "served_model": "o1-pro-2025-03-19"
+        },
+        "gpt-4-turbo": {
+          "status": "translated",
+          "served_model": "gpt-4-turbo-2024-04-09"
+        },
+        "o3-pro": {
+          "status": "translated",
+          "served_model": "o3-pro-2025-06-10"
+        },
+        "gpt-4o-2024-08-06": {
+          "status": "translated",
+          "served_model": "gpt-4o-2024-08-06"
+        },
+        "o3": {
+          "status": "translated",
+          "served_model": "o3-2025-04-16"
+        },
+        "gpt-4.1-mini-2025-04-14": {
+          "status": "translated",
+          "served_model": "gpt-4.1-mini-2025-04-14"
+        },
+        "o3-mini-2025-01-31": {
+          "status": "translated",
+          "served_model": "o3-mini-2025-01-31"
+        },
+        "gpt-5.1-2025-11-13": {
+          "status": "translated",
+          "served_model": "gpt-5.1-2025-11-13"
+        },
+        "gpt-4-0613": {
+          "status": "translated",
+          "served_model": "gpt-4-0613"
+        },
+        "gpt-4o": {
+          "status": "translated",
+          "served_model": "gpt-4o-2024-08-06"
+        },
+        "gpt-4.1-mini": {
+          "status": "translated",
+          "served_model": "gpt-4.1-mini-2025-04-14"
+        },
+        "gpt-4o-mini": {
+          "status": "translated",
+          "served_model": "gpt-4o-mini-2024-07-18"
+        },
+        "gpt-6-sol": {
+          "status": "translated",
+          "served_model": "gpt-6-sol"
+        },
+        "gpt-5.2": {
+          "status": "translated",
+          "served_model": "gpt-5.2-2025-12-11"
+        },
+        "o1": {
+          "status": "translated",
+          "served_model": "o1-2024-12-17"
+        },
+        "gpt-5.4-nano-2026-03-17": {
+          "status": "translated",
+          "served_model": "gpt-5.4-nano-2026-03-17"
+        },
+        "gpt-6.1-sol": {
+          "status": "translated",
+          "served_model": "gpt-6.1-sol"
+        },
+        "o1-2024-12-17": {
+          "status": "translated",
+          "served_model": "o1-2024-12-17"
+        },
+        "gpt-5.3-codex": {
+          "status": "translated",
+          "served_model": "gpt-5.3-codex"
+        },
+        "gpt-5-search-api-2025-10-14": {
+          "status": "translated",
+          "served_model": "gpt-5-search-api-2025-10-14"
+        },
+        "gpt-5": {
+          "status": "translated",
+          "served_model": "gpt-5-2025-08-07"
+        },
+        "gpt-4.1-nano-2025-04-14": {
+          "status": "translated",
+          "served_model": "gpt-4.1-nano-2025-04-14"
+        },
+        "gpt-4.1-2025-04-14": {
+          "status": "translated",
+          "served_model": "gpt-4.1-2025-04-14"
+        },
+        "gpt-4o-mini-2024-07-18": {
+          "status": "translated",
+          "served_model": "gpt-4o-mini-2024-07-18"
+        },
+        "gpt-4": {
+          "status": "translated",
+          "served_model": "gpt-4-0613"
+        },
+        "gpt-5-nano-2025-08-07": {
+          "status": "translated",
+          "served_model": "gpt-5-nano-2025-08-07"
+        },
+        "o4-mini": {
+          "status": "translated",
+          "served_model": "o4-mini-2025-04-16"
+        },
+        "gpt-6-astra": {
+          "status": "translated",
+          "served_model": "gpt-6-astra"
+        },
+        "gpt-6-luna": {
+          "status": "translated",
+          "served_model": "gpt-6-luna"
+        },
+        "gpt-5.6-cyber": {
+          "status": "not_available_to_test_credentials"
+        },
+        "gpt-rosalind-research": {
+          "status": "not_available_to_test_credentials"
+        },
+        "gpt-rosalind-discovery": {
+          "status": "not_available_to_test_credentials"
+        },
+        "gpt-4-1106-preview": {
+          "status": "not_available_to_test_credentials"
+        }
+      },
+      "observed_api_catalog_count": 141,
+      "observed_but_excluded": [
+        {
+          "id": "gpt-realtime-2.1-mini",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "gpt-realtime-2025-08-28",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "omni-moderation-2024-09-26",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "gpt-live-transcribe",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "omni-moderation-latest",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "gpt-realtime-2",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "gpt-5.1-codex",
+          "reason": "shutdown 2026-07-23"
+        },
+        {
+          "id": "tts-1",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "gpt-realtime",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "tts-1-hd",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "gpt-realtime-1.5",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "gpt-5-chat-latest",
+          "reason": "shutdown 2026-07-23"
+        },
+        {
+          "id": "gpt-4o-mini-transcribe-2025-12-15",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "gpt-4o-mini-transcribe-2025-03-20",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "gpt-audio-2025-08-28",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "tts-1-1106",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "gpt-audio-mini-2025-10-06",
+          "reason": "shutdown 2026-07-23"
+        },
+        {
+          "id": "gpt-realtime-mini-2025-12-15",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "gpt-4o-mini-tts",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "gpt-5.1-codex-max",
+          "reason": "shutdown 2026-07-23"
+        },
+        {
+          "id": "gpt-4o-mini-search-preview",
+          "reason": "live API returned model_not_found and explicitly said deprecated"
+        },
+        {
+          "id": "o3-deep-research-2025-06-26",
+          "reason": "shutdown 2026-07-23"
+        },
+        {
+          "id": "whisper-1",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "gpt-realtime-whisper",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "tts-1-hd-1106",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "o4-mini-deep-research",
+          "reason": "shutdown 2026-07-23"
+        },
+        {
+          "id": "gpt-4o-search-preview-2025-03-11",
+          "reason": "shutdown 2026-07-23"
+        },
+        {
+          "id": "text-embedding-3-small",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "gpt-image-2",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "text-embedding-ada-002",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "gpt-realtime-2.1",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "gpt-realtime-translate",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "gpt-5.3-chat-latest",
+          "reason": "shutdown 2026-08-10"
+        },
+        {
+          "id": "chatgpt-image-latest",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "babbage-002",
+          "reason": "shutdown 2026-09-28"
+        },
+        {
+          "id": "text-embedding-3-large",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "gpt-realtime-mini",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "gpt-image-1-mini",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "gpt-3.5-turbo-instruct-0914",
+          "reason": "live API returned model_not_found and explicitly said deprecated"
+        },
+        {
+          "id": "davinci-002",
+          "reason": "shutdown 2026-09-28"
+        },
+        {
+          "id": "gpt-audio-mini-2025-12-15",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "o4-mini-deep-research-2025-06-26",
+          "reason": "shutdown 2026-07-23"
+        },
+        {
+          "id": "o3-deep-research",
+          "reason": "shutdown 2026-07-23"
+        },
+        {
+          "id": "gpt-4o-mini-search-preview-2025-03-11",
+          "reason": "shutdown 2026-07-23"
+        },
+        {
+          "id": "gpt-audio-mini",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "gpt-5.1-chat-latest",
+          "reason": "shutdown 2026-07-23"
+        },
+        {
+          "id": "gpt-image-1.5",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "gpt-audio-1.5",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "gpt-4o-transcribe-diarize",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "gpt-5-codex",
+          "reason": "shutdown 2026-07-23"
+        },
+        {
+          "id": "gpt-4o-search-preview",
+          "reason": "live API returned model_not_found and explicitly said deprecated"
+        },
+        {
+          "id": "gpt-3.5-turbo-1106",
+          "reason": "shutdown 2026-09-28"
+        },
+        {
+          "id": "sora-2",
+          "reason": "shutdown 2026-09-24"
+        },
+        {
+          "id": "gpt-4o-mini-tts-2025-03-20",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "gpt-4o-mini-tts-2025-12-15",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "gpt-image-1",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "gpt-audio",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "gpt-5.2-chat-latest",
+          "reason": "shutdown 2026-08-10"
+        },
+        {
+          "id": "gpt-image-2-2026-04-21",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "gpt-4o-mini-transcribe",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "computer-use-preview-2025-03-11",
+          "reason": "shutdown 2026-07-23"
+        },
+        {
+          "id": "gpt-3.5-turbo-instruct",
+          "reason": "shutdown 2026-09-28"
+        },
+        {
+          "id": "sora-2-pro",
+          "reason": "shutdown 2026-09-24"
+        },
+        {
+          "id": "gpt-transcribe",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "gpt-image-2.5-sunburst",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "gpt-image-2.5-flare-2026-09-08",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "gpt-5.2-codex",
+          "reason": "shutdown 2026-07-23"
+        },
+        {
+          "id": "gpt-image-2.5-sunburst-2026-09-08",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "computer-use-preview",
+          "reason": "shutdown 2026-07-23"
+        },
+        {
+          "id": "gpt-5.1-codex-mini",
+          "reason": "shutdown 2026-07-23"
+        },
+        {
+          "id": "gpt-4o-transcribe",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "gpt-live-1",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        },
+        {
+          "id": "gpt-image-2.5-flare",
+          "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
+        }
+      ]
+    },
+    "xai": {
+      "sources": [
+        "https://docs.x.ai/developers/models",
+        "https://docs.x.ai/developers/model-capabilities/text/multi-agent",
+        "https://docs.x.ai/developers/migration/may-15-retirement"
+      ],
+      "models": {
+        "grok-4.20-0309-reasoning": "grok-4.20-0309-reasoning",
+        "grok-4.20-0309-non-reasoning": "grok-4.20-0309-non-reasoning",
+        "grok-4.20-multi-agent-0309": "grok-4.20-multi-agent-0309",
+        "grok-4.3": "grok-4.3",
+        "grok-4.5": "grok-4.5",
+        "grok-4.6": "grok-4.6",
+        "grok-4.7": "grok-4.7",
+        "grok-build-0.1": "grok-build-0.1"
+      },
+      "exclusions": [
+        {
+          "id": "grok-3",
+          "reason": "retired; redirects to grok-4.3"
+        },
+        {
+          "id": "grok-3-mini",
+          "reason": "not account-visible; no current dedicated model evidence"
+        },
+        {
+          "id": "grok-4-0709",
+          "reason": "retired; redirects to grok-4.3"
+        },
+        {
+          "id": "grok-4-fast-reasoning",
+          "reason": "retired; redirects to grok-4.3"
+        },
+        {
+          "id": "grok-4-fast-non-reasoning",
+          "reason": "retired; redirects to grok-4.3"
+        },
+        {
+          "id": "grok-4-1-fast-reasoning",
+          "reason": "retired; redirects to grok-4.3"
+        },
+        {
+          "id": "grok-4-1-fast-non-reasoning",
+          "reason": "retired; redirects to grok-4.3"
+        },
+        {
+          "id": "grok-code-fast-1",
+          "reason": "retired; redirects to grok-build-0.1"
+        }
+      ],
+      "live_confirmed_exclusions": [],
+      "confirmed_redirects": {
+        "grok-4": "grok-4.3",
+        "grok-3": "grok-4.3",
+        "grok-3-mini": "grok-4.3"
+      },
+      "text_smoke": {
+        "grok-4.20-0309-reasoning": {
+          "status": "translated",
+          "served_model": "grok-4.20-0309-reasoning"
+        },
+        "grok-4.20-0309-non-reasoning": {
+          "status": "translated",
+          "served_model": "grok-4.20-0309-non-reasoning"
+        },
+        "grok-4.20-multi-agent-0309": {
+          "status": "translated",
+          "served_model": "grok-4.20-multi-agent-0309"
+        },
+        "grok-4.3": {
+          "status": "translated",
+          "served_model": "grok-4.3"
+        },
+        "grok-4.5": {
+          "status": "translated",
+          "served_model": "grok-4.5"
+        },
+        "grok-4.6": {
+          "status": "translated",
+          "served_model": "grok-4.6"
+        },
+        "grok-4.7": {
+          "status": "translated",
+          "served_model": "grok-4.7"
+        },
+        "grok-build-0.1": {
+          "status": "translated",
+          "served_model": "grok-build-0.1"
+        }
+      },
+      "observed_api_catalog_count": 8,
+      "observed_but_excluded": []
+    },
+    "yandex": {
+      "sources": [
+        "https://aistudio.yandex.ru/ru/docs/ai-studio/concepts/generation/models",
+        "https://aistudio.yandex.ru/ru/docs/ai-studio/release-notes/"
+      ],
+      "models": {
+        "gpt-lite": "yandexgpt-lite/latest",
+        "gpt-pro": "yandexgpt/latest",
+        "gpt-32k": "yandexgpt-32k/latest",
+        "aliceai-llm": "aliceai-llm",
+        "aliceai-llm-flash": "aliceai-llm-flash",
+        "yandexgpt-5.1": "yandexgpt-5.1",
+        "yandexgpt-5-pro": "yandexgpt-5-pro",
+        "yandexgpt-5-lite": "yandexgpt-5-lite",
+        "deepseek-v4-flash": "deepseek-v4-flash",
+        "deepseek-v4.1-flash": "deepseek-v4.1-flash",
+        "qwen3-235b-a22b-fp8": "qwen3-235b-a22b-fp8",
+        "gpt-oss-120b": "gpt-oss-120b",
+        "gpt-oss-20b": "gpt-oss-20b",
+        "qwen3.6-35b-a3b": "qwen3.6-35b-a3b",
+        "yandexgpt-latest": "yandexgpt/latest",
+        "yandexgpt-rc": "yandexgpt/rc"
+      },
+      "exclusions": [
+        {
+          "id": "aliceai-image-art-3.0",
+          "reason": "image API, outside translation text driver"
+        },
+        {
+          "id": "speech-realtime-deepseek-v4-flash",
+          "reason": "realtime speech API, outside translation text driver"
+        },
+        {
+          "id": "speech-realtime-max-tts-live/latest",
+          "reason": "realtime speech API, outside translation text driver"
+        },
+        {
+          "id": "speech-realtime-tts-live/latest",
+          "reason": "realtime speech API, outside translation text driver"
+        }
+      ],
+      "live_confirmed_exclusions": [],
+      "confirmed_unknown_models": [
+        "llama/latest",
+        "llama-lite/latest"
+      ],
+      "text_smoke": {
+        "gpt-lite": {
+          "status": "translated",
+          "served_model": "25.03.2025"
+        },
+        "gpt-pro": {
+          "status": "translated",
+          "served_model": "09.02.2025"
+        },
+        "gpt-32k": {
+          "status": "translated",
+          "served_model": "09.02.2025"
+        },
+        "aliceai-llm": {
+          "status": "translated",
+          "served_model": "gpt://aliceai-llm/latest"
+        },
+        "aliceai-llm-flash": {
+          "status": "translated",
+          "served_model": "gpt://aliceai-llm-flash/latest"
+        },
+        "yandexgpt-5.1": {
+          "status": "translated",
+          "served_model": "yagpt-5.1-2025-08"
+        },
+        "yandexgpt-5-pro": {
+          "status": "translated",
+          "served_model": "09.02.2025"
+        },
+        "yandexgpt-5-lite": {
+          "status": "translated",
+          "served_model": "gpt://b1g4etq2gd2nqbkmdj3r/yandexgpt-5-lite"
+        },
+        "deepseek-v4-flash": {
+          "status": "translated",
+          "served_model": "gpt://deepseek-v4-flash/latest"
+        },
+        "deepseek-v4.1-flash": {
+          "status": "translated",
+          "served_model": "gpt://deepseek-v4.1-flash/latest"
+        },
+        "qwen3-235b-a22b-fp8": {
+          "status": "not_available_to_test_credentials"
+        },
+        "gpt-oss-120b": {
+          "status": "translated",
+          "served_model": "gpt://gpt-oss-120b/latest"
+        },
+        "gpt-oss-20b": {
+          "status": "translated",
+          "served_model": "gpt://gpt-oss-20b/latest"
+        },
+        "qwen3.6-35b-a3b": {
+          "status": "translated",
+          "served_model": "gpt://qwen3.6-35b-a3b/latest"
+        },
+        "yandexgpt-latest": {
+          "status": "translated",
+          "served_model": "09.02.2025"
+        },
+        "yandexgpt-rc": {
+          "status": "translated",
+          "served_model": "yagpt-5.1-2025-08"
+        }
+      }
+    },
+    "deepl": {
+      "sources": [
+        "https://developers.deepl.com/api-reference/translate/request-translation"
+      ],
+      "models": {
+        "free": "Free tier",
+        "pro": "Pro tier"
+      },
+      "model_type": [
+        "quality_optimized",
+        "prefer_quality_optimized",
+        "latency_optimized"
+      ],
+      "text_smoke": {
+        "free": {
+          "status": "translated",
+          "served_model": null
+        },
+        "pro": {
+          "status": "translated",
+          "served_model": null
+        }
+      }
+    }
+  },
+  "verification": {
+    "kind": "Short live plain-text translation through the facade, not an HTML/JSON or translation-quality benchmark",
+    "translated_model_keys": 123,
+    "remaining_model_keys": [
+      "anthropic:claude-mythos-5",
+      "anthropic:claude-mythos-preview",
+      "anthropic:claude-mythos-5.1",
+      "openai:gpt-5-pro",
+      "openai:gpt-5.6-cyber",
+      "openai:gpt-rosalind-research",
+      "openai:gpt-rosalind-discovery",
+      "openai:gpt-4-1106-preview",
+      "yandex:qwen3-235b-a22b-fp8"
+    ],
+    "notes": "Unverified restricted or slow models remain registered when official documentation confirms their existence. No fallback substitution or automatic retry is used."
+  }
+}
