@@ -12,6 +12,7 @@ The format is based on [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 - Live integration tests can select a model with `BBLSLUG_LIVE_MODEL`.
 
 ### Fixed
+- Composer distributions include the CLI executable, which uses the consuming project's Composer autoloader when invoked through its binary proxy.
 - README examples and CLI help now describe current prompts, credential precedence, dry-run behavior, and validation limits.
 - Anthropic requests use the Messages API; DeepL uses header authentication and the correct Pro endpoint.
 - JSON structure validation now distinguishes objects from arrays, including empty containers and objects with numeric keys.
