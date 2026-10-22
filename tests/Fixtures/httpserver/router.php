@@ -31,6 +31,13 @@ $send = static function (int $code, array $headers = [], string $body = ''): voi
     echo $body;
 };
 
+// Delayed endpoint used to verify that the client enforces request timeouts.
+if ($uri === '/slow') {
+    usleep(1_500_000);
+    $send(200, ['Content-Type' => 'text/plain'], 'slow response');
+    return;
+}
+
 // Echo endpoint: returns method + raw body as JSON and emits a multi-valued header.
 if ($uri === '/echo') {
     $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';

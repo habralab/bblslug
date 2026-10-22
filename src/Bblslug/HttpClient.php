@@ -21,6 +21,9 @@ class HttpClient
      * @param array<int,string> $maskPatterns  Substrings to mask in debug logs.
      * @param string|null   $proxy         Optional proxy URI (http, socks5, etc.).
      * @param bool          $verbose       If true, include request/response debug logs.
+     * @param int|null      $timeoutSeconds Total request timeout; overrides BBLSLUG_HTTP_TIMEOUT (default 120).
+     * @param int|null      $connectTimeoutSeconds Connection timeout in seconds (default 10).
+     *                                            Overrides BBLSLUG_HTTP_CONNECT_TIMEOUT.
      *
      * @return array{
      *     body: string,
@@ -31,6 +34,7 @@ class HttpClient
      * }
      *
      * @throws \RuntimeException On network or cURL errors.
+     * @throws \InvalidArgumentException On invalid timeout settings.
      */
     public static function request(
         string $method,
@@ -40,8 +44,13 @@ class HttpClient
         array $headers = [],
         array $maskPatterns = [],
         ?string $proxy = null,
-        bool $verbose = false
+        bool $verbose = false,
+        ?int $timeoutSeconds = null,
+        ?int $connectTimeoutSeconds = null
     ): array {
+        $timeoutSeconds = self::resolveTimeout($timeoutSeconds, 'BBLSLUG_HTTP_TIMEOUT', 120);
+        $connectTimeoutSeconds = self::resolveTimeout($connectTimeoutSeconds, 'BBLSLUG_HTTP_CONNECT_TIMEOUT', 10);
+
         // Prepare masked copies for logging
         $logHeaders = $headers;
         $logBody    = $body;
@@ -87,6 +96,8 @@ class HttpClient
         $ch = \curl_init($url);
         \curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
         \curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        \curl_setopt($ch, CURLOPT_TIMEOUT, $timeoutSeconds);
+        \curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, $connectTimeoutSeconds);
         if (!empty($headers)) {
             \curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
         }
@@ -124,10 +135,11 @@ class HttpClient
             $respBody = '';
         }
 
-        if (\curl_errno($ch)) {
+        $errorCode = \curl_errno($ch);
+        if ($errorCode !== 0) {
             $err = \curl_error($ch);
             \curl_close($ch);
-            throw new \RuntimeException("Network error: {$err}");
+            throw new \RuntimeException("Network error: {$err}", $errorCode);
         }
         $status = (int)\curl_getinfo($ch, CURLINFO_HTTP_CODE);
         \curl_close($ch);
@@ -159,5 +171,28 @@ class HttpClient
             'debugRequest'  => $debugRequest,
             'debugResponse' => $debugResponse,
         ];
+    }
+
+    private static function resolveTimeout(?int $explicit, string $environmentName, int $default): int
+    {
+        if ($explicit !== null) {
+            if ($explicit <= 0) {
+                throw new \InvalidArgumentException(
+                    "{$environmentName} override must be a positive integer in seconds."
+                );
+            }
+            return $explicit;
+        }
+
+        $value = getenv($environmentName);
+        if ($value === false || $value === '') {
+            return $default;
+        }
+
+        $seconds = filter_var($value, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+        if ($seconds === false) {
+            throw new \InvalidArgumentException("{$environmentName} must be a positive integer in seconds.");
+        }
+        return $seconds;
     }
 }

@@ -113,6 +113,18 @@ chmod +x vendor/bin/bblslug
 
   This works for all HTTP requests and supports authentication (`http://user:pass@host:port`).
 
+5. **HTTP timeouts**:
+
+  All providers use a 10-second connection timeout and a 120-second total request
+  timeout. Set `BBLSLUG_HTTP_CONNECT_TIMEOUT` and `BBLSLUG_HTTP_TIMEOUT` to change
+  these limits (positive integer seconds). Unset or empty values use the defaults;
+  invalid values fail before sending a request, including in dry-run mode.
+
+  Direct callers of `HttpClient::request()` can override these settings with
+  `connectTimeoutSeconds` and `timeoutSeconds`. Explicit arguments take precedence
+  over environment values. Network failures throw `RuntimeException` with the cURL
+  error code (28 for a timeout). Requests are not automatically retried.
+
 
 ### Show available models
 

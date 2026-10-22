@@ -24,6 +24,28 @@ final class HttpClientTest extends TestCase
     private static int $port;
     private static string $host = '127.0.0.1';
 
+    /** @var array<string,string|false> */
+    private array $originalTimeoutEnvironment = [];
+
+    protected function setUp(): void
+    {
+        foreach (['BBLSLUG_HTTP_TIMEOUT', 'BBLSLUG_HTTP_CONNECT_TIMEOUT'] as $name) {
+            $this->originalTimeoutEnvironment[$name] = getenv($name);
+            putenv($name);
+        }
+    }
+
+    protected function tearDown(): void
+    {
+        foreach ($this->originalTimeoutEnvironment as $name => $value) {
+            if ($value === false) {
+                putenv($name);
+            } else {
+                putenv($name . '=' . $value);
+            }
+        }
+    }
+
     /**
      * Start the local test server once for the whole class.
      */
@@ -200,6 +222,7 @@ final class HttpClientTest extends TestCase
     {
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessageMatches('/^Network error:/');
+        $this->expectExceptionCode(CURLE_COULDNT_CONNECT);
 
         // Port 9 (discard) is expected to be closed locally in test envs.
         HttpClient::request(
@@ -237,5 +260,92 @@ final class HttpClientTest extends TestCase
         $mainType = strtolower(trim(explode(';', $firstCt, 2)[0]));
         $this->assertSame('text/plain', $mainType);
         $this->assertStringContainsString('Response (201)', $resp['debugResponse']);
+    }
+
+    /** @test */
+    public function explicitTimeoutsOverrideInvalidEnvironmentValues(): void
+    {
+        putenv('BBLSLUG_HTTP_TIMEOUT=invalid');
+        putenv('BBLSLUG_HTTP_CONNECT_TIMEOUT=0.5');
+
+        $resp = HttpClient::request(
+            method: 'GET',
+            url: $this->url('/echo'),
+            dryRun: true,
+            timeoutSeconds: 2,
+            connectTimeoutSeconds: 1
+        );
+
+        $this->assertSame(0, $resp['status']);
+        $this->assertSame('[dry-run]', $resp['body']);
+    }
+
+    /** @test */
+    public function nonpositiveExplicitTimeoutsAreRejected(): void
+    {
+        $timeoutCases = [
+            ['timeoutSeconds' => 0],
+            ['timeoutSeconds' => -1],
+            ['connectTimeoutSeconds' => 0],
+            ['connectTimeoutSeconds' => -1],
+        ];
+
+        foreach ($timeoutCases as $arguments) {
+            try {
+                $requestArguments = [
+                    'method' => 'GET',
+                    'url' => $this->url('/echo'),
+                    'dryRun' => true,
+                ] + $arguments;
+                HttpClient::request(...$requestArguments);
+                $this->fail('A nonpositive explicit timeout should be rejected.');
+            } catch (\InvalidArgumentException) {
+                $this->addToAssertionCount(1);
+            }
+        }
+    }
+
+    /** @test */
+    public function invalidTimeoutEnvironmentValuesNameTheSetting(): void
+    {
+        $environmentCases = [
+            'BBLSLUG_HTTP_TIMEOUT' => ['0', '-1', 'invalid', '1.5'],
+            'BBLSLUG_HTTP_CONNECT_TIMEOUT' => ['0', '-1', 'invalid', '1.5'],
+        ];
+
+        foreach ($environmentCases as $name => $values) {
+            foreach ($values as $value) {
+                putenv($name . '=' . $value);
+
+                try {
+                    HttpClient::request(
+                        method: 'GET',
+                        url: $this->url('/echo'),
+                        dryRun: true
+                    );
+                    $this->fail("Invalid {$name} should be rejected.");
+                } catch (\InvalidArgumentException $exception) {
+                    $this->assertStringContainsString($name, $exception->getMessage());
+                }
+            }
+            putenv($name);
+        }
+    }
+
+    /** @test */
+    public function timeoutNetworkErrorCarriesCurlTimeoutCode(): void
+    {
+        try {
+            HttpClient::request(
+                method: 'GET',
+                url: $this->url('/slow'),
+                timeoutSeconds: 1,
+                connectTimeoutSeconds: 1
+            );
+            $this->fail('The slow response should exceed the request timeout.');
+        } catch (\RuntimeException $exception) {
+            $this->assertStringStartsWith('Network error:', $exception->getMessage());
+            $this->assertSame(CURLE_OPERATION_TIMEDOUT, $exception->getCode());
+        }
     }
 }
