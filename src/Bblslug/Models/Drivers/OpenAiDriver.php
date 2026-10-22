@@ -27,7 +27,9 @@ class OpenAiDriver implements ModelDriverInterface
      *     - dryRun      (bool)        Skip API call (ignored here).
      *     - format      (string)      Indicates which prompt format to use.
      *     - promptKey   (string)      Key of the prompt template in prompts.yaml.
-     *     - temperature (float)       Sampling temperature.
+     *     - reasoning_effort (string) Reasoning effort supported by the selected model.
+     *     - max_completion_tokens (int) Optional output budget, including reasoning tokens.
+     *     - temperature (float|null) Sampling temperature; null omits the parameter.
      *     - verbose     (bool)        Include debug logs (ignored here).
      *
      * @return array{url:string, headers:string[], body:string}
@@ -63,10 +65,9 @@ class OpenAiDriver implements ModelDriverInterface
             ? $defaults['target_lang']
             : 'EN';
 
-        $tempRaw = $options['temperature'] ?? ($defaults['temperature'] ?? 0.0);
-        $temperature = (\is_float($tempRaw) || \is_int($tempRaw) || \is_numeric($tempRaw))
-            ? (float)$tempRaw
-            : 0.0;
+        $settings = array_replace($defaults, $options);
+        $tempRaw = \array_key_exists('temperature', $settings) ? $settings['temperature'] : 0.0;
+        $temperature = $tempRaw === null ? null : (\is_numeric($tempRaw) ? (float)$tempRaw : 0.0);
 
         // Render system prompt from YAML templates
         $systemPrompt = Prompts::render(
@@ -90,8 +91,23 @@ class OpenAiDriver implements ModelDriverInterface
         $payload = [
             'model'       => $model,
             'messages'    => $messages,
-            'temperature' => $temperature,
         ];
+        if ($temperature !== null) {
+            $payload['temperature'] = $temperature;
+        }
+        if (\is_string($settings['reasoning_effort'] ?? null)) {
+            $payload['reasoning_effort'] = $settings['reasoning_effort'];
+        }
+        if (isset($settings['max_completion_tokens'])) {
+            $budget = $settings['max_completion_tokens'];
+            if (
+                (!\is_int($budget) && !\is_string($budget))
+                || filter_var($budget, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) === false
+            ) {
+                throw new \InvalidArgumentException('max_completion_tokens must be a positive integer');
+            }
+            $payload['max_completion_tokens'] = (int)$budget;
+        }
 
         // Normalize return shape and types
         $url = \is_string($config['endpoint'] ?? null) ? (string)$config['endpoint'] : '';

@@ -202,6 +202,44 @@ openai:
         reasoning: completion_tokens_details.reasoning_tokens
 
   models:
+    # Verified against official OpenAI model documentation on 2026-10-22.
+    # Reasoning requests must omit temperature.
+    gpt-6-luna:
+      name: 'OpenAI GPT-6 Luna'
+      defaults:
+        model: gpt-6-luna
+        temperature: null
+        reasoning_effort: low
+      limits:
+        max_tokens: 1050000
+        max_output_tokens: 128000
+        estimated_max_chars: 4200000
+      notes: 'Current efficient model for focused, high-volume translation; low reasoning effort.'
+
+    gpt-6.1-sol:
+      name: 'OpenAI GPT-6.1 Sol'
+      defaults:
+        model: gpt-6.1-sol
+        temperature: null
+        reasoning_effort: low
+      limits:
+        max_tokens: 1050000
+        max_output_tokens: 128000
+        estimated_max_chars: 4200000
+      notes: 'Current general-purpose model for more demanding translation; low reasoning effort.'
+
+    gpt-6-astra:
+      name: 'OpenAI GPT-6 Astra'
+      defaults:
+        model: gpt-6-astra
+        temperature: null
+        reasoning_effort: low
+      limits:
+        max_tokens: 1050000
+        max_output_tokens: 128000
+        estimated_max_chars: 4200000
+      notes: 'Current most capable model, with higher cost; low reasoning effort.'
+
     gpt-5:
       name: 'OpenAI GPT-5'
       defaults:

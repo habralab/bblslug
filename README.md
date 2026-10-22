@@ -19,6 +19,9 @@ APIs supported:
   - `google:gemini-2.5-pro` - Gemini 2.5 Pro
   - `google:gemini-2.0-flash` - Gemini 2.0 Flash
 - OpenAI (GPT):
+  - `openai:gpt-6-luna` - GPT-6 Luna (efficient, low reasoning effort)
+  - `openai:gpt-6.1-sol` - GPT-6.1 Sol (general purpose, low reasoning effort)
+  - `openai:gpt-6-astra` - GPT-6 Astra (most capable, higher cost, low reasoning effort)
   - `openai:gpt-5` - OpenAI GPT-5
   - `openai:gpt-5-mini` - OpenAI GPT-5 Mini
   - `openai:gpt-5-nano` - OpenAI GPT-5 Nano
@@ -46,6 +49,10 @@ APIs supported:
 - **Verbose** mode (`--verbose`) to print request previews
 - Can be invoked as a CLI tool or embedded in PHP code
 - **Validation** of container syntax for HTML or JSON; disable with `--no-validate`
+
+The GPT-6 entries were checked against [official OpenAI documentation](https://developers.openai.com/api/docs/guides/latest-model) on 2026-10-22.
+They use Chat Completions with `reasoning_effort=low` and omit `temperature`, which is unsupported with reasoning enabled.
+Older model identifiers remain available for existing integrations; registry presence does not guarantee access for your API account.
 
 ## Installation
 
@@ -151,6 +158,10 @@ vendor/bin/bblslug \
 ```
 
 ### Pass model-specific variables
+
+For OpenAI, `--variables=reasoning_effort=low,max_completion_tokens=8192` can set
+the reasoning effort and output budget (including reasoning tokens). These parameters
+must be supported by the selected model. GPT-6 reasoning requests should omit temperature.
 
 ```bash
 vendor/bin/bblslug \
