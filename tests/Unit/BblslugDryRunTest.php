@@ -68,6 +68,8 @@ final class BblslugDryRunTest extends TestCase
         $this->assertSame(0, $out['httpStatus']);                 // dry-run uses status 0
         $this->assertIsString($out['debugRequest']);
         $this->assertIsString($out['debugResponse']);             // empty in dry-run
+        $this->assertStringContainsString('Authorization: DeepL-Auth-Key ***', $out['debugRequest']);
+        $this->assertStringNotContainsString('auth_key=', $out['debugRequest']);
         $this->assertIsString($out['rawResponseBody']);           // "[dry-run]" from HttpClient
 
         // Filters were applied (prepared has placeholders), then restored (result == original)

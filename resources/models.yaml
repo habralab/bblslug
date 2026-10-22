@@ -63,8 +63,9 @@ deepl:
     formality: prefer_more
   requirements:
     auth:
-      type: form
-      key_name: auth_key
+      type: header
+      key_name: Authorization
+      prefix: DeepL-Auth-Key
       help_url: 'https://www.deepl.com/account/summary'
     headers:
       - 'Content-Type: application/x-www-form-urlencoded'
@@ -85,6 +86,7 @@ deepl:
 
     pro:
       name: 'DeepL API Pro'
+      endpoint: 'https://api.deepl.com/v2/translate'
       requirements:
         auth:
           env: DEEPL_PRO_API_KEY
