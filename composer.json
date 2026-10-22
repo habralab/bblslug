@@ -1,6 +1,6 @@
 {
   "name": "habr/bblslug",
-  "description": "CLI translation tool for HTML and plain text using LLM-based APIs.",
+  "description": "CLI and PHP library for translating plain text, HTML, and JSON with translation APIs.",
   "keywords": ["translation","LLM","deepl","openai"],
   "homepage": "https://github.com/habralab/bblslug",
   "license": "MIT",

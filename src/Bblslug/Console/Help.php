@@ -52,7 +52,7 @@ class Help
         echo "\t{$bold}--context=TEXT{$reset}       Add translation context prompt\n";
         echo "\t{$bold}--dry-run{$reset}            Apply filters only; save SOURCE.prepared or write STDOUT\n";
         echo "\t{$bold}--filters=F1,F2,...{$reset}  Comma-separated filters to (e.g. url, html_pre, html_code)\n";
-        echo "\t{$bold}--format=html|json|text{$reset}  Required input format: plain text, HTML, or JSON\n";
+        echo "\t{$bold}--format=FORMAT{$reset}      Required: text, html, json, structured_json, or linedJson\n";
         echo "\t{$bold}--help{$reset}               Show this help message\n";
         echo "\t{$bold}--list-models{$reset}        Show available translation models grouped by vendor\n";
         echo "\t{$bold}--list-prompts{$reset}       Show available prompt templates\n";

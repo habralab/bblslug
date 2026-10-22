@@ -156,7 +156,7 @@ and exclusion evidence are recorded in [model-catalog.json](resources/model-cata
 
 ## Features
 
-- Supports **HTML**, **JSON** and **plain text** (`--format=text|html|json`)
+- Supports **HTML**, **JSON** and **plain text** (`--format=text|html|json|structured_json|linedJson`)
 - Placeholder-based protection with filters: `html_pre`, `html_code`, `url`, etc.
 - Model selection via `--model=vendor:name`
 - Fully configurable backend registry (via `resources/models.yaml`)
@@ -188,24 +188,6 @@ Yandex models using the OpenAI-compatible API retain the `yandex:` prefix and th
 same credentials/folder variables. The registry selects the required endpoint;
 the application does not substitute another model after a failure.
 
-DeepL Free and Pro are service tiers. Select any documented translation engine
-with `--variables=model_type=quality_optimized`, `prefer_quality_optimized`, or
-`latency_optimized`. The provider default applies when omitted. These are engine
-options, rather than additional model IDs.
-
-Yandex models using the OpenAI-compatible API retain the `yandex:` prefix and the
-same credentials/folder variables. The registry selects the required endpoint;
-the application does not substitute another model after a failure.
-
-DeepL Free and Pro are service tiers. Select any documented translation engine
-with `--variables=model_type=quality_optimized`, `prefer_quality_optimized`, or
-`latency_optimized`. The provider default applies when omitted. These are engine
-options, rather than additional model IDs.
-
-Yandex models using the OpenAI-compatible API retain the `yandex:` prefix and the
-same credentials/folder variables. The registry selects the required endpoint;
-the application does not substitute another model after a failure.
-
 ## Installation
 
 Requires PHP 8.2 or newer with the cURL, DOM, and mbstring extensions.
@@ -219,7 +201,7 @@ chmod +x vendor/bin/bblslug
 
 ### Prepare
 
-1. **Specify a model and format** with `--model=vendor:name` and `--format=text|html|json`.
+1. **Specify a model and format** with `--model=vendor:name` and `--format=text|html|json|structured_json|linedJson`.
    Both are required for translation and dry-run; listing models, prompts, and help does not require them.
 
 2. **Export your API key(s)** before running:
@@ -412,6 +394,52 @@ echo "Hello world" | vendor/bin/bblslug \
 ```
 
 
+### Native structured JSON
+
+Use `format: 'structured_json'` with an explicit JSON Schema in
+`variables['response_schema']`. This mode is implemented for OpenAI Chat
+Completions/Responses and Google Gemini; the selected model must support native
+structured output. Unsupported providers and legacy OpenAI Completions are
+rejected locally. Provider schema restrictions and access rules still apply.
+
+```php
+$translation = \Bblslug\Bblslug::translate(
+    apiKey: getenv('BBLSLUG_OPENAI_API_KEY'),
+    format: 'structured_json',
+    modelKey: 'openai:gpt-5-mini',
+    text: '{"message":"Hello"}',
+    targetLang: 'DE',
+    variables: ['response_schema' => [
+        'type' => 'object',
+        'properties' => ['message' => ['type' => 'string']],
+        'required' => ['message'],
+        'additionalProperties' => false,
+    ]]
+);
+```
+
+The CLI reads the schema from a JSON file:
+
+```bash
+bblslug --model=openai:gpt-5-mini --format=structured_json \
+  --response-schema=translation.schema.json --source=input.json --target-lang=DE
+```
+
+Input and output are JSON **strings**, not PHP arrays. Native mode sends the
+schema without rewriting it and reads the JSON response without translation
+markers. OpenAI uses strict schema mode by default; PHP callers may override
+`strict` with a boolean and `response_schema_name` with a name of 1–64 letters,
+digits, underscores, or dashes. A schema supplied with `format: 'json'` also enables
+native mode. The library still validates returned JSON syntax and source structure;
+it does not independently implement every JSON Schema constraint.
+
+`linedJson` selects an alternative JSON translation prompt with the same container
+validation as `json`. It processes one JSON document, not JSON Lines, and does not
+silently repair malformed output. Neither new mode assumes particular field names
+or a document domain. Use the existing context or a custom prompt for application
+rules. Custom prompt templates must provide the requested format; native mode
+requests the `structured_json` template.
+
 ### Disable validation
 
 For HTML and JSON formats, Bblslug performs basic syntax validation before and after translation.
@@ -583,7 +611,7 @@ Returns an array like:
 ```php
 [
   'translator' => [
-      'formats' => ['text', 'html', 'json'],
+      'formats' => ['text', 'html', 'json', 'structured_json', 'linedJson'],
       'notes'   => 'professional translator template',
   ],
   'experimental' => [
