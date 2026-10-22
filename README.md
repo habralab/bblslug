@@ -192,6 +192,13 @@ the application does not substitute another model after a failure.
 
 Requires PHP 8.2 or newer with the cURL, DOM, and mbstring extensions.
 
+**Upgrading from `0.8.0`:** the updated release is **0.9.0**. Packagist keeps
+published version references immutable, so republishing the old tag cannot
+replace its stored code. Update the consumer's constraint, for example with
+`composer require habr/bblslug:0.9.0`, review the lock file, and commit both
+`composer.json` and `composer.lock`. No VCS override is needed. See the
+[changelog](CHANGELOG.md) for compatibility changes and validation limits.
+
 ```bash
 composer require habr/bblslug
 chmod +x vendor/bin/bblslug
