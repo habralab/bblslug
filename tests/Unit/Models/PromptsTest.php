@@ -22,7 +22,7 @@ class PromptsTest extends TestCase
         $prop->setValue(null, null);
 
         // Prepare a temporary YAML file for testing
-        $this->yamlPath = sys_get_temp_dir() . '/prompts_test.yaml';
+        $this->yamlPath = sys_get_temp_dir() . '/prompts_test_' . bin2hex(random_bytes(8)) . '.yaml';
         if (file_exists($this->yamlPath)) {
             unlink($this->yamlPath);
         }
