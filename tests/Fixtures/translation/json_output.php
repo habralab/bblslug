@@ -34,7 +34,7 @@ namespace {
     try {
         $result = \Bblslug\Bblslug::translate(
             apiKey: 'fixture-key',
-            format: 'json',
+            format: (string) ($scenario['format'] ?? 'json'),
             modelKey: 'deepl:free',
             text: (string) ($scenario['input'] ?? ''),
             filters: [],

@@ -48,7 +48,7 @@ final class PromptsYamlTest extends TestCase
         $this->assertIsArray($tpl, '"translator" must be a mapping');
 
         // "notes" is optional, but formats are required
-        foreach (['text', 'html', 'json'] as $fmt) {
+        foreach (['text', 'html', 'json', 'structured_json', 'linedJson'] as $fmt) {
             $this->assertArrayHasKey($fmt, $tpl, sprintf('"translator" must define "%s" format', $fmt));
             $this->assertIsString($tpl[$fmt], sprintf('"translator.%s" must be a string', $fmt));
             $this->assertNotSame('', trim($tpl[$fmt]), sprintf('"translator.%s" must be non-empty', $fmt));
@@ -69,7 +69,7 @@ final class PromptsYamlTest extends TestCase
             }
 
             // Check only known format keys if present
-            foreach (['text', 'html', 'json'] as $fmt) {
+            foreach (['text', 'html', 'json', 'structured_json', 'linedJson'] as $fmt) {
                 if (!array_key_exists($fmt, $tpl)) {
                     continue;
                 }
@@ -77,7 +77,8 @@ final class PromptsYamlTest extends TestCase
                 $this->assertIsString($body, sprintf('Template "%s.%s" must be a string', $key, $fmt));
                 $this->assertNotSame('', trim($body), sprintf('Template "%s.%s" must be non-empty', $key, $fmt));
 
-                foreach ($required as $ph) {
+                $placeholders = $fmt === 'structured_json' ? ['{source}', '{target}', '{context}'] : $required;
+                foreach ($placeholders as $ph) {
                     $this->assertStringContainsString(
                         $ph,
                         $body,

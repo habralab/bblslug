@@ -8,6 +8,22 @@ use PHPUnit\Framework\TestCase;
 
 final class BblslugJsonOutputTest extends TestCase
 {
+    public function testLinedJsonRejectsMalformedAndStructurallyIncompleteOutput(): void
+    {
+        foreach (
+            [
+                ['{"message":"Hello"}', '{"message":"Привет""}', 'JSON syntax broken'],
+                ['{"message":"Hello","optional":null}', '{"message":"Привет"}', 'Schema mismatch'],
+            ] as [$input, $translated, $message]
+        ) {
+            $result = $this->runFixture([
+                'format' => 'linedJson', 'input' => $input, 'translated' => $translated,
+            ]);
+            $this->assertSame(\RuntimeException::class, $result['type']);
+            $this->assertStringContainsString($message, $result['message']);
+        }
+    }
+
     /** @test */
     public function emptyObjectAndListCannotBeSwappedAtRoot(): void
     {
