@@ -32,10 +32,16 @@ APIs supported:
   - `yandex:gpt-lite` - YandexGPT Lite
   - `yandex:gpt-pro` - YandexGPT Pro
   - `yandex:gpt-32k` - YandexGPT Pro 32K
+  - `yandex:llama` - Llama 70 B via Yandex
+  - `yandex:llama-lite` - Llama 8 B (Lite) via Yandex
 - X.ai:
   - `xai:grok-4` - Grok 4
   - `xai:grok-3` - Grok 3
   - `xai:grok-3-mini` - Grok 3 Mini
+
+This list mirrors the model registry and `--list-models`. Registration does not
+guarantee provider availability, access for your account, or verified translation
+in every supported format.
 
 ## Features
 
