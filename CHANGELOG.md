@@ -8,6 +8,7 @@ The format is based on [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ### Fixed
 - CLI now exits with an error when a translated or dry-run prepared file cannot be fully written.
+- Composer requirements now declare PHP 8.2+ (required by Symfony YAML 7.3) and the DOM extension used by HTML validation.
 
 ### Removed
 - Retired model keys `anthropic:claude-haiku-3.5`, `anthropic:claude-opus-4`,

@@ -62,6 +62,8 @@ and [Google](https://ai.google.dev/gemini-api/docs/deprecations).
 
 ## Installation
 
+Requires PHP 8.2 or newer with the cURL, DOM, and mbstring extensions.
+
 ```bash
 composer require habr/bblslug
 chmod +x vendor/bin/bblslug
