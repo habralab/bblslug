@@ -6,6 +6,9 @@ The format is based on [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ## [Unreleased]
 
+### Fixed
+- CLI now exits with an error when a translated or dry-run prepared file cannot be fully written.
+
 ### Removed
 - Retired model keys `anthropic:claude-haiku-3.5`, `anthropic:claude-opus-4`,
   `anthropic:claude-sonnet-4`, and `google:gemini-2.0-flash` from the registry and CLI list.

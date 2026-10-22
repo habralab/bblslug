@@ -202,7 +202,9 @@ class Cli
         if ($dryRun) {
             $prepared = (new FilterManager($filters))->apply($text);
             if ($sourceFile !== null) {
-                file_put_contents($sourceFile . '.prepared', $prepared);
+                if (@file_put_contents($sourceFile . '.prepared', $prepared) !== strlen($prepared)) {
+                    Help::error("Failed to write prepared file: {$sourceFile}.prepared");
+                }
                 Help::info("Dry-run: saved prepared file as {$sourceFile}.prepared");
             } else {
                 echo $prepared;
@@ -312,7 +314,9 @@ class Cli
 
         // Write output (file or STDOUT)
         if ($outFile !== null) {
-            file_put_contents($outFile, $res['result']);
+            if (@file_put_contents($outFile, $res['result']) !== strlen($res['result'])) {
+                Help::error("Failed to write translation file: {$outFile}");
+            }
             Help::info("Translation complete: {$outFile}");
         } else {
             echo $res["result"];
