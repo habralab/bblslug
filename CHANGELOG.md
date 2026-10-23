@@ -15,6 +15,12 @@ The format is based on [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ### Fixed
 
+- Facade and CLI model variables reject reserved `format`, `dryRun`, `promptKey`,
+  `verbose`, `context`, and internal `responseContext` names before filtering or
+  HTTP, including dry-run and `null` values. Model overrides can no longer
+  silently replace the format or prompt selected through explicit arguments.
+  Error messages name the reserved option without exposing its supplied value.
+
 - HTTP diagnostics mask raw, URL/form-encoded, and JSON-escaped secrets in
   request URLs, headers, bodies, response logs, and cURL network exceptions.
   Nested JSON escaping and mixed-case hexadecimal escapes are covered;

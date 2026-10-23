@@ -166,6 +166,15 @@ and exclusion evidence are recorded in [model-catalog.json](resources/model-cata
 - Can be invoked as a CLI tool or embedded in PHP code
 - **Validation** of container syntax for HTML or JSON; disable with `--no-validate`
 
+`variables` / `--variables` accepts model-specific options. The names `format`,
+`dryRun`, `promptKey`, `verbose`, and `context` are reserved: use the corresponding
+`translate()` arguments or CLI flags. `responseContext` is internal request state
+and cannot be supplied through variables. Reserved names cause an error even if
+the value is `null` or equals the explicit argument, including in dry-run mode.
+The diagnostic names the option without printing its value. Options such as
+`temperature`, `response_schema`, `json_transport`, and `document_timeout` remain
+available through variables.
+
 The GPT-6 entries were checked against [official OpenAI documentation](https://developers.openai.com/api/docs/guides/latest-model) on 2026-10-22.
 The GPT-6 defaults use Chat Completions with `reasoning_effort=low` and omit `temperature`.
 Responses-only models use the Responses API with its own request and usage fields.

@@ -7,6 +7,7 @@ namespace Bblslug;
 use Bblslug\Filters\FilterManager;
 use Bblslug\HttpClient;
 use Bblslug\Models\ModelRegistry;
+use Bblslug\Models\ModelVariables;
 use Bblslug\Models\Prompts;
 use Bblslug\Models\UsageExtractor;
 use Bblslug\Validation\EmbeddedJsonValidator;
@@ -77,7 +78,7 @@ class Bblslug
      * @param string|null           $sourceLang Optional source language code.
      * @param string|null           $targetLang Optional target language code.
      * @param bool                  $validate   If true: perform container syntax validation.
-     * @param array<string,mixed>   $variables  Model-specific vars (e.g. ['some'=>'...'])
+     * @param array<string,mixed>   $variables  Model-specific vars; facade controls are reserved.
      * @param bool                  $verbose    If true: include request/response logs.
      * @param bool $validateEmbeddedJson Opt in to checking JSON containers encoded in string values.
      *
@@ -116,6 +117,8 @@ class Bblslug
         ?callable $onFeedback = null,
         bool $validateEmbeddedJson = false
     ): array {
+        ModelVariables::validate($variables);
+
         // Prepare holders for validation debug
         $valLogPre  = '';
         $valLogPost = '';

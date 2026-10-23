@@ -8,6 +8,7 @@ use Bblslug\Bblslug;
 use Bblslug\Console\Help;
 use Bblslug\Filters\FilterManager;
 use Bblslug\Models\ModelRegistry;
+use Bblslug\Models\ModelVariables;
 
 /**
  * CLI entrypoint for the Bblslug translation tool.
@@ -161,6 +162,12 @@ class Cli
                     Help::error("Invalid --variables format: '{$pair}'");
                 }
             }
+        }
+
+        try {
+            ModelVariables::validate($cliVars);
+        } catch (\InvalidArgumentException $exception) {
+            Help::error($exception->getMessage());
         }
 
         // Handle input
