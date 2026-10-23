@@ -15,6 +15,11 @@ The format is based on [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ### Fixed
 
+- DeepL HTML requests wrap normal-text placeholders in non-translatable spans
+  tied to each request. This fixes the observed movement of a protected code block
+  into a link. Only generated wrappers are removed; malformed or missing wrappers
+  are rejected. Attribute, comment, and raw-text markers are left untouched.
+
 - DeepL `json`/`linedJson` now send string values as an ordered text batch and
   reconstruct JSON locally, including string-encoded nested containers. Keys,
   non-string tokens, and container whitespace are not sent for translation.
@@ -56,8 +61,6 @@ The format is based on [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ### Known limitations
 
-- DeepL Free/Pro HTML still failed the small live scenario on 2026-10-23:
-  a protected block moved inside a link in the inspected response.
 - DeepL JSON containers now pass syntax/structure/value checks in live requests,
   but the provider changes quotation marks inside a path-like string. Container
   validation does not guarantee semantic preservation of string data.

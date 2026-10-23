@@ -454,8 +454,8 @@ validation enabled, HTML URL/code filters, and opt-in embedded JSON validation:
 
 | Model | Text | HTML | JSON |
 | --- | --- | --- | --- |
-| `deepl:free` | Passed | Rejected: protected code block moved inside link | Container passes; path quotation marks changed |
-| `deepl:pro` | Passed | Rejected: HTML structure changed | Container passes; path quotation marks changed |
+| `deepl:free` | Passed | Passed: protected block and inline code | Container passes; path quotation marks changed |
+| `deepl:pro` | Passed | Passed: protected block and inline code | Container passes; path quotation marks changed |
 | `yandex:gpt-lite` | Passed | One response added an opening Markdown fence; now rejected | Passed |
 | `yandex:gpt-pro` | Passed | Passed | Passed |
 
@@ -464,9 +464,10 @@ benchmark. After replacing DeepL's JSON pseudo-tags with value batching, real
 `json` and `linedJson` requests preserve the outer and string-encoded JSON
 containers. DeepL still changes ASCII quotes to typographic quotes in a path-like
 string, including with `preserve_formatting` enabled. String content is translated;
-its semantic preservation is not guaranteed by container validation. DeepL HTML
-can still move a protected fragment to a different parent while preserving its
-placeholder count.
+its semantic preservation is not guaranteed by container validation. After adding
+HTML transport wrappers, the previously moved protected block and a separate
+inline-code scenario passed on both DeepL tiers. These samples do not guarantee
+that every provider output preserves markup; the post-validation checks remain.
 
 ### DeepL JSON transport
 
@@ -489,6 +490,20 @@ by `buildRequest()` to `parseResponse()` through its options. It belongs to that
 specific request; the driver keeps no mutable current-document state. An optional
 `localResult` indicates a prepared result requiring no HTTP request. The public
 `Bblslug::translate()` facade handles both fields automatically.
+
+### DeepL HTML placeholders
+
+For HTML requests, markers in normal text are temporarily wrapped in spans using
+[DeepL's `translate="no"` support](https://developers.deepl.com/docs/translate/translating-html).
+Only wrappers created for that request are removed before restoring the original
+fragments. User markup is not reserialized. Markers in attributes, comments, CDATA,
+and raw-text/RCDATA elements such as `script`, `style`, `title`, and `textarea`
+are left without these wrappers.
+
+A missing, duplicated, malformed, or modified transport wrapper causes an error.
+Post-validation still compares the restored HTML tree, so the wrappers do not
+bypass structure checks. The 128 KiB request-body limit is checked
+after wrapping so transport overhead cannot silently exceed the provider limit.
 
 ### Disable validation
 

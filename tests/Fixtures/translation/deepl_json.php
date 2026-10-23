@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 namespace Bblslug {
-    /** Controlled DeepL batch endpoint, exercising the real request and response driver. */
+    /** Controlled DeepL endpoint, exercising the real request and response driver. */
     class HttpClient
     {
         /** @var array<string,mixed> */
@@ -18,8 +18,27 @@ namespace Bblslug {
                 return ['status' => 0, 'body' => '', 'debugRequest' => '', 'debugResponse' => '', 'headers' => []];
             }
             self::$calls++;
-            $payload = json_decode($arguments['body'], true, 512, JSON_THROW_ON_ERROR);
-            self::$texts = $payload['text'];
+            if (str_starts_with(ltrim($arguments['body']), '{')) {
+                $payload = json_decode($arguments['body'], true, 512, JSON_THROW_ON_ERROR);
+            } else {
+                parse_str($arguments['body'], $payload);
+            }
+            self::$texts = is_array($payload['text']) ? $payload['text'] : [$payload['text']];
+            if (isset(self::$scenario['htmlMutation'])) {
+                $html = self::$texts[0];
+                preg_match('/<span\b[^>]*>@@[0-9]+@@<\/span>/', $html, $wrapper);
+                if (self::$scenario['htmlMutation'] === 'move') {
+                    $html = str_replace($wrapper[0], '', $html);
+                    $html = str_replace('</a>', $wrapper[0] . '</a>', $html);
+                } elseif (self::$scenario['htmlMutation'] === 'drop') {
+                    $html = str_replace($wrapper[0], '', $html);
+                } elseif (self::$scenario['htmlMutation'] === 'duplicate') {
+                    $html .= $wrapper[0];
+                } else {
+                    $html = str_replace(['Hi', 'there', 'Documentation'], ['Hallo', 'da', 'Dokumentation'], $html);
+                }
+                self::$texts = [$html];
+            }
             $translations = self::$scenario['translations'] ?? self::$texts;
             return [
                 'status' => 200,
@@ -44,7 +63,7 @@ namespace {
             modelKey: 'deepl:free',
             text: $scenario['source'],
             filters: $scenario['filters'] ?? [],
-            validateEmbeddedJson: true
+            validateEmbeddedJson: ($scenario['format'] ?? 'json') !== 'html'
         );
         echo json_encode([
             'type' => 'success', 'result' => $result['result'], 'httpStatus' => $result['httpStatus'],

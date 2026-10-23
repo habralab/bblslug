@@ -30,7 +30,7 @@ class DeepLDriver implements ModelDriverInterface
      *     url:     string,   // Full endpoint URL
      *     headers: string[], // HTTP headers to send
      *     body:    string,   // URL-encoded form body or JSON batch
-     *     responseContext?: DeepLJsonDocument,
+     *     responseContext?: DeepLJsonDocument|DeepLHtmlPlaceholders,
      *     localResult?: string
      * }
      */
@@ -76,6 +76,7 @@ class DeepLDriver implements ModelDriverInterface
         }
 
         $jsonDocument = null;
+        $htmlPlaceholders = null;
 
         // Format-specific adjustments
         $format = \is_string($options['format'] ?? null)
@@ -84,6 +85,8 @@ class DeepLDriver implements ModelDriverInterface
 
         switch ($format) {
             case 'html':
+                $htmlPlaceholders = new DeepLHtmlPlaceholders($text);
+                $payload['text'] = $htmlPlaceholders->getText();
                 $payload['tag_handling'] = 'html';
                 $payload['preserve_formatting'] = '1';
                 $payload['outline_detection'] = '1';
@@ -134,6 +137,12 @@ class DeepLDriver implements ModelDriverInterface
                 $request['localResult'] = $text;
             }
         }
+        if ($htmlPlaceholders !== null && $htmlPlaceholders->getText() !== $text) {
+            if (strlen($request['body']) > 128 * 1024) {
+                throw new \InvalidArgumentException('DeepL HTML request exceeds 128 KiB after placeholder protection');
+            }
+            $request['responseContext'] = $htmlPlaceholders;
+        }
         return $request;
     }
 
@@ -177,7 +186,9 @@ class DeepLDriver implements ModelDriverInterface
             if (count($texts) !== 1) {
                 throw new \RuntimeException('Unexpected DeepL translation count without responseContext');
             }
-            $text = $texts[0];
+            $text = $document instanceof DeepLHtmlPlaceholders
+                ? $document->restore($texts[0])
+                : $texts[0];
         }
 
         return [
