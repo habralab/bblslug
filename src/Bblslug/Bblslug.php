@@ -7,6 +7,7 @@ namespace Bblslug;
 use Bblslug\Filters\FilterManager;
 use Bblslug\HttpClient;
 use Bblslug\Models\ModelRegistry;
+use Bblslug\Models\ModelDriverInterface;
 use Bblslug\Models\ModelVariables;
 use Bblslug\Models\Prompts;
 use Bblslug\Models\UsageExtractor;
@@ -306,154 +307,34 @@ class Bblslug
             $options['context'] = $context;
         }
 
-        // Build request
-        $say($onFeedback, "Building request for endpoint: {$endpoint}", 'info');
-        /** @var array{url:mixed,body:mixed,headers:mixed,responseContext?:mixed,localResult?:string,workflow?:HttpWorkflowInterface,timeoutSeconds?:int} $reqRaw */
-        $reqRaw = $driver->buildRequest(
+        $emptySegments = $htmlDocument !== null && !$htmlDocument->hasTexts();
+        $provider = self::executePrepared(
+            $driver,
             $model,
+            $modelKey,
             $requestText,
-            $options
+            $options,
+            $apiKey,
+            $proxy,
+            static fn (string $message, string $level = 'info') => $say($onFeedback, $message, $level),
+            $valLogPre,
+            $emptySegments ? ($jsonHtmlDocument !== null ? $text : $prepared) : null
         );
-
-        if ($htmlDocument !== null && !$htmlDocument->hasTexts()) {
-            $reqRaw['localResult'] = $jsonHtmlDocument !== null ? $text : $prepared;
-        }
-        $options['responseContext'] = $reqRaw['responseContext'] ?? null;
-        $localResult = $reqRaw['localResult'] ?? null;
-
-        // Normalize request shape
-        $reqUrl = \is_string($reqRaw['url']  ?? null) ? (string)$reqRaw['url']  : '';
-        $reqBody = \is_string($reqRaw['body'] ?? null) ? (string)$reqRaw['body'] : '';
-        $reqHeaders = [];
-        foreach ((array)($reqRaw['headers'] ?? []) as $h) {
-            if (\is_string($h)) {
-                $reqHeaders[] = $h;
-            }
-        }
-
-        // API auth key handling
-        $requirements = isset($model['requirements']) && \is_array($model['requirements'])
-            ? $model['requirements']
-            : null;
-        $auth = \is_array($requirements) ? ($requirements['auth'] ?? null) : null;
-        if (\is_array($auth)) {
-            if (!$apiKey) {
-                throw new \InvalidArgumentException("API key is required for {$modelKey}");
-            }
-            $say($onFeedback, "Injecting auth credentials", 'info');
-            $keyName = \is_string($auth['key_name'] ?? null) ? $auth['key_name'] : '';
-            $prefix  = (\is_string($auth['prefix'] ?? null) && $auth['prefix'] !== '')
-                ? $auth['prefix'] . ' '
-                : '';
-            $type = \is_string($auth['type'] ?? null) ? $auth['type'] : 'form';
-            switch ($type) {
-                case 'header':
-                    $reqHeaders[] = "{$keyName}: {$prefix}{$apiKey}";
-                    break;
-                case 'form':
-                    $reqBody .= '&' . urlencode($keyName) . '=' . urlencode($apiKey);
-                    break;
-                case 'query':
-                    $sep = \str_contains($reqUrl, '?') ? '&' : '?';
-                    $reqUrl .= $sep . http_build_query([$keyName => $apiKey]);
-                    break;
-                default:
-                    throw new \RuntimeException("Unsupported auth type: {$type}");
-            }
-        }
-
-        // Perform HTTP request
-        $requestMessage = $dryRun ? "Dry-run: skipping HTTP request" : "Sending HTTP request";
-        if ($localResult !== null) {
-            $requestMessage = "No translatable string values: skipping HTTP request";
-        }
-        $say($onFeedback, $requestMessage, 'info');
-        $http = HttpClient::request(
-            method: 'POST',
-            url: $reqUrl,
-            body: $reqBody,
-            dryRun: $dryRun || $localResult !== null,
-            headers: $reqHeaders,
-            maskPatterns: [
-                $apiKey,
-            ],
-            proxy: $proxy,
-            verbose: $verbose,
-            timeoutSeconds: $reqRaw['timeoutSeconds'] ?? null
-        );
-
-        $workflow = $reqRaw['workflow'] ?? null;
-        if (!$dryRun && $localResult === null && $workflow instanceof HttpWorkflowInterface) {
-            $http = $workflow->complete(
-                $http,
-                /**
-                 * @param array{url:string,body:string,headers:array<int,string>,
-                 *     maskPatterns:array<int,string>,timeoutSeconds:int} $next
-                 * @return array{status:int,body:string,headers:array<string,array<int,string>>,
-                 *     debugRequest:string,debugResponse:string}
-                 */
-                static function (array $next) use ($reqHeaders, $apiKey, $proxy, $verbose): array {
-                    $headers = array_values(array_filter(
-                        $reqHeaders,
-                        static fn (string $header): bool => stripos($header, 'Content-Type:') !== 0
-                    ));
-                    try {
-                        return HttpClient::request(
-                            method: 'POST',
-                            url: $next['url'],
-                            body: $next['body'],
-                            headers: array_merge($headers, $next['headers']),
-                            maskPatterns: array_merge([$apiKey], $next['maskPatterns']),
-                            proxy: $proxy,
-                            verbose: $verbose,
-                            timeoutSeconds: $next['timeoutSeconds']
-                        );
-                    } catch (\RuntimeException $e) {
-                        throw new \RuntimeException((new SecretMasker([$apiKey]))->redact($e->getMessage()));
-                    }
-                }
-            );
-        }
-
-        $httpStatus = $http['status'];
-        $debugRequest = $valLogPre . $http['debugRequest'];
-        $debugResponse = $http['debugResponse'];
-        $raw = $http['body'];
-
-        $errorMasker = new SecretMasker([$apiKey]);
-
-        // Parse response
-        if ($dryRun || $localResult !== null) {
-            $translated = $dryRun && $jsonHtmlDocument !== null ? $text : ($localResult ?? $prepared);
-            $rawUsage   = null;
-            $say($onFeedback, $localResult !== null ? "Local translation completed" : "Dry-run completed", 'info');
+        $httpStatus = $provider['httpStatus'];
+        $debugRequest = $provider['debugRequest'];
+        $debugResponse = $provider['debugResponse'];
+        $raw = $provider['rawResponseBody'];
+        $rawUsage = $provider['usage'];
+        if ($dryRun || $emptySegments) {
+            $translated = $jsonHtmlDocument !== null ? $text : $prepared;
         } else {
-            $say($onFeedback, "HTTP response received (status={$httpStatus})", 'info');
-            $hasCustomHttpHandling = isset($model['http_error_handling']) && !empty($model['http_error_handling']);
-            if ($httpStatus >= 400 && !$hasCustomHttpHandling) {
-                throw new \RuntimeException(
-                    $errorMasker->redact(
-                        "HTTP {$httpStatus} error from {$reqUrl}: {$raw}\n\n" . $debugRequest . $debugResponse
-                    )
-                );
-            }
-            $say($onFeedback, "Parsing provider response", 'info');
             try {
-                /** @var array{text:string, usage?:array<string,mixed>|null} $parsed */
-                $parsed     = $driver->parseResponse($model, $raw, $options);
-                $translated = $htmlDocument !== null
-                    ? $htmlDocument->restore($parsed['text'])
-                    : $parsed['text'];
-                /** @var array<string,mixed>|null $rawUsage */
-                $rawUsage   = $parsed['usage'] ?? null;
-            } catch (\RuntimeException $e) {
-                throw new \RuntimeException(
-                    $errorMasker->redact(
-                        $e->getMessage() . "\n\n" . $debugRequest . $debugResponse
-                    )
-                );
+                $translated = $htmlDocument !== null ? $htmlDocument->restore($provider['text']) : $provider['text'];
+            } catch (\RuntimeException $exception) {
+                throw new \RuntimeException((new SecretMasker([$apiKey]))->redact(
+                    $exception->getMessage() . "\n\n" . $debugRequest . $debugResponse
+                ));
             }
-            $say($onFeedback, "Provider response parsed", 'info');
         }
 
         $consumed = UsageExtractor::extract($model, $rawUsage);
@@ -595,6 +476,189 @@ class Bblslug
                 'translated' => $finalLength,
             ],
             'filterStats' => $filterStats,
+        ];
+    }
+
+    /**
+     * Execute one provider request, including its request-local continuation.
+     *
+     * @param array<string,mixed> $model
+     * @param array<string,mixed> $options
+     * @param callable(string,string=):void $feedback
+     * @return array{text:string,usage:array<string,mixed>|null,httpStatus:int,debugRequest:string,
+     *     debugResponse:string,rawResponseBody:string}
+     */
+    private static function executePrepared(
+        ModelDriverInterface $driver,
+        array $model,
+        string $modelKey,
+        string $requestText,
+        array $options,
+        string $apiKey,
+        ?string $proxy,
+        callable $feedback,
+        string $validationLog,
+        ?string $localOverride = null
+    ): array {
+        $dryRun = (bool) ($options['dryRun'] ?? false);
+        $verbose = (bool) ($options['verbose'] ?? false);
+        $rawUsage = null;
+        $endpoint = is_string($model['endpoint'] ?? null) ? $model['endpoint'] : '';
+        // Build request
+        $feedback("Building request for endpoint: {$endpoint}", 'info');
+        /** @var array{url:mixed,body:mixed,headers:mixed,responseContext?:mixed,localResult?:string,workflow?:HttpWorkflowInterface,timeoutSeconds?:int} $reqRaw */
+        $reqRaw = $driver->buildRequest(
+            $model,
+            $requestText,
+            $options
+        );
+
+        if ($localOverride !== null) {
+            $reqRaw['localResult'] = $localOverride;
+        }
+        $options['responseContext'] = $reqRaw['responseContext'] ?? null;
+        $localResult = $reqRaw['localResult'] ?? null;
+
+        // Normalize request shape
+        $reqUrl = \is_string($reqRaw['url']  ?? null) ? (string)$reqRaw['url']  : '';
+        $reqBody = \is_string($reqRaw['body'] ?? null) ? (string)$reqRaw['body'] : '';
+        $reqHeaders = [];
+        foreach ((array)($reqRaw['headers'] ?? []) as $h) {
+            if (\is_string($h)) {
+                $reqHeaders[] = $h;
+            }
+        }
+
+        // API auth key handling
+        $requirements = isset($model['requirements']) && \is_array($model['requirements'])
+            ? $model['requirements']
+            : null;
+        $auth = \is_array($requirements) ? ($requirements['auth'] ?? null) : null;
+        if (\is_array($auth)) {
+            if (!$apiKey) {
+                throw new \InvalidArgumentException("API key is required for {$modelKey}");
+            }
+            $feedback("Injecting auth credentials", 'info');
+            $keyName = \is_string($auth['key_name'] ?? null) ? $auth['key_name'] : '';
+            $prefix  = (\is_string($auth['prefix'] ?? null) && $auth['prefix'] !== '')
+                ? $auth['prefix'] . ' '
+                : '';
+            $type = \is_string($auth['type'] ?? null) ? $auth['type'] : 'form';
+            switch ($type) {
+                case 'header':
+                    $reqHeaders[] = "{$keyName}: {$prefix}{$apiKey}";
+                    break;
+                case 'form':
+                    $reqBody .= '&' . urlencode($keyName) . '=' . urlencode($apiKey);
+                    break;
+                case 'query':
+                    $sep = \str_contains($reqUrl, '?') ? '&' : '?';
+                    $reqUrl .= $sep . http_build_query([$keyName => $apiKey]);
+                    break;
+                default:
+                    throw new \RuntimeException("Unsupported auth type: {$type}");
+            }
+        }
+
+        // Perform HTTP request
+        $requestMessage = $dryRun ? "Dry-run: skipping HTTP request" : "Sending HTTP request";
+        if ($localResult !== null) {
+            $requestMessage = "No translatable string values: skipping HTTP request";
+        }
+        $feedback($requestMessage, 'info');
+        $http = HttpClient::request(
+            method: 'POST',
+            url: $reqUrl,
+            body: $reqBody,
+            dryRun: $dryRun || $localResult !== null,
+            headers: $reqHeaders,
+            maskPatterns: [
+                $apiKey,
+            ],
+            proxy: $proxy,
+            verbose: $verbose,
+            timeoutSeconds: $reqRaw['timeoutSeconds'] ?? null
+        );
+
+        $workflow = $reqRaw['workflow'] ?? null;
+        if (!$dryRun && $localResult === null && $workflow instanceof HttpWorkflowInterface) {
+            $http = $workflow->complete(
+                $http,
+                /**
+                 * @param array{url:string,body:string,headers:array<int,string>,
+                 *     maskPatterns:array<int,string>,timeoutSeconds:int} $next
+                 * @return array{status:int,body:string,headers:array<string,array<int,string>>,
+                 *     debugRequest:string,debugResponse:string}
+                 */
+                static function (array $next) use ($reqHeaders, $apiKey, $proxy, $verbose): array {
+                    $headers = array_values(array_filter(
+                        $reqHeaders,
+                        static fn (string $header): bool => stripos($header, 'Content-Type:') !== 0
+                    ));
+                    try {
+                        return HttpClient::request(
+                            method: 'POST',
+                            url: $next['url'],
+                            body: $next['body'],
+                            headers: array_merge($headers, $next['headers']),
+                            maskPatterns: array_merge([$apiKey], $next['maskPatterns']),
+                            proxy: $proxy,
+                            verbose: $verbose,
+                            timeoutSeconds: $next['timeoutSeconds']
+                        );
+                    } catch (\RuntimeException $e) {
+                        throw new \RuntimeException((new SecretMasker([$apiKey]))->redact($e->getMessage()));
+                    }
+                }
+            );
+        }
+
+        $httpStatus = $http['status'];
+        $debugRequest = $validationLog . $http['debugRequest'];
+        $debugResponse = $http['debugResponse'];
+        $raw = $http['body'];
+
+        $errorMasker = new SecretMasker([$apiKey]);
+
+        // Parse response
+        if ($dryRun || $localResult !== null) {
+            $translated = $localResult ?? $requestText;
+            $rawUsage   = null;
+            $feedback($localResult !== null ? "Local translation completed" : "Dry-run completed", 'info');
+        } else {
+            $feedback("HTTP response received (status={$httpStatus})", 'info');
+            $hasCustomHttpHandling = isset($model['http_error_handling']) && !empty($model['http_error_handling']);
+            if ($httpStatus >= 400 && !$hasCustomHttpHandling) {
+                throw new \RuntimeException(
+                    $errorMasker->redact(
+                        "HTTP {$httpStatus} error from {$reqUrl}: {$raw}\n\n" . $debugRequest . $debugResponse
+                    )
+                );
+            }
+            $feedback("Parsing provider response", 'info');
+            try {
+                /** @var array{text:string, usage?:array<string,mixed>|null} $parsed */
+                $parsed     = $driver->parseResponse($model, $raw, $options);
+                $translated = $parsed['text'];
+                /** @var array<string,mixed>|null $rawUsage */
+                $rawUsage   = $parsed['usage'] ?? null;
+            } catch (\RuntimeException $e) {
+                throw new \RuntimeException(
+                    $errorMasker->redact(
+                        $e->getMessage() . "\n\n" . $debugRequest . $debugResponse
+                    )
+                );
+            }
+            $feedback("Provider response parsed", 'info');
+        }
+
+        return [
+            'text' => $translated,
+            'usage' => $rawUsage,
+            'httpStatus' => $httpStatus,
+            'debugRequest' => $debugRequest,
+            'debugResponse' => $debugResponse,
+            'rawResponseBody' => $raw,
         ];
     }
 
