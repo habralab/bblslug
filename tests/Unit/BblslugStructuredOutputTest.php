@@ -61,6 +61,64 @@ final class BblslugStructuredOutputTest extends TestCase
         }
     }
 
+    public function testNativeFormatsAllowObjectKeysToBeReorderedButKeepListOrder(): void
+    {
+        $input = '{"meta":{"0":"zero","1":"one","10":"ten","01":"leading"},'
+            . '"items":[{"title":"First","details":{"a":"A","b":"B"}},'
+            . '{"title":"Second","details":{"a":"C","b":"D"}}],"title":"Source"}';
+        $translated = '{"title":"Перевод","items":[{"details":{"b":"Б","a":"А"},'
+            . '"title":"Первый"},{"details":{"b":"Д","a":"Ц"},"title":"Второй"}],'
+            . '"meta":{"01":"leading","10":"ten","1":"one","0":"zero"}}';
+        $schema = [
+            'type' => 'object',
+            'additionalProperties' => true,
+        ];
+
+        foreach (['openai:gpt-5-mini', 'google:gemini-2.5-flash'] as $model) {
+            $result = $this->runFixture([
+                'model' => $model,
+                'input' => $input,
+                'translated' => $translated,
+                'schema' => $schema,
+            ]);
+
+            self::assertSame('success', $result['type'], (string) ($result['message'] ?? ''));
+            self::assertSame($translated, $result['result']);
+        }
+    }
+
+    public function testNativeFormatsRejectScalarValuesMovedBetweenObjectKeys(): void
+    {
+        foreach (['openai:gpt-5-mini', 'google:gemini-2.5-flash'] as $model) {
+            $result = $this->runFixture([
+                'model' => $model,
+                'input' => '{"a":1,"b":2,"nested":{"left":true,"right":false}}',
+                'translated' => '{"b":1,"a":2,"nested":{"right":true,"left":false}}',
+            ]);
+
+            self::assertSame(\RuntimeException::class, $result['type']);
+            self::assertStringContainsString('JSON scalar values changed', $result['message']);
+        }
+    }
+
+    public function testNativeFormatsPreserveExactNonStringScalarLexemesWhenKeysMove(): void
+    {
+        $input = '{"decimal":0.12345678901234567891,"large":9223372036854775808,'
+            . '"enabled":true,"empty":null,"nested":{"number":1.0}}';
+        $translated = '{"nested":{"number":1.0},"empty":null,"enabled":true,'
+            . '"large":9223372036854775808,"decimal":0.12345678901234567891}';
+        foreach (['openai:gpt-5-mini', 'google:gemini-2.5-flash'] as $model) {
+            $result = $this->runFixture([
+                'model' => $model,
+                'input' => $input,
+                'translated' => $translated,
+            ]);
+
+            self::assertSame('success', $result['type'], (string) ($result['message'] ?? ''));
+            self::assertSame($translated, $result['result']);
+        }
+    }
+
     public function testNativeOutputCannotOmitNullsOrChangeNestedContainerTypes(): void
     {
         foreach (

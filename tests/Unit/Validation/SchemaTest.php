@@ -11,6 +11,33 @@ use function array_is_list;
 
 final class SchemaTest extends TestCase
 {
+    public function testReorderedObjectPropertiesHaveTheSameSchemaAtEveryDepth(): void
+    {
+        $before = json_decode('{"title":"Source","items":[{"id":1,"name":"First"}],"meta":{"a":true,"b":null}}');
+        $after = json_decode('{"meta":{"b":null,"a":true},"items":[{"name":"Перевод","id":1}],"title":"Перевод"}');
+        self::assertTrue(Schema::validate(Schema::capture($before), Schema::capture($after))->isValid());
+    }
+
+    public function testAssociativeArrayKeyOrderIsIgnoredWithoutSortingListElements(): void
+    {
+        self::assertTrue(Schema::validate(
+            Schema::capture(['a' => 1, 'b' => 'Source']),
+            Schema::capture(['b' => 'Перевод', 'a' => 1])
+        )->isValid());
+        self::assertFalse(Schema::validate(
+            Schema::capture([1, 'Source']),
+            Schema::capture(['Перевод', 1])
+        )->isValid());
+    }
+
+    public function testNumericObjectKeysDoNotTurnIntoAListWhenReordered(): void
+    {
+        $before = json_decode('{"0":"Source","10":1,"01":true}');
+        $after = json_decode('{"01":true,"10":1,"0":"Перевод"}');
+        self::assertTrue(Schema::validate(Schema::capture($before), Schema::capture($after))->isValid());
+        self::assertFalse(Schema::validate(Schema::capture($before), Schema::capture(['Перевод', 1, true]))->isValid());
+    }
+
     /** @test */
     public function emptyObjectAndListHaveDifferentSchemas(): void
     {

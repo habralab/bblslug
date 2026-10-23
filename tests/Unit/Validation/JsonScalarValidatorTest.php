@@ -9,6 +9,33 @@ use PHPUnit\Framework\TestCase;
 
 final class JsonScalarValidatorTest extends TestCase
 {
+    public function testReorderedPropertiesRetainValuesAtTheirOriginalPaths(): void
+    {
+        $source = '{"a":1,"nested":{"x":true,"values":[null,9223372036854775808]},"text":"Source"}';
+        $output = '{"text":"Перевод","nested":{"values":[null,9223372036854775808],"x":true},"a":1}';
+        self::assertTrue((new JsonScalarValidator($source))->validate($output)->isValid());
+    }
+
+    public function testSameGlobalScalarSequenceCannotHideValuesSwappedBetweenProperties(): void
+    {
+        $validator = new JsonScalarValidator('{"a":1,"b":2}');
+        self::assertFalse($validator->validate('{"b":1,"a":2}')->isValid());
+    }
+
+    public function testArrayPositionsRemainSignificantWhenObjectPropertiesAreReordered(): void
+    {
+        $source = '{"items":[{"id":1,"enabled":true},{"id":2,"enabled":false}]}';
+        $output = '{"items":[{"enabled":false,"id":2},{"enabled":true,"id":1}]}';
+        self::assertFalse((new JsonScalarValidator($source))->validate($output)->isValid());
+    }
+
+    public function testEscapedPropertyNamesReferToTheSameProperty(): void
+    {
+        $source = '{"a\\b":42,"quoted\"key":true,"\u0063":1}';
+        $output = '{"c":1,"quoted\"key":true,"a\\b":42}';
+        self::assertTrue((new JsonScalarValidator($source))->validate($output)->isValid());
+    }
+
     public function testTranslatedStringsAndWhitespaceDoNotAffectScalarComparison(): void
     {
         $source = '{"title":"false 123 null","values":[1,-2,0.123,true,false,null]}';

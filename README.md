@@ -455,6 +455,9 @@ JSON validation also checks the returned structure against the input. Missing
 fields or list elements, including `null` values, cause a schema error. Omitted
 values are not automatically restored.
 Objects and arrays must retain their container types, including empty `{}` and `[]`.
+Object property order may change, including in nested objects; list positions remain
+significant. Non-string values are compared at their original property/index.
+The provider's output is returned without reordering its properties.
 Numbers, booleans, and `null` must retain their original JSON tokens; only string
 values may be translated. Number comparison uses the exact JSON spelling to avoid
 rounding large integers or precise decimals. Equivalent rewrites such as `1.0`
@@ -466,7 +469,7 @@ marker's occurrence count. Missing, duplicated, or unexpected markers cause a
 `Placeholder mismatch` error before restoration. Marker order may change. This
 integrity check remains enabled with `--no-validate` or `validate: false`.
 
-Current limits: object key order is compared strictly. HTML validation checks parsing,
+Current limits: HTML validation checks parsing,
 not preservation of the original DOM tree. JSON encoded inside string values is
 not validated separately.
 

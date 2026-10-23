@@ -88,6 +88,90 @@ final class BblslugJsonOutputTest extends TestCase
     }
 
     /** @test */
+    public function jsonFormatsAllowObjectKeysToBeReorderedButKeepListOrder(): void
+    {
+        $input = '{"meta":{"0":"zero","1":"one","10":"ten","01":"leading",'
+            . '"nested":[{"first":"one","second":"two"}]},'
+            . '"items":[{"title":"First","details":{"a":"A","b":"B"}},'
+            . '{"title":"Second","details":{"a":"C","b":"D"}}],'
+            . '"title":"Source"}';
+        $translated = '{"title":"Перевод","items":[{"details":{"b":"Б","a":"А"},'
+            . '"title":"Первый"},{"details":{"b":"Д","a":"Ц"},"title":"Второй"}],'
+            . '"meta":{"01":"leading","10":"ten","1":"one","0":"zero",'
+            . '"nested":[{"second":"два","first":"один"}]}}';
+
+        foreach (['json', 'linedJson'] as $format) {
+            $result = $this->runFixture([
+                'format' => $format, 'input' => $input, 'translated' => $translated,
+            ]);
+
+            $this->assertSame('success', $result['type'], (string) ($result['message'] ?? ''));
+            $this->assertSame($translated, $result['result']);
+        }
+    }
+
+    /** @test */
+    public function jsonFormatsRejectScalarValuesMovedBetweenObjectKeys(): void
+    {
+        foreach (['json', 'linedJson'] as $format) {
+            $result = $this->runFixture([
+                'format' => $format,
+                'input' => '{"a":1,"b":2,"nested":{"left":true,"right":false}}',
+                'translated' => '{"b":1,"a":2,"nested":{"right":true,"left":false}}',
+            ]);
+
+            $this->assertSame('RuntimeException', $result['type']);
+            $this->assertStringContainsString('JSON scalar values changed', $result['message']);
+        }
+    }
+
+    /** @test */
+    public function jsonFormatsRejectListValuesMovedBetweenIndexes(): void
+    {
+        foreach (['json', 'linedJson'] as $format) {
+            $result = $this->runFixture([
+                'format' => $format,
+                'input' => '{"values":[1,2]}',
+                'translated' => '{"values":[2,1]}',
+            ]);
+
+            $this->assertSame('RuntimeException', $result['type']);
+            $this->assertStringContainsString('JSON scalar values changed', $result['message']);
+        }
+    }
+
+    /** @test */
+    public function jsonFormatsMatchEquivalentEscapedAndUnicodeObjectKeys(): void
+    {
+        $result = $this->runFixture([
+            'format' => 'json',
+            'input' => '{"caf\\u00e9":"Source","nested":{"\\u0061":"A"}}',
+            'translated' => '{"nested":{"a":"Перевод"},"caf\\u00e9":"Translation"}',
+        ]);
+
+        $this->assertSame('success', $result['type'], (string) ($result['message'] ?? ''));
+        $this->assertSame('{"nested":{"a":"Перевод"},"caf\\u00e9":"Translation"}', $result['result']);
+    }
+
+    /** @test */
+    public function jsonFormatsPreserveExactNonStringScalarLexemesWhenKeysMove(): void
+    {
+        $input = '{"decimal":0.12345678901234567891,"large":9223372036854775808,'
+            . '"enabled":true,"empty":null,"nested":{"number":1.0}}';
+        $translated = '{"nested":{"number":1.0},"empty":null,"enabled":true,'
+            . '"large":9223372036854775808,"decimal":0.12345678901234567891}';
+
+        foreach (['json', 'linedJson'] as $format) {
+            $result = $this->runFixture([
+                'format' => $format, 'input' => $input, 'translated' => $translated,
+            ]);
+
+            $this->assertSame('success', $result['type'], (string) ($result['message'] ?? ''));
+            $this->assertSame($translated, $result['result']);
+        }
+    }
+
+    /** @test */
     public function jsonFormatsRejectNullChangedToAnotherType(): void
     {
         foreach (['json', 'linedJson'] as $format) {

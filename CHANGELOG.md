@@ -8,6 +8,10 @@ The format is based on [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ### Fixed
 
+- JSON validation accepts reordered object properties at any depth while retaining
+  array positions and exact non-string values at each property/index. Returned
+  JSON keeps the provider's property order.
+
 - JSON validation rejects changes to numbers, booleans, and `null`, including
   numeric changes hidden by PHP floating-point rounding. Numeric tokens must keep
   their exact JSON spelling; translated string values remain unrestricted.
