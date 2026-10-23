@@ -574,8 +574,8 @@ not guarantee semantic preservation of arbitrary strings. See
 [the repeatable smoke runner](tools/README.md) for commands and scope.
 
 Yandex Lite text/JSON also passed four API/CLI smoke requests after the completion
-status checks were added. These successful responses do not resolve its known HTML
-Markdown-fence failures.
+status checks were added. That earlier run predates the source-aware HTML prefix
+handling described below.
 
 ### Yandex completion status
 
@@ -592,6 +592,32 @@ markers and enabled output validation still apply. CLI provider failures leave t
 source and an existing destination file unchanged. No automatic retry is performed.
 The documented Yandex API format controls target JSON; this change does not add an
 HTML output mode or strip Markdown wrappers from a model response.
+
+### Yandex HTML response prefixes
+
+For HTML input whose prepared text contains no Markdown fence, the Yandex driver
+handles the opening-only artifact observed in Lite responses. It removes exactly
+one initial line containing three backticks and an optional `html` label. LF and
+CRLF, whitespace around the label, and `HTML` casing are supported. No other fence
+may remain in the response. The remaining HTML still passes placeholder, syntax,
+and structure validation; the original HTTP response remains in `rawResponseBody`.
+
+The source check considers backtick/tilde triples anywhere, including HTML entity
+representations. If source fences are present, this compatibility handling is
+disabled and their content is not stripped. Added paired, trailing-only, nested,
+inline, tilde, or unfamiliar labelled fences fail explicitly for fence-free input,
+also when container validation is disabled. Text and JSON responses are unchanged.
+This is not a Markdown parser or general repair of model output.
+
+The facade forwards the request-local `responseContext` automatically. Low-level
+driver integrations must pass that context to `parseResponse()`; without it, the
+driver retains its previous parsing behavior and does not guess source formatting.
+No shared mutable request state or automatic HTTP retry is used.
+
+A 2026-10-23 live check passed all 12 requests: Lite/Pro, API/CLI, and text/HTML/JSON.
+Both Lite HTML replies actually contained the opening artifact; the returned HTML
+passed validation after it was removed. This is a small scenario, not a claim that
+all possible provider output is accepted or correct.
 
 ### Secret masking in diagnostics
 

@@ -32,7 +32,7 @@ class YandexDriver implements ModelDriverInterface
      *     - temperature (float)       Sampling temperature.
      *     - verbose     (bool)        Include debug logs (ignored here).
      *
-     * @return array{url:string, headers:string[], body:string}
+     * @return array{url:string, headers:string[], body:string,responseContext:array{html_fence_free:bool}|null}
      *
      * @throws \RuntimeException If required configuration is missing.
      */
@@ -160,6 +160,9 @@ class YandexDriver implements ModelDriverInterface
             'url'     => $url,
             'headers' => $headers,
             'body'    => \is_string($body) ? $body : '{}',
+            'responseContext' => $format === 'html' ? [
+                'html_fence_free' => !self::hasFence(\html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8')),
+            ] : null,
         ];
     }
 
@@ -171,7 +174,7 @@ class YandexDriver implements ModelDriverInterface
      *
      * @param array<string,mixed> $config       Model configuration (unused).
      * @param string              $responseBody Raw HTTP response body.
-     * @param array<string,mixed> $options Request options (unused).
+     * @param array<string,mixed> $options Request options, including the request responseContext.
      *
      * @return array{text:string, usage:array<string,mixed>|null}
      *
@@ -274,6 +277,10 @@ class YandexDriver implements ModelDriverInterface
         }
 
         $text = trim($matches[1]);
+        $context = $options['responseContext'] ?? null;
+        if (\is_array($context) && ($context['html_fence_free'] ?? false) === true) {
+            $text = self::removeAddedHtmlFence($text);
+        }
 
         // Usage statistics
         $usage = null;
@@ -293,6 +300,27 @@ class YandexDriver implements ModelDriverInterface
             'text'  => $text,
             'usage' => $usage,
         ];
+    }
+
+    private static function hasFence(string $text): bool
+    {
+        return \str_contains($text, '```') || \str_contains($text, '~~~');
+    }
+
+    /** Remove only the opening-only transport artifact observed in Yandex HTML responses. */
+    private static function removeAddedHtmlFence(string $text): string
+    {
+        if (!self::hasFence($text)) {
+            return $text;
+        }
+        if (\preg_match('/\A```[\t ]*(?:html[\t ]*)?\r?\n/i', $text, $opening) === 1) {
+            $body = \substr($text, \strlen($opening[0]));
+            if (!self::hasFence($body)) {
+                return \trim($body);
+            }
+        }
+        // Paired, nested, inline, or unfamiliar fences require an explicit failure, not guessed cleanup.
+        throw new \RuntimeException('Yandex HTML response added an unsupported Markdown fence');
     }
 
     /** @param array<array-key,mixed> $alternative */

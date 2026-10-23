@@ -95,3 +95,10 @@ API/CLI JSON requests: nine passed, and 4 Argon CLI timed out at 45 seconds. A
 separate single check with the normal library timeout of 120 seconds passed in
 3.49 seconds; the first timeout remains recorded. Four 2.5 Flash text/HTML requests
 also passed. These observations do not claim every catalogue entry was live-tested.
+
+After source-aware Yandex HTML opening-prefix handling, a 12-request Lite/Pro run
+passed through API/CLI for text, HTML, and JSON. Both raw Lite HTML replies retained
+the observed opening-only fence while the returned HTML passed the normal checks.
+Native JSON-envelope probes were diagnostic only: passing a JSON-encoded HTML
+input corrupted closing tags, while a full marker prompt caused a Lite whitespace
+loop ending at the token limit. No native HTML-envelope mode was shipped.

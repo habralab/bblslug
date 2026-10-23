@@ -46,6 +46,14 @@ The format is based on [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ### Fixed
 
+- Yandex HTML parsing removes the observed single opening-only Markdown fence
+  only when the request's prepared source contains no fences, including HTML
+  entity representations. Other introduced fences fail explicitly; existing source
+  fences are not stripped. Request-local context keeps concurrent calls separate.
+  Placeholder restoration and HTML validation remain active, with the original
+  response preserved. Lite/Pro text/HTML/JSON passed all 12 live API/CLI checks;
+  both Lite HTML replies exercised the compatibility path.
+
 - Selected HTML block filters now reject unclosed non-void/raw-text blocks and
   incomplete opening tags before HTTP, including recursively encoded JSON values.
   Separate JSON strings cannot complete one another's tag pair. The guard applies
@@ -182,9 +190,10 @@ The format is based on [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 ### Known limitations
 
 - Explicit/custom marker-based Gemini JSON responses can still omit markers and
-  are rejected; default capable-model JSON uses native output. Yandex Lite can add
-  Markdown fences to HTML despite the prompt; those responses remain rejected.
-  Neither case is silently repaired or retried.
+  are rejected; default capable-model JSON uses native output. Yandex's narrow
+  opening-only HTML compatibility handling does not accept arbitrary Markdown
+  wrappers or normalize sources that already contain fences. Other malformed
+  provider output remains an error; no automatic HTTP retry is performed.
 
 - Selected non-void HTML blocks require explicit closing tags, even when HTML
   permits an omitted end tag. Missing boundaries fail before translation; filters
