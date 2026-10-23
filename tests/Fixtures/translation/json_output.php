@@ -7,10 +7,12 @@ namespace Bblslug {
     class HttpClient
     {
         public static string $translated = '';
+        public static int $calls = 0;
 
         /** @return array{body:string,debugRequest:string,debugResponse:string,headers:array<string,array<int,string>>,status:int} */
         public static function request(...$arguments): array
         {
+            self::$calls++;
             return [
                 'body' => (string) json_encode([
                     'choices' => [['finish_reason' => 'stop', 'message' => [
@@ -41,10 +43,13 @@ namespace {
             filters: $scenario['filters'] ?? [],
             validate: (bool) ($scenario['validate'] ?? true),
             verbose: true,
-            validateEmbeddedJson: (bool) ($scenario['validateEmbeddedJson'] ?? false)
+            validateEmbeddedJson: (bool) ($scenario['validateEmbeddedJson'] ?? false),
+            validateHtmlJsonPointers: $scenario['validateHtmlJsonPointers'] ?? [],
+            dryRun: (bool) ($scenario['dryRun'] ?? false)
         );
         echo json_encode([
             'type' => 'success',
+            'httpCalls' => \Bblslug\HttpClient::$calls,
             'result' => $result['result'],
             'rawResponseBody' => $result['rawResponseBody'],
             'lengths' => $result['lengths'],
@@ -52,7 +57,7 @@ namespace {
         ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR), "\n";
     } catch (\Throwable $exception) {
         echo json_encode([
-            'type' => $exception::class,
+            'type' => $exception::class, 'httpCalls' => \Bblslug\HttpClient::$calls,
             'message' => $exception->getMessage(),
         ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR), "\n";
     }

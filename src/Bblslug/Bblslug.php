@@ -11,6 +11,7 @@ use Bblslug\Models\ModelVariables;
 use Bblslug\Models\Prompts;
 use Bblslug\Models\UsageExtractor;
 use Bblslug\Validation\EmbeddedJsonValidator;
+use Bblslug\Validation\JsonHtmlValidator;
 use Bblslug\Validation\HtmlValidator;
 use Bblslug\Validation\HtmlStructureValidator;
 use Bblslug\Validation\JsonValidator;
@@ -81,6 +82,7 @@ class Bblslug
      * @param array<string,mixed>   $variables  Model-specific vars; facade controls are reserved.
      * @param bool                  $verbose    If true: include request/response logs.
      * @param bool $validateEmbeddedJson Opt in to checking JSON containers encoded in string values.
+     * @param array<int,string> $validateHtmlJsonPointers Explicit JSON Pointers to HTML strings to validate.
      *
      * @return array{
      *     original: string,
@@ -115,7 +117,8 @@ class Bblslug
         array $variables = [],
         bool $verbose = false,
         ?callable $onFeedback = null,
-        bool $validateEmbeddedJson = false
+        bool $validateEmbeddedJson = false,
+        array $validateHtmlJsonPointers = []
     ): array {
         ModelVariables::validate($variables);
         $diagnosticMasker = new SecretMasker([
@@ -164,6 +167,10 @@ class Bblslug
         $model = $registry->get($modelKey);
         $driver = $registry->getDriver($modelKey);
 
+        if ($validateHtmlJsonPointers !== [] && !\in_array($format, ['json', 'structured_json', 'linedJson'], true)) {
+            throw new \InvalidArgumentException('validateHtmlJsonPointers requires a JSON format');
+        }
+
         if ($validateEmbeddedJson && !\in_array($format, ['json', 'structured_json', 'linedJson'], true)) {
             throw new \InvalidArgumentException('validateEmbeddedJson requires a JSON format');
         }
@@ -196,6 +203,8 @@ class Bblslug
         $originalLength = mb_strlen($text);
         $say($onFeedback, "Input received (length={$originalLength})", 'info');
 
+        $jsonHtmlValidator = null;
+
         // Pre-validation (before filters)
         if ($validate) {
             $say($onFeedback, "Pre-validation started ({$format})", 'info');
@@ -206,6 +215,9 @@ class Bblslug
                     throw new \RuntimeException(
                         "JSON syntax failed: " . implode('; ', $preResult->getErrors())
                     );
+                }
+                if ($validateHtmlJsonPointers !== []) {
+                    $jsonHtmlValidator = new JsonHtmlValidator($text, $validateHtmlJsonPointers);
                 }
                 $parsedIn = json_decode($text, false);
                 $schemaIn = Schema::capture($parsedIn);
@@ -474,6 +486,14 @@ class Bblslug
                     throw new \RuntimeException(
                         "JSON scalar values changed: " . implode('; ', $scalarValidation->getErrors())
                     );
+                }
+                if ($jsonHtmlValidator !== null) {
+                    $htmlResult = $jsonHtmlValidator->validate($result);
+                    if (!$htmlResult->isValid()) {
+                        throw new \RuntimeException(
+                            "HTML inside JSON mismatch: " . implode('; ', $htmlResult->getErrors())
+                        );
+                    }
                 }
                 if ($validateEmbeddedJson) {
                     $embeddedResult = (new EmbeddedJsonValidator($text))->validate($result);

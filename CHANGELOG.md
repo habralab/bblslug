@@ -8,6 +8,13 @@ The format is based on [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ### Added
 
+- Opt-in HTML validation at caller-selected JSON Pointers through
+  `validateHtmlJsonPointers` and repeatable CLI `--validate-html-json-pointer`.
+  Source selections are checked before HTTP; translated HTML syntax and structure
+  are checked after placeholder restoration. No field names are inferred. Existing
+  default JSON behavior is unchanged, and `--no-validate` disables the checks.
+
+
 - Preserved the pending XML-style JSON prompt prototype as opt-in
   `experimental_xml`, keeping `translator.json` as the default. Clarified marker
   framing and JSON escape examples. The template is sent verbatim without a POML

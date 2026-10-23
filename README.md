@@ -804,6 +804,36 @@ as `123`, `true`, or `null` remain translatable. The option is off by default be
 JSON-looking text can be intentional prose or a code example. `validate: false`
 or `--no-validate` also disables these checks.
 
+HTML inside a JSON string is checked only at locations explicitly selected by
+`validateHtmlJsonPointers` in the PHP API:
+
+```php
+$result = Bblslug::translate(
+    apiKey: $key,
+    format: 'json',
+    modelKey: 'openai:gpt-5-mini',
+    text: $json,
+    validateHtmlJsonPointers: ['/body', '/items/0/html'],
+);
+```
+
+In the CLI, repeat `--validate-html-json-pointer=/body` for each selected location.
+These checks support `json`, `linedJson`, and `structured_json`. They validate
+source HTML before sending the request, then check translated HTML syntax and
+structure after placeholder restoration using the HTML rules above. Invalid,
+missing, or non-string source selections fail before HTTP, including dry-run.
+A changed result raises `HTML inside JSON mismatch`; the CLI leaves an existing
+output file unchanged and writes no partial translation to stdout.
+
+Paths use RFC 6901 JSON Pointer string syntax: `/items/0/html` selects an array
+item, `~1` represents `/` in a key, and `~0` represents `~`. The empty pointer
+selects a root JSON string (`--validate-html-json-pointer ''` in the CLI). Paths
+have no wildcards or URI fragment encoding and do not implicitly decode JSON
+stored inside another string. Field names are never inferred. Unselected strings
+remain ordinary translatable content. `validate: false` or `--no-validate` disables
+these checks. Validation does not repair HTML or establish translation completeness;
+use filters to protect code and other text that must remain unchanged.
+
 To skip validation, add:
 
 ```bash

@@ -66,6 +66,7 @@ class Help
         echo "\t{$bold}--target-lang=LANG{$reset}   Target language (e.g. EN, DE) - default EN\n";
         echo "\t{$bold}--translated=FILE{$reset}    Output file for translated content (omit to write to STDOUT)\n";
         echo "\t{$bold}--validate-embedded-json{$reset} Check JSON objects/arrays encoded inside string values\n";
+        echo "\t{$bold}--validate-html-json-pointer=POINTER{$reset} Check HTML at JSON Pointer paths (repeatable)\n";
         echo "\t{$bold}--variables=K=V,...{$reset}  Comma-separated model-specific overrides (string values)\n";
         echo "\t{$bold}--verbose{$reset}            Show extra debug info after processing\n";
 

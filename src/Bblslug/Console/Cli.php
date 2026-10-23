@@ -9,6 +9,7 @@ use Bblslug\Console\Help;
 use Bblslug\Filters\FilterManager;
 use Bblslug\Models\ModelRegistry;
 use Bblslug\Models\ModelVariables;
+use Bblslug\Validation\JsonHtmlValidator;
 
 /**
  * CLI entrypoint for the Bblslug translation tool.
@@ -47,6 +48,7 @@ class Cli
             "target-lang:",  // override target language
             "translated:",   // output file (default = STDOUT)
             "validate-embedded-json", // opt-in checks for encoded JSON containers
+            "validate-html-json-pointer:", // opt-in HTML checks at JSON Pointer paths (repeatable)
             "variables:",    // model-specific overrides
             "verbose",       // enable debug logs
         ]);
@@ -101,6 +103,41 @@ class Cli
         $validate   = ! isset($options['no-validate']);
         $verbose    = isset($options['verbose']);
 
+        // getopt returns a scalar for one occurrence and an array for repeated
+        // occurrences. Preserve empty strings so that the empty JSON Pointer
+        // (the document root) can be requested with --validate-html-json-pointer ''.
+        $htmlJsonPointers = [];
+        $rawArgv = $_SERVER['argv'] ?? [];
+        $argv = is_array($rawArgv) ? array_values($rawArgv) : [];
+        foreach ($argv as $index => $argument) {
+            if ($argument === '--') {
+                break;
+            }
+            if (!is_string($argument)) {
+                continue;
+            }
+            if ($argument === '--validate-html-json-pointer=') {
+                Help::error(
+                    'Empty --validate-html-json-pointer value must be passed as a separate empty argument.'
+                );
+            } elseif ($argument === '--validate-html-json-pointer') {
+                $next = $argv[$index + 1] ?? null;
+                if (!is_string($next) || ($next !== '' && str_starts_with($next, '--'))) {
+                    Help::error('--validate-html-json-pointer requires a value.');
+                }
+            }
+        }
+        if (isset($options['validate-html-json-pointer'])) {
+            $rawPointers = $options['validate-html-json-pointer'];
+            $rawPointers = is_array($rawPointers) ? $rawPointers : [$rawPointers];
+            foreach ($rawPointers as $pointer) {
+                if (!is_string($pointer)) {
+                    Help::error('--validate-html-json-pointer requires a string value.');
+                }
+                $htmlJsonPointers[] = $pointer;
+            }
+        }
+
         if ($modelKey === null || $modelKey === '') {
             Help::error(
                 "No model selected. Use --model to specify a model or --list-models to view available models."
@@ -121,6 +158,10 @@ class Cli
             Help::error("Invalid format: '{$format}'. Allowed: text, html, json, structured_json, linedJson.");
         }
         /** @var 'text'|'html'|'json'|'structured_json'|'linedJson' $format */
+
+        if ($htmlJsonPointers !== [] && !in_array($format, ['json', 'structured_json', 'linedJson'], true)) {
+            Help::error('--validate-html-json-pointer requires a JSON format.');
+        }
 
 
         if (!$registry->has($modelKey)) {
@@ -239,6 +280,13 @@ class Cli
 
         // Dry-run: prepare placeholders and exit
         if ($dryRun) {
+            if ($validate && $htmlJsonPointers !== []) {
+                try {
+                    new JsonHtmlValidator($text, $htmlJsonPointers);
+                } catch (\Throwable $exception) {
+                    Help::error($exception->getMessage());
+                }
+            }
             try {
                 $prepared = $filterManager->apply($text);
             } catch (\Throwable $exception) {
@@ -339,6 +387,7 @@ class Cli
                 validateEmbeddedJson: isset($options['validate-embedded-json']),
                 variables: $variables,
                 verbose: $verbose,
+                validateHtmlJsonPointers: $htmlJsonPointers,
             );
         } catch (\Throwable $e) {
             Help::error($e->getMessage());
