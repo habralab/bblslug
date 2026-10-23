@@ -8,12 +8,27 @@ The format is based on [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ### Added
 
+- Repeatable `tools/live-smoke.php` checks library and CLI translation across
+  configured providers using synthetic text, HTML, and recursively encoded JSON.
+  Credentials stay in the environment and saved diagnostics are masked. The README
+  records successful cases, provider output rejections, and a connection timeout.
+
 - Opt-in `validateEmbeddedJson` API argument and `--validate-embedded-json` CLI
   flag validate JSON objects/arrays encoded inside source string values,
   recursively checking translated syntax, structure, and exact non-string values.
   Disabled by default; ordinary strings and encoded scalar values remain translatable.
 
 ### Fixed
+
+- DeepL native JSON document requests accept a positive integer timeout passed
+  as a CLI variable string. Zero, fractional, nonnumeric, boolean, and overflowing
+  values remain invalid. Previously `--variables=document_timeout=45` failed before
+  upload even though the equivalent integer library option worked.
+
+- JSON prompt instructions now describe the required boundary markers consistently
+  rather than simultaneously demanding a bare JSON document. HTML instructions
+  explicitly prohibit added Markdown fences. These clarifications do not guarantee
+  provider compliance; strict marker and structure validation remains enabled.
 
 - URL filters recognize Unicode-escaped schemes, slashes, hosts, paths, and query
   strings in JSON values, including recursively encoded JSON. Matching uses

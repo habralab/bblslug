@@ -465,21 +465,32 @@ requests the `structured_json` template.
 
 ### Live provider checks
 
-Small English-to-German requests checked on 2026-10-23 through the library with
-validation enabled, HTML URL/code filters, and opt-in embedded JSON validation:
+English-to-German smoke requests on 2026-10-23 used both the library and CLI,
+with validation enabled, HTML/JSON URL and code filters, and embedded JSON validation.
+Text cases ran on `61610e4`; HTML/JSON cases were repeated with the DeepL CLI timeout
+and prompt framing fixes described in the unreleased changelog.
 
-| Model | Text | HTML | JSON |
+| Model | Text (API / CLI) | HTML (API / CLI) | JSON (API / CLI) |
 | --- | --- | --- | --- |
-| `deepl:free` | Passed | Passed: protected block and inline code | Passed through native Document API |
-| `deepl:pro` | Passed | Passed: protected block and inline code | Passed through native Document API |
-| `yandex:gpt-lite` | Passed | One response added an opening Markdown fence; now rejected | Passed |
-| `yandex:gpt-pro` | Passed | Passed | Passed |
+| `openai:gpt-5-mini` | Passed / Passed | Passed / Passed | Passed / Passed |
+| `anthropic:claude-haiku-4.5-20251001` | Passed / Passed | Passed / Passed | Passed / Passed |
+| `google:gemini-2.5-flash` | Passed / Passed | Passed / Passed | Passed / Rejected: missing markers |
+| `xai:grok-4.20-0309-non-reasoning` | Passed / Passed | Passed / Passed | Passed / Passed |
+| `deepl:free` | Passed / Passed | Passed / Passed | Passed / Passed (native Document API) |
+| `deepl:pro` | Passed / Passed | Passed / Passed | Passed / Passed (native Document API) |
+| `yandex:gpt-lite` | Passed / Passed | Rejected markup / Rejected markup | Passed / Passed |
+| `yandex:gpt-pro` | Passed / Passed | Passed / Passed | Connection timeout / Passed |
 
-These are individual small scenarios, not a reliability or translation-quality
-benchmark. Native DeepL JSON document requests passed the path-quote scenario on
-both API tiers, including a string-encoded JSON object. This does not guarantee
-semantic preservation of arbitrary string data. Container and placeholder
-validation remain enabled by default.
+The latest observations cover 48 cases: 44 passed, three responses were rejected
+by output validation, and one connection timed out. The earlier Gemini API JSON
+case also missed markers, so its later success does not establish reliability.
+No invalid response was accepted and no automatic retry was added.
+
+These are small scenarios using eight model/tier entries across six providers,
+not a full model-catalogue check or a translation-quality benchmark. Native DeepL
+JSON requests preserved the tested path and encoded JSON on both tiers; this does
+not guarantee semantic preservation of arbitrary strings. See
+[the repeatable smoke runner](tools/README.md) for commands and scope.
 
 ### Secret masking in diagnostics
 
@@ -504,8 +515,9 @@ and JSON syntax, structure, exact non-string value, and optional embedded JSON c
 The source file limit is 1 MB; the facade also enforces the model registry's
 existing character limit. `variables: ['document_timeout' => 120]` sets a
 positive integer timeout in seconds: the upload has this HTTP timeout, and polling
-plus downloading share a separate deadline of that duration. Polling ignores the
-provider's estimated remaining time. An HTTP error, processing error, malformed
+plus downloading share a separate deadline of that duration. CLI variables may use
+a canonical positive integer string, for example `--variables=document_timeout=45`.
+Polling ignores the provider's estimated remaining time. An HTTP error, processing error, malformed
 status, or deadline expiry stops the operation. Uploads and downloads are not
 retried automatically. Document IDs and encryption keys are masked in debug logs
 and exceptions; `rawResponseBody` contains the downloaded document.
