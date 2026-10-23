@@ -491,6 +491,30 @@ specific request; the driver keeps no mutable current-document state. An optiona
 `localResult` indicates a prepared result requiring no HTTP request. The public
 `Bblslug::translate()` facade handles both fields automatically.
 
+### Native DeepL JSON documents: investigated, not yet integrated
+
+DeepL also supports `.json` files through its
+[Document API](https://developers.deepl.com/api-reference/document/upload-and-translate-a-document).
+This is a different transport: upload a multipart file, poll the returned document
+ID/key, then download the translated result. The text endpoint's `tag_handling`
+accepts HTML/XML, not JSON; sending an HTTP JSON body does not enable native JSON
+content handling.
+
+A direct Document API probe on 2026-10-23 passed on both API Free and Pro:
+ordinary strings translated, root/nested path strings retained their quotes and
+backslashes, and a string-encoded JSON object remained parseable with its path
+unchanged. The probe also retained `{stars}` in a template string. These are
+individual observations, not a guarantee for arbitrary string data.
+
+[DeepL documents](https://developers.deepl.com/docs/best-practices/document-translations)
+that JSON keys and non-string values are left untouched and only string values
+are translated. The `input_conversion_options` parameter can control brace
+placeholders; it is not a general switch to protect arbitrary technical strings.
+The documented JSON upload limit is 1 MB. Integration still needs bounded polling,
+document credential masking, failure handling, and the existing output validators.
+Bblslug currently uses the text-batch transport described above; it does not yet
+upload JSON documents or silently fall back between the two transports.
+
 ### DeepL HTML placeholders
 
 For HTML requests, markers in normal text are temporarily wrapped in spans using

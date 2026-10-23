@@ -61,6 +61,11 @@ The format is based on [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ### Known limitations
 
+- Native DeepL JSON document translation was checked directly on API Free and
+  Pro: the path-quote scenario passed, including an encoded JSON object. This
+  upload/status/download transport is not yet integrated into Bblslug; its
+  current JSON mode still uses text-value batches.
+
 - DeepL JSON containers now pass syntax/structure/value checks in live requests,
   but the provider changes quotation marks inside a path-like string. Container
   validation does not guarantee semantic preservation of string data.
