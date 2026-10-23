@@ -15,6 +15,13 @@ The format is based on [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ### Fixed
 
+- HTTP diagnostics mask raw, URL/form-encoded, and JSON-escaped secrets in
+  request URLs, headers, bodies, response logs, and cURL network exceptions.
+  Nested JSON escaping and mixed-case hexadecimal escapes are covered;
+  overlapping secrets are replaced longest first. Transport error codes and
+  original request/response data are preserved. Provider error exceptions use
+  the same masking rules.
+
 - URL filtering avoids regex stack exhaustion on long plain or JSON-escaped
   URLs. A regex failure now stops translation with an explicit error instead of
   silently passing the unprotected source to the provider.

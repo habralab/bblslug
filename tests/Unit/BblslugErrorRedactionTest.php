@@ -18,6 +18,16 @@ final class BblslugErrorRedactionTest extends TestCase
         $urlEncoded = urlencode($rawKey);
 
         return [
+            'google error with nested encoded key' => [
+                'model' => 'google:gemini-2.5-flash',
+                'status' => 401,
+                'body' => json_encode(
+                    ['message' => json_encode(['key' => $rawKey], JSON_THROW_ON_ERROR)],
+                    JSON_THROW_ON_ERROR
+                ),
+                'reason' => 'HTTP 401 error',
+                'verbose' => true,
+            ],
             'google http error' => [
                 'model' => 'google:gemini-2.5-flash',
                 'status' => 401,
@@ -102,6 +112,9 @@ final class BblslugErrorRedactionTest extends TestCase
         $this->assertStringContainsString($scenario['reason'], $result['message']);
         $this->assertStringNotContainsString($rawKey, $result['message']);
         $this->assertStringNotContainsString(rawurlencode($rawKey), $result['message']);
+        $jsonOnce = substr(json_encode($rawKey, JSON_THROW_ON_ERROR), 1, -1);
+        $jsonTwice = substr(json_encode($jsonOnce, JSON_THROW_ON_ERROR), 1, -1);
+        $this->assertStringNotContainsString($jsonTwice, $result['message']);
         $this->assertStringNotContainsString(urlencode($rawKey), $result['message']);
         $this->assertStringNotContainsString(
             trim((string)json_encode($rawKey), '"'),

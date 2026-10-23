@@ -465,6 +465,18 @@ both API tiers, including a string-encoded JSON object. This does not guarantee
 semantic preservation of arbitrary string data. Container and placeholder
 validation remain enabled by default.
 
+### Secret masking in diagnostics
+
+The facade masks the API key in HTTP diagnostic logs and provider exceptions.
+Low-level `HttpClient::request()` callers supply raw secrets through
+`maskPatterns`. Masking covers raw text, URL/form encoding, and up to two layers
+of JSON string escaping, including hexadecimal escape case variations. Empty
+patterns are ignored; overlapping secrets are matched longest first.
+
+Request and response diagnostic copies are sanitized. Sent payloads, returned
+response bodies and headers keep their original data. Network exceptions retain
+the cURL error code and redact known secrets from the message.
+
 ### DeepL JSON transport
 
 For `json` and `linedJson`, DeepL Free and Pro use the native

@@ -354,12 +354,7 @@ class Bblslug
                             timeoutSeconds: $next['timeoutSeconds']
                         );
                     } catch (\RuntimeException $e) {
-                        $encodedKey = json_encode($apiKey, JSON_THROW_ON_ERROR);
-                        throw new \RuntimeException(str_replace(
-                            [$apiKey, rawurlencode($apiKey), urlencode($apiKey), substr($encodedKey, 1, -1)],
-                            '***',
-                            $e->getMessage()
-                        ));
+                        throw new \RuntimeException((new SecretMasker([$apiKey]))->redact($e->getMessage()));
                     }
                 }
             );
@@ -370,11 +365,7 @@ class Bblslug
         $debugResponse = $http['debugResponse'];
         $raw = $http['body'];
 
-        $errorMaskPatterns = [$apiKey, rawurlencode($apiKey), urlencode($apiKey)];
-        $jsonApiKey = json_encode($apiKey);
-        if ($jsonApiKey !== false) {
-            $errorMaskPatterns[] = substr($jsonApiKey, 1, -1);
-        }
+        $errorMasker = new SecretMasker([$apiKey]);
 
         // Parse response
         if ($dryRun || $localResult !== null) {
@@ -386,9 +377,7 @@ class Bblslug
             $hasCustomHttpHandling = isset($model['http_error_handling']) && !empty($model['http_error_handling']);
             if ($httpStatus >= 400 && !$hasCustomHttpHandling) {
                 throw new \RuntimeException(
-                    str_replace(
-                        $errorMaskPatterns,
-                        '***',
+                    $errorMasker->redact(
                         "HTTP {$httpStatus} error from {$reqUrl}: {$raw}\n\n" . $debugRequest . $debugResponse
                     )
                 );
@@ -402,9 +391,7 @@ class Bblslug
                 $rawUsage   = $parsed['usage'] ?? null;
             } catch (\RuntimeException $e) {
                 throw new \RuntimeException(
-                    str_replace(
-                        $errorMaskPatterns,
-                        '***',
+                    $errorMasker->redact(
                         $e->getMessage() . "\n\n" . $debugRequest . $debugResponse
                     )
                 );

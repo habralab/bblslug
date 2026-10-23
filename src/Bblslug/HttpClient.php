@@ -51,21 +51,10 @@ class HttpClient
         $timeoutSeconds = self::resolveTimeout($timeoutSeconds, 'BBLSLUG_HTTP_TIMEOUT', 120);
         $connectTimeoutSeconds = self::resolveTimeout($connectTimeoutSeconds, 'BBLSLUG_HTTP_CONNECT_TIMEOUT', 10);
 
-        // Prepare masked copies for logging
-        $logUrl = $url;
-        $logHeaders = $headers;
-        $logBody    = $body;
-
-        if (!empty($maskPatterns)) {
-            foreach ($maskPatterns as $pat) {
-                $logUrl = str_replace([$pat, rawurlencode($pat), urlencode($pat)], '***', $logUrl);
-                foreach ($logHeaders as &$h) {
-                    $h = str_replace($pat, '***', $h);
-                }
-                unset($h);
-                $logBody = str_replace($pat, '***', $logBody);
-            }
-        }
+        $masker = new SecretMasker($maskPatterns);
+        $logUrl = $masker->redact($url);
+        $logHeaders = array_map($masker->redact(...), $headers);
+        $logBody = $masker->redact($body);
 
         // Build request debug log
         $debugRequest = '';
@@ -139,7 +128,7 @@ class HttpClient
 
         $errorCode = \curl_errno($ch);
         if ($errorCode !== 0) {
-            $err = \curl_error($ch);
+            $err = $masker->redact(\curl_error($ch));
             throw new \RuntimeException("Network error: {$err}", $errorCode);
         }
         $status = (int)\curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -150,17 +139,12 @@ class HttpClient
             $debugResponse .= "\n\033[1mResponse ({$status})\033[0m\nHeaders:\n";
             foreach ($responseHeaders as $name => $vals) {
                 foreach ($vals as $v) {
-                    $val = $v;
-                    foreach ($maskPatterns as $pat) {
-                        $val = str_replace($pat, '***', $val);
-                    }
-                    $debugResponse .= "  {$name}: {$val}\n";
+                    $val = $masker->redact($v);
+                    $logName = $masker->redact($name);
+                    $debugResponse .= "  {$logName}: {$val}\n";
                 }
             }
-            $logRespBody = (string) $respBody;
-            foreach ($maskPatterns as $pat) {
-                $logRespBody = str_replace($pat, '***', $logRespBody);
-            }
+            $logRespBody = $masker->redact((string) $respBody);
             $debugResponse .= "\nBody:\n{$logRespBody}\n\n";
         }
 
