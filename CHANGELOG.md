@@ -15,6 +15,11 @@ The format is based on [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ### Fixed
 
+- Unknown filter names and malformed `html_*` tag names now fail explicitly
+  instead of silently leaving content unprotected. CLI validation runs before
+  input/output handling, including dry-run. Empty filter lists remain valid;
+  custom, namespaced, and Unicode-containing tag names remain supported.
+
 - Facade and CLI model variables reject reserved `format`, `dryRun`, `promptKey`,
   `verbose`, `context`, and internal `responseContext` names before filtering or
   HTTP, including dry-run and `null` values. Model overrides can no longer

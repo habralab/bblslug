@@ -19,6 +19,12 @@ class HtmlTagFilter implements FilterInterface
 
     public function __construct(string $tag)
     {
+        $pattern = <<<'REGEX'
+~\A[a-z][^\s/<>"'\x00-\x1f\x7f]*\z~i
+REGEX;
+        if (preg_match($pattern, $tag) !== 1) {
+            throw new \InvalidArgumentException('Invalid HTML tag name for filter');
+        }
         $this->tag = $tag;
     }
 

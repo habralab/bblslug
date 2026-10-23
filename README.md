@@ -166,6 +166,13 @@ and exclusion evidence are recorded in [model-catalog.json](resources/model-cata
 - Can be invoked as a CLI tool or embedded in PHP code
 - **Validation** of container syntax for HTML or JSON; disable with `--no-validate`
 
+Filter names are `url` or `html_TAG`. Unknown names (for example `urll`) and
+malformed tag names cause an error before translation. `TAG` starts with an ASCII
+letter and cannot contain whitespace, quotes, angle brackets, forward slashes, or control
+characters; custom names such as `x-panel`, `svg:path`, and `x-элемент` are allowed.
+An empty API list (`filters: []`) or CLI `--filters=` applies no filters. Empty
+entries inside a nonempty CLI list, such as `url,,html_code`, are rejected.
+
 `variables` / `--variables` accepts model-specific options. The names `format`,
 `dryRun`, `promptKey`, `verbose`, and `context` are reserved: use the corresponding
 `translate()` arguments or CLI flags. `responseContext` is internal request state

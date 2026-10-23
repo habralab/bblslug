@@ -77,6 +77,7 @@ class Cli
         $format     = isset($options['format']) && is_string($options['format'])
                         ? $options['format'] : null;
         $filters    = isset($options['filters']) && is_string($options['filters'])
+                        && trim($options['filters']) !== ''
                         ? array_map('trim', explode(',', $options['filters']))
                         : [];
         $modelKey   = isset($options['model']) && is_string($options['model'])
@@ -166,6 +167,7 @@ class Cli
 
         try {
             ModelVariables::validate($cliVars);
+            $filterManager = new FilterManager($filters);
         } catch (\InvalidArgumentException $exception) {
             Help::error($exception->getMessage());
         }
@@ -237,7 +239,7 @@ class Cli
 
         // Dry-run: prepare placeholders and exit
         if ($dryRun) {
-            $prepared = (new FilterManager($filters))->apply($text);
+            $prepared = $filterManager->apply($text);
             if ($sourceFile !== null) {
                 if (@file_put_contents($sourceFile . '.prepared', $prepared) !== strlen($prepared)) {
                     Help::error("Failed to write prepared file: {$sourceFile}.prepared");

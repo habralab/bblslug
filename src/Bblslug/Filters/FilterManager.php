@@ -28,6 +28,8 @@ class FilterManager
             } elseif (str_starts_with($name, 'html_')) {
                 $tag = substr($name, 5);
                 $this->filters[] = new HtmlTagFilter($tag);
+            } else {
+                throw new \InvalidArgumentException('Unknown filter: ' . $name);
             }
         }
     }

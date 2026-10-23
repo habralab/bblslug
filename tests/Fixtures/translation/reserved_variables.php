@@ -48,6 +48,7 @@ namespace {
             modelKey: 'openai:gpt-5-mini',
             text: (string) ($scenario['text'] ?? 'Hello'),
             dryRun: (bool) ($scenario['dryRun'] ?? false),
+            filters: $scenario['filters'] ?? [],
             validate: (bool) ($scenario['validate'] ?? true),
             variables: $scenario['variables'] ?? [],
         );
