@@ -239,7 +239,11 @@ class Cli
 
         // Dry-run: prepare placeholders and exit
         if ($dryRun) {
-            $prepared = $filterManager->apply($text);
+            try {
+                $prepared = $filterManager->apply($text);
+            } catch (\Throwable $exception) {
+                Help::error($exception->getMessage());
+            }
             if ($sourceFile !== null) {
                 if (@file_put_contents($sourceFile . '.prepared', $prepared) !== strlen($prepared)) {
                     Help::error("Failed to write prepared file: {$sourceFile}.prepared");

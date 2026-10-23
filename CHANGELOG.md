@@ -46,6 +46,14 @@ The format is based on [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ### Fixed
 
+- Selected HTML block filters now reject unclosed non-void/raw-text blocks and
+  incomplete opening tags before HTTP, including recursively encoded JSON values.
+  Separate JSON strings cannot complete one another's tag pair. The guard applies
+  even with validation disabled or dry-run. Valid unpaired void elements retain
+  their prior behavior; `plaintext` protects through its HTML-defined end at EOF.
+  CLI dry-run catches filter errors and preserves source/destination/prepared files
+  instead of exposing a fatal stack trace.
+
 - Gemini `json`/`linedJson` with the standard translator now use native JSON in
   the default `auto` mode when the registry declares support. No marker matching
   is needed on that path. Text/HTML, custom marker prompts, and undeclared models
@@ -178,9 +186,10 @@ The format is based on [Semantic Versioning](https://semver.org/spec/v2.0.0.html
   Markdown fences to HTML despite the prompt; those responses remain rejected.
   Neither case is silently repaired or retried.
 
-- Unclosed selected HTML elements remain unprotected; only complete explicit
-  tag pairs are captured. JSON-aware filtering requires valid JSON; malformed
-  input is not repaired by filters.
+- Selected non-void HTML blocks require explicit closing tags, even when HTML
+  permits an omitted end tag. Missing boundaries fail before translation; filters
+  do not repair markup. JSON-aware filtering requires valid JSON; malformed input
+  is not repaired by filters.
 
 - DeepL string contents remain translatable. Native document checks passed the
   observed path scenario, but neither container validation nor a small live sample

@@ -65,8 +65,9 @@ JSON;
     {
         $source = '{"first":"<code>open", "second":"close<\\/code>"}';
         $filter = new HtmlTagFilter('code');
-        self::assertSame($source, $filter->apply($source, new PlaceholderCounter()));
-        self::assertSame(0, $filter->getStats()['count']);
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Unclosed selected HTML tag');
+        $filter->apply($source, new PlaceholderCounter());
     }
 
     public function testRootStringsAndRepeatedEncodedRootStringsRoundTrip(): void

@@ -9,6 +9,13 @@ use Bblslug\Filters\PlaceholderCounter;
 
 class HtmlTagFilter implements DebuggableFilterInterface
 {
+    private const VOID_TAGS = [
+        'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input',
+        'link', 'meta', 'param', 'source', 'track', 'wbr',
+        // Obsolete elements that HTML parsers still treat as void.
+        'basefont', 'bgsound', 'frame', 'keygen',
+    ];
+
     private string $tag;
 
     /** @var array<string,string> placeholder => original */
@@ -90,7 +97,7 @@ REGEX;
         return $blocks;
     }
 
-    /** @return array<int,array{int,int}> Complete outermost HTML blocks as byte offsets/lengths. */
+    /** @return array<int,array{int,int}> Protected HTML blocks as byte offsets/lengths. */
     private function findHtmlBlocks(string $text): array
     {
         // Opaque contexts come first: their apparent tags must not change depth.
@@ -103,8 +110,10 @@ REGEX;
     (?:[^"'<>]++|"[^"]*"|'[^']*')*+>.*?(?:</\1\s*>|\z)
  |<(/?)([a-z][^\s/<>"']*)(?=[\s/>])(?:[^"'<>]++|"[^"]*"|'[^']*')*+>
  |<!(?:[^"'<>]++|"[^"]*"|'[^']*')*+>
+ |<(?P<incomplete>{selected_tag})(?=[\s/>]|\z)
 ~six
 REGEX;
+        $pattern = str_replace('{selected_tag}', preg_quote($this->tag, '~'), $pattern);
         $depth = 0;
         $start = 0;
         $position = 0;
@@ -112,12 +121,23 @@ REGEX;
         while (($matched = preg_match($pattern, $text, $token, PREG_OFFSET_CAPTURE, $position)) === 1) {
             [$markup, $offset] = $token[0];
             $position = $offset + strlen($markup);
+            if (($token['incomplete'][0] ?? '') !== '') {
+                throw new \RuntimeException('Incomplete opening tag for selected HTML filter <' . $this->tag . '>');
+            }
+            // HTML plaintext consumes the remainder, even when it contains an apparent closing tag.
+            if (
+                strcasecmp($this->tag, 'plaintext') === 0
+                && preg_match('~\A<plaintext(?=[\s/>])~i', $markup) === 1
+            ) {
+                $blocks[] = [$offset, strlen($markup)];
+                continue;
+            }
             $rawTag = $token[1][0] ?? '';
             if ($rawTag !== '') {
-                if (
-                    $depth === 0 && strcasecmp($rawTag, $this->tag) === 0
-                    && preg_match('~</' . preg_quote($rawTag, '~') . '\\s*>\z~i', $markup) === 1
-                ) {
+                if ($depth === 0 && strcasecmp($rawTag, $this->tag) === 0) {
+                    if (preg_match('~</' . preg_quote($rawTag, '~') . '\\s*>\z~i', $markup) !== 1) {
+                        throw new \RuntimeException('Unclosed selected HTML tag <' . $this->tag . '>');
+                    }
                     $blocks[] = [$offset, strlen($markup)];
                 }
                 continue;
@@ -136,6 +156,9 @@ REGEX;
         }
         if ($matched === false) {
             throw new \RuntimeException('Could not protect HTML tag fragments');
+        }
+        if ($depth > 0 && !in_array(strtolower($this->tag), self::VOID_TAGS, true)) {
+            throw new \RuntimeException('Unclosed selected HTML tag <' . $this->tag . '>');
         }
         return $blocks;
     }

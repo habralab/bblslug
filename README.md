@@ -702,9 +702,28 @@ without normalizing their encoding. URL-shaped property names stay unchanged;
 separate JSON values cannot combine into one URL. Literal Unicode escape notation
 in ordinary text is not decoded by the filter.
 
-For ordinary HTML/text input, HTML filters continue to use the HTML token
-scan. Only complete explicit tag pairs are protected; an unclosed element is
-left unchanged. Filters do not repair malformed JSON or markup.
+For ordinary HTML/text input, HTML filters use the same HTML token scan. Selected
+non-void blocks require explicit closing tags. An unclosed selected block or an
+incomplete selected opening tag stops processing before HTTP instead of sending
+its contents unprotected. This also applies inside decoded JSON string values;
+a closing tag in another value cannot complete the block. The error names the
+selected tag without dumping its source contents.
+
+This protection check also runs with `--no-validate`, `validate: false`, and
+`--dry-run`. CLI errors go to stderr without a stack trace or partial output;
+source, destination, and `.prepared` files are not written after filter failure.
+Even for HTML elements with optional end tags, this block filter requires explicit
+pairs; it does not infer DOM boundaries or repair source markup. A trailing slash
+on a non-void tag, such as `<code/>`, does not replace its required closing tag.
+
+Valid unpaired void elements such as `<br>`, `<img>`, and legacy `<param>` retain
+their existing behavior. Selected `<plaintext>` protects everything from its
+opening tag to EOF, including apparent closing tags, following the
+[HTML plaintext parsing rule](https://html.spec.whatwg.org/multipage/parsing.html#plaintext-state).
+For JSON, EOF here means the end of the decoded string value, not the surrounding
+container. Comments, CDATA, attributes, and other raw-text elements remain opaque
+to selected-tag matching. JSON-aware filtering still requires valid JSON; malformed
+JSON is not repaired.
 
 ### Disable validation
 

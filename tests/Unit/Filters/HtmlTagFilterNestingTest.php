@@ -79,21 +79,23 @@ final class HtmlTagFilterNestingTest extends TestCase
         ];
     }
 
-    public function testUnclosedChosenElementRemainsUnchanged(): void
+    public function testUnclosedChosenElementStopsFiltering(): void
     {
         $filter = new HtmlTagFilter('div');
         $source = '<p>safe</p><div>secret <span>content</span>';
 
-        self::assertSame($source, $filter->apply($source, new PlaceholderCounter()));
-        self::assertSame(0, $filter->getStats()['count']);
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Unclosed selected HTML tag <div>');
+        $filter->apply($source, new PlaceholderCounter());
     }
 
-    public function testUnclosedOuterBlockDoesNotCaptureOnlyItsClosedInnerBlock(): void
+    public function testUnclosedOuterBlockStopsFiltering(): void
     {
         $source = '<div>outer<div>inner</div>tail';
         $filter = new HtmlTagFilter('div');
-        self::assertSame($source, $filter->apply($source, new PlaceholderCounter()));
-        self::assertSame(0, $filter->getStats()['count']);
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Unclosed selected HTML tag <div>');
+        $filter->apply($source, new PlaceholderCounter());
     }
 
     public function testLongTextRemainsProtectedWithALowBacktrackingLimit(): void
