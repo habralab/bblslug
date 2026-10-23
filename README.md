@@ -602,8 +602,10 @@ CRLF, whitespace around the label, and `HTML` casing are supported. No other fen
 may remain in the response. The remaining HTML still passes placeholder, syntax,
 and structure validation; the original HTTP response remains in `rawResponseBody`.
 
-The source check considers backtick/tilde triples anywhere, including HTML entity
-representations. If source fences are present, this compatibility handling is
+The source check considers backtick/tilde triples anywhere in prepared HTML,
+including HTML entity representations. Protected code blocks are placeholders at
+this stage and are restored unchanged afterward. If visible source fences are
+present, this compatibility handling is
 disabled and their content is not stripped. Added paired, trailing-only, nested,
 inline, tilde, or unfamiliar labelled fences fail explicitly for fence-free input,
 also when container validation is disabled. Text and JSON responses are unchanged.
@@ -778,8 +780,13 @@ nesting, attribute presence, comments, doctype, and non-translatable attribute
 values must match. Text and the values of `title`, `alt`, and `aria-label` may
 change. Attribute order and equivalent entity spellings are ignored. The result
 is returned unchanged; comparison does not reserialize the HTML. Newly added
-Markdown fences at document boundaries are rejected even when libxml parses them
-as ordinary text. Literal fences already present at those boundaries are allowed.
+New Markdown fences are rejected even when libxml parses them as ordinary text.
+Existing fence delimiter runs must retain their type, length, count, and order;
+HTML entity equivalents compare as the same visible delimiters. Boundary fence
+labels must also remain unchanged, while surrounding whitespace may vary. These
+checks catch duplicated or changed existing fences as well as newly added ones.
+The Yandex driver's narrowly specified opening-only transport prefix is handled
+before the restored HTML reaches this validator.
 
 Current limits: HTML comparison uses libxml's parsed tree, including its HTML
 normalization, and does not verify translated text content. Use placeholder

@@ -31,7 +31,7 @@ class HtmlStructureValidator implements ValidatorInterface
             return ValidationResult::success();
         }
         return ValidationResult::failure([
-            'Markup, non-translatable attributes, and boundary code fences must match the source HTML',
+            'Markup, non-translatable attributes, and Markdown fences must match the source HTML',
         ]);
     }
 
@@ -59,11 +59,22 @@ class HtmlStructureValidator implements ValidatorInterface
         if ($dom->firstChild instanceof DOMProcessingInstruction) {
             $dom->removeChild($dom->firstChild);
         }
+        $leadingMatch = preg_match('/\A\s*((?:`{3,}|~{3,})[^\r\n]*)\R/', $content, $leading);
+        $trailingMatch = preg_match('/(?:\A|\R)[\t ]*((?:`{3,}|~{3,}))[\t ]*\s*\z/', $content, $trailing);
+        $fenceMatch = preg_match_all(
+            '/`{3,}|~{3,}/',
+            html_entity_decode($content, ENT_QUOTES | ENT_HTML5, 'UTF-8'),
+            $fences
+        );
+        if ($leadingMatch === false || $trailingMatch === false || $fenceMatch === false) {
+            throw new \RuntimeException('Could not inspect Markdown fences in HTML');
+        }
         return [
             'tree' => self::capture($dom),
-            // libxml treats Markdown fences as text; the DOM comparison ignores text values.
-            'leadingFence' => (bool) preg_match('/\A\s*(?:`{3,}|~{3,})[^\r\n]*\R/', $content),
-            'trailingFence' => (bool) preg_match('/(?:\A|\R)[\t ]*(?:`{3,}|~{3,})[\t ]*\s*\z/', $content),
+            // libxml treats fences as text; preserve delimiters and boundary labels separately.
+            'leadingFence' => $leadingMatch === 1 ? rtrim($leading[1], "\t ") : null,
+            'trailingFence' => $trailingMatch === 1 ? $trailing[1] : null,
+            'fenceRuns' => $fences[0],
         ];
     }
 

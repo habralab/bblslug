@@ -46,6 +46,12 @@ The format is based on [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ### Fixed
 
+- HTML structure validation compares Markdown fence delimiter sequences and
+  boundary labels, catching changed fence types/lengths, removed delimiters, and
+  duplicated existing fences. HTML entity equivalents remain comparable and
+  surrounding whitespace may vary. The previous presence-only check could accept
+  a different fence type or label when both source and output were fenced.
+
 - Yandex HTML parsing removes the observed single opening-only Markdown fence
   only when the request's prepared source contains no fences, including HTML
   entity representations. Other introduced fences fail explicitly; existing source

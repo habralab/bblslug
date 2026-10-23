@@ -36,6 +36,23 @@ final class HtmlStructureValidatorTest extends TestCase
             ],
             'trailing fence only' => ['<p>Hello</p>', "<p>Привет</p>\n```\n"],
             'tilde fence' => ['<p>Hello</p>', "~~~html\n<p>Привет</p>\n~~~"],
+            'changed existing fence kind' => [
+                "```html\n<p>Hello</p>\n```", "~~~html\n<p>Hallo</p>\n~~~",
+            ],
+            'changed existing fence length' => [
+                "```html\n<p>Hello</p>\n```", "````html\n<p>Hallo</p>\n````",
+            ],
+            'changed existing fence label' => [
+                "```html\n<p>Hello</p>\n```", "```php\n<p>Hallo</p>\n```",
+            ],
+            'changed closing fence length' => [
+                "```html\n<p>Hello</p>\n```", "```html\n<p>Hallo</p>\n````",
+            ],
+            'duplicated inner fence' => [
+                "```html\n<p>Hello</p>\n```", "```html\n```html\n<p>Hallo</p>\n```\n```",
+            ],
+            'removed inline fence' => ['<p>Hello <code>```</code></p>', '<p>Hallo <code></code></p>'],
+            'changed inline fence kind' => ['<p>Hello <code>```</code></p>', '<p>Hallo <code>~~~</code></p>'],
             'added attribute' => ['<p>Hello</p>', '<p onclick="run()">Привет</p>'],
             'missing translatable attribute' => ['<img alt="Source">', '<img>'],
             'added translatable attribute' => ['<img>', '<img alt="Перевод">'],
@@ -74,6 +91,20 @@ final class HtmlStructureValidatorTest extends TestCase
     {
         $source = '<p>Run <code>```</code> as an example</p>';
         $output = '<p>Пример <code>```</code> для запуска</p>';
+        self::assertTrue((new HtmlStructureValidator($source))->validate($output)->isValid());
+    }
+
+    public function testFenceEntitiesCompareWithTheirEquivalentLiteralCharacters(): void
+    {
+        $source = '<p>Hello <code>&grave;&grave;&grave; &#126;&#126;&#126;</code></p>';
+        $output = '<p>Hallo <code>``` ~~~</code></p>';
+        self::assertTrue((new HtmlStructureValidator($source))->validate($output)->isValid());
+    }
+
+    public function testBoundaryFenceWhitespaceRemainsFormattingIndependent(): void
+    {
+        $source = "  ```html  \r\n<p>Hello</p>\r\n```  ";
+        $output = "```html\n<p>Hallo</p>\n```\n";
         self::assertTrue((new HtmlStructureValidator($source))->validate($output)->isValid());
     }
 
