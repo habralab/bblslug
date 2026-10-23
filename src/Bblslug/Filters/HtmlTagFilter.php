@@ -40,22 +40,65 @@ class HtmlTagFilter implements FilterInterface
         }
         $text = $shielded;
 
-        $tag = preg_quote($this->tag, '~');
-        $pattern = sprintf('~<%s(?=[\s/>])[^>]*>.*?</%s\s*>~is', $tag, $tag);
-        $replaced = preg_replace_callback(
-            $pattern,
-            /** @param array<int,string> $m */
-            function (array $m) use ($counter): string {
-                $ph = $counter->next();
-                $this->map[$ph] = $m[0];
-                return $ph;
-            },
-            $text
-        );
-        if ($replaced === null) {
+        $output = '';
+        $cursor = 0;
+        foreach ($this->findBlocks($text) as [$offset, $length]) {
+            $placeholder = $counter->next();
+            $this->map[$placeholder] = substr($text, $offset, $length);
+            $output .= substr($text, $cursor, $offset - $cursor) . $placeholder;
+            $cursor = $offset + $length;
+        }
+        return $output . substr($text, $cursor);
+    }
+
+    /** @return array<int,array{int,int}> Complete outermost blocks as byte offsets/lengths. */
+    private function findBlocks(string $text): array
+    {
+        // Opaque contexts come first: their apparent tags must not change depth.
+        // Token offsets let restoration preserve the user's original HTML bytes.
+        $pattern = <<<'REGEX'
+~<!--.*?(?:-->|\z)
+ |<!\[CDATA\[.*?(?:\]\]>|\z)
+ |<plaintext(?=[\s/>])(?:[^"'<>]++|"[^"]*"|'[^']*')*+>.*\z
+ |<(script|style|title|textarea|xmp|iframe|noembed|noframes)(?=[\s/>])
+    (?:[^"'<>]++|"[^"]*"|'[^']*')*+>.*?(?:</\1\s*>|\z)
+ |<(/?)([a-z][^\s/<>"']*)(?=[\s/>])(?:[^"'<>]++|"[^"]*"|'[^']*')*+>
+ |<!(?:[^"'<>]++|"[^"]*"|'[^']*')*+>
+~six
+REGEX;
+        $depth = 0;
+        $start = 0;
+        $position = 0;
+        $blocks = [];
+        while (($matched = preg_match($pattern, $text, $token, PREG_OFFSET_CAPTURE, $position)) === 1) {
+            [$markup, $offset] = $token[0];
+            $position = $offset + strlen($markup);
+            $rawTag = $token[1][0] ?? '';
+            if ($rawTag !== '') {
+                if (
+                    $depth === 0 && strcasecmp($rawTag, $this->tag) === 0
+                    && preg_match('~</' . preg_quote($rawTag, '~') . '\\s*>\z~i', $markup) === 1
+                ) {
+                    $blocks[] = [$offset, strlen($markup)];
+                }
+                continue;
+            }
+            if (strcasecmp($token[3][0] ?? '', $this->tag) !== 0) {
+                continue;
+            }
+            if (($token[2][0] ?? '') === '') {
+                if ($depth === 0) {
+                    $start = $offset;
+                }
+                $depth++;
+            } elseif ($depth > 0 && --$depth === 0) {
+                $blocks[] = [$start, $offset + strlen($markup) - $start];
+            }
+        }
+        if ($matched === false) {
             throw new \RuntimeException('Could not protect HTML tag fragments');
         }
-        return $replaced;
+        return $blocks;
     }
 
     public function restore(string $text): string

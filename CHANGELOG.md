@@ -15,6 +15,11 @@ The format is based on [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ### Fixed
 
+- HTML tag filters protect complete outermost blocks when the selected tag is
+  nested inside itself. A token scan ignores apparent tags inside comments,
+  CDATA, attributes, and raw-text/RCDATA elements and restores the original bytes
+  without DOM serialization. Deep nesting does not use recursive regex matching.
+
 - HTML tag filters match the complete selected tag name, so `html_pre` no longer
   hides `<prelude>` and `html_code` no longer hides `<code-block>`. Closing-tag
   whitespace is accepted, tag names are treated literally, and a regex failure
@@ -77,9 +82,9 @@ The format is based on [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ### Known limitations
 
-- HTML tag filters still stop at the first same-name closing tag in nested
-  elements and do not recognize JSON-escaped closing tags such as `<\/code>`.
-  These cases are not fixed by the exact tag-name matching change.
+- HTML tag filters do not yet recognize JSON-escaped closing tags such as
+  `<\/code>`. Unclosed selected elements remain unprotected; only complete
+  explicit tag pairs are captured.
 
 - DeepL string contents remain translatable. Native document checks passed the
   observed path scenario, but neither container validation nor a small live sample

@@ -91,7 +91,7 @@ final class HtmlTagFilterTest extends TestCase
             $filter = new HtmlTagFilter('code');
             $this->expectException(\RuntimeException::class);
             $this->expectExceptionMessage('Could not protect HTML tag fragments');
-            $filter->apply('<code>' . str_repeat('word ', 2000) . '</code>', new PlaceholderCounter());
+            $filter->apply('<code ' . str_repeat('a="x" ', 5000) . '>Keep</code>', new PlaceholderCounter());
         } finally {
             ini_set('pcre.backtrack_limit', (string) $limit);
         }
