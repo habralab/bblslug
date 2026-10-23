@@ -521,6 +521,20 @@ Post-validation still compares the restored HTML tree, so the wrappers do not
 bypass structure checks. The 128 KiB request-body limit is checked
 after wrapping so transport overhead cannot silently exceed the provider limit.
 
+### HTML filters inside JSON
+
+When a filter such as `html_code` or `html_pre` receives valid JSON, it inspects
+string values separately and recursively handles JSON containers/strings encoded
+inside them. Escaped closing tags (`<\/code>`), quoted attributes, and Unicode
+escapes are decoded for matching; protected fragments are restored from exact
+source byte slices. JSON keys, numeric spellings, whitespace, and unrelated escape
+sequences are not reserialized by the filter. Tag pairs in separate JSON values
+cannot form one protected block. This behavior applies across providers.
+
+For ordinary HTML/text input, the same filters continue to use the HTML token
+scan. Only complete explicit tag pairs are protected; an unclosed element is
+left unchanged. Filters do not repair malformed JSON or markup.
+
 ### Disable validation
 
 For HTML and JSON formats, Bblslug performs basic syntax validation before and after translation.

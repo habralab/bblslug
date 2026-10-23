@@ -38,7 +38,7 @@ namespace {
             format: (string) ($scenario['format'] ?? 'json'),
             modelKey: 'openai:gpt-5-mini',
             text: (string) ($scenario['input'] ?? ''),
-            filters: [],
+            filters: $scenario['filters'] ?? [],
             validate: (bool) ($scenario['validate'] ?? true),
             verbose: true,
             validateEmbeddedJson: (bool) ($scenario['validateEmbeddedJson'] ?? false)

@@ -15,6 +15,11 @@ The format is based on [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ### Fixed
 
+- HTML filters protect escaped fragments inside JSON string values, including
+  recursively encoded JSON strings. Byte-offset mapping handles slash, quote,
+  and Unicode escapes without reserializing containers, keys, unrelated strings,
+  or exact numeric tokens. Tag pairs cannot span separate JSON values.
+
 - HTML tag filters protect complete outermost blocks when the selected tag is
   nested inside itself. A token scan ignores apparent tags inside comments,
   CDATA, attributes, and raw-text/RCDATA elements and restores the original bytes
@@ -82,9 +87,9 @@ The format is based on [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ### Known limitations
 
-- HTML tag filters do not yet recognize JSON-escaped closing tags such as
-  `<\/code>`. Unclosed selected elements remain unprotected; only complete
-  explicit tag pairs are captured.
+- Unclosed selected HTML elements remain unprotected; only complete explicit
+  tag pairs are captured. JSON-aware filtering requires valid JSON; malformed
+  input is not repaired by filters.
 
 - DeepL string contents remain translatable. Native document checks passed the
   observed path scenario, but neither container validation nor a small live sample

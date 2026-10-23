@@ -51,8 +51,41 @@ class HtmlTagFilter implements FilterInterface
         return $output . substr($text, $cursor);
     }
 
-    /** @return array<int,array{int,int}> Complete outermost blocks as byte offsets/lengths. */
+    /** @return array<int,array{int,int}> Protected fragments as source byte offsets/lengths. */
     private function findBlocks(string $text): array
+    {
+        try {
+            json_decode($text, false, 512, JSON_THROW_ON_ERROR);
+        } catch (\JsonException) {
+            return $this->findHtmlBlocks($text);
+        }
+        // Inspect JSON string values without rewriting keys, scalar tokens or whitespace.
+        $pattern = <<<'REGEX'
+~"(?:[^"\\]++|\\.)*+"~s
+REGEX;
+        $position = 0;
+        $blocks = [];
+        while (($matched = preg_match($pattern, $text, $token, PREG_OFFSET_CAPTURE, $position)) === 1) {
+            [$source, $offset] = $token[0];
+            $position = $offset + strlen($source);
+            if (preg_match('/\G\s*:/', $text, $unused, 0, $position) === 1) {
+                continue;
+            }
+            $view = new JsonStringView($source);
+            foreach ($this->findBlocks($view->getText()) as [$start, $length]) {
+                $rawStart = $view->sourceOffset($start);
+                $rawEnd = $view->sourceOffset($start + $length);
+                $blocks[] = [$offset + $rawStart, $rawEnd - $rawStart];
+            }
+        }
+        if ($matched === false) {
+            throw new \RuntimeException('Could not inspect JSON strings for HTML fragments');
+        }
+        return $blocks;
+    }
+
+    /** @return array<int,array{int,int}> Complete outermost HTML blocks as byte offsets/lengths. */
+    private function findHtmlBlocks(string $text): array
     {
         // Opaque contexts come first: their apparent tags must not change depth.
         // Token offsets let restoration preserve the user's original HTML bytes.
