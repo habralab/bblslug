@@ -10,7 +10,7 @@ use Bblslug\Models\Prompts;
 /**
  * Google Gemini translation driver using Generative Language API.
  *
- * Builds requests and parses responses for the Google Generative Language Chat Completions API.
+ * Builds requests and parses responses for the Google Generative Language GenerateContent API.
  */
 class GoogleDriver implements ModelDriverInterface
 {
@@ -27,7 +27,7 @@ class GoogleDriver implements ModelDriverInterface
      *     - context         (string|null) Additional context for system prompt.
      *     - format          (string)      Indicates which prompt format to use.
      *     - includeThoughts (bool|null)   Include chain-of-thought reasoning (Gemini 2.5+).
-     *     - json_transport  (string)      'markers' (default) or explicit 'native' JSON mode.
+     *     - json_transport  (string)      'auto' (default), 'markers', or 'native' JSON mode.
      *     - maxOutputTokens (int|null)    Maximum tokens for output.
      *     - promptKey       (string)      Key of the prompt template in prompts.yaml.
      *     - response_schema (array)       Gemini JSON schema for native structured output.
@@ -67,14 +67,7 @@ class GoogleDriver implements ModelDriverInterface
                 'format structured_json requires a non-empty associative response_schema.'
             );
         }
-        $transport = \array_key_exists('json_transport', $options) ? $options['json_transport'] : 'markers';
-        if (!\in_array($transport, ['markers', 'native'], true)) {
-            throw new \InvalidArgumentException('Google json_transport must be markers or native');
-        }
-        if ($hasResponseSchema && ($options['json_transport'] ?? null) === 'markers') {
-            throw new \InvalidArgumentException('Google response_schema cannot use the markers transport');
-        }
-        $nativeStructured = $hasResponseSchema || $transport === 'native';
+        $nativeStructured = self::usesNativeJson($config, $options);
         if ($nativeStructured && !\in_array($format, ['json', 'structured_json', 'linedJson'], true)) {
             throw new \InvalidArgumentException(
                 'Native JSON output requires format json, structured_json, or linedJson'
@@ -264,7 +257,7 @@ class GoogleDriver implements ModelDriverInterface
             $usage = $typed;
         }
 
-        if (\array_key_exists('response_schema', $options) || ($options['json_transport'] ?? null) === 'native') {
+        if (self::usesNativeJson($config, $options)) {
             return [
                 'text'  => \trim($accumulated),
                 'usage' => $usage,
@@ -288,5 +281,39 @@ class GoogleDriver implements ModelDriverInterface
             'text'  => $text,
             'usage' => $usage,
         ];
+    }
+
+    /**
+     * Resolve the same wire protocol when building a request and parsing its response.
+     *
+     * @param array<string,mixed> $config
+     * @param array<string,mixed> $options
+     */
+    private static function usesNativeJson(array $config, array $options): bool
+    {
+        $transport = \array_key_exists('json_transport', $options) ? $options['json_transport'] : 'auto';
+        if (!\in_array($transport, ['auto', 'markers', 'native'], true)) {
+            throw new \InvalidArgumentException('Google json_transport must be auto, markers, or native');
+        }
+        $hasSchema = \array_key_exists('response_schema', $options);
+        if ($hasSchema && $transport === 'markers') {
+            throw new \InvalidArgumentException('Google response_schema cannot use the markers transport');
+        }
+        if ($hasSchema || $transport === 'native') {
+            return true;
+        }
+        if ($transport === 'markers') {
+            return false;
+        }
+        $defaults = \is_array($config['defaults'] ?? null) ? $config['defaults'] : [];
+        $format = \is_string($options['format'] ?? null)
+            ? $options['format'] : ($defaults['format'] ?? 'text');
+        $promptKey = \is_string($options['promptKey'] ?? null) ? $options['promptKey'] : 'translator';
+        $capabilities = \is_array($config['capabilities'] ?? null) ? $config['capabilities'] : [];
+        // Custom JSON prompts keep their existing marker contract unless explicitly opted in.
+        return ($capabilities['native_json'] ?? false) === true
+            && \in_array($format, ['json', 'linedJson'], true)
+            && $promptKey === 'translator'
+            && \in_array('structured_json', Prompts::list()[$promptKey]['formats'] ?? [], true);
     }
 }

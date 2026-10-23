@@ -9,6 +9,21 @@ use PHPUnit\Framework\TestCase;
 
 final class BblslugStructuredOutputTest extends TestCase
 {
+    public function testRegisteredGeminiDefaultsToNativeJsonWithoutTransportOverride(): void
+    {
+        $result = $this->runFixture([
+            'model' => 'google:gemini-2.5-flash',
+            'format' => 'json',
+            'variables' => [],
+            'input' => '{"message":"Hello","count":7}',
+            'translated' => '{"message":"Hallo","count":7}',
+        ]);
+        self::assertSame('success', $result['type'], $result['message'] ?? '');
+        self::assertSame('{"message":"Hallo","count":7}', $result['result']);
+        self::assertSame('application/json', $result['request']['generationConfig']['responseMimeType']);
+        self::assertArrayNotHasKey('responseJsonSchema', $result['request']['generationConfig']);
+    }
+
     public function testGoogleNativeJsonWithoutSchemaUsesFacadeValidation(): void
     {
         foreach (['json', 'linedJson'] as $format) {

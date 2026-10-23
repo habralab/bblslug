@@ -500,27 +500,42 @@ requests the `structured_json` template.
 
 ### Google native JSON transport
 
-For Gemini models supporting [JSON output](https://ai.google.dev/api/generate-content#v1beta.GenerationConfig),
-`variables: ['json_transport' => 'native']` enables `application/json` output for
-`json` or `linedJson` without requiring a JSON Schema. Input and output contain
-only the JSON document, without translation markers. Syntax, source structure,
-exact non-string values, placeholders, and opt-in embedded JSON checks still apply
-when validation is enabled. Native JSON syntax alone does not guarantee a correct
-translation or unchanged technical string data.
+Google JSON requests default to `json_transport=auto`. For registered Gemini models
+with a declared native JSON capability, `json` and `linedJson` with the standard
+`translator` group request `application/json` output without translation markers
+or a required JSON Schema. The registry declares this capability per model; the
+driver does not infer it from names or endpoints. The current Gemini entries have
+it enabled; Gemma and undeclared custom configurations retain markers.
 
 ```bash
 printf '%s' '{"title":"Hello"}' | bblslug --model=google:gemini-2.5-flash \
-  --format=json --source-lang=EN --target-lang=DE --variables=json_transport=native
+  --format=json --source-lang=EN --target-lang=DE
 ```
 
-The default remains `json_transport=markers` for compatibility with legacy models
-and existing custom JSON prompts. It still rejects missing output markers. Native
-mode requests the `structured_json` prompt template, including for custom prompt
-groups. `structured_json` format itself still requires `response_schema`; supplying
-a schema automatically enables native output. An explicit `markers` transport with
-a schema is rejected. Native mode does not fall back to markers after an error.
-The transport values `native` and `markers` are specific to Google; DeepL has its
-own transport choices.
+The driver uses the same automatic selection to build requests and parse responses.
+Text and HTML retain markers. Custom prompt groups retain their existing marker
+contract in auto mode; a custom `translator` group without `structured_json` also
+retains markers. To select a protocol explicitly, pass
+`variables: ['json_transport' => 'native']` or `['json_transport' => 'markers']`,
+or CLI `--variables=json_transport=markers`. A failed HTTP request or invalid
+response never triggers an automatic protocol retry.
+
+Explicit native mode requests the selected group's `structured_json` template;
+missing templates fail explicitly. `structured_json` format still requires
+`response_schema`, and supplying a schema selects native output even in auto mode.
+Explicit markers conflict with a schema. Syntax, source structure, exact non-string
+values, placeholders, and opt-in embedded JSON validation remain enabled by default.
+Native JSON syntax does not guarantee semantic correctness of translated strings.
+See the provider's [JSON output documentation](https://ai.google.dev/api/generate-content#v1beta.GenerationConfig).
+Google transport choices are separate from DeepL's transport choices.
+
+A 2026-10-23 auto-mode check sent JSON through API and CLI on Gemini 2.5 Flash,
+2.5 Pro, 2.5 Flash-Lite, 3.8 Flash, and 4 Argon. Nine of ten requests passed the
+nested JSON/code/URL/scalar checks; 4 Argon's CLI request timed out at the smoke
+runner's 45-second deadline. One separately recorded CLI check with the library's
+normal 120-second timeout passed in 3.49 seconds. This does not establish a cause
+for the transient timeout. Four additional 2.5 Flash text/HTML API/CLI requests
+passed with their existing marker protocol.
 
 ### Live provider checks
 

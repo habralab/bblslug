@@ -29,7 +29,7 @@ php tools/live-smoke.php
 key. Select formats that the chosen group provides. The XML group has no native
 `structured_json` template, so use the marker protocol for that comparison.
 
-To check Google's native JSON transport instead of the default markers:
+To force Google's native JSON transport instead of the default automatic selection:
 
 ```bash
 BBLSLUG_SMOKE_MODELS=google:gemini-2.5-flash \
@@ -39,9 +39,11 @@ BBLSLUG_SMOKE_REPORT_DIR=/tmp/bblslug-gemini-native \
 php tools/live-smoke.php
 ```
 
-The transport override accepts `markers` or `native`, applies only to Google JSON
-cases, and is recorded in each corresponding summary row. The ordinary default
-run continues to exercise the marker protocol.
+The transport override accepts `auto` (default), `markers`, or `native`, applies
+only to Google JSON cases, and is recorded in each corresponding summary row.
+Auto mode uses declared model capabilities with the standard translator template;
+custom JSON-only prompt groups retain their marker protocol. Use `markers` to
+reproduce the historical protocol checks explicitly.
 
 Defaults cover the eight model/tier entries in the README live-check table, all
 three formats (`text,html,json`), and both entry points (`api,cli`). Credentials
@@ -87,3 +89,9 @@ prototype passed 10/12, and the reviewed `experimental_xml` passed 12/12. The
 original prototype's Yandex Pro responses added Markdown fences and were rejected.
 It was loaded under a temporary local key for comparison and is not a shipped
 prompt group. See the README for scope and limitations of this single-sample run.
+
+The subsequent automatic-selection check covered five Gemini models with ten
+API/CLI JSON requests: nine passed, and 4 Argon CLI timed out at 45 seconds. A
+separate single check with the normal library timeout of 120 seconds passed in
+3.49 seconds; the first timeout remains recorded. Four 2.5 Flash text/HTML requests
+also passed. These observations do not claim every catalogue entry was live-tested.

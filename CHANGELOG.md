@@ -29,7 +29,8 @@ The format is based on [Semantic Versioning](https://semver.org/spec/v2.0.0.html
   without a required response schema. The request uses `application/json` and the
   generic `structured_json` prompt; responses do not depend on translation markers.
   Source structure, scalar, placeholder, and optional embedded JSON validation
-  remain active. The default marker protocol is unchanged for compatibility.
+  remain active. Automatic selection preserves marker-only custom prompts and
+  models without a declared native JSON capability.
   `structured_json` still requires a schema; explicit markers conflict with a schema.
   Native Google API/CLI smoke requests passed three times each on Gemini 2.5 Flash.
 
@@ -44,6 +45,13 @@ The format is based on [Semantic Versioning](https://semver.org/spec/v2.0.0.html
   Disabled by default; ordinary strings and encoded scalar values remain translatable.
 
 ### Fixed
+
+- Gemini `json`/`linedJson` with the standard translator now use native JSON in
+  the default `auto` mode when the registry declares support. No marker matching
+  is needed on that path. Text/HTML, custom marker prompts, and undeclared models
+  retain their prior protocol. Explicit `native`/`markers` overrides remain
+  available; build and parse share the same selection. Fifteen current Gemini
+  entries declare native JSON support; Gemma entries remain conservative.
 
 - Composer distribution archives now include the README alongside the license and
   changelog, so installed consumers retain usage instructions and known limitations.
@@ -165,10 +173,10 @@ The format is based on [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ### Known limitations
 
-- Gemini marker-based JSON responses can omit the opening marker and are rejected.
-  Explicit native JSON transport avoids that marker dependency on supporting models.
-  Yandex Lite can add Markdown fences to HTML despite the prompt; those responses
-  remain rejected. Neither case is silently repaired or retried.
+- Explicit/custom marker-based Gemini JSON responses can still omit markers and
+  are rejected; default capable-model JSON uses native output. Yandex Lite can add
+  Markdown fences to HTML despite the prompt; those responses remain rejected.
+  Neither case is silently repaired or retried.
 
 - Unclosed selected HTML elements remain unprotected; only complete explicit
   tag pairs are captured. JSON-aware filtering requires valid JSON; malformed

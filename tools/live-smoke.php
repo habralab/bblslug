@@ -149,8 +149,8 @@ if (
 ) {
     throw new InvalidArgumentException('Unsupported smoke formats or entries');
 }
-$googleJsonTransport = getenv('BBLSLUG_SMOKE_GOOGLE_JSON_TRANSPORT') ?: 'markers';
-if (!in_array($googleJsonTransport, ['markers', 'native'], true)) {
+$googleJsonTransport = getenv('BBLSLUG_SMOKE_GOOGLE_JSON_TRANSPORT') ?: 'auto';
+if (!in_array($googleJsonTransport, ['auto', 'markers', 'native'], true)) {
     throw new InvalidArgumentException('Unsupported Google JSON smoke transport');
 }
 $promptKey = getenv('BBLSLUG_SMOKE_PROMPT_KEY') ?: 'translator';
