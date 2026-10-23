@@ -40,7 +40,8 @@ class HtmlTagFilter implements FilterInterface
         }
         $text = $shielded;
 
-        $pattern = sprintf('/<%s.*?>.*?<\/%s>/is', $this->tag, $this->tag);
+        $tag = preg_quote($this->tag, '~');
+        $pattern = sprintf('~<%s(?=[\s/>])[^>]*>.*?</%s\s*>~is', $tag, $tag);
         $replaced = preg_replace_callback(
             $pattern,
             /** @param array<int,string> $m */
@@ -51,8 +52,10 @@ class HtmlTagFilter implements FilterInterface
             },
             $text
         );
-        // preg_replace_callback may return null on error; fall back to original text
-        return $replaced !== null ? $replaced : $text;
+        if ($replaced === null) {
+            throw new \RuntimeException('Could not protect HTML tag fragments');
+        }
+        return $replaced;
     }
 
     public function restore(string $text): string

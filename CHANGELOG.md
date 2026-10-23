@@ -15,6 +15,11 @@ The format is based on [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ### Fixed
 
+- HTML tag filters match the complete selected tag name, so `html_pre` no longer
+  hides `<prelude>` and `html_code` no longer hides `<code-block>`. Closing-tag
+  whitespace is accepted, tag names are treated literally, and a regex failure
+  stops filtering instead of silently sending unprotected content for translation.
+
 - DeepL `json`/`linedJson` now use native document upload, bounded status polling,
   and download by default. Live Free/Pro checks preserve the previously changed
   path quotation marks, including an encoded JSON object. Existing result
@@ -71,6 +76,10 @@ The format is based on [Semantic Versioning](https://semver.org/spec/v2.0.0.html
   safe when filter instances process multiple inputs.
 
 ### Known limitations
+
+- HTML tag filters still stop at the first same-name closing tag in nested
+  elements and do not recognize JSON-escaped closing tags such as `<\/code>`.
+  These cases are not fixed by the exact tag-name matching change.
 
 - DeepL string contents remain translatable. Native document checks passed the
   observed path scenario, but neither container validation nor a small live sample
