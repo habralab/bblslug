@@ -11,6 +11,7 @@ use Bblslug\Models\Prompts;
 use Bblslug\Models\UsageExtractor;
 use Bblslug\Validation\HtmlValidator;
 use Bblslug\Validation\JsonValidator;
+use Bblslug\Validation\PlaceholderValidator;
 use Bblslug\Validation\Schema;
 use Bblslug\Validation\TextLengthValidator;
 
@@ -357,6 +358,16 @@ class Bblslug
         }
 
         $consumed = UsageExtractor::extract($model, $rawUsage);
+
+        // Integrity is required for safe restoration, independently of container validation.
+        if ($filterManager->getStats() !== []) {
+            $placeholderResult = (new PlaceholderValidator($prepared))->validate($translated);
+            if (!$placeholderResult->isValid()) {
+                throw new \RuntimeException(
+                    "Placeholder mismatch: " . implode('; ', $placeholderResult->getErrors())
+                );
+            }
+        }
 
         // Restore placeholders
         $say($onFeedback, "Restoring placeholders", 'info');

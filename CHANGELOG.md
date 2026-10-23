@@ -8,6 +8,10 @@ The format is based on [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ### Fixed
 
+- Filtered translations reject missing, duplicated, or unexpected placeholder
+  markers before restoration. Marker order may change; occurrence counts must
+  match the prepared input, even when container validation is disabled.
+
 - URL filtering preserves escaped quote boundaries inside JSON strings and HTML
   attributes, recognizes escaped slashes at nested JSON encoding depths, and
   supports standard `mailto:` links. Matched URL bytes are restored unchanged.
