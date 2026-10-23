@@ -33,6 +33,15 @@ namespace Bblslug {
                         'error' => ['type' => 'invalid_request_error', 'message' => "Credit balance too low ({$key})"],
                     ], JSON_THROW_ON_ERROR);
                     break;
+                case 'yandex-truncated':
+                case 'yandex-filtered':
+                    $status = 200;
+                    $body = json_encode(['result' => ['alternatives' => [[
+                        'status' => $case === 'yandex-truncated'
+                            ? 'ALTERNATIVE_STATUS_TRUNCATED_FINAL' : 'ALTERNATIVE_STATUS_CONTENT_FILTER',
+                        'message' => ['text' => '‹‹TRANSLATION››Hallo‹‹END››'],
+                    ]]]], JSON_THROW_ON_ERROR);
+                    break;
                 case 'malformed':
                     $status = 200;
                     $body = '{}';

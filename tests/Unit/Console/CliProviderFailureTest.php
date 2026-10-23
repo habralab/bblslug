@@ -35,6 +35,8 @@ final class CliProviderFailureTest extends TestCase
             'anthropic credit' => ['anthropic-credit', 'anthropic:claude-haiku-5.5', 'Credit balance too low'],
             'malformed response' => ['malformed', 'openai:gpt-5-mini', 'OpenAI translation failed'],
             'timeout' => ['timeout', 'openai:gpt-5-mini', 'timed out'],
+            'Yandex truncation with markers' => ['yandex-truncated', 'yandex:gpt-lite', 'translation was truncated'],
+            'Yandex content filter with markers' => ['yandex-filtered', 'yandex:gpt-lite', 'content filter'],
         ];
     }
 
@@ -82,6 +84,8 @@ final class CliProviderFailureTest extends TestCase
             'BBLSLUG_TEST_CASE' => $case,
             'BBLSLUG_OPENAI_API_KEY' => $key,
             'BBLSLUG_ANTHROPIC_API_KEY' => $key,
+            'BBLSLUG_YANDEX_API_KEY' => $key,
+            'BBLSLUG_YANDEX_FOLDER_ID' => 'fixture-folder',
         ];
         $process = proc_open(
             $command,

@@ -523,6 +523,26 @@ JSON requests preserved the tested path and encoded JSON on both tiers; this doe
 not guarantee semantic preservation of arbitrary strings. See
 [the repeatable smoke runner](tools/README.md) for commands and scope.
 
+Yandex Lite text/JSON also passed four API/CLI smoke requests after the completion
+status checks were added. These successful responses do not resolve its known HTML
+Markdown-fence failures.
+
+### Yandex completion status
+
+The driver checks completion metadata before extracting text, even when translation
+markers are present. Foundation API alternatives must have
+`ALTERNATIVE_STATUS_FINAL`; Chat Completions and legacy completion responses must
+have `finish_reason=stop`, when that field is supplied. Truncated, partial,
+content-filtered, tool-call, unknown, and malformed completion states are rejected.
+An explicit Chat Completions refusal is also rejected. Only the first alternative
+is considered; another alternative does not replace a rejected one.
+
+Older response shapes without completion metadata remain accepted for compatibility;
+markers and enabled output validation still apply. CLI provider failures leave the
+source and an existing destination file unchanged. No automatic retry is performed.
+The documented Yandex API format controls target JSON; this change does not add an
+HTML output mode or strip Markdown wrappers from a model response.
+
 ### Secret masking in diagnostics
 
 The facade masks the API key in HTTP diagnostic logs and provider exceptions.

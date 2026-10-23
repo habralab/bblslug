@@ -224,7 +224,11 @@ class YandexDriver implements ModelDriverInterface
         // OpenAI-compatible Chat Completions response shape
         $choices = $data['choices'] ?? null;
         if (\is_array($choices) && isset($choices[0]) && \is_array($choices[0])) {
+            self::assertCompleted($choices[0], 'finish_reason', 'stop');
             $message = \is_array($choices[0]['message'] ?? null) ? $choices[0]['message'] : null;
+            if ($message !== null && ($message['refusal'] ?? '') !== '') {
+                throw new \RuntimeException('Yandex: translation was refused by the model');
+            }
             if ($message !== null && \is_string($message['content'] ?? null)) {
                 $content = $message['content'];
             }
@@ -235,6 +239,7 @@ class YandexDriver implements ModelDriverInterface
         if ($content === null && $result !== null) {
             $alts = \is_array($result['alternatives'] ?? null) ? $result['alternatives'] : null;
             if ($alts !== null && isset($alts[0]) && \is_array($alts[0])) {
+                self::assertCompleted($alts[0], 'status', 'ALTERNATIVE_STATUS_FINAL');
                 $msg = \is_array($alts[0]['message'] ?? null) ? $alts[0]['message'] : null;
                 if ($msg !== null && \is_string($msg['text'] ?? null)) {
                     $content = $msg['text'];
@@ -245,6 +250,7 @@ class YandexDriver implements ModelDriverInterface
         if ($content === null) {
             $comps = \is_array($data['completions'] ?? null) ? $data['completions'] : null;
             if ($comps !== null && isset($comps[0]) && \is_array($comps[0])) {
+                self::assertCompleted($comps[0], 'finish_reason', 'stop');
                 $t = $comps[0]['text'] ?? null;
                 if (\is_string($t)) {
                     $content = $t;
@@ -287,5 +293,27 @@ class YandexDriver implements ModelDriverInterface
             'text'  => $text,
             'usage' => $usage,
         ];
+    }
+
+    /** @param array<array-key,mixed> $alternative */
+    private static function assertCompleted(array $alternative, string $field, string $completed): void
+    {
+        // Legacy responses may omit completion metadata; explicit failure must never be ignored.
+        if (!\array_key_exists($field, $alternative) || $alternative[$field] === $completed) {
+            return;
+        }
+        $status = $alternative[$field];
+        if (\in_array($status, ['ALTERNATIVE_STATUS_TRUNCATED_FINAL', 'length'], true)) {
+            throw new \RuntimeException(
+                'Yandex: translation was truncated; increase maxTokens or split the input into smaller chunks'
+            );
+        }
+        if (\in_array($status, ['ALTERNATIVE_STATUS_CONTENT_FILTER', 'content_filter'], true)) {
+            throw new \RuntimeException('Yandex: translation was blocked by the content filter');
+        }
+        if (\in_array($status, ['ALTERNATIVE_STATUS_TOOL_CALLS', 'tool_calls', 'function_call'], true)) {
+            throw new \RuntimeException('Yandex: a tool call was returned instead of a completed translation');
+        }
+        throw new \RuntimeException('Yandex: translation did not finish successfully');
     }
 }

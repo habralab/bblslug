@@ -28,6 +28,14 @@ The format is based on [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ### Fixed
 
+- Yandex rejects incomplete, truncated, content-filtered, tool-call, and invalid
+  completion states before parsing translated content, even when both translation
+  markers are present. Chat Completions refusals are also rejected. Foundation,
+  Chat Completions, and legacy completion response shapes retain compatibility
+  when metadata is absent. CLI regression checks verify that truncation/filter
+  errors leave existing source and destination files unchanged. Four live Yandex
+  Lite text/JSON requests passed through API and CLI after the fix.
+
 - DeepL native JSON document requests accept a positive integer timeout passed
   as a CLI variable string. Zero, fractional, nonnumeric, boolean, and overflowing
   values remain invalid. Previously `--variables=document_timeout=45` failed before
