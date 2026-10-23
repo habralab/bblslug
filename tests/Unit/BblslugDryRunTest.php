@@ -94,6 +94,38 @@ final class BblslugDryRunTest extends TestCase
         $this->assertSame([], $out['consumed']);
     }
 
+    public function testJsonUrlFilterKeepsPreparedInputValidAcrossJsonFormats(): void
+    {
+        foreach (['json', 'structured_json', 'linedJson'] as $format) {
+            foreach ([JSON_UNESCAPED_SLASHES, 0] as $flags) {
+                $input = json_encode(
+                    ['content' => '<a href="https://example.org/docs?q=1">Read</a>'],
+                    $flags | JSON_THROW_ON_ERROR
+                );
+                $variables = $format === 'structured_json' ? ['response_schema' => [
+                    'type' => 'object',
+                    'properties' => ['content' => ['type' => 'string']],
+                    'required' => ['content'],
+                    'additionalProperties' => false,
+                ]] : [];
+                $out = Bblslug::translate(
+                    apiKey: 'fixture-key',
+                    format: $format,
+                    modelKey: 'openai:gpt-5-mini',
+                    text: $input,
+                    dryRun: true,
+                    filters: ['url'],
+                    variables: $variables
+                );
+
+                $prepared = json_decode($out['prepared'], true, 512, JSON_THROW_ON_ERROR);
+                self::assertSame('<a href="@@0@@">Read</a>', $prepared['content']);
+                self::assertSame($input, $out['result']);
+                self::assertSame(1, $out['filterStats'][0]['count']);
+            }
+        }
+    }
+
     /** @test */
     public function dryRunJsonValidatesSchemaBeforeAndAfter(): void
     {

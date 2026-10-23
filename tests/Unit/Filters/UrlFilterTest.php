@@ -51,4 +51,103 @@ final class UrlFilterTest extends TestCase
         $this->assertSame($in, $f->restore($in));
         $this->assertSame(0, $f->getStats()['count']);
     }
+
+    /**
+     * @test
+     * @dataProvider jsonEncodingFlags
+     */
+    public function masksUrlInsideJsonHtmlAttributeWithoutCorruptingJson(int $flags): void
+    {
+        $f = new UrlFilter();
+        $ctr = new PlaceholderCounter();
+        $in = json_encode(
+            ['content' => '<a href="https://example.org/docs?a=1">Documentation</a>'],
+            JSON_THROW_ON_ERROR | $flags
+        );
+
+        $masked = $f->apply($in, $ctr);
+        $decoded = json_decode($masked, true, 512, JSON_THROW_ON_ERROR);
+
+        $this->assertSame('<a href="@@0@@">Documentation</a>', $decoded['content']);
+        $this->assertSame(1, $f->getStats()['count']);
+        $this->assertSame($in, $f->restore($masked));
+    }
+
+    /**
+     * @test
+     * @dataProvider nestedJsonEncodingFlags
+     */
+    public function masksUrlInsideNestedJsonAtDifferentEscapeDepths(int $innerFlags, int $outerFlags): void
+    {
+        $f = new UrlFilter();
+        $ctr = new PlaceholderCounter();
+        $nested = json_encode(
+            ['html' => '<a href="https://example.org/nested">Nested</a>'],
+            JSON_THROW_ON_ERROR | $innerFlags
+        );
+        $in = json_encode(
+            ['embedded' => $nested],
+            JSON_THROW_ON_ERROR | $outerFlags
+        );
+
+        $masked = $f->apply($in, $ctr);
+        $decoded = json_decode($masked, true, 512, JSON_THROW_ON_ERROR);
+        $decodedNested = json_decode($decoded['embedded'], true, 512, JSON_THROW_ON_ERROR);
+
+        $this->assertSame('<a href="@@0@@">Nested</a>', $decodedNested['html']);
+        $this->assertSame(1, $f->getStats()['count']);
+        $this->assertSame($in, $f->restore($masked));
+    }
+
+    /** @test */
+    public function preservesSingleQuotedHtmlAttributeBoundary(): void
+    {
+        $f = new UrlFilter();
+        $ctr = new PlaceholderCounter();
+        $in = "<a href='https://example.org/docs'>Documentation</a>";
+
+        $masked = $f->apply($in, $ctr);
+
+        $this->assertSame("<a href='@@0@@'>Documentation</a>", $masked);
+        $this->assertSame(1, $f->getStats()['count']);
+        $this->assertSame($in, $f->restore($masked));
+    }
+
+    /** @test */
+    public function masksStandardMailtoUrl(): void
+    {
+        $f = new UrlFilter();
+        $ctr = new PlaceholderCounter();
+        $in = 'Contact mailto:user@example.org for details.';
+
+        $masked = $f->apply($in, $ctr);
+
+        $this->assertSame('Contact @@0@@ for details.', $masked);
+        $this->assertSame(1, $f->getStats()['count']);
+        $this->assertSame($in, $f->restore($masked));
+    }
+
+    /**
+     * @return array<string,array{int}>
+     */
+    public static function jsonEncodingFlags(): array
+    {
+        return [
+            'default escaped slashes' => [0],
+            'unescaped slashes' => [JSON_UNESCAPED_SLASHES],
+        ];
+    }
+
+    /**
+     * @return array<string,array{int,int}>
+     */
+    public static function nestedJsonEncodingFlags(): array
+    {
+        return [
+            'both levels escape slashes' => [0, 0],
+            'inner level leaves slashes unescaped' => [JSON_UNESCAPED_SLASHES, 0],
+            'outer level leaves slashes unescaped' => [0, JSON_UNESCAPED_SLASHES],
+            'both levels leave slashes unescaped' => [JSON_UNESCAPED_SLASHES, JSON_UNESCAPED_SLASHES],
+        ];
+    }
 }

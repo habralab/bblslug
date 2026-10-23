@@ -14,8 +14,12 @@ class UrlFilter implements FilterInterface
 
     public function apply(string $text, PlaceholderCounter $counter): string
     {
+        // Preserve escaped slashes, but leave quote escapes outside the URL.
+        $pattern = <<<'REGEX'
+~\b(?:(?:https?|ftp):(?://|\\+/\\+/)|mailto:)(?:\\+/|[^\s"'<>()\\])+~i
+REGEX;
         $replaced = preg_replace_callback(
-            '/\b(?:https?|ftp|mailto):\/\/[^\s"<>()]+/i',
+            $pattern,
             /** @param array<int,string> $m */
             function (array $m) use ($counter): string {
                 $ph = $counter->next();

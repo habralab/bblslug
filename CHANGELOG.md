@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- URL filtering preserves escaped quote boundaries inside JSON strings and HTML
+  attributes, recognizes escaped slashes at nested JSON encoding depths, and
+  supports standard `mailto:` links. Matched URL bytes are restored unchanged.
+
 ## [0.9.0] – 2026-10-23
 
 This release supersedes the withdrawn `v0.8.0` Git release. Packagist retains
