@@ -94,6 +94,23 @@ final class BblslugDryRunTest extends TestCase
         $this->assertSame([], $out['consumed']);
     }
 
+    public function testDryRunPreservesSourceMarkerTextAcrossFilterOrders(): void
+    {
+        $input = 'Keep @@1@@ and <code>@@0@@</code> beside https://example.org/@@2@@';
+        foreach ([['url'], ['html_code'], ['url', 'html_code'], ['html_code', 'url']] as $filters) {
+            $out = Bblslug::translate(
+                apiKey: 'fixture-key',
+                format: 'text',
+                modelKey: 'openai:gpt-5-mini',
+                text: $input,
+                dryRun: true,
+                filters: $filters
+            );
+            self::assertSame($input, $out['result']);
+            self::assertSame(0, $out['httpStatus']);
+        }
+    }
+
     public function testJsonUrlFilterKeepsPreparedInputValidAcrossJsonFormats(): void
     {
         foreach (['json', 'structured_json', 'linedJson'] as $format) {

@@ -14,6 +14,9 @@ class HtmlTagFilter implements FilterInterface
     /** @var array<string,string> placeholder => original */
     private array $map = [];
 
+    /** @var array<string,string> generated shield => literal marker-like source text */
+    private array $literalMap = [];
+
     public function __construct(string $tag)
     {
         $this->tag = $tag;
@@ -21,6 +24,22 @@ class HtmlTagFilter implements FilterInterface
 
     public function apply(string $text, PlaceholderCounter $counter): string
     {
+        // Shield complete, overlapping, and partial markers before capturing fragments.
+        $shielded = preg_replace_callback(
+            '/(?<![0-9@])[0-9@]*@@[0-9@]*/',
+            /** @param array<int,string> $match */
+            function (array $match) use ($counter): string {
+                $placeholder = $counter->next();
+                $this->literalMap[$placeholder] = $match[0];
+                return $placeholder;
+            },
+            $text
+        );
+        if ($shielded === null) {
+            throw new \RuntimeException('Could not protect literal placeholders');
+        }
+        $text = $shielded;
+
         $pattern = sprintf('/<%s.*?>.*?<\/%s>/is', $this->tag, $this->tag);
         $replaced = preg_replace_callback(
             $pattern,
@@ -38,7 +57,8 @@ class HtmlTagFilter implements FilterInterface
 
     public function restore(string $text): string
     {
-        return str_replace(array_keys($this->map), array_values($this->map), $text);
+        // Each pass is simultaneous; source markers return after fragment expansion.
+        return strtr(strtr($text, $this->map), $this->literalMap);
     }
 
     /**

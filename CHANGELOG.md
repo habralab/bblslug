@@ -12,6 +12,10 @@ The format is based on [Semantic Versioning](https://semver.org/spec/v2.0.0.html
   attributes, recognizes escaped slashes at nested JSON encoding depths, and
   supports standard `mailto:` links. Matched URL bytes are restored unchanged.
 
+- URL and HTML filters preserve literal placeholder-like text, including partial
+  and overlapping markers. Restoration avoids cascading replacements and remains
+  safe when filter instances process multiple inputs.
+
 ## [0.9.0] – 2026-10-23
 
 This release supersedes the withdrawn `v0.8.0` Git release. Packagist retains
