@@ -25,7 +25,7 @@ class DeepLDriver implements ModelDriverInterface
      *     - dryRun    (bool)   Skip real HTTP call
      *     - format    (string) 'text', 'html', 'json' or 'linedJson'
      *     - json_transport (string) 'document' (default) or explicit 'text_batch'.
-     *     - document_timeout (int) Upload timeout and polling/download deadline, in seconds.
+     *     - document_timeout (int|string) Upload timeout and polling/download deadline, in seconds.
      *     - verbose   (bool)   Include debug logs
      *
      * @return array{
@@ -174,6 +174,9 @@ class DeepLDriver implements ModelDriverInterface
             throw new \InvalidArgumentException('DeepL JSON document exceeds the 1 MB upload limit');
         }
         $timeout = $options['document_timeout'] ?? 120;
+        if (is_string($timeout) && preg_match('/^[1-9][0-9]*$/D', $timeout) === 1) {
+            $timeout = filter_var($timeout, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+        }
         if (!is_int($timeout) || $timeout < 1) {
             throw new \InvalidArgumentException('DeepL document_timeout must be a positive integer');
         }

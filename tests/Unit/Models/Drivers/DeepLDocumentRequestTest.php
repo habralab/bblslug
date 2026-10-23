@@ -44,6 +44,16 @@ final class DeepLDocumentRequestTest extends TestCase
         self::assertSame(9, $request['timeoutSeconds']);
     }
 
+    public function testCanonicalPositiveIntegerStringTimeoutIsAccepted(): void
+    {
+        $request = (new DeepLDriver())->buildRequest(
+            self::CONFIG,
+            '{"title":"Hello"}',
+            ['format' => 'json', 'document_timeout' => '5']
+        );
+        self::assertSame(5, $request['timeoutSeconds']);
+    }
+
     public function testDocumentUploadAllowsMoreThan128KiBButRejectsOverOneMegabyte(): void
     {
         $source = json_encode(['value' => str_repeat('x', 140 * 1024)], JSON_THROW_ON_ERROR);
@@ -68,7 +78,16 @@ final class DeepLDocumentRequestTest extends TestCase
     /** @return array<string,array{mixed}> */
     public static function invalidTimeoutProvider(): array
     {
-        return ['zero' => [0], 'negative' => [-1], 'float' => [1.5], 'string' => ['5']];
+        return [
+            'zero' => [0],
+            'negative' => [-1],
+            'float' => [1.5],
+            'decimal string' => ['1.5'],
+            'nonnumeric string' => ['five'],
+            'boolean' => [true],
+            'zero string' => ['0'],
+            'overflow string' => [str_repeat('9', 100)],
+        ];
     }
 
     public function testUnsupportedTransportAndNativeOnlyOptionsAreRejected(): void

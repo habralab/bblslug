@@ -21,6 +21,18 @@ final class BblslugDeepLDocumentTest extends TestCase
         }
     }
 
+    public function testCliStyleDocumentTimeoutStringReachesNativeWorkflow(): void
+    {
+        $result = $this->runFixture([
+            'source' => '{"title":"Hello"}',
+            'variables' => ['document_timeout' => '5'],
+        ]);
+        self::assertSame('success', $result['type'], $result['message'] ?? '');
+        self::assertSame(5, $result['calls'][0]['timeoutSeconds']);
+        self::assertSame(5, $result['calls'][1]['timeoutSeconds']);
+        self::assertSame(5, $result['calls'][2]['timeoutSeconds']);
+    }
+
     public function testWindowsPathAndNestedEncodedJsonRoundTripByteForByteWithoutFilters(): void
     {
         $path = 'C:\\tmp\\"x"';
