@@ -370,8 +370,8 @@ the selected prompt group's JSON template and the provider's JSON transport. A c
 a JSON template for this mode. DeepL uses its JSON Document API by default;
 `json_transport=text_batch` remains an explicit alternative with its existing
 batch limits. Length checks apply to the serialized JSON payload; returned `prepared` text
-and length statistics still describe HTML. There is no
-automatic splitting, retry, or fallback to document mode.
+and length statistics still describe HTML. Requests remain unsplit unless explicit
+batching is enabled below. There is no automatic retry or fallback to document mode.
 
 Fragment translation can reduce fluency where grammar requires moving words
 across inline tags. Keeping every fragment does not prove translation fidelity.
@@ -448,6 +448,81 @@ bytes and HTML structure. Fresh Gemini 2.5 Flash API and CLI checks also passed,
 with `maxOutputTokens=32768`; protected URLs/code and unselected JSON bytes were
 unchanged. This verifies reconstruction for that fixture, not general translation
 fidelity or a new live check of every provider.
+
+### Limit HTML segment batches
+
+Set `htmlSegmentBatchSize: 25` in the PHP API or add
+`--html-segment-batch-size=25` in the CLI to send at most 25 fragments per request.
+The option requires `htmlTransport: 'segments'` / `--html-transport=segments` and
+works for HTML and selected HTML strings inside `json`/`linedJson`.
+
+```php
+$result = Bblslug::translate(
+    apiKey: $key,
+    format: 'json',
+    modelKey: 'xai:grok-4.20-0309-non-reasoning',
+    text: $json,
+    htmlTransport: 'segments',
+    htmlJsonPointers: ['/body'],
+    htmlSegmentBatchSize: 25,
+);
+```
+
+```bash
+vendor/bin/bblslug --model=xai:grok-4.20-0309-non-reasoning --format=html \
+  --html-transport=segments --html-segment-batch-size=25 \
+  --source=input.html --translated=out.html
+```
+
+The default is `null` (no batching). Packets run sequentially, preserving the
+original identifiers and source positions. Every response is checked against its
+own packet before continuing, even with validation disabled. Missing, duplicate,
+extra, empty, or non-string values abort the operation. A packet failure identifies
+its position and the number of earlier completed packets; no further packets are
+sent, no partial document is returned, and the CLI keeps existing files unchanged.
+There are no automatic retries or fallback requests. A successful earlier packet
+is a completed provider operation even when a later packet fails.
+
+Model input-length checks and request-body preparation run for **all** packets
+before the first HTTP call. A single oversized fragment fails; it is never clipped
+or silently divided. The limit counts fragments, not characters or bytes. Smaller
+packets also reduce context across inline text nodes, so translation fidelity still
+requires review. Source HTML and unselected JSON remain local as before.
+
+Batching explicitly makes multiple translation requests. Existing output-token
+settings and timeouts apply **per packet**, not to the complete document. Prompts
+and context are repeated. DeepL's default JSON transport starts a separate document
+workflow per packet; its explicit `json_transport=text_batch` alternative retains
+its own endpoint limits. Authentication, proxy, language, and model options are
+reused for each request.
+
+With a batch size configured, the result adds `batches`: ordered summaries with
+`index` (1-based), `segments`, `httpStatus`, and normalized `consumed` usage.
+Top-level `consumed` sums the metrics actually reported across packets; absent
+metrics are not estimated. `httpStatus` describes the last packet.
+`rawResponseBody` becomes a JSON array of raw response-body **strings**, one per
+packet, rather than a fabricated provider response. Verbose diagnostics identify
+packets. API dry-run records planned packets with status 0 and sends no HTTP;
+CLI dry-run still returns prepared HTML/JSON. Inputs with no translatable text
+make no requests and return an empty `batches` list. Without the option, the
+existing single-response result shape remains unchanged.
+
+A 2026-10-23 large-document check used 179 fragments and a limit of 25. It did
+not produce a complete large-document translation:
+
+| Configuration | Observed result |
+| --- | --- |
+| Grok 4.20 non-reasoning | Six packets passed; packet 7/8 timed out after 240 seconds. |
+| Yandex Lite | Packet 1/8 returned invalid JSON with an opening Markdown fence. |
+| Yandex Pro | Packet 1 passed; packet 2/8 added paired Markdown fences around JSON. |
+
+No packets were retried. Offline inspection also found a JSON syntax error in
+Lite's response after removing its transport fence; Pro's enclosed 25 values
+passed strict checks in that offline inspection. Fence removal is **not** part of
+this batching feature. A separate small JSON CLI example passed on Grok: five
+fragments in three packets, with selected HTML, code, and unselected JSON preserved.
+These results establish the batching/error-handling behavior, not general provider
+reliability on large documents.
 
 ### Add translation context (prompt), source and target language
 

@@ -13,6 +13,8 @@ use Bblslug\Models\Prompts;
 use Bblslug\Models\UsageExtractor;
 use Bblslug\Translation\HtmlTextDocument;
 use Bblslug\Translation\JsonHtmlDocument;
+use Bblslug\Translation\SegmentBatches;
+use Bblslug\Translation\SegmentTranslations;
 use Bblslug\Validation\EmbeddedJsonValidator;
 use Bblslug\Validation\JsonHtmlValidator;
 use Bblslug\Validation\HtmlValidator;
@@ -88,6 +90,7 @@ class Bblslug
      * @param array<int,string> $validateHtmlJsonPointers Explicit JSON Pointers to HTML strings to validate.
      * @param string $htmlTransport HTML document translation or locally reconstructed text segments.
      * @param array<int,string> $htmlJsonPointers Explicit HTML strings to translate in JSON segment mode.
+     * @param int|null $htmlSegmentBatchSize Maximum segments per sequential request; null keeps one request.
      *
      * @return array{
      *     original: string,
@@ -99,7 +102,8 @@ class Bblslug
      *     rawResponseBody: string,
      *     consumed: array<string,mixed>,
      *     lengths: array{original:int,prepared:int,translated:int},
-     *     filterStats: array<array{filter:string,count:int}>
+     *     filterStats: array<array{filter:string,count:int}>,
+     *     batches?: list<array{index:int,segments:int,httpStatus:int,consumed:array<string,mixed>}>
      * }
      *
      * @throws \InvalidArgumentException If inputs are invalid.
@@ -125,8 +129,14 @@ class Bblslug
         bool $validateEmbeddedJson = false,
         array $validateHtmlJsonPointers = [],
         string $htmlTransport = 'document',
-        array $htmlJsonPointers = []
+        array $htmlJsonPointers = [],
+        ?int $htmlSegmentBatchSize = null
     ): array {
+        if ($htmlSegmentBatchSize !== null && ($htmlSegmentBatchSize < 1 || $htmlTransport !== 'segments')) {
+            throw new \InvalidArgumentException(
+                'htmlSegmentBatchSize requires segments transport and a positive integer'
+            );
+        }
         if (!\in_array($htmlTransport, ['document', 'segments'], true)) {
             throw new \InvalidArgumentException('htmlTransport must be document or segments');
         }
@@ -280,15 +290,23 @@ class Bblslug
         $htmlDocument = $jsonHtmlDocument
             ?? ($htmlTransport === 'segments' ? new HtmlTextDocument($prepared) : null);
         $requestText = $htmlDocument !== null ? $htmlDocument->getJson() : $prepared;
+        $batching = $htmlSegmentBatchSize !== null && $htmlDocument !== null && $htmlDocument->hasTexts();
+        $payloads = $batching ? SegmentBatches::split($requestText, $htmlSegmentBatchSize) : [$requestText];
+        if ($payloads === []) {
+            throw new \LogicException('A nonempty segment document requires at least one packet');
+        }
 
         // Length guard: make sure the actual translation payload fits model constraints
         $say($onFeedback, "Checking model length limits", 'info');
         $lengthValidator = TextLengthValidator::fromModelConfig($model);
-        $lenResult = $lengthValidator->validate($requestText);
-        if (! $lenResult->isValid()) {
-            throw new \RuntimeException(
-                "Input length exceeds model limits: " . implode('; ', $lenResult->getErrors())
-            );
+        foreach ($payloads as $index => $payload) {
+            $lenResult = $lengthValidator->validate($payload);
+            if (!$lenResult->isValid()) {
+                $batchLabel = $batching ? ' (batch ' . ($index + 1) . '/' . count($payloads) . ')' : '';
+                throw new \RuntimeException(
+                    'Input length exceeds model limits' . $batchLabel . ': ' . implode('; ', $lenResult->getErrors())
+                );
+            }
         }
         $say($onFeedback, "Length check passed", 'info');
 
@@ -307,24 +325,79 @@ class Bblslug
             $options['context'] = $context;
         }
 
+        // Build every packet before sending any: a later configuration/body-limit
+        // failure must not follow an already paid successful packet.
+        $requests = [];
+        if ($batching) {
+            foreach ($payloads as $payload) {
+                $requests[] = $driver->buildRequest($model, $payload, $options);
+            }
+        }
         $emptySegments = $htmlDocument !== null && !$htmlDocument->hasTexts();
-        $provider = self::executePrepared(
-            $driver,
-            $model,
-            $modelKey,
-            $requestText,
-            $options,
-            $apiKey,
-            $proxy,
-            static fn (string $message, string $level = 'info') => $say($onFeedback, $message, $level),
-            $valLogPre,
-            $emptySegments ? ($jsonHtmlDocument !== null ? $text : $prepared) : null
-        );
+        $providers = [];
+        $batchSummaries = [];
+        $batchUsages = [];
+        $combined = [];
+        $debugRequest = '';
+        $debugResponse = '';
+        foreach ($payloads as $index => $payload) {
+            $batchLabel = 'HTML segment batch ' . ($index + 1) . '/' . count($payloads);
+            if ($batching) {
+                $say($onFeedback, 'Starting ' . $batchLabel, 'info');
+            }
+            $protocolDebug = '';
+            try {
+                $provider = self::executePrepared(
+                    $driver,
+                    $model,
+                    $modelKey,
+                    $payload,
+                    $options,
+                    $apiKey,
+                    $proxy,
+                    static fn (string $message, string $level = 'info') => $say($onFeedback, $message, $level),
+                    $index === 0 ? $valLogPre : '',
+                    $emptySegments ? ($jsonHtmlDocument !== null ? $text : $prepared) : null,
+                    $requests[$index] ?? null
+                );
+                if ($batching) {
+                    $protocolDebug = $verbose ? "\n\n" . $provider['debugRequest'] . $provider['debugResponse'] : '';
+                    $packet = json_decode($payload, false, 512, JSON_THROW_ON_ERROR);
+                    if (!$packet instanceof \stdClass) {
+                        throw new \LogicException('An HTML segment packet must be an object');
+                    }
+                    $expected = array_keys(get_object_vars($packet));
+                    $combined += SegmentTranslations::decode($provider['text'], $expected);
+                    $usage = UsageExtractor::extract($model, $provider['usage']);
+                    $batchUsages[] = $usage;
+                    $batchSummaries[] = [
+                        'index' => $index + 1, 'segments' => count($expected),
+                        'httpStatus' => $provider['httpStatus'], 'consumed' => $usage,
+                    ];
+                    $say($onFeedback, 'Completed ' . $batchLabel, 'info');
+                }
+            } catch (\RuntimeException $exception) {
+                if (!$batching) {
+                    throw $exception;
+                }
+                throw new \RuntimeException($diagnosticMasker->redact(
+                    $batchLabel . ' failed; ' . $index . ' earlier batch(es) completed: '
+                    . $exception->getMessage() . $protocolDebug
+                ), 0, $exception);
+            }
+            $providers[] = $provider;
+            $logLabel = $batching && ($verbose || $dryRun) ? '[' . $batchLabel . "]\n" : '';
+            $debugRequest .= $logLabel . $provider['debugRequest'];
+            $debugResponse .= $logLabel . $provider['debugResponse'];
+        }
         $httpStatus = $provider['httpStatus'];
-        $debugRequest = $provider['debugRequest'];
-        $debugResponse = $provider['debugResponse'];
-        $raw = $provider['rawResponseBody'];
+        $raw = $htmlSegmentBatchSize !== null
+            ? json_encode(array_column($batching ? $providers : [], 'rawResponseBody'), JSON_THROW_ON_ERROR)
+            : $provider['rawResponseBody'];
         $rawUsage = $provider['usage'];
+        if ($batching) {
+            $provider['text'] = json_encode((object) $combined, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+        }
         if ($dryRun || $emptySegments) {
             $translated = $jsonHtmlDocument !== null ? $text : $prepared;
         } else {
@@ -337,7 +410,7 @@ class Bblslug
             }
         }
 
-        $consumed = UsageExtractor::extract($model, $rawUsage);
+        $consumed = $batching ? UsageExtractor::sum($batchUsages) : UsageExtractor::extract($model, $rawUsage);
 
         // Integrity is required for safe restoration, independently of container validation.
         if ($filterManager->getStats() !== []) {
@@ -461,7 +534,7 @@ class Bblslug
 
         $say($onFeedback, "Done", 'info');
 
-        return [
+        $resultData = [
             'original' => $text,
             'prepared' => $prepared,
             'result' => $result,
@@ -477,6 +550,10 @@ class Bblslug
             ],
             'filterStats' => $filterStats,
         ];
+        if ($htmlSegmentBatchSize !== null) {
+            $resultData['batches'] = $batchSummaries;
+        }
+        return $resultData;
     }
 
     /**
@@ -485,6 +562,7 @@ class Bblslug
      * @param array<string,mixed> $model
      * @param array<string,mixed> $options
      * @param callable(string,string=):void $feedback
+     * @param array<string,mixed>|null $prebuiltRequest
      * @return array{text:string,usage:array<string,mixed>|null,httpStatus:int,debugRequest:string,
      *     debugResponse:string,rawResponseBody:string}
      */
@@ -498,7 +576,8 @@ class Bblslug
         ?string $proxy,
         callable $feedback,
         string $validationLog,
-        ?string $localOverride = null
+        ?string $localOverride = null,
+        ?array $prebuiltRequest = null
     ): array {
         $dryRun = (bool) ($options['dryRun'] ?? false);
         $verbose = (bool) ($options['verbose'] ?? false);
@@ -507,7 +586,7 @@ class Bblslug
         // Build request
         $feedback("Building request for endpoint: {$endpoint}", 'info');
         /** @var array{url:mixed,body:mixed,headers:mixed,responseContext?:mixed,localResult?:string,workflow?:HttpWorkflowInterface,timeoutSeconds?:int} $reqRaw */
-        $reqRaw = $driver->buildRequest(
+        $reqRaw = $prebuiltRequest ?? $driver->buildRequest(
             $model,
             $requestText,
             $options

@@ -13,6 +13,45 @@ namespace Bblslug\Models;
 class UsageExtractor
 {
     /**
+     * Sum normalized usage metrics across requests.
+     *
+     * A metric is included only when it is present in at least one input
+     * entry; absent totals and breakdown categories are not invented.
+     *
+     * @param list<array<string, array{total?: int, breakdown?: array<string, int>}>> $usages
+     * @return array<string, array{total?: int, breakdown?: array<string, int>}>
+     */
+    public static function sum(array $usages): array
+    {
+        /** @var array<string, array{total?: int, breakdown?: array<string, int>}> $result */
+        $result = [];
+
+        foreach ($usages as $usage) {
+            foreach ($usage as $category => $entry) {
+                if (!isset($result[$category])) {
+                    $result[$category] = [];
+                }
+
+                if (array_key_exists('total', $entry)) {
+                    $result[$category]['total'] = ($result[$category]['total'] ?? 0) + $entry['total'];
+                }
+
+                if (array_key_exists('breakdown', $entry)) {
+                    if (!isset($result[$category]['breakdown'])) {
+                        $result[$category]['breakdown'] = [];
+                    }
+                    foreach ($entry['breakdown'] as $name => $value) {
+                        $result[$category]['breakdown'][$name] =
+                            ($result[$category]['breakdown'][$name] ?? 0) + $value;
+                    }
+                }
+            }
+        }
+
+        return $result;
+    }
+
+    /**
      * Extract and normalize usage metrics according to
      * the `usage` section in the model’s config.
      *

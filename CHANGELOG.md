@@ -8,6 +8,19 @@ The format is based on [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ### Added
 
+- Explicit sequential HTML segment batches through `htmlSegmentBatchSize` and
+  `--html-segment-batch-size`, for HTML and selected HTML-in-JSON. Every packet
+  retains its original identifiers and must pass strict response checks before
+  the next request. Length/body preflight covers all packets before HTTP. Errors
+  stop further requests without returning a partial document or overwriting files.
+  No retries or fallback requests are added. Optional batch summaries and summed
+  provider usage expose the multiple operations; raw responses remain available
+  as an ordered JSON array of strings. Default single-request behavior is unchanged.
+  A small Grok CLI JSON case passed three packets. The large check remained
+  incomplete: Grok timed out on packet 7/8, and Yandex Lite/Pro returned invalid
+  JSON framing (Lite also had a syntax error). No automatic retries were made.
+
+
 - HTML segment translation inside caller-selected JSON strings through
   `htmlJsonPointers` / repeatable `--html-json-pointer`, with `htmlTransport=segments`
   and `json`/`linedJson`. Filters run within selected HTML strings; unselected JSON

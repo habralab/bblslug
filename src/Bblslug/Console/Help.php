@@ -54,6 +54,8 @@ class Help
         echo "\t{$bold}--filters=F1,F2,...{$reset}  Comma-separated filters to (e.g. url, html_pre, html_code)\n";
         echo "\t{$bold}--format=FORMAT{$reset}      Required: text, html, json, structured_json, or linedJson\n";
         echo "\t{$bold}--html-transport=MODE{$reset} HTML transport: document (default) or segments\n";
+        echo "\t{$bold}--html-segment-batch-size=N{$reset} Segments per request "
+            . "(positive integer; segments transport only)\n";
         echo "\t{$bold}--html-json-pointer=POINTER{$reset} Translate HTML at a JSON Pointer "
             . "(repeatable; segments only)\n";
         echo "\t{$bold}--help{$reset}               Show this help message\n";

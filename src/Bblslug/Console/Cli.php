@@ -38,6 +38,7 @@ class Cli
             "filters:",      // comma-separated filter list
             "format:",       // text, HTML or a JSON format
             "html-transport:", // HTML transport: document or segments
+            "html-segment-batch-size:", // positive number of HTML segments per request
             "html-json-pointer:", // JSON Pointer to HTML strings selected for segment translation (repeatable)
             "help",          // show help and exit
             "list-models",   // show models and exit
@@ -87,6 +88,7 @@ class Cli
             Help::error('--html-transport requires a single string value.');
         }
         $htmlTransport = $htmlTransportOption ?? 'document';
+        $htmlSegmentBatchSize = null;
         $filters    = isset($options['filters']) && is_string($options['filters'])
                         && trim($options['filters']) !== ''
                         ? array_map('trim', explode(',', $options['filters']))
@@ -119,12 +121,19 @@ class Cli
         $htmlJsonSelectionPointers = [];
         $rawArgv = $_SERVER['argv'] ?? [];
         $argv = is_array($rawArgv) ? array_values($rawArgv) : [];
+        $batchSizeOccurrences = 0;
         foreach ($argv as $index => $argument) {
             if ($argument === '--') {
                 break;
             }
             if (!is_string($argument)) {
                 continue;
+            }
+            if (
+                $argument === '--html-segment-batch-size'
+                || str_starts_with($argument, '--html-segment-batch-size=')
+            ) {
+                $batchSizeOccurrences++;
             }
             if ($argument === '--validate-html-json-pointer=') {
                 Help::error(
@@ -153,7 +162,39 @@ class Cli
                 if (!is_string($next) || ($next !== '' && str_starts_with($next, '--'))) {
                     Help::error('--html-transport requires a value.');
                 }
+            } elseif ($argument === '--html-segment-batch-size=') {
+                Help::error('--html-segment-batch-size requires a positive integer value.');
+            } elseif ($argument === '--html-segment-batch-size') {
+                $next = $argv[$index + 1] ?? null;
+                if (!is_string($next) || ($next !== '' && str_starts_with($next, '--'))) {
+                    Help::error('--html-segment-batch-size requires a value.');
+                }
             }
+        }
+
+        if ($batchSizeOccurrences > 1) {
+            Help::error('--html-segment-batch-size may only be specified once.');
+        }
+
+        // This option is intentionally singleton. getopt() returns an array for
+        // repeated options, but silently accepting that would make the selected
+        // batch size depend on implementation details.
+        if (isset($options['html-segment-batch-size'])) {
+            $rawBatchSize = $options['html-segment-batch-size'];
+            if (is_array($rawBatchSize)) {
+                Help::error('--html-segment-batch-size may only be specified once.');
+            }
+            if (!is_string($rawBatchSize) || !preg_match('/\A[1-9][0-9]*\z/', $rawBatchSize)) {
+                Help::error('--html-segment-batch-size requires a positive integer value.');
+            }
+            $maxInt = (string) PHP_INT_MAX;
+            if (
+                strlen($rawBatchSize) > strlen($maxInt)
+                || (strlen($rawBatchSize) === strlen($maxInt) && strcmp($rawBatchSize, $maxInt) > 0)
+            ) {
+                Help::error('--html-segment-batch-size is too large.');
+            }
+            $htmlSegmentBatchSize = (int) $rawBatchSize;
         }
         if (isset($options['validate-html-json-pointer'])) {
             $rawPointers = $options['validate-html-json-pointer'];
@@ -215,6 +256,9 @@ class Cli
             }
         } elseif ($htmlJsonSelectionPointers !== []) {
             Help::error('--html-json-pointer requires --html-transport=segments.');
+        }
+        if ($htmlSegmentBatchSize !== null && $htmlTransport !== 'segments') {
+            Help::error('--html-segment-batch-size requires --html-transport=segments.');
         }
 
         if ($htmlJsonPointers !== [] && !in_array($format, ['json', 'structured_json', 'linedJson'], true)) {
@@ -469,6 +513,7 @@ class Cli
                 validateHtmlJsonPointers: $htmlJsonPointers,
                 htmlJsonPointers: $htmlJsonSelectionPointers,
                 htmlTransport: $htmlTransport,
+                htmlSegmentBatchSize: $htmlSegmentBatchSize,
             );
         } catch (\Throwable $e) {
             Help::error($e->getMessage());
