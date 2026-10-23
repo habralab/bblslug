@@ -8,6 +8,14 @@ The format is based on [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ### Added
 
+- Completed the pending verbose diagnostics prototype: URL and HTML filters expose
+  captured maps through an optional `DebuggableFilterInterface`, without changing
+  the existing `FilterInterface`. CLI stderr/library feedback show masked,
+  JSON-quoted previews, limited to 50 captures per filter and 200 characters per
+  value. JSON syntax and HTML syntax/structure errors include a masked restored
+  document preview in verbose mode, limited to 2000 characters. Masking happens
+  before truncation; raw capture accessors and translation payloads remain raw.
+
 - Google `json_transport=native` enables native JSON output for `json`/`linedJson`
   without a required response schema. The request uses `application/json` and the
   generic `structured_json` prompt; responses do not depend on translation markers.

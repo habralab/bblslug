@@ -7,9 +7,9 @@ namespace Bblslug\Filters;
 use Bblslug\Filters\FilterInterface;
 use Bblslug\Filters\PlaceholderCounter;
 
-class UrlFilter implements FilterInterface
+class UrlFilter implements DebuggableFilterInterface
 {
-    /** @var array<string,string> placeholder => url */
+    /** @var array<string,string> Placeholder => exact source slice, including JSON escapes. */
     private array $map = [];
 
     /** @var array<string,string> generated shield => literal marker-like source text */
@@ -102,5 +102,11 @@ REGEX;
     public function getStats(): array
     {
         return ['filter' => 'url', 'count' => count($this->map)];
+    }
+
+    /** @return array<string,string> Placeholder => captured source slice. */
+    public function debugDump(): array
+    {
+        return $this->map;
     }
 }

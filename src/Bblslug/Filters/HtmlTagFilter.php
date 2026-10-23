@@ -7,7 +7,7 @@ namespace Bblslug\Filters;
 use Bblslug\Filters\FilterInterface;
 use Bblslug\Filters\PlaceholderCounter;
 
-class HtmlTagFilter implements FilterInterface
+class HtmlTagFilter implements DebuggableFilterInterface
 {
     private string $tag;
 
@@ -152,5 +152,11 @@ REGEX;
     public function getStats(): array
     {
         return ['filter' => "html_{$this->tag}", 'count' => count($this->map)];
+    }
+
+    /** @return array<string,string> Placeholder => captured source slice. */
+    public function debugDump(): array
+    {
+        return $this->map;
     }
 }

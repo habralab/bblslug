@@ -118,6 +118,11 @@ class Bblslug
         bool $validateEmbeddedJson = false
     ): array {
         ModelVariables::validate($variables);
+        $diagnosticMasker = new SecretMasker([
+            $apiKey,
+            $proxy ?? '',
+            \is_string($variables['folder_id'] ?? null) ? $variables['folder_id'] : '',
+        ]);
 
         // Prepare holders for validation debug
         $valLogPre  = '';
@@ -230,6 +235,9 @@ class Bblslug
         $prepared = $filterManager->apply($text);
         $preparedLength = mb_strlen($prepared);
         $say($onFeedback, "Filters applied (preparedLength={$preparedLength})", 'info');
+        if ($verbose) {
+            self::dumpPlaceholdersVerbose($filterManager, $onFeedback, $diagnosticMasker);
+        }
 
         // Length guard: make sure prepared text fits model constraints
         $say($onFeedback, "Checking model length limits", 'info');
@@ -436,6 +444,10 @@ class Bblslug
                 // JSON syntax check
                 $postResult = (new JsonValidator())->validate($result);
                 if (! $postResult->isValid()) {
+                    if ($verbose) {
+                        $debugResponse .= "\n[Restored JSON (invalid) dump]\n";
+                        $debugResponse .= self::ellipsize($diagnosticMasker->redact($result), 2000) . "\n";
+                    }
                     throw new \RuntimeException(
                         "JSON syntax broken: " . implode('; ', $postResult->getErrors())
                         . "\n\n" . $debugRequest . $debugResponse
@@ -478,15 +490,25 @@ class Bblslug
                 $htmlValidator = new HtmlValidator();
                 $postResult = $htmlValidator->validate($result);
                 if (! $postResult->isValid()) {
+                    if ($verbose) {
+                        $debugResponse .= "\n[Restored HTML (invalid) dump]\n";
+                        $debugResponse .= self::ellipsize($diagnosticMasker->redact($result), 2000) . "\n";
+                    }
                     throw new \RuntimeException(
                         "HTML validation failed: "
                         . implode('; ', $postResult->getErrors())
+                        . "\n\n" . $debugRequest . $debugResponse
                     );
                 }
                 $structureResult = (new HtmlStructureValidator($text))->validate($result);
                 if (!$structureResult->isValid()) {
+                    if ($verbose) {
+                        $debugResponse .= "\n[Restored HTML (invalid) dump]\n";
+                        $debugResponse .= self::ellipsize($diagnosticMasker->redact($result), 2000) . "\n";
+                    }
                     throw new \RuntimeException(
                         "HTML structure mismatch: " . implode('; ', $structureResult->getErrors())
+                        . ($verbose ? "\n\n" . $debugRequest . $debugResponse : '')
                     );
                 }
                 if ($verbose) {
@@ -520,5 +542,49 @@ class Bblslug
             ],
             'filterStats' => $filterStats,
         ];
+    }
+
+    /** @param callable(string,string=):void|null $onFeedback */
+    private static function dumpPlaceholdersVerbose(
+        FilterManager $filterManager,
+        ?callable $onFeedback,
+        SecretMasker $masker
+    ): void {
+        if ($onFeedback === null) {
+            return;
+        }
+        $maps = $filterManager->getDebugMaps();
+        if ($maps === []) {
+            return;
+        }
+        $lines = ['Verbose: placeholders captured'];
+        foreach ($maps as $entry) {
+            $total = count($entry['map']);
+            $lines[] = "- {$entry['filter']}: {$total} item(s)";
+            $i = 0;
+            foreach ($entry['map'] as $placeholder => $value) {
+                if ($i++ >= 50) {
+                    $lines[] = '  … (+' . ($total - 50) . ' more)';
+                    break;
+                }
+                // Mask the complete slice before truncation can expose a partial credential.
+                $preview = self::ellipsize($masker->redact($value), 200);
+                $encoded = json_encode(
+                    $preview,
+                    JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE
+                );
+                $lines[] = "  {$placeholder} => {$encoded}";
+            }
+        }
+        try {
+            $onFeedback(implode("\n", $lines), 'info');
+        } catch (\Throwable $e) {
+            // Feedback must not prevent translation.
+        }
+    }
+
+    private static function ellipsize(string $value, int $max): string
+    {
+        return mb_strlen($value) > $max ? mb_substr($value, 0, $max) . '…' : $value;
     }
 }

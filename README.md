@@ -555,6 +555,29 @@ Request and response diagnostic copies are sanitized. Sent payloads, returned
 response bodies and headers keep their original data. Network exceptions retain
 the cURL error code and redact known secrets from the message.
 
+### Verbose filter and validation diagnostics
+
+With `--verbose`, the CLI prints captured URL and HTML-filter previews to stderr.
+Library callers receive these messages through `onFeedback` when `verbose: true`.
+Each filter shows at most 50 captures; each value is masked before being shortened
+to 200 characters plus an ellipsis. Values are JSON-quoted so line breaks and
+backslashes remain visible on one log line. Maps describe intermediate filter
+stages and may contain internal placeholder tokens. Translation output and exact
+protected source bytes are unchanged.
+
+JSON syntax errors and HTML syntax/structure errors include a preview of the
+restored invalid document only in verbose mode. This preview is masked before
+being limited to 2000 characters plus an ellipsis. Existing HTTP diagnostic logs
+have their own behavior; this limit applies to the restored-document preview.
+The new previews mask the supplied API key, proxy URI, and Yandex folder ID using
+the same encoded-secret representations as `SecretMasker`. Other source content
+can remain visible, so verbose output is diagnostic data.
+
+`FilterManager::getDebugMaps()` and `DebuggableFilterInterface::debugDump()` expose
+raw captures for diagnostic integrations; callers must mask them before logging.
+The optional interface leaves the existing `FilterInterface` contract unchanged.
+Callback exceptions remain isolated from translation.
+
 ### DeepL JSON transport
 
 For `json` and `linedJson`, DeepL Free and Pro use the native
