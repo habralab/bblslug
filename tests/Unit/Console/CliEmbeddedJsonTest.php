@@ -29,11 +29,11 @@ final class CliEmbeddedJsonTest extends TestCase
     {
         $process = proc_open(
             [PHP_BINARY, dirname(__DIR__, 2) . '/Fixtures/console/embedded_json.php',
-                '--model=deepl:free', '--format=json', ...$options],
+                '--model=openai:gpt-5-mini', '--format=json', ...$options],
             [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']],
             $pipes,
             null,
-            ['DEEPL_FREE_API_KEY' => 'fixture-key']
+            ['OPENAI_API_KEY' => 'fixture-key']
         );
         self::assertIsResource($process);
         fwrite($pipes[0], json_encode(['payload' => '{"count":1}'], JSON_THROW_ON_ERROR));

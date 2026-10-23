@@ -337,7 +337,7 @@ final class BblslugJsonOutputTest extends TestCase
         $this->assertSame($translated, $result['result']);
         $this->assertSame(mb_strlen($translated), $result['lengths']['translated']);
         $raw = json_decode($result['rawResponseBody'], true, 512, JSON_THROW_ON_ERROR);
-        $this->assertSame($translated, $raw['translations'][0]['text']);
+        $this->assertSame("‹‹TRANSLATION››\n{$translated}\n‹‹END››", $raw['choices'][0]['message']['content']);
     }
 
     /** @test */

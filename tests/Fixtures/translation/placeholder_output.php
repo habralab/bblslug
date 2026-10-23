@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 namespace Bblslug {
-    /** Controlled DeepL response for placeholder integrity tests. */
+    /** Controlled OpenAI response for placeholder integrity tests. */
     class HttpClient
     {
         /** @var array{mutation:string,translated:?string} */
@@ -15,18 +15,16 @@ namespace Bblslug {
         /** @return array{body:string,debugRequest:string,debugResponse:string,headers:array<string,array<int,string>>,status:int} */
         public static function request(...$arguments): array
         {
-            $body = (string) ($arguments['body'] ?? '');
-            parse_str($body, $payload);
-            $prepared = (string) ($payload['text'] ?? '');
-            $prepared = strtr($prepared, [
-                '<jlc/>' => '{',
-                '<jrc/>' => '}',
-                '<jlb/>' => '[',
-                '<jrb/>' => ']',
-                '<jcol/>' => ':',
-                '<jcomma/>' => ',',
-                '<jqt/>' => '"',
-            ]);
+            $body = json_decode((string) ($arguments['body'] ?? ''), true, 512, JSON_THROW_ON_ERROR);
+            $messages = $body['messages'] ?? [];
+            $prepared = '';
+            foreach ($messages as $message) {
+                if (($message['role'] ?? null) === 'user' && is_string($message['content'] ?? null)) {
+                    $prepared = $message['content'];
+                    break;
+                }
+            }
+            $prepared = preg_replace('/^‹‹TRANSLATION››\n|\n‹‹END››$/u', '', $prepared) ?? $prepared;
 
             $translated = self::$scenario['translated'] ?? $prepared;
             if ($translated === null) {
@@ -35,10 +33,11 @@ namespace Bblslug {
             $translated = self::mutate($translated, self::$scenario['mutation']);
 
             return [
-                'body' => (string) json_encode(
-                    ['translations' => [['text' => $translated]]],
-                    JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR
-                ),
+                'body' => (string) json_encode([
+                    'choices' => [['finish_reason' => 'stop', 'message' => [
+                        'content' => "‹‹TRANSLATION››\n" . $translated . "\n‹‹END››",
+                    ]]],
+                ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR),
                 'debugRequest' => '',
                 'debugResponse' => '',
                 'headers' => [],
@@ -111,7 +110,7 @@ namespace {
         $result = \Bblslug\Bblslug::translate(
             apiKey: 'fixture-key',
             format: (string) ($scenario['format'] ?? 'text'),
-            modelKey: 'deepl:free',
+            modelKey: 'openai:gpt-5-mini',
             text: (string) ($scenario['input'] ?? ''),
             filters: array_values(array_map('strval', $scenario['filters'] ?? [])),
             validate: (bool) ($scenario['validate'] ?? true),

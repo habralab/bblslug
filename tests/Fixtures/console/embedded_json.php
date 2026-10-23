@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 namespace Bblslug {
-    /** Controlled response for the real CLI and facade without network access. */
+    /** Controlled OpenAI response for the real CLI and facade without network access. */
     class HttpClient
     {
         /** @return array{body:string,debugRequest:string,debugResponse:string,headers:array<string,array<int,string>>,status:int} */
@@ -11,7 +11,9 @@ namespace Bblslug {
         {
             $translated = json_encode(['payload' => '{"count":2}'], JSON_THROW_ON_ERROR);
             return [
-                'body' => json_encode(['translations' => [['text' => $translated]]], JSON_THROW_ON_ERROR),
+                'body' => json_encode(['choices' => [['finish_reason' => 'stop', 'message' => [
+                    'content' => "‹‹TRANSLATION››\n" . $translated . "\n‹‹END››",
+                ]]]], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR),
                 'debugRequest' => '',
                 'debugResponse' => '',
                 'headers' => [],
