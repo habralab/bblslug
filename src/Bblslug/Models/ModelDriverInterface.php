@@ -20,7 +20,9 @@ interface ModelDriverInterface
      * @return array{
      *     body:    string,     // URL-encoded form or JSON payload
      *     headers: string[],   // HTTP headers to send
-     *     url:     string      // Full endpoint URL
+     *     url:     string,     // Full endpoint URL
+     *     responseContext?: mixed, // Request-local state forwarded only to parseResponse
+     *     localResult?: string // Prepared result requiring no HTTP request
      * }
      */
     public function buildRequest(array $config, string $text, array $options): array;
@@ -30,7 +32,7 @@ interface ModelDriverInterface
      *
      * @param array<string,mixed> $config       Model config from registry
      * @param string              $responseBody Raw response body from the API
-     * @param array<string,mixed> $options Request options used to build the request
+     * @param array<string,mixed> $options Request options plus responseContext returned by buildRequest
      *
      * @return array{text:string, usage: array<string,mixed>|null}
      *

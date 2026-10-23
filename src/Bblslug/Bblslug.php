@@ -256,12 +256,15 @@ class Bblslug
 
         // Build request
         $say($onFeedback, "Building request for endpoint: {$endpoint}", 'info');
-        /** @var array{url:mixed, body:mixed, headers:mixed} $reqRaw */
+        /** @var array{url:mixed,body:mixed,headers:mixed,responseContext?:mixed,localResult?:string} $reqRaw */
         $reqRaw = $driver->buildRequest(
             $model,
             $prepared,
             $options
         );
+
+        $options['responseContext'] = $reqRaw['responseContext'] ?? null;
+        $localResult = $reqRaw['localResult'] ?? null;
 
         // Normalize request shape
         $reqUrl = \is_string($reqRaw['url']  ?? null) ? (string)$reqRaw['url']  : '';
@@ -305,12 +308,16 @@ class Bblslug
         }
 
         // Perform HTTP request
-        $say($onFeedback, $dryRun ? "Dry-run: skipping HTTP request" : "Sending HTTP request", 'info');
+        $requestMessage = $dryRun ? "Dry-run: skipping HTTP request" : "Sending HTTP request";
+        if ($localResult !== null) {
+            $requestMessage = "No translatable string values: skipping HTTP request";
+        }
+        $say($onFeedback, $requestMessage, 'info');
         $http = HttpClient::request(
             method: 'POST',
             url: $reqUrl,
             body: $reqBody,
-            dryRun: $dryRun,
+            dryRun: $dryRun || $localResult !== null,
             headers: $reqHeaders,
             maskPatterns: [
                 $apiKey,
@@ -331,10 +338,10 @@ class Bblslug
         }
 
         // Parse response
-        if ($dryRun) {
-            $translated = $prepared;
+        if ($dryRun || $localResult !== null) {
+            $translated = $localResult ?? $prepared;
             $rawUsage   = null;
-            $say($onFeedback, "Dry-run completed", 'info');
+            $say($onFeedback, $localResult !== null ? "Local translation completed" : "Dry-run completed", 'info');
         } else {
             $say($onFeedback, "HTTP response received (status={$httpStatus})", 'info');
             $hasCustomHttpHandling = isset($model['http_error_handling']) && !empty($model['http_error_handling']);

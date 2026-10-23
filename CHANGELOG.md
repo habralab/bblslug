@@ -15,6 +15,15 @@ The format is based on [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ### Fixed
 
+- DeepL `json`/`linedJson` now send string values as an ordered text batch and
+  reconstruct JSON locally, including string-encoded nested containers. Keys,
+  non-string tokens, and container whitespace are not sent for translation.
+  Returned strings are safely escaped; incomplete batches are rejected.
+- DeepL JSON requests with no translatable values complete locally without HTTP.
+  Driver requests may supply per-request `responseContext` and `localResult`;
+  the facade handles these without changing existing method signatures.
+- DeepL text/HTML responses no longer decode literal former JSON pseudo-tags.
+
 - HTML validation rejects newly introduced Markdown fences at document boundaries,
   including an opening-only fence observed in a real Yandex Lite response.
 
@@ -47,10 +56,11 @@ The format is based on [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ### Known limitations
 
-- Real small-scenario checks on 2026-10-23 still failed for DeepL Free/Pro HTML
-  and JSON. DeepL moved a protected block into a link in the inspected HTML
-  response; its JSON pseudo-tag transport translated keys and corrupted markup
-  and escaping. Validation rejects these results, but transport fixes remain.
+- DeepL Free/Pro HTML still failed the small live scenario on 2026-10-23:
+  a protected block moved inside a link in the inspected response.
+- DeepL JSON containers now pass syntax/structure/value checks in live requests,
+  but the provider changes quotation marks inside a path-like string. Container
+  validation does not guarantee semantic preservation of string data.
 
 ## [0.9.0] – 2026-10-23
 

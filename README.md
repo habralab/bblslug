@@ -454,16 +454,41 @@ validation enabled, HTML URL/code filters, and opt-in embedded JSON validation:
 
 | Model | Text | HTML | JSON |
 | --- | --- | --- | --- |
-| `deepl:free` | Passed | Rejected: protected code block moved inside link | Rejected: invalid JSON |
-| `deepl:pro` | Passed | Rejected: HTML structure changed | Rejected: invalid JSON |
+| `deepl:free` | Passed | Rejected: protected code block moved inside link | Container passes; path quotation marks changed |
+| `deepl:pro` | Passed | Rejected: HTML structure changed | Container passes; path quotation marks changed |
 | `yandex:gpt-lite` | Passed | One response added an opening Markdown fence; now rejected | Passed |
 | `yandex:gpt-pro` | Passed | Passed | Passed |
 
 These are individual small scenarios, not a reliability or translation-quality
-benchmark. DeepL's current JSON pseudo-tag transport translated object keys and
-corrupted embedded markup/escaping in these requests; JSON translation remains
-unreliable and requires a separate transport fix. HTML placeholder counts alone
-do not prevent a provider from moving protected fragments to a different parent.
+benchmark. After replacing DeepL's JSON pseudo-tags with value batching, real
+`json` and `linedJson` requests preserve the outer and string-encoded JSON
+containers. DeepL still changes ASCII quotes to typographic quotes in a path-like
+string, including with `preserve_formatting` enabled. String content is translated;
+its semantic preservation is not guaranteed by container validation. DeepL HTML
+can still move a protected fragment to a different parent while preserving its
+placeholder count.
+
+### DeepL JSON transport
+
+For `json` and `linedJson`, the driver sends decoded nonempty string values in one
+[ordered DeepL text batch](https://developers.deepl.com/api-reference/translate/request-translation).
+Object keys, whitespace outside strings, numeric tokens, booleans, and `null` stay
+local and retain their original bytes. The returned strings are JSON-encoded
+before insertion. Valid JSON objects/arrays encoded inside string values are
+processed recursively, preserving their container syntax as well. Empty strings,
+whitespace-only values, and values consisting solely of placeholders stay local.
+
+These string values are translated as independent text segments. The driver does
+not send JSON punctuation as HTML tags, and it does not interpret former pseudo-tags
+such as `<jlc/>` in ordinary provider responses. Any missing or extra translation
+causes an error. Requests larger than DeepL's 128 KiB body limit are rejected before
+HTTP. No request is sent when there are no translatable values (`httpStatus` is `0`).
+
+Low-level driver integrations must forward the optional `responseContext` returned
+by `buildRequest()` to `parseResponse()` through its options. It belongs to that
+specific request; the driver keeps no mutable current-document state. An optional
+`localResult` indicates a prepared result requiring no HTTP request. The public
+`Bblslug::translate()` facade handles both fields automatically.
 
 ### Disable validation
 

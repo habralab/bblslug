@@ -11,7 +11,7 @@ use Bblslug\Models\ModelDriverInterface;
 /**
  * DeepL model driver: builds requests and parses responses for DeepL API.
  *
- * Builds HTTP params in x-www-form-urlencoded format.
+ * Uses form requests for text/HTML and JSON text arrays for JSON documents.
  */
 class DeepLDriver implements ModelDriverInterface
 {
@@ -29,7 +29,9 @@ class DeepLDriver implements ModelDriverInterface
      * @return array{
      *     url:     string,   // Full endpoint URL
      *     headers: string[], // HTTP headers to send
-     *     body:    string    // URL-encoded form body
+     *     body:    string,   // URL-encoded form body or JSON batch
+     *     responseContext?: DeepLJsonDocument,
+     *     localResult?: string
      * }
      */
     public function buildRequest(array $config, string $text, array $options): array
@@ -73,6 +75,8 @@ class DeepLDriver implements ModelDriverInterface
             }
         }
 
+        $jsonDocument = null;
+
         // Format-specific adjustments
         $format = \is_string($options['format'] ?? null)
             ? $options['format']
@@ -87,20 +91,9 @@ class DeepLDriver implements ModelDriverInterface
 
             case 'json':
             case 'linedJson':
-                $payload['tag_handling'] = 'html';
-                $payload['preserve_formatting'] = '1';
-                $payload['outline_detection'] = '1';
-                $protect = [
-                    '{'   => '<jlc/>',
-                    '}'   => '<jrc/>',
-                    '['   => '<jlb/>',
-                    ']'   => '<jrb/>',
-                    ':'   => '<jcol/>',
-                    ','   => '<jcomma/>',
-                    '"'   => '<jqt/>',
-                ];
-                $protectedText = \strtr($payload['text'], $protect);
-                $payload['text'] = $protectedText;
+                $jsonDocument = new DeepLJsonDocument($text);
+                $payload['text'] = $jsonDocument->getTexts();
+                $payload['preserve_formatting'] = true;
                 break;
 
             case 'text':
@@ -120,11 +113,28 @@ class DeepLDriver implements ModelDriverInterface
             }
         }
 
-        return [
+        $request = [
             'url'     => $url,
             'headers' => $headers,
             'body'    => \http_build_query($payload),
         ];
+        if ($jsonDocument !== null) {
+            // JSON requests use DeepL's ordered text array, not HTML pseudo-tags.
+            $request['headers'] = array_values(array_filter(
+                $headers,
+                static fn (string $header): bool => stripos($header, 'Content-Type:') !== 0
+            ));
+            $request['headers'][] = 'Content-Type: application/json';
+            $request['body'] = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+            if (strlen($request['body']) > 128 * 1024) {
+                throw new \InvalidArgumentException('DeepL JSON request exceeds the 128 KiB request limit');
+            }
+            $request['responseContext'] = $jsonDocument;
+            if ($jsonDocument->getTexts() === []) {
+                $request['localResult'] = $text;
+            }
+        }
+        return $request;
     }
 
     /**
@@ -133,7 +143,7 @@ class DeepLDriver implements ModelDriverInterface
      * @param array<string,mixed> $config       Model config (unused here).
      * @param string              $responseBody Raw JSON response body.
      *
-     * @param array<string,mixed> $options Request options (unused).
+     * @param array<string,mixed> $options Request options, including responseContext from buildRequest.
      *
      * @return array{text:string, usage:array<string,mixed>|null}
      *
@@ -146,29 +156,29 @@ class DeepLDriver implements ModelDriverInterface
             throw new \RuntimeException("Invalid JSON response: {$responseBody}");
         }
 
-        // translations[0]['text'] safe extraction
-        $translations = \is_array($data['translations'] ?? null) ? $data['translations'] : null;
-        if ($translations === null || !isset($translations[0]) || !\is_array($translations[0])) {
+        $translations = $data['translations'] ?? null;
+        if (!is_array($translations) || !array_is_list($translations) || $translations === []) {
             throw new \RuntimeException("DeepL translation failed: {$responseBody}");
         }
-        $first = $translations[0];
-        $txt = $first['text'] ?? null;
-        if (!\is_string($txt)) {
-            throw new \RuntimeException("DeepL translation failed: {$responseBody}");
+        $texts = [];
+        foreach ($translations as $translation) {
+            if (!is_array($translation) || !is_string($translation['text'] ?? null)) {
+                throw new \RuntimeException("DeepL translation failed: {$responseBody}");
+            }
+            $texts[] = $translation['text'];
         }
-        $text = $txt;
-
-        // Restore any JSON pseudo-tags back to original characters
-        $reverse = [
-            '<jlc/>' => '{',
-            '<jrc/>' => '}',
-            '<jlb/>' => '[',
-            '<jrb/>' => ']',
-            '<jcol/>' => ':',
-            '<jcomma/>' => ',',
-            '<jqt/>' => '"',
-        ];
-        $text = \strtr($text, $reverse);
+        $document = $options['responseContext'] ?? null;
+        if ($document instanceof DeepLJsonDocument) {
+            $text = $document->restore($texts);
+        } else {
+            if (in_array($options['format'] ?? null, ['json', 'linedJson'], true)) {
+                throw new \RuntimeException('DeepL JSON response requires its request responseContext');
+            }
+            if (count($texts) !== 1) {
+                throw new \RuntimeException('Unexpected DeepL translation count without responseContext');
+            }
+            $text = $texts[0];
+        }
 
         return [
             'text'  => $text,
