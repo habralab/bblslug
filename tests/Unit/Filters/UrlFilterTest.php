@@ -127,6 +127,40 @@ final class UrlFilterTest extends TestCase
         $this->assertSame($in, $f->restore($masked));
     }
 
+    /** @dataProvider longUrlSources */
+    public function testLongUrlsDoNotExhaustTheRegexStack(string $source): void
+    {
+        $filter = new UrlFilter();
+        $prepared = $filter->apply($source, new PlaceholderCounter());
+        self::assertSame('Before @@0@@ after', $prepared);
+        self::assertSame($source, $filter->restore($prepared));
+        self::assertSame(1, $filter->getStats()['count']);
+    }
+
+    /** @return array<string,array{string}> */
+    public static function longUrlSources(): array
+    {
+        return [
+            'plain path' => ['Before https://example.test/' . str_repeat('x', 100000) . ' after'],
+            'escaped slashes' => ['Before https:\/\/example.test/' . str_repeat('part\/', 10000) . ' after'],
+            'nested escapes' => ['Before https:\\\/\\\/example.test/' . str_repeat('part\\\/', 10000) . ' after'],
+        ];
+    }
+
+    public function testRegexFailureDoesNotSilentlyReturnUnprotectedUrls(): void
+    {
+        $limit = ini_get('pcre.backtrack_limit');
+        ini_set('pcre.backtrack_limit', '1');
+        try {
+            $filter = new UrlFilter();
+            $this->expectException(\RuntimeException::class);
+            $this->expectExceptionMessage('Could not protect URL fragments');
+            $filter->apply('https://example.test/path', new PlaceholderCounter());
+        } finally {
+            ini_set('pcre.backtrack_limit', (string) $limit);
+        }
+    }
+
     /**
      * @return array<string,array{int}>
      */

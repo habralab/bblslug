@@ -35,7 +35,7 @@ class UrlFilter implements FilterInterface
 
         // Preserve escaped slashes, but leave quote escapes outside the URL.
         $pattern = <<<'REGEX'
-~\b(?:(?:https?|ftp):(?://|\\+/\\+/)|mailto:)(?:\\+/|[^\s"'<>()\\])+~i
+~\b(?:(?:https?|ftp):(?://|\\+/\\+/)|mailto:)(?:\\+/|[^\s"'<>()\\]++)++~i
 REGEX;
         $replaced = preg_replace_callback(
             $pattern,
@@ -47,7 +47,10 @@ REGEX;
             },
             $text
         );
-        return $replaced !== null ? $replaced : $text;
+        if ($replaced === null) {
+            throw new \RuntimeException('Could not protect URL fragments');
+        }
+        return $replaced;
     }
 
     public function restore(string $text): string

@@ -15,6 +15,10 @@ The format is based on [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ### Fixed
 
+- URL filtering avoids regex stack exhaustion on long plain or JSON-escaped
+  URLs. A regex failure now stops translation with an explicit error instead of
+  silently passing the unprotected source to the provider.
+
 - HTML filters protect escaped fragments inside JSON string values, including
   recursively encoded JSON strings. Byte-offset mapping handles slash, quote,
   and Unicode escapes without reserializing containers, keys, unrelated strings,
