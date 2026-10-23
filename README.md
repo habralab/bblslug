@@ -455,6 +455,11 @@ JSON validation also checks the returned structure against the input. Missing
 fields or list elements, including `null` values, cause a schema error. Omitted
 values are not automatically restored.
 Objects and arrays must retain their container types, including empty `{}` and `[]`.
+Numbers, booleans, and `null` must retain their original JSON tokens; only string
+values may be translated. Number comparison uses the exact JSON spelling to avoid
+rounding large integers or precise decimals. Equivalent rewrites such as `1.0`
+to `1e0` also cause a `JSON scalar values changed` error. This check is disabled
+along with container validation by `--no-validate` or `validate: false`.
 
 With placeholder filters enabled, translated output must preserve each prepared
 marker's occurrence count. Missing, duplicated, or unexpected markers cause a

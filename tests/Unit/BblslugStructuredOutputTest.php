@@ -27,6 +27,40 @@ final class BblslugStructuredOutputTest extends TestCase
         }
     }
 
+    public function testNativeFormatsRejectChangedNonStringScalarValues(): void
+    {
+        foreach (['openai:gpt-5-mini', 'google:gemini-2.5-flash'] as $model) {
+            $result = $this->runFixture([
+                'model' => $model,
+                'input' => '{"nested":{"count":7,"ratio":0.12345678901234567,"enabled":true}}',
+                'translated' => '{"nested":{"count":8,"ratio":0.12345678901234568,"enabled":false}}',
+            ]);
+
+            self::assertSame(\RuntimeException::class, $result['type']);
+            self::assertStringContainsString('JSON scalar values changed', $result['message']);
+        }
+    }
+
+    public function testNativeFormatsAllowChangedStringsWithScalarLookingText(): void
+    {
+        $input = json_encode([
+            'number' => '7', 'boolean' => 'true', 'null' => 'null', 'text' => 'Source "ok" path',
+        ], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+        $translated = json_encode([
+            'number' => '8', 'boolean' => 'false', 'null' => 'null', 'text' => 'Перевод "ok" \\ путь',
+        ], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+        foreach (['openai:gpt-5-mini', 'google:gemini-2.5-flash'] as $model) {
+            $result = $this->runFixture([
+                'model' => $model,
+                'input' => $input,
+                'translated' => $translated,
+            ]);
+
+            self::assertSame('success', $result['type'], (string) ($result['message'] ?? ''));
+            self::assertSame($translated, $result['result']);
+        }
+    }
+
     public function testNativeOutputCannotOmitNullsOrChangeNestedContainerTypes(): void
     {
         foreach (

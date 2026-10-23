@@ -25,6 +25,97 @@ final class BblslugJsonOutputTest extends TestCase
     }
 
     /** @test */
+    public function jsonFormatsRejectChangedNonStringScalarValues(): void
+    {
+        foreach (['json', 'linedJson'] as $format) {
+            foreach (
+                [
+                    [
+                        '{"nested":{"count":7,"ratio":0.12345678901234567,"enabled":true}}',
+                        '{"nested":{"count":8,"ratio":0.12345678901234567,"enabled":true}}',
+                    ],
+                    [
+                        '{"nested":{"count":7,"ratio":0.12345678901234567,"enabled":true}}',
+                        '{"nested":{"count":7,"ratio":0.12345678901234568,"enabled":true}}',
+                    ],
+                    [
+                        '{"nested":{"count":7,"ratio":0.12345678901234567,"enabled":true}}',
+                        '{"nested":{"count":7,"ratio":0.12345678901234567,"enabled":false}}',
+                    ],
+                    ['{"large":9223372036854775808}', '{"large":9223372036854775809}'],
+                    ['{"large":9007199254740992}', '{"large":9007199254740993}'],
+                    ['{"number":1.0}', '{"number":1e0}'],
+                    ['{"values":[true,false]}', '{"values":[false,true]}'],
+                    ['{"ratio":0.12345678901234567891}', '{"ratio":0.12345678901234567892}'],
+                ] as [$input, $translated]
+            ) {
+                $result = $this->runFixture([
+                    'format' => $format,
+                    'input' => $input,
+                    'translated' => $translated,
+                ]);
+
+                $this->assertSame(\RuntimeException::class, $result['type']);
+                $this->assertStringContainsString('JSON scalar values changed', $result['message']);
+            }
+        }
+    }
+
+    /** @test */
+    public function jsonFormatsAllowChangedStringsWithScalarLookingText(): void
+    {
+        $input = json_encode([
+            'nested' => [
+                'number' => '7', 'boolean' => 'true', 'null' => 'null', 'text' => 'Source "ok" path',
+            ],
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
+        $translated = json_encode([
+            'nested' => [
+                'number' => '8', 'boolean' => 'false', 'null' => 'null', 'text' => 'Перевод "ok" \\ путь',
+            ],
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
+
+        foreach (['json', 'linedJson'] as $format) {
+            $result = $this->runFixture([
+                'format' => $format,
+                'input' => $input,
+                'translated' => $translated,
+            ]);
+
+            $this->assertSame('success', $result['type'], (string) ($result['message'] ?? ''));
+            $this->assertSame($translated, $result['result']);
+        }
+    }
+
+    /** @test */
+    public function jsonFormatsRejectNullChangedToAnotherType(): void
+    {
+        foreach (['json', 'linedJson'] as $format) {
+            $result = $this->runFixture([
+                'format' => $format,
+                'input' => '{"nested":{"value":null}}',
+                'translated' => '{"nested":{"value":false}}',
+            ]);
+
+            $this->assertSchemaMismatch($result);
+        }
+    }
+
+    /** @test */
+    public function validationDisabledKeepsChangedJsonScalarsPermissive(): void
+    {
+        $translated = '{"nested":{"count":8,"enabled":false}}';
+        $result = $this->runFixture([
+            'input' => '{"nested":{"count":7,"enabled":true}}',
+            'translated' => $translated,
+            'validate' => false,
+        ]);
+
+        $this->assertSame('success', $result['type']);
+        $this->assertSame($translated, $result['result']);
+    }
+
+    /** @test */
     public function emptyObjectAndListCannotBeSwappedAtRoot(): void
     {
         foreach ([['{}', '[]'], ['[]', '{}']] as [$input, $translated]) {

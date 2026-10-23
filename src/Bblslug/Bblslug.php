@@ -11,6 +11,7 @@ use Bblslug\Models\Prompts;
 use Bblslug\Models\UsageExtractor;
 use Bblslug\Validation\HtmlValidator;
 use Bblslug\Validation\JsonValidator;
+use Bblslug\Validation\JsonScalarValidator;
 use Bblslug\Validation\PlaceholderValidator;
 use Bblslug\Validation\Schema;
 use Bblslug\Validation\TextLengthValidator;
@@ -410,6 +411,12 @@ class Bblslug
                         "Schema mismatch: "
                         . implode('; ', $schemaValidation->getErrors())
                         . "\n\n" . $debugRequest . $debugResponse
+                    );
+                }
+                $scalarValidation = (new JsonScalarValidator($text))->validate($result);
+                if (!$scalarValidation->isValid()) {
+                    throw new \RuntimeException(
+                        "JSON scalar values changed: " . implode('; ', $scalarValidation->getErrors())
                     );
                 }
                 if ($verbose) {
