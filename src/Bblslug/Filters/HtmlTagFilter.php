@@ -149,6 +149,13 @@ REGEX;
                 if ($depth === 0) {
                     $start = $offset;
                 }
+                // SVG/MathML roots honor self-closing syntax; ordinary HTML tags do not.
+                if ($this->isSelfClosingForeignRoot($markup)) {
+                    if ($depth === 0) {
+                        $blocks[] = [$offset, strlen($markup)];
+                    }
+                    continue;
+                }
                 $depth++;
             } elseif ($depth > 0 && --$depth === 0) {
                 $blocks[] = [$start, $offset + strlen($markup) - $start];
@@ -161,6 +168,19 @@ REGEX;
             throw new \RuntimeException('Unclosed selected HTML tag <' . $this->tag . '>');
         }
         return $blocks;
+    }
+
+    private function isSelfClosingForeignRoot(string $markup): bool
+    {
+        if (!in_array(strtolower($this->tag), ['svg', 'math'], true)) {
+            return false;
+        }
+        // A trailing slash in an unquoted attribute value belongs to that value.
+        $pattern = <<<'REGEX'
+~\A<(?:svg|math)(?:[\t\n\f\r ]+[^\s/="'<>]++
+    (?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s"'=<>`]++))?)*\s*/>\z~ix
+REGEX;
+        return preg_match($pattern, $markup) === 1;
     }
 
     public function restore(string $text): string

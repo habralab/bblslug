@@ -376,8 +376,8 @@ batching is enabled below. There is no automatic retry or fallback to document m
 Fragment translation can reduce fluency where grammar requires moving words
 across inline tags. Keeping every fragment does not prove translation fidelity.
 Extraction is conservative: incomplete markup and unsupported protected-block
-forms fail before HTTP. In particular, the shared filters currently reject
-self-closing SVG/MathML roots; those inputs require document mode.
+forms fail before HTTP. SVG/MathML blocks, including self-closing roots, stay
+local and are restored byte for byte.
 
 A 2026-10-23 check on a 26,087-character HTML document passed with Gemini 2.5
 Flash, GPT-5 Mini, Claude Haiku 4.5, and DeepL free/pro. The same document passed

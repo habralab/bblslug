@@ -135,6 +135,71 @@ final class HtmlTagFilterNestingTest extends TestCase
         self::assertSame($source, $filter->restore($prepared));
     }
 
+    /** @dataProvider foreignSelfClosingProvider */
+    public function testForeignSelfClosingAndNestedBlocksAreProtectedVerbatim(string $tag, string $source): void
+    {
+        $filter = new HtmlTagFilter($tag);
+
+        $prepared = $filter->apply($source, new PlaceholderCounter());
+
+        self::assertSame('before @@0@@ middle @@1@@ after', $prepared);
+        self::assertSame($source, $filter->restore($prepared));
+        self::assertSame(2, $filter->getStats()['count']);
+    }
+
+    /** @return array<string,array{string,string}> */
+    public static function foreignSelfClosingProvider(): array
+    {
+        return [
+            'svg' => [
+                'svg',
+                'before <SVG data-slash="/"/> middle <svg><svg/>nested <SVG>inner</SVG> tail</svg> after',
+            ],
+            'math' => [
+                'math',
+                "before <MaTh data-slash='/' /> middle <math><math />nested <MATH>inner</MATH> tail</math> after",
+            ],
+        ];
+    }
+
+    public function testForeignUnquotedAttributeSlashStillRequiresClosingTag(): void
+    {
+        $filter = new HtmlTagFilter('svg');
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Unclosed selected HTML tag <svg>');
+        $filter->apply('<svg data=x/>text', new PlaceholderCounter());
+    }
+
+    public function testForeignSelfClosingSpaceAndQuotedSlashAreParsedCorrectly(): void
+    {
+        $filter = new HtmlTagFilter('svg');
+        $counter = new PlaceholderCounter();
+
+        self::assertSame('@@0@@text', $filter->apply('<svg data=x />text', $counter));
+        self::assertSame('<svg data=x />text', $filter->restore('@@0@@text'));
+
+        $filter = new HtmlTagFilter('svg');
+        self::assertSame('@@1@@', $filter->apply('<svg data="/>">text</svg>', $counter));
+        self::assertSame('<svg data="/>">text</svg>', $filter->restore('@@1@@'));
+    }
+
+    /** @dataProvider ordinarySelfClosingProvider */
+    public function testOrdinaryHtmlSelfClosingSyntaxStillRequiresClosingTag(string $tag): void
+    {
+        $filter = new HtmlTagFilter($tag);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Unclosed selected HTML tag <' . $tag . '>');
+        $filter->apply('<' . $tag . '/>text', new PlaceholderCounter());
+    }
+
+    /** @return array<string,array{string}> */
+    public static function ordinarySelfClosingProvider(): array
+    {
+        return ['code' => ['code'], 'div' => ['div']];
+    }
+
     public function testVoidChosenTagWithoutPairedBlockKeepsExistingBehavior(): void
     {
         $source = 'before <br>visible after <br/>tail';

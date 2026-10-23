@@ -110,6 +110,15 @@ final class HtmlTextDocumentTest extends TestCase
                 '<svg><path/><text>keep</text></svg><math><mi>keep</mi></math><p>Hello</p>', ['s0' => 'Hello'],
                 ['s0' => 'Bonjour'], '<svg><path/><text>keep</text></svg><math><mi>keep</mi></math><p>Bonjour</p>',
             ],
+            'empty self-closing foreign roots' => ['<svg/><math />', [], [], '<svg/><math />'],
+            'foreign self-closing and nested content' => [
+                '<p>Before</p><SVG data-slash="/"/><p>Middle</p><svg><svg/>fixed <SVG>inner</SVG></svg>'
+                . '<p>After</p><MaTh data-slash="/" /><p>End</p><math><math/><mi>fixed</mi></math>',
+                ['s0' => 'Before', 's1' => 'Middle', 's2' => 'After', 's3' => 'End'],
+                ['s0' => 'Avant', 's1' => 'Milieu', 's2' => 'Après', 's3' => 'Fin'],
+                '<p>Avant</p><SVG data-slash="/"/><p>Milieu</p><svg><svg/>fixed <SVG>inner</SVG></svg>'
+                . '<p>Après</p><MaTh data-slash="/" /><p>Fin</p><math><math/><mi>fixed</mi></math>',
+            ],
             'plaintext consumes EOF' => ['<plaintext>Hello <b>world', [], [], '<plaintext>Hello <b>world'],
             'CDATA and declarations' => [
                 '<!DOCTYPE html><![CDATA[keep > <p>unchanged</p>]]><!-- keep --><p>Hello</p>',
@@ -155,6 +164,6 @@ final class HtmlTextDocumentTest extends TestCase
     /** @return list<array{string}> */
     public static function incompleteSources(): array
     {
-        return [['<p title="oops>'], ['<!-- oops'], ['<code/>oops'], ['<textarea>oops'], ['<svg/>']];
+        return [['<p title="oops>'], ['<!-- oops'], ['<code/>oops'], ['<textarea>oops']];
     }
 }
