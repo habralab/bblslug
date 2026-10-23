@@ -8,6 +8,10 @@ The format is based on [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ### Fixed
 
+- HTML validation rejects changes to the parsed tag tree, non-translatable
+  attributes, comments, and doctype. Text and `title`, `alt`, `aria-label` values
+  may translate; attribute ordering and equivalent entity spellings may change.
+
 - Removed obsolete cURL close and reflection accessibility calls that emit
   deprecation warnings on PHP 8.5. PHP 8.2 remains supported.
 

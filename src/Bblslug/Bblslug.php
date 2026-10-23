@@ -10,6 +10,7 @@ use Bblslug\Models\ModelRegistry;
 use Bblslug\Models\Prompts;
 use Bblslug\Models\UsageExtractor;
 use Bblslug\Validation\HtmlValidator;
+use Bblslug\Validation\HtmlStructureValidator;
 use Bblslug\Validation\JsonValidator;
 use Bblslug\Validation\JsonScalarValidator;
 use Bblslug\Validation\PlaceholderValidator;
@@ -429,6 +430,12 @@ class Bblslug
                     throw new \RuntimeException(
                         "HTML validation failed: "
                         . implode('; ', $postResult->getErrors())
+                    );
+                }
+                $structureResult = (new HtmlStructureValidator($text))->validate($result);
+                if (!$structureResult->isValid()) {
+                    throw new \RuntimeException(
+                        "HTML structure mismatch: " . implode('; ', $structureResult->getErrors())
                     );
                 }
                 if ($verbose) {

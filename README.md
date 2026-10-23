@@ -469,9 +469,16 @@ marker's occurrence count. Missing, duplicated, or unexpected markers cause a
 `Placeholder mismatch` error before restoration. Marker order may change. This
 integrity check remains enabled with `--no-validate` or `validate: false`.
 
-Current limits: HTML validation checks parsing,
-not preservation of the original DOM tree. JSON encoded inside string values is
-not validated separately.
+HTML validation also compares the parsed source and translated trees: tag order,
+nesting, attribute presence, comments, doctype, and non-translatable attribute
+values must match. Text and the values of `title`, `alt`, and `aria-label` may
+change. Attribute order and equivalent entity spellings are ignored. The result
+is returned unchanged; comparison does not reserialize the HTML.
+
+Current limits: HTML comparison uses libxml's parsed tree, including its HTML
+normalization, and does not verify translated text content. Use placeholder
+filters to protect code or other text that must remain unchanged. JSON encoded
+inside string values is not validated separately.
 
 To skip validation, add:
 
