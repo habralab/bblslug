@@ -140,11 +140,9 @@ class HttpClient
         $errorCode = \curl_errno($ch);
         if ($errorCode !== 0) {
             $err = \curl_error($ch);
-            \curl_close($ch);
             throw new \RuntimeException("Network error: {$err}", $errorCode);
         }
         $status = (int)\curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        \curl_close($ch);
 
         // Build response debug log
         $debugResponse = '';

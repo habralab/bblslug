@@ -8,6 +8,9 @@ The format is based on [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ### Fixed
 
+- Removed obsolete cURL close and reflection accessibility calls that emit
+  deprecation warnings on PHP 8.5. PHP 8.2 remains supported.
+
 - JSON validation accepts reordered object properties at any depth while retaining
   array positions and exact non-string values at each property/index. Returned
   JSON keeps the provider's property order.
