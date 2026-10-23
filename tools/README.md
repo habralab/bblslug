@@ -15,6 +15,20 @@ BBLSLUG_SMOKE_REPORT_DIR=/tmp/bblslug-deepl-smoke \
 php tools/live-smoke.php
 ```
 
+To check Google's native JSON transport instead of the default markers:
+
+```bash
+BBLSLUG_SMOKE_MODELS=google:gemini-2.5-flash \
+BBLSLUG_SMOKE_FORMATS=json \
+BBLSLUG_SMOKE_GOOGLE_JSON_TRANSPORT=native \
+BBLSLUG_SMOKE_REPORT_DIR=/tmp/bblslug-gemini-native \
+php tools/live-smoke.php
+```
+
+The transport override accepts `markers` or `native`, applies only to Google JSON
+cases, and is recorded in each corresponding summary row. The ordinary default
+run continues to exercise the marker protocol.
+
 Defaults cover the eight model/tier entries in the README live-check table, all
 three formats (`text,html,json`), and both entry points (`api,cli`). Credentials
 prefer `BBLSLUG_` names with unprefixed fallback, matching the application. Missing
@@ -46,3 +60,9 @@ retaining the original 16 text results. DeepL CLI JSON changed from local timeou
 validation errors to successful uploads on both tiers. Gemini JSON was inconsistent
 about markers; Yandex Lite HTML remained rejected; one Yandex Pro connection timed
 out. Do not treat a single later success as a fix for those provider failures.
+
+An additional 2026-10-23 native Google JSON run passed six requests (three API/CLI
+pairs), with the same nested JSON/code/URL/scalar checks enabled. A diagnostic
+Yandex Lite HTML request reproduced an added opening Markdown fence; it remained
+a validation failure. Sandbox DNS failures before the native live run are not
+provider output failures and are not included in that six-request result.

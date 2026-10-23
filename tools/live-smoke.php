@@ -147,6 +147,10 @@ if (
 ) {
     throw new InvalidArgumentException('Unsupported smoke formats or entries');
 }
+$googleJsonTransport = getenv('BBLSLUG_SMOKE_GOOGLE_JSON_TRANSPORT') ?: 'markers';
+if (!in_array($googleJsonTransport, ['markers', 'native'], true)) {
+    throw new InvalidArgumentException('Unsupported Google JSON smoke transport');
+}
 $rows = [];
 foreach ($models as $model) {
     $keyName = $registry->getAuthEnv($model);
@@ -175,6 +179,11 @@ foreach ($models as $model) {
                 $row += ['status' => 'skipped_account_error', 'reason' => $blocked];
             } else {
                 try {
+                    $caseVariables = $variables;
+                    if (str_starts_with($model, 'google:') && $format === 'json') {
+                        $caseVariables['json_transport'] = $googleJsonTransport;
+                        $row['jsonTransport'] = $googleJsonTransport;
+                    }
                     if ($entry === 'api') {
                         $response = Bblslug::translate(
                             apiKey: $key,
@@ -184,7 +193,7 @@ foreach ($models as $model) {
                             filters: $filters,
                             sourceLang: 'EN',
                             targetLang: 'DE',
-                            variables: $variables,
+                            variables: $caseVariables,
                             verbose: true,
                             validateEmbeddedJson: $format === 'json',
                             proxy: $smokeEnv('PROXY') ?: null
@@ -193,7 +202,7 @@ foreach ($models as $model) {
                         $diagnostics = $response['debugRequest'] . $response['debugResponse'];
                         $row['httpStatus'] = $response['httpStatus'];
                     } else {
-                        $response = $smokeCli($model, $format, $input, $filters, $variables);
+                        $response = $smokeCli($model, $format, $input, $filters, $caseVariables);
                         $diagnostics = $response['stderr'];
                         if ($response['exit'] !== 0) {
                             throw new RuntimeException('CLI failure: ' . $diagnostics, $response['exit']);

@@ -27,6 +27,7 @@ class GoogleDriver implements ModelDriverInterface
      *     - context         (string|null) Additional context for system prompt.
      *     - format          (string)      Indicates which prompt format to use.
      *     - includeThoughts (bool|null)   Include chain-of-thought reasoning (Gemini 2.5+).
+     *     - json_transport  (string)      'markers' (default) or explicit 'native' JSON mode.
      *     - maxOutputTokens (int|null)    Maximum tokens for output.
      *     - promptKey       (string)      Key of the prompt template in prompts.yaml.
      *     - response_schema (array)       Gemini JSON schema for native structured output.
@@ -66,9 +67,18 @@ class GoogleDriver implements ModelDriverInterface
                 'format structured_json requires a non-empty associative response_schema.'
             );
         }
-        $nativeStructured = $hasResponseSchema;
+        $transport = \array_key_exists('json_transport', $options) ? $options['json_transport'] : 'markers';
+        if (!\in_array($transport, ['markers', 'native'], true)) {
+            throw new \InvalidArgumentException('Google json_transport must be markers or native');
+        }
+        if ($hasResponseSchema && ($options['json_transport'] ?? null) === 'markers') {
+            throw new \InvalidArgumentException('Google response_schema cannot use the markers transport');
+        }
+        $nativeStructured = $hasResponseSchema || $transport === 'native';
         if ($nativeStructured && !\in_array($format, ['json', 'structured_json', 'linedJson'], true)) {
-            throw new \InvalidArgumentException('response_schema requires format json, structured_json, or linedJson');
+            throw new \InvalidArgumentException(
+                'Native JSON output requires format json, structured_json, or linedJson'
+            );
         }
 
         $includeThoughts = null;
@@ -140,7 +150,9 @@ class GoogleDriver implements ModelDriverInterface
         }
         if ($nativeStructured) {
             $generationConfig['responseMimeType'] = 'application/json';
-            $generationConfig['responseJsonSchema'] = $responseSchema;
+            if ($hasResponseSchema) {
+                $generationConfig['responseJsonSchema'] = $responseSchema;
+            }
         }
 
         $bodyArr = [
@@ -252,7 +264,7 @@ class GoogleDriver implements ModelDriverInterface
             $usage = $typed;
         }
 
-        if (\array_key_exists('response_schema', $options)) {
+        if (\array_key_exists('response_schema', $options) || ($options['json_transport'] ?? null) === 'native') {
             return [
                 'text'  => \trim($accumulated),
                 'usage' => $usage,

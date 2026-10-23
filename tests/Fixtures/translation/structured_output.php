@@ -40,11 +40,11 @@ namespace {
     try {
         $result = \Bblslug\Bblslug::translate(
             apiKey: 'fixture-key',
-            format: 'structured_json',
+            format: (string) ($scenario['format'] ?? 'structured_json'),
             modelKey: $model,
             text: (string) ($scenario['input'] ?? ''),
             validate: (bool) ($scenario['validate'] ?? true),
-            variables: ['response_schema' => $scenario['schema'] ?? [
+            variables: $scenario['variables'] ?? ['response_schema' => $scenario['schema'] ?? [
                 'type' => 'object',
                 'properties' => ['message' => ['type' => 'string']],
                 'required' => ['message'],

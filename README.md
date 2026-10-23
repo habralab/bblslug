@@ -463,6 +463,30 @@ or a document domain. Use the existing context or a custom prompt for applicatio
 rules. Custom prompt templates must provide the requested format; native mode
 requests the `structured_json` template.
 
+### Google native JSON transport
+
+For Gemini models supporting [JSON output](https://ai.google.dev/api/generate-content#v1beta.GenerationConfig),
+`variables: ['json_transport' => 'native']` enables `application/json` output for
+`json` or `linedJson` without requiring a JSON Schema. Input and output contain
+only the JSON document, without translation markers. Syntax, source structure,
+exact non-string values, placeholders, and opt-in embedded JSON checks still apply
+when validation is enabled. Native JSON syntax alone does not guarantee a correct
+translation or unchanged technical string data.
+
+```bash
+printf '%s' '{"title":"Hello"}' | bblslug --model=google:gemini-2.5-flash \
+  --format=json --source-lang=EN --target-lang=DE --variables=json_transport=native
+```
+
+The default remains `json_transport=markers` for compatibility with legacy models
+and existing custom JSON prompts. It still rejects missing output markers. Native
+mode requests the `structured_json` prompt template, including for custom prompt
+groups. `structured_json` format itself still requires `response_schema`; supplying
+a schema automatically enables native output. An explicit `markers` transport with
+a schema is rejected. Native mode does not fall back to markers after an error.
+The transport values `native` and `markers` are specific to Google; DeepL has its
+own transport choices.
+
 ### Live provider checks
 
 English-to-German smoke requests on 2026-10-23 used both the library and CLI,
@@ -481,10 +505,17 @@ and prompt framing fixes described in the unreleased changelog.
 | `yandex:gpt-lite` | Passed / Passed | Rejected markup / Rejected markup | Passed / Passed |
 | `yandex:gpt-pro` | Passed / Passed | Passed / Passed | Connection timeout / Passed |
 
-The latest observations cover 48 cases: 44 passed, three responses were rejected
-by output validation, and one connection timed out. The earlier Gemini API JSON
-case also missed markers, so its later success does not establish reliability.
-No invalid response was accepted and no automatic retry was added.
+The table records the marker-based Google protocol. Those observations cover 48
+cases: 44 passed, three responses were rejected by output validation, and one
+connection timed out. The earlier Gemini API JSON case also missed markers, so its
+later success does not establish reliability. No invalid response was accepted
+and no automatic retry was added.
+
+A separate Google native JSON check passed all six requests: API and CLI, three
+runs each, on `gemini-2.5-flash`. The sample included encoded JSON, protected code,
+a Unicode-escaped URL, and exact non-string values. This is evidence for the tested
+native path, not a guarantee across all Gemini models. A separate Yandex Lite HTML
+request again added an opening Markdown fence inside the markers and was rejected.
 
 These are small scenarios using eight model/tier entries across six providers,
 not a full model-catalogue check or a translation-quality benchmark. Native DeepL

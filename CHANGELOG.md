@@ -8,6 +8,14 @@ The format is based on [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ### Added
 
+- Google `json_transport=native` enables native JSON output for `json`/`linedJson`
+  without a required response schema. The request uses `application/json` and the
+  generic `structured_json` prompt; responses do not depend on translation markers.
+  Source structure, scalar, placeholder, and optional embedded JSON validation
+  remain active. The default marker protocol is unchanged for compatibility.
+  `structured_json` still requires a schema; explicit markers conflict with a schema.
+  Native Google API/CLI smoke requests passed three times each on Gemini 2.5 Flash.
+
 - Repeatable `tools/live-smoke.php` checks library and CLI translation across
   configured providers using synthetic text, HTML, and recursively encoded JSON.
   Credentials stay in the environment and saved diagnostics are masked. The README
@@ -128,6 +136,11 @@ The format is based on [Semantic Versioning](https://semver.org/spec/v2.0.0.html
   safe when filter instances process multiple inputs.
 
 ### Known limitations
+
+- Gemini marker-based JSON responses can omit the opening marker and are rejected.
+  Explicit native JSON transport avoids that marker dependency on supporting models.
+  Yandex Lite can add Markdown fences to HTML despite the prompt; those responses
+  remain rejected. Neither case is silently repaired or retried.
 
 - Unclosed selected HTML elements remain unprotected; only complete explicit
   tag pairs are captured. JSON-aware filtering requires valid JSON; malformed

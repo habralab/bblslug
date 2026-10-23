@@ -9,6 +9,48 @@ use PHPUnit\Framework\TestCase;
 
 final class BblslugStructuredOutputTest extends TestCase
 {
+    public function testGoogleNativeJsonWithoutSchemaUsesFacadeValidation(): void
+    {
+        foreach (['json', 'linedJson'] as $format) {
+            $result = $this->runFixture([
+                'model' => 'google:gemini-2.5-flash',
+                'format' => $format,
+                'variables' => ['json_transport' => 'native'],
+                'input' => '{"message":"Hello","count":7}',
+                'translated' => '{"message":"Hallo","count":7}',
+            ]);
+            self::assertSame('success', $result['type'], $result['message'] ?? '');
+            self::assertSame('{"message":"Hallo","count":7}', $result['result']);
+            self::assertSame('application/json', $result['request']['generationConfig']['responseMimeType']);
+            self::assertArrayNotHasKey('responseJsonSchema', $result['request']['generationConfig']);
+        }
+    }
+
+    /** @dataProvider googleNativeInvalidOutputProvider */
+    public function testGoogleNativeJsonDoesNotBypassValidation(string $output, string $reason): void
+    {
+        $result = $this->runFixture([
+            'model' => 'google:gemini-2.5-flash',
+            'format' => 'json',
+            'variables' => ['json_transport' => 'native'],
+            'input' => '{"message":"Hello","count":7}',
+            'translated' => $output,
+        ]);
+        self::assertSame(\RuntimeException::class, $result['type']);
+        self::assertStringContainsString($reason, $result['message']);
+    }
+
+    /** @return array<string,array{string,string}> */
+    public static function googleNativeInvalidOutputProvider(): array
+    {
+        return [
+            'broken syntax' => ['{"message":"Hallo","count":}', 'JSON syntax broken'],
+            'changed structure' => ['{"message":"Hallo"}', 'Schema mismatch'],
+            'changed scalar' => ['{"message":"Hallo","count":8}', 'JSON scalar values changed'],
+            'added fences' => ["```json\n{\"message\":\"Hallo\",\"count\":7}\n```", 'JSON syntax broken'],
+        ];
+    }
+
     public function testNativeFormatsPassOptionsThroughTheFacadeAndValidateReturnedJson(): void
     {
         foreach (['openai:gpt-5-mini', 'google:gemini-2.5-flash'] as $model) {
