@@ -45,6 +45,9 @@ The format is based on [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ### Fixed
 
+- Composer distribution archives now include the README alongside the license and
+  changelog, so installed consumers retain usage instructions and known limitations.
+
 - Yandex rejects incomplete, truncated, content-filtered, tool-call, and invalid
   completion states before parsing translated content, even when both translation
   markers are present. Chat Completions refusals are also rejected. Foundation,

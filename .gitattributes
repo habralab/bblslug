@@ -2,7 +2,6 @@
 /tests export-ignore
 /.gitignore export-ignore
 /.gitattributes export-ignore
-/README.md export-ignore
 
 # Ensure line endings are normalized
 *.php text
