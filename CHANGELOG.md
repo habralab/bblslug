@@ -8,6 +8,18 @@ The format is based on [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ### Added
 
+- HTML segment translation inside caller-selected JSON strings through
+  `htmlJsonPointers` / repeatable `--html-json-pointer`, with `htmlTransport=segments`
+  and `json`/`linedJson`. Filters run within selected HTML strings; unselected JSON
+  bytes and exact scalar tokens stay local and unchanged. Pointer resolution,
+  source JSON ambiguity, and fragment protocol checks remain mandatory even with
+  container validation disabled. `structured_json`/`response_schema` are rejected
+  because their outer schema does not describe the internal fragment payload.
+  Ordinary HTML and selected HTML-in-JSON share the strict segment response parser.
+  Five recorded-response replays and fresh Gemini API/CLI checks passed on a large
+  JSON example, preserving unselected bytes and protected HTML fragments.
+
+
 - Opt-in HTML `segments` transport (`htmlTransport` in PHP and `--html-transport`
   in CLI). Only keyed text fragments and natural-language attribute values are
   translated through the existing JSON transports; markup, protected blocks,

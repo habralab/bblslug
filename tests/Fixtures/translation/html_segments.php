@@ -59,12 +59,15 @@ namespace {
             variables: $scenario['variables'] ?? [],
             validate: $scenario['validate'] ?? true,
             dryRun: $scenario['dryRun'] ?? false,
-            htmlTransport: $scenario['htmlTransport'] ?? 'segments'
+            htmlTransport: $scenario['htmlTransport'] ?? 'segments',
+            htmlJsonPointers: $scenario['htmlJsonPointers'] ?? [],
+            validateHtmlJsonPointers: $scenario['validateHtmlJsonPointers'] ?? []
         );
         echo json_encode([
             'type' => 'success',
             'result' => $result['result'],
             'prepared' => $result['prepared'],
+            'filterStats' => $result['filterStats'],
             'rawResponseBody' => $result['rawResponseBody'],
             'networkCalls' => \Bblslug\HttpClient::$networkCalls,
             'request' => json_decode(\Bblslug\HttpClient::$request, true),

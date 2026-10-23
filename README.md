@@ -365,8 +365,8 @@ with no translatable fragments skips HTTP. CLI dry-run validates extraction but
 continues to return prepared HTML, not the internal JSON payload.
 
 The default remains `htmlTransport: 'document'` / `--html-transport=document`.
-`segments` supports only HTML input and uses the selected prompt group's JSON
-template and the provider's JSON transport. A custom HTML-only prompt group needs
+`segments` supports HTML input and selected HTML strings in JSON (below). It uses
+the selected prompt group's JSON template and the provider's JSON transport. A custom HTML-only prompt group needs
 a JSON template for this mode. DeepL uses its JSON Document API by default;
 `json_transport=text_batch` remains an explicit alternative with its existing
 batch limits. Length checks apply to the serialized JSON payload; returned `prepared` text
@@ -385,6 +385,69 @@ through Gemini CLI. Output budgets were explicitly increased for this large
 input. Grok 4.20 non-reasoning and Yandex Lite/Pro responses failed segment
 protocol checks and were rejected without retries. This single-document check
 is not a guarantee for all models or documents.
+
+### Translate selected HTML strings inside JSON
+
+Use `htmlTransport: 'segments'` with explicit `htmlJsonPointers` to translate
+only selected HTML string values. Supported formats are `json` and `linedJson`.
+
+```php
+$result = Bblslug::translate(
+    apiKey: $key,
+    format: 'json',
+    modelKey: 'google:gemini-2.5-flash',
+    text: $json,
+    filters: ['url', 'html_code'],
+    htmlTransport: 'segments',
+    htmlJsonPointers: ['/body', '/items/0/html'],
+);
+```
+
+```bash
+vendor/bin/bblslug --model=google:gemini-2.5-flash --format=json \
+  --html-transport=segments --html-json-pointer=/body \
+  --html-json-pointer=/items/0/html --filters=url,html_code \
+  --source=input.json --translated=out.json
+```
+
+Only HTML fragments from those strings are sent. All unselected values, keys,
+whitespace, property order, and numeric tokens remain byte-for-byte unchanged.
+Filters apply separately inside selected strings, leaving unselected fields alone.
+Each HTML string has its own scope, including raw-text/`plaintext` handling.
+Fragment identifiers are unique across the request. Reconstruction escapes each
+changed HTML string as JSON; an unchanged string retains its original JSON token.
+A changed selected token may normalize its JSON escape spelling, while its decoded
+markup stays local. `rawResponseBody` contains the provider's fragment response;
+`result` contains the assembled JSON document.
+
+Selectors use RFC 6901 JSON Pointer syntax: `~1` for `/`, `~0` for `~`, array
+indices such as `/items/0/html`, and an empty pointer for a root JSON string
+(`--html-json-pointer ''`). Repeated selectors are deduplicated. There are no
+wildcards, field-name guesses, or implicit traversal into JSON encoded inside
+another string. Invalid/missing/non-string selections, duplicate source object
+keys, and malformed source JSON fail before HTTP, including dry-run and
+`--no-validate`. Segment response integrity is also mandatory. When validation is
+enabled, selected HTML is checked before and after translation automatically.
+
+`htmlJsonPointers` / `--html-json-pointer` selects content to **translate**.
+`validateHtmlJsonPointers` / `--validate-html-json-pointer` only selects additional
+HTML strings to **check**. Both can be used together. JSON segment mode requires
+at least one translation selector; document mode rejects translation selectors.
+`structured_json` and `response_schema` are incompatible with segment mode because
+the provider sees a fragment object rather than the outer JSON schema.
+
+The earlier HTML transport limitations still apply. CLI JSON dry-run outputs
+filtered JSON with only the selected strings prepared; the PHP API exposes this in
+`prepared` while its dry-run `result` remains the source. Transport input limits apply to the
+serialized fragment payload, not to unselected metadata. This mode does not change
+the default JSON translation behavior, which translates all string values.
+
+A large JSON fixture produced the same 179-fragment request as its standalone
+HTML value. Replaying five recorded provider responses preserved its unselected
+bytes and HTML structure. Fresh Gemini 2.5 Flash API and CLI checks also passed,
+with `maxOutputTokens=32768`; protected URLs/code and unselected JSON bytes were
+unchanged. This verifies reconstruction for that fixture, not general translation
+fidelity or a new live check of every provider.
 
 ### Add translation context (prompt), source and target language
 

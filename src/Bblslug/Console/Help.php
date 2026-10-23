@@ -53,7 +53,9 @@ class Help
         echo "\t{$bold}--dry-run{$reset}            Apply filters only; save SOURCE.prepared or write STDOUT\n";
         echo "\t{$bold}--filters=F1,F2,...{$reset}  Comma-separated filters to (e.g. url, html_pre, html_code)\n";
         echo "\t{$bold}--format=FORMAT{$reset}      Required: text, html, json, structured_json, or linedJson\n";
-        echo "\t{$bold}--html-transport=MODE{$reset} HTML transport: document (default) or segments (html only)\n";
+        echo "\t{$bold}--html-transport=MODE{$reset} HTML transport: document (default) or segments\n";
+        echo "\t{$bold}--html-json-pointer=POINTER{$reset} Translate HTML at a JSON Pointer "
+            . "(repeatable; segments only)\n";
         echo "\t{$bold}--help{$reset}               Show this help message\n";
         echo "\t{$bold}--list-models{$reset}        Show available translation models grouped by vendor\n";
         echo "\t{$bold}--list-prompts{$reset}       Show available prompt templates\n";
@@ -102,6 +104,10 @@ class Help
         echo "\n\tTranslate HTML using structured text segments\n";
         echo "\tvendor/bin/bblslug --model=google:gemini-2.5-flash --format=html --html-transport=segments \\\n";
         echo "\t    --source=doc.html --translated=out.html\n";
+
+        echo "\n\tTranslate selected HTML strings inside JSON\n";
+        echo "\tvendor/bin/bblslug --model=google:gemini-2.5-flash --format=json --html-transport=segments \\\n";
+        echo "\t    --html-json-pointer=/body --source=doc.json --translated=out.json\n";
 
         echo "\n\tTranslate plain text via STDIN → STDOUT\n";
         echo "\tcat in.txt | vendor/bin/bblslug --model=openai:gpt-4o --format=text > out.txt\n";

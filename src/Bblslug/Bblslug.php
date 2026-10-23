@@ -11,6 +11,7 @@ use Bblslug\Models\ModelVariables;
 use Bblslug\Models\Prompts;
 use Bblslug\Models\UsageExtractor;
 use Bblslug\Translation\HtmlTextDocument;
+use Bblslug\Translation\JsonHtmlDocument;
 use Bblslug\Validation\EmbeddedJsonValidator;
 use Bblslug\Validation\JsonHtmlValidator;
 use Bblslug\Validation\HtmlValidator;
@@ -85,6 +86,7 @@ class Bblslug
      * @param bool $validateEmbeddedJson Opt in to checking JSON containers encoded in string values.
      * @param array<int,string> $validateHtmlJsonPointers Explicit JSON Pointers to HTML strings to validate.
      * @param string $htmlTransport HTML document translation or locally reconstructed text segments.
+     * @param array<int,string> $htmlJsonPointers Explicit HTML strings to translate in JSON segment mode.
      *
      * @return array{
      *     original: string,
@@ -121,13 +123,24 @@ class Bblslug
         ?callable $onFeedback = null,
         bool $validateEmbeddedJson = false,
         array $validateHtmlJsonPointers = [],
-        string $htmlTransport = 'document'
+        string $htmlTransport = 'document',
+        array $htmlJsonPointers = []
     ): array {
         if (!\in_array($htmlTransport, ['document', 'segments'], true)) {
             throw new \InvalidArgumentException('htmlTransport must be document or segments');
         }
-        if ($htmlTransport === 'segments' && $format !== 'html') {
-            throw new \InvalidArgumentException('htmlTransport segments requires format html');
+        $jsonHtmlSegments = $htmlTransport === 'segments' && \in_array($format, ['json', 'linedJson'], true);
+        if ($htmlTransport === 'segments' && !\in_array($format, ['html', 'json', 'linedJson'], true)) {
+            throw new \InvalidArgumentException('htmlTransport segments requires format html, json, or linedJson');
+        }
+        if ($htmlJsonPointers !== [] && !$jsonHtmlSegments) {
+            throw new \InvalidArgumentException('htmlJsonPointers requires JSON format and htmlTransport segments');
+        }
+        if ($jsonHtmlSegments && $htmlJsonPointers === []) {
+            throw new \InvalidArgumentException('JSON HTML segments require explicit htmlJsonPointers');
+        }
+        if ($htmlTransport === 'segments' && \array_key_exists('response_schema', $variables)) {
+            throw new \InvalidArgumentException('response_schema cannot describe an HTML segment transport payload');
         }
         ModelVariables::validate($variables);
         $diagnosticMasker = new SecretMasker([
@@ -225,8 +238,10 @@ class Bblslug
                         "JSON syntax failed: " . implode('; ', $preResult->getErrors())
                     );
                 }
-                if ($validateHtmlJsonPointers !== []) {
-                    $jsonHtmlValidator = new JsonHtmlValidator($text, $validateHtmlJsonPointers);
+                $htmlChecks = $jsonHtmlSegments
+                    ? array_merge($validateHtmlJsonPointers, $htmlJsonPointers) : $validateHtmlJsonPointers;
+                if ($htmlChecks !== []) {
+                    $jsonHtmlValidator = new JsonHtmlValidator($text, $htmlChecks);
                 }
                 $parsedIn = json_decode($text, false);
                 $schemaIn = Schema::capture($parsedIn);
@@ -251,16 +266,18 @@ class Bblslug
         // Apply placeholder filters
         /** @var array<int,string> $filtersList */
         $filtersList = \array_values(\array_map('strval', $filters));
-        $filterManager = new FilterManager($filtersList);
+        $jsonHtmlDocument = $jsonHtmlSegments ? new JsonHtmlDocument($text, $htmlJsonPointers, $filtersList) : null;
+        $filterManager = new FilterManager($jsonHtmlSegments ? [] : $filtersList);
         $say($onFeedback, "Applying filters: " . (empty($filters) ? '(none)' : implode(', ', $filters)), 'info');
-        $prepared = $filterManager->apply($text);
+        $prepared = $jsonHtmlDocument !== null ? $jsonHtmlDocument->getPrepared() : $filterManager->apply($text);
         $preparedLength = mb_strlen($prepared);
         $say($onFeedback, "Filters applied (preparedLength={$preparedLength})", 'info');
         if ($verbose) {
-            self::dumpPlaceholdersVerbose($filterManager, $onFeedback, $diagnosticMasker);
+            self::dumpPlaceholdersVerbose($jsonHtmlDocument ?? $filterManager, $onFeedback, $diagnosticMasker);
         }
 
-        $htmlDocument = $htmlTransport === 'segments' ? new HtmlTextDocument($prepared) : null;
+        $htmlDocument = $jsonHtmlDocument
+            ?? ($htmlTransport === 'segments' ? new HtmlTextDocument($prepared) : null);
         $requestText = $htmlDocument !== null ? $htmlDocument->getJson() : $prepared;
 
         // Length guard: make sure the actual translation payload fits model constraints
@@ -299,7 +316,7 @@ class Bblslug
         );
 
         if ($htmlDocument !== null && !$htmlDocument->hasTexts()) {
-            $reqRaw['localResult'] = $prepared;
+            $reqRaw['localResult'] = $jsonHtmlDocument !== null ? $text : $prepared;
         }
         $options['responseContext'] = $reqRaw['responseContext'] ?? null;
         $localResult = $reqRaw['localResult'] ?? null;
@@ -407,7 +424,7 @@ class Bblslug
 
         // Parse response
         if ($dryRun || $localResult !== null) {
-            $translated = $localResult ?? $prepared;
+            $translated = $dryRun && $jsonHtmlDocument !== null ? $text : ($localResult ?? $prepared);
             $rawUsage   = null;
             $say($onFeedback, $localResult !== null ? "Local translation completed" : "Dry-run completed", 'info');
         } else {
@@ -458,7 +475,7 @@ class Bblslug
         $say($onFeedback, "Placeholders restored (translatedLength={$finalLength})", 'info');
 
         // Collect stats
-        $filterStats = $filterManager->getStats();
+        $filterStats = $jsonHtmlDocument !== null ? $jsonHtmlDocument->getFilterStats() : $filterManager->getStats();
 
         // Post-validation (after translation)
         if ($validate) {
@@ -583,7 +600,7 @@ class Bblslug
 
     /** @param callable(string,string=):void|null $onFeedback */
     private static function dumpPlaceholdersVerbose(
-        FilterManager $filterManager,
+        FilterManager|JsonHtmlDocument $filterManager,
         ?callable $onFeedback,
         SecretMasker $masker
     ): void {

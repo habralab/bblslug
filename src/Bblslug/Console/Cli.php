@@ -10,6 +10,7 @@ use Bblslug\Filters\FilterManager;
 use Bblslug\Models\ModelRegistry;
 use Bblslug\Models\ModelVariables;
 use Bblslug\Translation\HtmlTextDocument;
+use Bblslug\Translation\JsonHtmlDocument;
 use Bblslug\Validation\JsonHtmlValidator;
 
 /**
@@ -37,6 +38,7 @@ class Cli
             "filters:",      // comma-separated filter list
             "format:",       // text, HTML or a JSON format
             "html-transport:", // HTML transport: document or segments
+            "html-json-pointer:", // JSON Pointer to HTML strings selected for segment translation (repeatable)
             "help",          // show help and exit
             "list-models",   // show models and exit
             "list-prompts",  // show available prompt templates and exit
@@ -114,6 +116,7 @@ class Cli
         // occurrences. Preserve empty strings so that the empty JSON Pointer
         // (the document root) can be requested with --validate-html-json-pointer ''.
         $htmlJsonPointers = [];
+        $htmlJsonSelectionPointers = [];
         $rawArgv = $_SERVER['argv'] ?? [];
         $argv = is_array($rawArgv) ? array_values($rawArgv) : [];
         foreach ($argv as $index => $argument) {
@@ -131,6 +134,15 @@ class Cli
                 $next = $argv[$index + 1] ?? null;
                 if (!is_string($next) || ($next !== '' && str_starts_with($next, '--'))) {
                     Help::error('--validate-html-json-pointer requires a value.');
+                }
+            } elseif ($argument === '--html-json-pointer=') {
+                Help::error(
+                    'Empty --html-json-pointer value must be passed as a separate empty argument.'
+                );
+            } elseif ($argument === '--html-json-pointer') {
+                $next = $argv[$index + 1] ?? null;
+                if (!is_string($next) || ($next !== '' && str_starts_with($next, '--'))) {
+                    Help::error('--html-json-pointer requires a value.');
                 }
             } elseif ($argument === '--html-transport=') {
                 Help::error(
@@ -151,6 +163,16 @@ class Cli
                     Help::error('--validate-html-json-pointer requires a string value.');
                 }
                 $htmlJsonPointers[] = $pointer;
+            }
+        }
+        if (isset($options['html-json-pointer'])) {
+            $rawPointers = $options['html-json-pointer'];
+            $rawPointers = is_array($rawPointers) ? $rawPointers : [$rawPointers];
+            foreach ($rawPointers as $pointer) {
+                if (!is_string($pointer)) {
+                    Help::error('--html-json-pointer requires a string value.');
+                }
+                $htmlJsonSelectionPointers[] = $pointer;
             }
         }
 
@@ -178,12 +200,31 @@ class Cli
         if (!in_array($htmlTransport, ['document', 'segments'], true)) {
             Help::error("Invalid HTML transport: '{$htmlTransport}'. Allowed: document, segments.");
         }
-        if ($htmlTransport === 'segments' && $format !== 'html') {
-            Help::error('--html-transport=segments requires --format=html.');
+        if ($htmlTransport === 'segments') {
+            if ($format === 'html' && $htmlJsonSelectionPointers !== []) {
+                Help::error('--html-json-pointer requires a JSON format with --html-transport=segments.');
+            }
+            if ($format === 'structured_json') {
+                Help::error('--html-transport=segments is incompatible with structured_json.');
+            }
+            if (in_array($format, ['json', 'linedJson'], true) && $htmlJsonSelectionPointers === []) {
+                Help::error('--html-transport=segments with JSON requires at least one --html-json-pointer.');
+            }
+            if (!in_array($format, ['html', 'json', 'linedJson'], true)) {
+                Help::error('--html-transport=segments requires --format=html, json, or linedJson.');
+            }
+        } elseif ($htmlJsonSelectionPointers !== []) {
+            Help::error('--html-json-pointer requires --html-transport=segments.');
         }
 
         if ($htmlJsonPointers !== [] && !in_array($format, ['json', 'structured_json', 'linedJson'], true)) {
             Help::error('--validate-html-json-pointer requires a JSON format.');
+        }
+        if ($htmlJsonSelectionPointers !== [] && !in_array($format, ['json', 'linedJson'], true)) {
+            Help::error('--html-json-pointer requires json or linedJson format.');
+        }
+        if ($htmlTransport === 'segments' && isset($options['response-schema'])) {
+            Help::error('--response-schema is incompatible with --html-transport=segments.');
         }
 
 
@@ -234,6 +275,9 @@ class Cli
             $filterManager = new FilterManager($filters);
         } catch (\InvalidArgumentException $exception) {
             Help::error($exception->getMessage());
+        }
+        if ($htmlTransport === 'segments' && array_key_exists('response_schema', $cliVars)) {
+            Help::error('--response-schema is incompatible with --html-transport=segments.');
         }
 
         // Handle input
@@ -303,24 +347,29 @@ class Cli
 
         // Dry-run: prepare placeholders and exit
         if ($dryRun) {
-            if ($validate && $htmlJsonPointers !== []) {
+            $validationPointers = array_values(array_unique(array_merge(
+                $htmlJsonPointers,
+                $htmlJsonSelectionPointers
+            )));
+            if ($validate && $validationPointers !== []) {
                 try {
-                    new JsonHtmlValidator($text, $htmlJsonPointers);
+                    new JsonHtmlValidator($text, $validationPointers);
                 } catch (\Throwable $exception) {
                     Help::error($exception->getMessage());
                 }
             }
             try {
-                $prepared = $filterManager->apply($text);
+                if ($htmlTransport === 'segments' && in_array($format, ['json', 'linedJson'], true)) {
+                    $jsonDocument = new JsonHtmlDocument($text, $htmlJsonSelectionPointers, $filters);
+                    $prepared = $jsonDocument->getPrepared();
+                } else {
+                    $prepared = $filterManager->apply($text);
+                    if ($htmlTransport === 'segments') {
+                        new HtmlTextDocument($prepared);
+                    }
+                }
             } catch (\Throwable $exception) {
                 Help::error($exception->getMessage());
-            }
-            if ($htmlTransport === 'segments') {
-                try {
-                    new HtmlTextDocument($prepared);
-                } catch (\Throwable $exception) {
-                    Help::error($exception->getMessage());
-                }
             }
             if ($sourceFile !== null) {
                 if (@file_put_contents($sourceFile . '.prepared', $prepared) !== strlen($prepared)) {
@@ -418,6 +467,7 @@ class Cli
                 variables: $variables,
                 verbose: $verbose,
                 validateHtmlJsonPointers: $htmlJsonPointers,
+                htmlJsonPointers: $htmlJsonSelectionPointers,
                 htmlTransport: $htmlTransport,
             );
         } catch (\Throwable $e) {
