@@ -477,8 +477,19 @@ is returned unchanged; comparison does not reserialize the HTML.
 
 Current limits: HTML comparison uses libxml's parsed tree, including its HTML
 normalization, and does not verify translated text content. Use placeholder
-filters to protect code or other text that must remain unchanged. JSON encoded
-inside string values is not validated separately.
+filters to protect code or other text that must remain unchanged.
+
+JSON encoded inside string values is checked only when explicitly enabled with
+`validateEmbeddedJson: true` in the PHP API or `--validate-embedded-json` in the CLI.
+This option supports `json`, `linedJson`, and `structured_json`. It detects source
+strings containing valid JSON objects or arrays, then recursively checks their
+translated syntax, structure, and exact non-string values using the same rules as
+the outer JSON. Object key order may change. Errors report `Embedded JSON mismatch`
+and the affected field or index. Output strings are not repaired or reserialized.
+Ordinary strings, malformed JSON-like source text, and encoded JSON scalars such
+as `123`, `true`, or `null` remain translatable. The option is off by default because
+JSON-looking text can be intentional prose or a code example. `validate: false`
+or `--no-validate` also disables these checks.
 
 To skip validation, add:
 

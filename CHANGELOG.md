@@ -6,6 +6,13 @@ The format is based on [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ## [Unreleased]
 
+### Added
+
+- Opt-in `validateEmbeddedJson` API argument and `--validate-embedded-json` CLI
+  flag validate JSON objects/arrays encoded inside source string values,
+  recursively checking translated syntax, structure, and exact non-string values.
+  Disabled by default; ordinary strings and encoded scalar values remain translatable.
+
 ### Fixed
 
 - HTML validation rejects changes to the parsed tag tree, non-translatable

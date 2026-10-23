@@ -9,6 +9,7 @@ use Bblslug\HttpClient;
 use Bblslug\Models\ModelRegistry;
 use Bblslug\Models\Prompts;
 use Bblslug\Models\UsageExtractor;
+use Bblslug\Validation\EmbeddedJsonValidator;
 use Bblslug\Validation\HtmlValidator;
 use Bblslug\Validation\HtmlStructureValidator;
 use Bblslug\Validation\JsonValidator;
@@ -78,6 +79,7 @@ class Bblslug
      * @param bool                  $validate   If true: perform container syntax validation.
      * @param array<string,mixed>   $variables  Model-specific vars (e.g. ['some'=>'...'])
      * @param bool                  $verbose    If true: include request/response logs.
+     * @param bool $validateEmbeddedJson Opt in to checking JSON containers encoded in string values.
      *
      * @return array{
      *     original: string,
@@ -111,7 +113,8 @@ class Bblslug
         bool $validate = true,
         array $variables = [],
         bool $verbose = false,
-        ?callable $onFeedback = null
+        ?callable $onFeedback = null,
+        bool $validateEmbeddedJson = false
     ): array {
         // Prepare holders for validation debug
         $valLogPre  = '';
@@ -152,6 +155,10 @@ class Bblslug
         /** @var array<string,mixed> $model */
         $model = $registry->get($modelKey);
         $driver = $registry->getDriver($modelKey);
+
+        if ($validateEmbeddedJson && !\in_array($format, ['json', 'structured_json', 'linedJson'], true)) {
+            throw new \InvalidArgumentException('validateEmbeddedJson requires a JSON format');
+        }
 
         if ($format === 'structured_json' || \array_key_exists('response_schema', $variables)) {
             if (!\in_array($model['vendor'] ?? null, ['openai', 'google'], true)) {
@@ -419,6 +426,14 @@ class Bblslug
                     throw new \RuntimeException(
                         "JSON scalar values changed: " . implode('; ', $scalarValidation->getErrors())
                     );
+                }
+                if ($validateEmbeddedJson) {
+                    $embeddedResult = (new EmbeddedJsonValidator($text))->validate($result);
+                    if (!$embeddedResult->isValid()) {
+                        throw new \RuntimeException(
+                            "Embedded JSON mismatch: " . implode('; ', $embeddedResult->getErrors())
+                        );
+                    }
                 }
                 if ($verbose) {
                     $valLogPost .= "[JSON schema validated]\n";

@@ -39,7 +39,8 @@ namespace {
             text: (string) ($scenario['input'] ?? ''),
             filters: [],
             validate: (bool) ($scenario['validate'] ?? true),
-            verbose: true
+            verbose: true,
+            validateEmbeddedJson: (bool) ($scenario['validateEmbeddedJson'] ?? false)
         );
         echo json_encode([
             'type' => 'success',

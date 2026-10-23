@@ -43,12 +43,14 @@ namespace {
             format: 'structured_json',
             modelKey: $model,
             text: (string) ($scenario['input'] ?? ''),
+            validate: (bool) ($scenario['validate'] ?? true),
             variables: ['response_schema' => $scenario['schema'] ?? [
                 'type' => 'object',
                 'properties' => ['message' => ['type' => 'string']],
                 'required' => ['message'],
                 'additionalProperties' => false,
-            ]]
+            ]],
+            validateEmbeddedJson: (bool) ($scenario['validateEmbeddedJson'] ?? false)
         );
         echo json_encode([
             'type' => 'success',

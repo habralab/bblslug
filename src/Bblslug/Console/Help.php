@@ -57,7 +57,7 @@ class Help
         echo "\t{$bold}--list-models{$reset}        Show available translation models grouped by vendor\n";
         echo "\t{$bold}--list-prompts{$reset}       Show available prompt templates\n";
         echo "\t{$bold}--model=MODEL_ID{$reset}     Required model (see --list-models)\n";
-        echo "\t{$bold}--no-validate{$reset}        Disable HTML/JSON syntax and JSON structure checks\n";
+        echo "\t{$bold}--no-validate{$reset}        Disable container syntax and structure checks\n";
         echo "\t{$bold}--prompt-key=KEY{$reset}     Specify prompt template key (prompts.yaml)\n";
         echo "\t{$bold}--response-schema=FILE{$reset} JSON Schema for OpenAI/Google native JSON output\n";
         echo "\t{$bold}--proxy=URI{$reset}          Optional proxy URI (see examples) or set BBLSLUG_PROXY\n";
@@ -65,6 +65,7 @@ class Help
         echo "\t{$bold}--source-lang=LANG{$reset}   Source language code (e.g. EN, DE) - default autodetect\n";
         echo "\t{$bold}--target-lang=LANG{$reset}   Target language (e.g. EN, DE) - default EN\n";
         echo "\t{$bold}--translated=FILE{$reset}    Output file for translated content (omit to write to STDOUT)\n";
+        echo "\t{$bold}--validate-embedded-json{$reset} Check JSON objects/arrays encoded inside string values\n";
         echo "\t{$bold}--variables=K=V,...{$reset}  Comma-separated model-specific overrides (string values)\n";
         echo "\t{$bold}--verbose{$reset}            Show extra debug info after processing\n";
 

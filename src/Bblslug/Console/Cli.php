@@ -45,6 +45,7 @@ class Cli
             "source-lang:",  // override source language
             "target-lang:",  // override target language
             "translated:",   // output file (default = STDOUT)
+            "validate-embedded-json", // opt-in checks for encoded JSON containers
             "variables:",    // model-specific overrides
             "verbose",       // enable debug logs
         ]);
@@ -322,6 +323,7 @@ class Cli
                 sourceLang: $sourceLang,
                 targetLang: $targetLang,
                 validate: $validate,
+                validateEmbeddedJson: isset($options['validate-embedded-json']),
                 variables: $variables,
                 verbose: $verbose,
             );
