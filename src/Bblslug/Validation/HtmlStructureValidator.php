@@ -31,7 +31,7 @@ class HtmlStructureValidator implements ValidatorInterface
             return ValidationResult::success();
         }
         return ValidationResult::failure([
-            'Tags, nesting, and non-translatable attributes must match the source HTML',
+            'Markup, non-translatable attributes, and boundary code fences must match the source HTML',
         ]);
     }
 
@@ -59,7 +59,12 @@ class HtmlStructureValidator implements ValidatorInterface
         if ($dom->firstChild instanceof DOMProcessingInstruction) {
             $dom->removeChild($dom->firstChild);
         }
-        return self::capture($dom);
+        return [
+            'tree' => self::capture($dom),
+            // libxml treats Markdown fences as text; the DOM comparison ignores text values.
+            'leadingFence' => (bool) preg_match('/\A\s*(?:`{3,}|~{3,})[^\r\n]*\R/', $content),
+            'trailingFence' => (bool) preg_match('/(?:\A|\R)[\t ]*(?:`{3,}|~{3,})[\t ]*\s*\z/', $content),
+        ];
     }
 
     /** @return array<string,mixed> */

@@ -12,6 +12,9 @@ final class BblslugHtmlOutputTest extends TestCase
     public function changedHtmlStructureIsRejected(): void
     {
         $cases = [
+            'Markdown opening fence with otherwise matching markup' => [
+                '<div><p>Hello</p></div>', "```\n<div><p>Привет</p></div>",
+            ],
             'dropped tag' => ['<p>Hello <strong>world</strong></p>', '<p>Hola mundo</p>'],
             'added tag' => ['<p>Hello world</p>', '<p><strong>Hola mundo</strong></p>'],
             'reordered tags' => [

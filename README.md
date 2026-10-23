@@ -447,6 +447,24 @@ or a document domain. Use the existing context or a custom prompt for applicatio
 rules. Custom prompt templates must provide the requested format; native mode
 requests the `structured_json` template.
 
+### Live provider checks
+
+Small English-to-German requests checked on 2026-10-23 through the library with
+validation enabled, HTML URL/code filters, and opt-in embedded JSON validation:
+
+| Model | Text | HTML | JSON |
+| --- | --- | --- | --- |
+| `deepl:free` | Passed | Rejected: protected code block moved inside link | Rejected: invalid JSON |
+| `deepl:pro` | Passed | Rejected: HTML structure changed | Rejected: invalid JSON |
+| `yandex:gpt-lite` | Passed | One response added an opening Markdown fence; now rejected | Passed |
+| `yandex:gpt-pro` | Passed | Passed | Passed |
+
+These are individual small scenarios, not a reliability or translation-quality
+benchmark. DeepL's current JSON pseudo-tag transport translated object keys and
+corrupted embedded markup/escaping in these requests; JSON translation remains
+unreliable and requires a separate transport fix. HTML placeholder counts alone
+do not prevent a provider from moving protected fragments to a different parent.
+
 ### Disable validation
 
 For HTML and JSON formats, Bblslug performs basic syntax validation before and after translation.
@@ -473,7 +491,9 @@ HTML validation also compares the parsed source and translated trees: tag order,
 nesting, attribute presence, comments, doctype, and non-translatable attribute
 values must match. Text and the values of `title`, `alt`, and `aria-label` may
 change. Attribute order and equivalent entity spellings are ignored. The result
-is returned unchanged; comparison does not reserialize the HTML.
+is returned unchanged; comparison does not reserialize the HTML. Newly added
+Markdown fences at document boundaries are rejected even when libxml parses them
+as ordinary text. Literal fences already present at those boundaries are allowed.
 
 Current limits: HTML comparison uses libxml's parsed tree, including its HTML
 normalization, and does not verify translated text content. Use placeholder

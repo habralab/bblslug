@@ -15,6 +15,9 @@ The format is based on [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ### Fixed
 
+- HTML validation rejects newly introduced Markdown fences at document boundaries,
+  including an opening-only fence observed in a real Yandex Lite response.
+
 - HTML validation rejects changes to the parsed tag tree, non-translatable
   attributes, comments, and doctype. Text and `title`, `alt`, `aria-label` values
   may translate; attribute ordering and equivalent entity spellings may change.
@@ -41,6 +44,13 @@ The format is based on [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 - URL and HTML filters preserve literal placeholder-like text, including partial
   and overlapping markers. Restoration avoids cascading replacements and remains
   safe when filter instances process multiple inputs.
+
+### Known limitations
+
+- Real small-scenario checks on 2026-10-23 still failed for DeepL Free/Pro HTML
+  and JSON. DeepL moved a protected block into a link in the inspected HTML
+  response; its JSON pseudo-tag transport translated keys and corrupted markup
+  and escaping. Validation rejects these results, but transport fixes remain.
 
 ## [0.9.0] – 2026-10-23
 

@@ -28,6 +28,14 @@ final class HtmlStructureValidatorTest extends TestCase
     public static function markupChanges(): array
     {
         return [
+            'leading backtick fence from live Yandex response' => [
+                '<div><p>Hello</p></div>', "```\n<div><p>Привет</p></div>",
+            ],
+            'paired html fence' => [
+                '<p>Hello</p>', "```html\n<p>Привет</p>\n```",
+            ],
+            'trailing fence only' => ['<p>Hello</p>', "<p>Привет</p>\n```\n"],
+            'tilde fence' => ['<p>Hello</p>', "~~~html\n<p>Привет</p>\n~~~"],
             'added attribute' => ['<p>Hello</p>', '<p onclick="run()">Привет</p>'],
             'missing translatable attribute' => ['<img alt="Source">', '<img>'],
             'added translatable attribute' => ['<img>', '<img alt="Перевод">'],
@@ -52,6 +60,20 @@ final class HtmlStructureValidatorTest extends TestCase
     {
         $source = '<p>Text <em>one</em> followed by <br>more</p>';
         $output = "<p>Перевод\n<em>один</em><br></p>";
+        self::assertTrue((new HtmlStructureValidator($source))->validate($output)->isValid());
+    }
+
+    public function testLiteralBoundaryFencesAlreadyInSourceAreAllowed(): void
+    {
+        $source = "```html\n<p>Hello</p>\n```";
+        $output = "```html\n<p>Привет</p>\n```";
+        self::assertTrue((new HtmlStructureValidator($source))->validate($output)->isValid());
+    }
+
+    public function testBackticksInsideHtmlTextRemainTranslatable(): void
+    {
+        $source = '<p>Run <code>```</code> as an example</p>';
+        $output = '<p>Пример <code>```</code> для запуска</p>';
         self::assertTrue((new HtmlStructureValidator($source))->validate($output)->isValid());
     }
 
