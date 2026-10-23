@@ -15,6 +15,11 @@ The format is based on [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ### Fixed
 
+- URL filters recognize Unicode-escaped schemes, slashes, hosts, paths, and query
+  strings in JSON values, including recursively encoded JSON. Matching uses
+  decoded strings and restores exact source slices; keys, numeric spellings,
+  and unrelated escapes remain unchanged. URLs cannot span separate JSON values.
+
 - Unknown filter names and malformed `html_*` tag names now fail explicitly
   instead of silently leaving content unprotected. CLI validation runs before
   input/output handling, including dry-run. Empty filter lists remain valid;

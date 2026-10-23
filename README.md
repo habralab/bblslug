@@ -549,7 +549,7 @@ Post-validation still compares the restored HTML tree, so the wrappers do not
 bypass structure checks. The 128 KiB request-body limit is checked
 after wrapping so transport overhead cannot silently exceed the provider limit.
 
-### HTML filters inside JSON
+### Filters inside JSON
 
 When a filter such as `html_code` or `html_pre` receives valid JSON, it inspects
 string values separately and recursively handles JSON containers/strings encoded
@@ -559,7 +559,14 @@ source byte slices. JSON keys, numeric spellings, whitespace, and unrelated esca
 sequences are not reserialized by the filter. Tag pairs in separate JSON values
 cannot form one protected block. This behavior applies across providers.
 
-For ordinary HTML/text input, the same filters continue to use the HTML token
+The `url` filter also inspects decoded JSON string values recursively. It
+recognizes supported URL schemes even when their letters, colons, slashes, hosts,
+paths, or query strings use `\uXXXX` escapes. The original URL bytes are restored
+without normalizing their encoding. URL-shaped property names stay unchanged;
+separate JSON values cannot combine into one URL. Literal Unicode escape notation
+in ordinary text is not decoded by the filter.
+
+For ordinary HTML/text input, HTML filters continue to use the HTML token
 scan. Only complete explicit tag pairs are protected; an unclosed element is
 left unchanged. Filters do not repair malformed JSON or markup.
 

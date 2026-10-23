@@ -33,24 +33,61 @@ class UrlFilter implements FilterInterface
         }
         $text = $shielded;
 
-        // Preserve escaped slashes, but leave quote escapes outside the URL.
-        $pattern = <<<'REGEX'
+        $output = '';
+        $cursor = 0;
+        foreach ($this->findUrls($text) as [$offset, $length]) {
+            $placeholder = $counter->next();
+            $this->map[$placeholder] = substr($text, $offset, $length);
+            $output .= substr($text, $cursor, $offset - $cursor) . $placeholder;
+            $cursor = $offset + $length;
+        }
+        return $output . substr($text, $cursor);
+    }
+
+    /** @return array<int,array{int,int}> URL fragments as source byte offsets/lengths. */
+    private function findUrls(string $text): array
+    {
+        try {
+            json_decode($text, false, 512, JSON_THROW_ON_ERROR);
+        } catch (\JsonException) {
+            // Literal text/HTML retains support for escaped slash spellings.
+            $pattern = <<<'REGEX'
 ~\b(?:(?:https?|ftp):(?://|\\+/\\+/)|mailto:)(?:\\+/|[^\s"'<>()\\]++)++~i
 REGEX;
-        $replaced = preg_replace_callback(
-            $pattern,
-            /** @param array<int,string> $m */
-            function (array $m) use ($counter): string {
-                $ph = $counter->next();
-                $this->map[$ph] = $m[0];
-                return $ph;
-            },
-            $text
-        );
-        if ($replaced === null) {
-            throw new \RuntimeException('Could not protect URL fragments');
+            if (preg_match_all($pattern, $text, $matches, PREG_OFFSET_CAPTURE) === false) {
+                throw new \RuntimeException('Could not protect URL fragments');
+            }
+            return array_map(
+                /**
+                 * @param array{string,int} $match
+                 * @return array{int,int}
+                 */
+                static fn (array $match): array => [$match[1], strlen($match[0])],
+                $matches[0]
+            );
         }
-        return $replaced;
+        $pattern = <<<'REGEX'
+~"(?:[^"\\]++|\\.)*+"~s
+REGEX;
+        $position = 0;
+        $ranges = [];
+        while (($matched = preg_match($pattern, $text, $token, PREG_OFFSET_CAPTURE, $position)) === 1) {
+            [$source, $offset] = $token[0];
+            $position = $offset + strlen($source);
+            if (preg_match('/\G\s*:/', $text, $unused, 0, $position) === 1) {
+                continue;
+            }
+            $view = new JsonStringView($source);
+            foreach ($this->findUrls($view->getText()) as [$start, $length]) {
+                $rawStart = $view->sourceOffset($start);
+                $rawEnd = $view->sourceOffset($start + $length);
+                $ranges[] = [$offset + $rawStart, $rawEnd - $rawStart];
+            }
+        }
+        if ($matched === false) {
+            throw new \RuntimeException('Could not inspect JSON strings for URL fragments');
+        }
+        return $ranges;
     }
 
     public function restore(string $text): string
