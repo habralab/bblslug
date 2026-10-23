@@ -10,6 +10,7 @@ use Bblslug\Models\ModelRegistry;
 use Bblslug\Models\ModelVariables;
 use Bblslug\Models\Prompts;
 use Bblslug\Models\UsageExtractor;
+use Bblslug\Translation\HtmlTextDocument;
 use Bblslug\Validation\EmbeddedJsonValidator;
 use Bblslug\Validation\JsonHtmlValidator;
 use Bblslug\Validation\HtmlValidator;
@@ -83,6 +84,7 @@ class Bblslug
      * @param bool                  $verbose    If true: include request/response logs.
      * @param bool $validateEmbeddedJson Opt in to checking JSON containers encoded in string values.
      * @param array<int,string> $validateHtmlJsonPointers Explicit JSON Pointers to HTML strings to validate.
+     * @param string $htmlTransport HTML document translation or locally reconstructed text segments.
      *
      * @return array{
      *     original: string,
@@ -118,8 +120,15 @@ class Bblslug
         bool $verbose = false,
         ?callable $onFeedback = null,
         bool $validateEmbeddedJson = false,
-        array $validateHtmlJsonPointers = []
+        array $validateHtmlJsonPointers = [],
+        string $htmlTransport = 'document'
     ): array {
+        if (!\in_array($htmlTransport, ['document', 'segments'], true)) {
+            throw new \InvalidArgumentException('htmlTransport must be document or segments');
+        }
+        if ($htmlTransport === 'segments' && $format !== 'html') {
+            throw new \InvalidArgumentException('htmlTransport segments requires format html');
+        }
         ModelVariables::validate($variables);
         $diagnosticMasker = new SecretMasker([
             $apiKey,
@@ -251,10 +260,13 @@ class Bblslug
             self::dumpPlaceholdersVerbose($filterManager, $onFeedback, $diagnosticMasker);
         }
 
-        // Length guard: make sure prepared text fits model constraints
+        $htmlDocument = $htmlTransport === 'segments' ? new HtmlTextDocument($prepared) : null;
+        $requestText = $htmlDocument !== null ? $htmlDocument->getJson() : $prepared;
+
+        // Length guard: make sure the actual translation payload fits model constraints
         $say($onFeedback, "Checking model length limits", 'info');
         $lengthValidator = TextLengthValidator::fromModelConfig($model);
-        $lenResult = $lengthValidator->validate($prepared);
+        $lenResult = $lengthValidator->validate($requestText);
         if (! $lenResult->isValid()) {
             throw new \RuntimeException(
                 "Input length exceeds model limits: " . implode('; ', $lenResult->getErrors())
@@ -265,7 +277,7 @@ class Bblslug
         // Prepare options for driver, merging in any CLI-provided variables
         $options = array_merge(
             [
-                'format' => $format,
+                'format' => $htmlDocument !== null ? 'json' : $format,
                 'dryRun' => $dryRun,
                 'promptKey' => $promptKey,
                 'verbose' => $verbose,
@@ -282,10 +294,13 @@ class Bblslug
         /** @var array{url:mixed,body:mixed,headers:mixed,responseContext?:mixed,localResult?:string,workflow?:HttpWorkflowInterface,timeoutSeconds?:int} $reqRaw */
         $reqRaw = $driver->buildRequest(
             $model,
-            $prepared,
+            $requestText,
             $options
         );
 
+        if ($htmlDocument !== null && !$htmlDocument->hasTexts()) {
+            $reqRaw['localResult'] = $prepared;
+        }
         $options['responseContext'] = $reqRaw['responseContext'] ?? null;
         $localResult = $reqRaw['localResult'] ?? null;
 
@@ -409,7 +424,9 @@ class Bblslug
             try {
                 /** @var array{text:string, usage?:array<string,mixed>|null} $parsed */
                 $parsed     = $driver->parseResponse($model, $raw, $options);
-                $translated = $parsed['text'];
+                $translated = $htmlDocument !== null
+                    ? $htmlDocument->restore($parsed['text'])
+                    : $parsed['text'];
                 /** @var array<string,mixed>|null $rawUsage */
                 $rawUsage   = $parsed['usage'] ?? null;
             } catch (\RuntimeException $e) {

@@ -8,6 +8,17 @@ The format is based on [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ### Added
 
+- Opt-in HTML `segments` transport (`htmlTransport` in PHP and `--html-transport`
+  in CLI). Only keyed text fragments and natural-language attribute values are
+  translated through the existing JSON transports; markup, protected blocks,
+  placeholders, and source whitespace edges are reconstructed locally. Missing,
+  duplicated, non-string, or empty fragments fail even with validation disabled.
+  Default document translation remains unchanged. Extraction is conservative and
+  does not guarantee translation fidelity across inline markup boundaries.
+  A large-document check passed 5/8 API configurations plus Gemini CLI; xAI and
+  Yandex Lite/Pro replies were rejected by the segment protocol checks.
+
+
 - Opt-in HTML validation at caller-selected JSON Pointers through
   `validateHtmlJsonPointers` and repeatable CLI `--validate-html-json-pointer`.
   Source selections are checked before HTTP; translated HTML syntax and structure

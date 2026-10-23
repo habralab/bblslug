@@ -324,6 +324,68 @@ vendor/bin/bblslug \
   --filters=url,html_code,html_pre
 ```
 
+### Keep HTML markup local during translation
+
+The optional `segments` transport sends text fragments as a JSON object with
+stable identifiers. Bblslug reconstructs the HTML from the original source slices;
+the provider does not rewrite its tags or non-language attributes.
+
+```bash
+vendor/bin/bblslug --model=google:gemini-2.5-flash --format=html \
+  --html-transport=segments --filters=url,html_code,html_pre \
+  --source=input.html --translated=out.html
+```
+
+```php
+$result = Bblslug::translate(
+    apiKey: $key,
+    format: 'html',
+    modelKey: 'google:gemini-2.5-flash',
+    text: $html,
+    filters: ['url', 'html_code', 'html_pre'],
+    htmlTransport: 'segments',
+);
+```
+
+Text nodes and `title`, `alt`, and `aria-label` attribute values are translated.
+`pre`, `code`, scripts, styles, legacy raw-text elements, SVG/MathML, comments,
+and declarations remain local. `plaintext` protects the remainder of the document.
+`title` and `textarea` contents are handled as text, including literal less-than
+signs. Placeholder markers remain at their source positions and are not sent.
+Original whitespace at fragment edges is retained. Entities are decoded for
+translation; changed values are escaped for their HTML context, including unquoted
+attributes. An unchanged value keeps its original entity spelling.
+CSS visibility and browser scripting state are not evaluated.
+
+The response must contain exactly the expected identifiers, without duplicates,
+and a nonempty string for every fragment. These transport checks remain active
+with `--no-validate`; they cannot restore an incomplete response safely. Output is
+still subject to the normal HTML checks unless validation is disabled. An input
+with no translatable fragments skips HTTP. CLI dry-run validates extraction but
+continues to return prepared HTML, not the internal JSON payload.
+
+The default remains `htmlTransport: 'document'` / `--html-transport=document`.
+`segments` supports only HTML input and uses the selected prompt group's JSON
+template and the provider's JSON transport. A custom HTML-only prompt group needs
+a JSON template for this mode. DeepL uses its JSON Document API by default;
+`json_transport=text_batch` remains an explicit alternative with its existing
+batch limits. Length checks apply to the serialized JSON payload; returned `prepared` text
+and length statistics still describe HTML. There is no
+automatic splitting, retry, or fallback to document mode.
+
+Fragment translation can reduce fluency where grammar requires moving words
+across inline tags. Keeping every fragment does not prove translation fidelity.
+Extraction is conservative: incomplete markup and unsupported protected-block
+forms fail before HTTP. In particular, the shared filters currently reject
+self-closing SVG/MathML roots; those inputs require document mode.
+
+A 2026-10-23 check on a 26,087-character HTML document passed with Gemini 2.5
+Flash, GPT-5 Mini, Claude Haiku 4.5, and DeepL free/pro. The same document passed
+through Gemini CLI. Output budgets were explicitly increased for this large
+input. Grok 4.20 non-reasoning and Yandex Lite/Pro responses failed segment
+protocol checks and were rejected without retries. This single-document check
+is not a guarantee for all models or documents.
+
 ### Add translation context (prompt), source and target language
 
 ```bash
@@ -513,7 +575,8 @@ printf '%s' '{"title":"Hello"}' | bblslug --model=google:gemini-2.5-flash \
 ```
 
 The driver uses the same automatic selection to build requests and parse responses.
-Text and HTML retain markers. Custom prompt groups retain their existing marker
+Text and default document-mode HTML retain markers. HTML segment mode below
+uses the JSON transport instead. Custom prompt groups retain their existing marker
 contract in auto mode; a custom `translator` group without `structured_json` also
 retains markers. To select a protocol explicitly, pass
 `variables: ['json_transport' => 'native']` or `['json_transport' => 'markers']`,
@@ -678,8 +741,8 @@ The Document API has no `context` or `model_type` parameter. These options cause
 an explicit error in native JSON mode. To retain text-endpoint options or the
 previous local reconstruction behavior, select
 `variables: ['json_transport' => 'text_batch']` explicitly. No automatic fallback
-occurs after an unsuccessful document request. Text and HTML retain their existing
-transport.
+occurs after an unsuccessful document request. Text and default document-mode
+HTML retain their existing transport. HTML segment mode uses the JSON transport.
 
 In `text_batch` mode, decoded nonempty string values are sent as an
 [ordered text batch](https://developers.deepl.com/api-reference/translate/request-translation).

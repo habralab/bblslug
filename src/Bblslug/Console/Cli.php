@@ -9,6 +9,7 @@ use Bblslug\Console\Help;
 use Bblslug\Filters\FilterManager;
 use Bblslug\Models\ModelRegistry;
 use Bblslug\Models\ModelVariables;
+use Bblslug\Translation\HtmlTextDocument;
 use Bblslug\Validation\JsonHtmlValidator;
 
 /**
@@ -35,6 +36,7 @@ class Cli
             "dry-run",       // placeholders only
             "filters:",      // comma-separated filter list
             "format:",       // text, HTML or a JSON format
+            "html-transport:", // HTML transport: document or segments
             "help",          // show help and exit
             "list-models",   // show models and exit
             "list-prompts",  // show available prompt templates and exit
@@ -78,6 +80,11 @@ class Cli
         $dryRun     = isset($options['dry-run']);
         $format     = isset($options['format']) && is_string($options['format'])
                         ? $options['format'] : null;
+        $htmlTransportOption = $options['html-transport'] ?? null;
+        if ($htmlTransportOption !== null && !is_string($htmlTransportOption)) {
+            Help::error('--html-transport requires a single string value.');
+        }
+        $htmlTransport = $htmlTransportOption ?? 'document';
         $filters    = isset($options['filters']) && is_string($options['filters'])
                         && trim($options['filters']) !== ''
                         ? array_map('trim', explode(',', $options['filters']))
@@ -125,6 +132,15 @@ class Cli
                 if (!is_string($next) || ($next !== '' && str_starts_with($next, '--'))) {
                     Help::error('--validate-html-json-pointer requires a value.');
                 }
+            } elseif ($argument === '--html-transport=') {
+                Help::error(
+                    '--html-transport requires document or segments.'
+                );
+            } elseif ($argument === '--html-transport') {
+                $next = $argv[$index + 1] ?? null;
+                if (!is_string($next) || ($next !== '' && str_starts_with($next, '--'))) {
+                    Help::error('--html-transport requires a value.');
+                }
             }
         }
         if (isset($options['validate-html-json-pointer'])) {
@@ -158,6 +174,13 @@ class Cli
             Help::error("Invalid format: '{$format}'. Allowed: text, html, json, structured_json, linedJson.");
         }
         /** @var 'text'|'html'|'json'|'structured_json'|'linedJson' $format */
+
+        if (!in_array($htmlTransport, ['document', 'segments'], true)) {
+            Help::error("Invalid HTML transport: '{$htmlTransport}'. Allowed: document, segments.");
+        }
+        if ($htmlTransport === 'segments' && $format !== 'html') {
+            Help::error('--html-transport=segments requires --format=html.');
+        }
 
         if ($htmlJsonPointers !== [] && !in_array($format, ['json', 'structured_json', 'linedJson'], true)) {
             Help::error('--validate-html-json-pointer requires a JSON format.');
@@ -292,6 +315,13 @@ class Cli
             } catch (\Throwable $exception) {
                 Help::error($exception->getMessage());
             }
+            if ($htmlTransport === 'segments') {
+                try {
+                    new HtmlTextDocument($prepared);
+                } catch (\Throwable $exception) {
+                    Help::error($exception->getMessage());
+                }
+            }
             if ($sourceFile !== null) {
                 if (@file_put_contents($sourceFile . '.prepared', $prepared) !== strlen($prepared)) {
                     Help::error("Failed to write prepared file: {$sourceFile}.prepared");
@@ -388,6 +418,7 @@ class Cli
                 variables: $variables,
                 verbose: $verbose,
                 validateHtmlJsonPointers: $htmlJsonPointers,
+                htmlTransport: $htmlTransport,
             );
         } catch (\Throwable $e) {
             Help::error($e->getMessage());
