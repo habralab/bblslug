@@ -8,6 +8,15 @@ The format is based on [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ### Added
 
+- Preserved the pending XML-style JSON prompt prototype as opt-in
+  `experimental_xml`, keeping `translator.json` as the default. Clarified marker
+  framing and JSON escape examples. The template is sent verbatim without a POML
+  compiler and supports only marker-based JSON. Smoke tooling accepts an explicit
+  prompt key for API/CLI comparisons. In a small 36-request comparison, default
+  and reviewed XML prompts each passed 12/12; the original prototype passed 10/12
+  after Yandex Pro API/CLI responses added Markdown fences. This does not establish
+  an advantage for XML markup or guarantee model reliability.
+
 - Completed the pending verbose diagnostics prototype: URL and HTML filters expose
   captured maps through an optional `DebuggableFilterInterface`, without changing
   the existing `FilterInterface`. CLI stderr/library feedback show masked,

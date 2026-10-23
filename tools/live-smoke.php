@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Bblslug\Bblslug;
 use Bblslug\Models\ModelRegistry;
+use Bblslug\Models\Prompts;
 use Bblslug\SecretMasker;
 
 require dirname(__DIR__) . '/vendor/autoload.php';
@@ -19,10 +20,11 @@ $smokeCli = static function (
     string $format,
     string $input,
     array $filters,
-    array $variables
+    array $variables,
+    string $promptKey
 ): array {
     $command = [PHP_BINARY, dirname(__DIR__) . '/bin/bblslug', '--model=' . $model,
-    '--format=' . $format, '--source-lang=EN', '--target-lang=DE', '--verbose'];
+    '--format=' . $format, '--source-lang=EN', '--target-lang=DE', '--verbose', '--prompt-key=' . $promptKey];
     if ($filters !== []) {
         $command[] = '--filters=' . implode(',', $filters);
     }
@@ -151,6 +153,10 @@ $googleJsonTransport = getenv('BBLSLUG_SMOKE_GOOGLE_JSON_TRANSPORT') ?: 'markers
 if (!in_array($googleJsonTransport, ['markers', 'native'], true)) {
     throw new InvalidArgumentException('Unsupported Google JSON smoke transport');
 }
+$promptKey = getenv('BBLSLUG_SMOKE_PROMPT_KEY') ?: 'translator';
+if (!array_key_exists($promptKey, Prompts::list())) {
+    throw new InvalidArgumentException('Unknown smoke prompt key');
+}
 $rows = [];
 foreach ($models as $model) {
     $keyName = $registry->getAuthEnv($model);
@@ -173,7 +179,7 @@ foreach ($models as $model) {
     $blocked = null;
     foreach ($entries as $entry) {
         foreach ($cases as $format => [$input, $filters]) {
-            $row = ['model' => $model, 'entry' => $entry, 'format' => $format];
+            $row = ['model' => $model, 'entry' => $entry, 'format' => $format, 'promptKey' => $promptKey];
             $started = microtime(true);
             if ($blocked !== null) {
                 $row += ['status' => 'skipped_account_error', 'reason' => $blocked];
@@ -194,6 +200,7 @@ foreach ($models as $model) {
                             sourceLang: 'EN',
                             targetLang: 'DE',
                             variables: $caseVariables,
+                            promptKey: $promptKey,
                             verbose: true,
                             validateEmbeddedJson: $format === 'json',
                             proxy: $smokeEnv('PROXY') ?: null
@@ -202,7 +209,7 @@ foreach ($models as $model) {
                         $diagnostics = $response['debugRequest'] . $response['debugResponse'];
                         $row['httpStatus'] = $response['httpStatus'];
                     } else {
-                        $response = $smokeCli($model, $format, $input, $filters, $caseVariables);
+                        $response = $smokeCli($model, $format, $input, $filters, $caseVariables, $promptKey);
                         $diagnostics = $response['stderr'];
                         if ($response['exit'] !== 0) {
                             throw new RuntimeException('CLI failure: ' . $diagnostics, $response['exit']);

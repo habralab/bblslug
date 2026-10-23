@@ -359,7 +359,8 @@ vendor/bin/bblslug \
 
 ### Choose a different prompt template
 
-Use `--list-prompts` to check supported formats. The `experimental` group supports JSON only.
+Use `--list-prompts` to check supported formats. The `experimental` and
+`experimental_xml` groups support JSON only.
 
 ```bash
 vendor/bin/bblslug \
@@ -369,6 +370,40 @@ vendor/bin/bblslug \
   --translated=out.json \
   --prompt-key=experimental
 ```
+
+The opt-in `experimental_xml` group preserves the XML-style JSON prompt prototype:
+
+```bash
+vendor/bin/bblslug --model=openai:gpt-5-mini --format=json \
+  --source=input.json --target-lang=DE --prompt-key=experimental_xml
+```
+
+PHP callers select `promptKey: 'experimental_xml'`. The template is sent verbatim
+as text with XML-like tags. The library substitutes its placeholders; it does not
+parse XML, expand entities, or run a [POML renderer](https://microsoft.github.io/poml/latest/language/basic/).
+Its marker instructions and JSON escape examples were clarified during review.
+`translator` remains the default. This experimental group provides no `text`,
+`html`, `linedJson`, or `structured_json` template; native JSON mode requests
+`structured_json` and therefore cannot use this group.
+
+A small 2026-10-23 comparison used the same English-to-German JSON sample with
+encoded JSON, protected code/URL, and non-string values. Six model/tier entries
+(OpenAI GPT-5 mini, Claude Haiku 4.5, Gemini 2.5 Flash, Grok 4.20, Yandex Lite/Pro)
+ran once through API and once through CLI for each prompt, with validation enabled:
+
+| Prompt | Passed / requests | Observed rejection |
+| --- | --- | --- |
+| Default `translator` | 12 / 12 | None in this run |
+| Original local XML prototype | 10 / 12 | Yandex Pro API and CLI added Markdown fences |
+| Reviewed `experimental_xml` | 12 / 12 | None in this run |
+
+The original prototype also contained contradictory bare-JSON/marker instructions.
+The comparison does not isolate which wording caused a model response. It is not
+a quality benchmark or reliability estimate and provides no evidence that XML
+markup improves on the default. Earlier intermittent Gemini marker failures remain
+relevant. DeepL was excluded because its translation API does not use these prompts.
+The unmodified local prototype is preserved in the local review backup; it is not
+published as another supported template.
 
 ### Dry-run placeholders only
 
@@ -867,7 +902,10 @@ Returns an array like:
       'formats' => ['json'],
       'notes'   => 'Compact experimental prompt based on `translator`',
   ],
-  // …
+  'experimental_xml' => [
+      'formats' => ['json'],
+      'notes'   => 'Opt-in XML-style JSON prompt; sent verbatim, without POML compilation',
+  ],
 ]
 ```
 

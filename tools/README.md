@@ -15,6 +15,20 @@ BBLSLUG_SMOKE_REPORT_DIR=/tmp/bblslug-deepl-smoke \
 php tools/live-smoke.php
 ```
 
+To choose a non-default prompt explicitly for both entry points:
+
+```bash
+BBLSLUG_SMOKE_MODELS=openai:gpt-5-mini,google:gemini-2.5-flash \
+BBLSLUG_SMOKE_FORMATS=json \
+BBLSLUG_SMOKE_PROMPT_KEY=experimental_xml \
+BBLSLUG_SMOKE_REPORT_DIR=/tmp/bblslug-xml-smoke \
+php tools/live-smoke.php
+```
+
+`BBLSLUG_SMOKE_PROMPT_KEY` defaults to `translator`; summary rows record the prompt
+key. Select formats that the chosen group provides. The XML group has no native
+`structured_json` template, so use the marker protocol for that comparison.
+
 To check Google's native JSON transport instead of the default markers:
 
 ```bash
@@ -66,3 +80,10 @@ pairs), with the same nested JSON/code/URL/scalar checks enabled. A diagnostic
 Yandex Lite HTML request reproduced an added opening Markdown fence; it remained
 a validation failure. Sandbox DNS failures before the native live run are not
 provider output failures and are not included in that six-request result.
+
+The 2026-10-23 prompt review made 36 requests across six model/tier entries and
+both entry points: default `translator` passed 12/12, the original local XML
+prototype passed 10/12, and the reviewed `experimental_xml` passed 12/12. The
+original prototype's Yandex Pro responses added Markdown fences and were rejected.
+It was loaded under a temporary local key for comparison and is not a shipped
+prompt group. See the README for scope and limitations of this single-sample run.
