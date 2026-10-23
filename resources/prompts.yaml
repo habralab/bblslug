@@ -47,6 +47,7 @@ translator:
     - Last line of your output must be exactly {end}.
     - There must be a blank line immediately before the {end} marker.
     - Do **not** wrap individual HTML elements or text nodes. Wrap the **entire** document only.
+    - Do not add Markdown code fences around the HTML.
     {context}
 
   json: |
@@ -72,12 +73,12 @@ translator:
       * Preserve ALL existing JSON escapes exactly (`\"`, `\\n`, `\\t`, `\\uXXXX`, etc.).
       * Do NOT add/remove backslashes; any new backslash you introduce MUST be doubled (`\\`).
       * Do NOT HTML-escape/unescape; do NOT change tags/attributes or code bytes; translate only human-language text within the string.
-      * Output MUST be a single valid RFC 8259 JSON document that parses as-is.
+      * Between the required boundary markers, output one valid RFC 8259 JSON document that parses as-is.
     - If a glossary is provided, use it strictly; otherwise preserve any untranslatable, unknown, or proper-name terms as in source.
     - First line of your output must be exactly {start}.
     - Last line of your output must be exactly {end}.
     - There must be a blank line immediately before the {end} marker.
-    - Return only the translated JSON, without commentary, Markdown fences, or extra text.
+    - Return the required boundary markers and the translated JSON only, without commentary or Markdown fences.
     {context}
 
   structured_json: |
@@ -155,5 +156,5 @@ experimental:
     - First line of your output must be exactly {start}.
     - Last line of your output must be exactly {end}.
     - There must be a blank line immediately before the {end} marker.
-    - Return only the translated JSON, without commentary, Markdown fences, or extra text.
+    - Return the required boundary markers and the translated JSON only, without commentary or Markdown fences.
     {context}
