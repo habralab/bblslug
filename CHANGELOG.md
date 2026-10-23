@@ -8,6 +8,18 @@ The format is based on [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ### Added
 
+- Yandex native JSON-object output using Foundation `jsonObject` or Chat
+  Completions `response_format`, with `json_transport=auto|native|markers`.
+  Auto selects object-root JSON with the standard prompt on declared-capable
+  Lite/Pro models; other roots, formats, models, and custom groups keep markers.
+  Native responses are checked as JSON objects without fence cleanup or escape
+  repair. Completion/refusal, schema/scalar, and strict segment checks remain.
+  Chat Completions usage now reaches the existing usage normalizer.
+  Pro passed large 179-fragment native API/CLI batch runs; Lite still exhibited omitted
+  keys and a later content-filter rejection, correctly stopping without partial
+  results. Valid JSON alone does not establish translation completeness.
+
+
 - Explicit sequential HTML segment batches through `htmlSegmentBatchSize` and
   `--html-segment-batch-size`, for HTML and selected HTML-in-JSON. Every packet
   retains its original identifiers and must pass strict response checks before

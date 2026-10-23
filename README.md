@@ -789,10 +789,65 @@ An explicit Chat Completions refusal is also rejected. Only the first alternativ
 is considered; another alternative does not replace a rejected one.
 
 Older response shapes without completion metadata remain accepted for compatibility;
-markers and enabled output validation still apply. CLI provider failures leave the
+the selected framing and enabled output validation still apply. CLI provider failures leave the
 source and an existing destination file unchanged. No automatic retry is performed.
 The documented Yandex API format controls target JSON; this change does not add an
 HTML output mode or strip Markdown wrappers from a model response.
+
+### Yandex native JSON transport
+
+Yandex supports JSON-object generation through
+[`jsonObject` in the Foundation API](https://aistudio.yandex.ru/ru/docs/ai-studio/text-generation/api-ref/TextGeneration/completion)
+and [`response_format: {type: json_object}` in Chat Completions](https://aistudio.yandex.ru/ru/docs/ai-studio/api/Chat-Completions/createChatCompletion).
+The driver uses these controls with the existing generic `structured_json` prompt,
+without translation markers. It does not strip JSON fences or repair escaping.
+
+`json_transport=auto` is the default. It selects native mode for `json`/`linedJson`
+only when the source root is an object, the model declares `native_json`, and the
+standard `translator` group has a `structured_json` template. Native capability is
+currently declared for `yandex:gpt-lite` and `yandex:gpt-pro`. HTML segment packets
+are objects, so they qualify automatically. Text, document-mode HTML, array/scalar
+JSON roots, other models, and custom prompt groups retain their marker protocol.
+
+```php
+$result = Bblslug::translate(
+    apiKey: $key,
+    format: 'json',
+    modelKey: 'yandex:gpt-pro',
+    text: $json,
+    variables: ['folder_id' => $folderId, 'json_transport' => 'native'],
+);
+```
+
+CLI overrides use `--variables=json_transport=native` or `json_transport=markers`.
+Explicit native mode requires `json`/`linedJson` and a valid object-root source;
+custom groups need a `structured_json` template. Explicit markers preserve the
+previous protocol. `structured_json` and `response_schema` remain unsupported by
+the Yandex integration; JSON-object mode does not enforce a caller-supplied schema.
+There is no fallback or retry when a native request is rejected.
+
+The response must be a JSON object even with container validation disabled.
+Truncation, content-filter, refusal, and completion-state checks happen first.
+Enabled schema/scalar checks and mandatory segment checks still reject changed,
+missing, duplicated, or empty values as appropriate. Request-local state fixes the
+selected framing at build time. `rawResponseBody` remains the raw provider response
+(or the ordered raw-response array when batching is enabled). Chat Completions
+usage is preserved from its top-level `usage` field.
+
+Live checks on 2026-10-23 showed the limits of this change:
+
+- Lite passed a short nested JSON probe with quotes, newlines, scalars, and a
+  protected URL. Pro returned valid JSON but changed that probe's structure;
+  the normal schema check rejected it.
+- Pro completed the 179-fragment HTML example in eight native packets of 25.
+  Its CLI JSON run also passed with automatic native selection, preserving code,
+  URLs, and all unselected JSON bytes.
+- Lite returned valid JSON but omitted two keys with packets of 25. With packets
+  of 10, nine packets passed before the provider's content filter rejected packet
+  10/18. Neither failure returned a partial document or triggered retries.
+
+Native JSON fixes the wire-format problem; it does not guarantee completeness,
+translation fidelity, or acceptance by the provider's content filter.
 
 ### Yandex HTML response prefixes
 

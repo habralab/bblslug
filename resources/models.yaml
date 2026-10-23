@@ -1689,11 +1689,15 @@ yandex:
         completion: completionTokens
   models:
     gpt-lite:
+      capabilities:
+        native_json: true
       name: 'Yandex GPT Lite'
       defaults:
         model: yandexgpt-lite/latest
       notes: 'Low-latency model with up to 8 k tokens sync or 32 k async.'
     gpt-pro:
+      capabilities:
+        native_json: true
       name: 'Yandex GPT Pro'
       defaults:
         model: yandexgpt/latest

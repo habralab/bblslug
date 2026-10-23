@@ -27,12 +27,14 @@ class YandexDriver implements ModelDriverInterface
      *     - dryRun      (bool)        Skip API call (ignored here).
      *     - format      (string)      Indicates which prompt format to use.
      *     - folder_id   (string)      Yandex folder ID (required).
+     *     - json_transport (string) 'auto' (default), 'markers', or native JSON-object output.
      *     - maxTokens   (int)         Maximum tokens to generate.
      *     - promptKey   (string)      Key of the prompt template in prompts.yaml.
      *     - temperature (float)       Sampling temperature.
      *     - verbose     (bool)        Include debug logs (ignored here).
      *
-     * @return array{url:string, headers:string[], body:string,responseContext:array{html_fence_free:bool}|null}
+     * @return array{url:string,headers:string[],body:string,
+     *     responseContext:array{html_fence_free?:bool,json_native?:bool}|null}
      *
      * @throws \RuntimeException If required configuration is missing.
      */
@@ -50,6 +52,8 @@ class YandexDriver implements ModelDriverInterface
             : (\is_string($defaults['format'] ?? null)
                 ? $defaults['format']
                 : (\is_string($config['format'] ?? null) ? $config['format'] : 'text'));
+
+        $nativeJson = self::nativeRequest($config, $text, $options, $format);
 
         $folderId = $options['folder_id'] ?? null;
         if (!\is_string($folderId) || $folderId === '') {
@@ -89,7 +93,7 @@ class YandexDriver implements ModelDriverInterface
         // Render system prompt
         $systemPrompt = Prompts::render(
             $promptKey,
-            $format,
+            $nativeJson ? 'structured_json' : $format,
             [
                 'source'  => $sourceLang,
                 'target'  => $targetLang,
@@ -102,7 +106,7 @@ class YandexDriver implements ModelDriverInterface
         // Compose chat messages
         $messages = [
             ['role' => 'system', 'text' => $systemPrompt],
-            ['role' => 'user',   'text' => self::START . "\n{$text}\n" . self::END],
+            ['role' => 'user',   'text' => $nativeJson ? $text : self::START . "\n{$text}\n" . self::END],
         ];
 
         $apiType = \is_string($config['api_type'] ?? null)
@@ -126,6 +130,9 @@ class YandexDriver implements ModelDriverInterface
                 'temperature' => (float) $temperature,
                 'stream'      => false,
             ];
+            if ($nativeJson) {
+                $payload['response_format'] = ['type' => 'json_object'];
+            }
             if ($maxTokens > 0) {
                 $payload['max_tokens'] = $maxTokens;
             }
@@ -139,6 +146,9 @@ class YandexDriver implements ModelDriverInterface
                 ],
                 'messages'          => $messages,
             ];
+            if ($nativeJson) {
+                $payload['jsonObject'] = true;
+            }
         }
 
         // Normalize return shape and types
@@ -154,15 +164,19 @@ class YandexDriver implements ModelDriverInterface
         if ($apiType === 'chat_completions') {
             $headers[] = "x-project: {$folderId}";
         }
-        $body = \json_encode($payload, JSON_UNESCAPED_UNICODE);
+        $body = \json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+        $responseContext = \in_array($format, ['json', 'linedJson'], true) ? ['json_native' => $nativeJson] : null;
+        if ($format === 'html') {
+            $responseContext = [
+                'html_fence_free' => !self::hasFence(\html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8')),
+            ];
+        }
 
         return [
             'url'     => $url,
             'headers' => $headers,
-            'body'    => \is_string($body) ? $body : '{}',
-            'responseContext' => $format === 'html' ? [
-                'html_fence_free' => !self::hasFence(\html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8')),
-            ] : null,
+            'body'    => $body,
+            'responseContext' => $responseContext,
         ];
     }
 
@@ -265,26 +279,47 @@ class YandexDriver implements ModelDriverInterface
             throw new \RuntimeException("Yandex translation failed: {$responseBody}");
         }
 
-        // Extract between markers
-        $pattern = '/'
-            . \preg_quote(self::START, '/')
-            . '(.*?)'
-            . \preg_quote(self::END, '/')
-            . '/s';
-
-        if (!preg_match($pattern, $content, $matches)) {
-            throw new \RuntimeException("Markers not found in Yandex response");
-        }
-
-        $text = trim($matches[1]);
+        $transport = self::jsonTransport($options);
         $context = $options['responseContext'] ?? null;
-        if (\is_array($context) && ($context['html_fence_free'] ?? false) === true) {
-            $text = self::removeAddedHtmlFence($text);
+        $hasNativeContext = \is_array($context) && \is_bool($context['json_native'] ?? null);
+        if (!$hasNativeContext && $transport === 'native') {
+            $defaults = \is_array($config['defaults'] ?? null) ? $config['defaults'] : [];
+            $format = $options['format'] ?? ($defaults['format'] ?? 'text');
+            if (!\in_array($format, ['json', 'linedJson'], true)) {
+                throw new \InvalidArgumentException('Yandex native JSON requires json or linedJson format');
+            }
+        }
+        $nativeJson = $hasNativeContext
+            ? $context['json_native'] : $transport === 'native';
+        if ($nativeJson) {
+            // JSON mode is a wire contract, independently of optional container checks.
+            $text = \trim($content);
+            try {
+                $document = \json_decode($text, false, 512, JSON_THROW_ON_ERROR);
+            } catch (\JsonException $exception) {
+                throw new \RuntimeException('Yandex native JSON response is not valid JSON', 0, $exception);
+            }
+            if (!$document instanceof \stdClass) {
+                throw new \RuntimeException('Yandex native JSON response requires an object root');
+            }
+        } else {
+            $pattern = '/'
+                . \preg_quote(self::START, '/')
+                . '(.*?)'
+                . \preg_quote(self::END, '/')
+                . '/s';
+            if (!preg_match($pattern, $content, $matches)) {
+                throw new \RuntimeException("Markers not found in Yandex response");
+            }
+            $text = trim($matches[1]);
+            if (\is_array($context) && ($context['html_fence_free'] ?? false) === true) {
+                $text = self::removeAddedHtmlFence($text);
+            }
         }
 
         // Usage statistics
         $usage = null;
-        $ru = $result['usage'] ?? null;
+        $ru = $result['usage'] ?? ($data['usage'] ?? null);
         if (\is_array($ru)) {
             /** @var array<string,mixed> $typed */
             $typed = [];
@@ -300,6 +335,61 @@ class YandexDriver implements ModelDriverInterface
             'text'  => $text,
             'usage' => $usage,
         ];
+    }
+
+    /** @param array<string,mixed> $options */
+    private static function jsonTransport(array $options): string
+    {
+        $transport = $options['json_transport'] ?? 'auto';
+        // An explicit null is an invalid override, not an absent setting.
+        if (\array_key_exists('json_transport', $options)) {
+            $transport = $options['json_transport'];
+        }
+        if (!\in_array($transport, ['auto', 'markers', 'native'], true)) {
+            throw new \InvalidArgumentException('Yandex json_transport must be auto, markers, or native');
+        }
+        return $transport;
+    }
+
+    /**
+     * @param array<string,mixed> $config
+     * @param array<string,mixed> $options
+     */
+    private static function nativeRequest(array $config, string $text, array $options, string $format): bool
+    {
+        $transport = self::jsonTransport($options);
+        if ($format === 'structured_json' || \array_key_exists('response_schema', $options)) {
+            throw new \InvalidArgumentException(
+                'Yandex JSON object mode does not support response_schema or structured_json'
+            );
+        }
+        $jsonFormat = \in_array($format, ['json', 'linedJson'], true);
+        if ($transport === 'native' && !$jsonFormat) {
+            throw new \InvalidArgumentException('Yandex native JSON requires json or linedJson format');
+        }
+        $capabilities = \is_array($config['capabilities'] ?? null) ? $config['capabilities'] : [];
+        $promptKey = \is_string($options['promptKey'] ?? null) ? $options['promptKey'] : 'translator';
+        $eligible = $jsonFormat && $promptKey === 'translator'
+            && ($capabilities['native_json'] ?? false) === true
+            && \in_array('structured_json', Prompts::list()[$promptKey]['formats'] ?? [], true);
+        if ($transport === 'markers' || ($transport === 'auto' && !$eligible)) {
+            return false;
+        }
+        try {
+            $source = \json_decode($text, false, 512, JSON_THROW_ON_ERROR);
+        } catch (\JsonException $exception) {
+            if ($transport === 'auto') {
+                return false;
+            }
+            throw new \InvalidArgumentException('Yandex native JSON requires a valid object source', 0, $exception);
+        }
+        if (!$source instanceof \stdClass) {
+            if ($transport === 'auto') {
+                return false;
+            }
+            throw new \InvalidArgumentException('Yandex native JSON requires an object source');
+        }
+        return true;
     }
 
     private static function hasFence(string $text): bool
