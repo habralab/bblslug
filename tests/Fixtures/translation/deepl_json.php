@@ -63,6 +63,7 @@ namespace {
             modelKey: 'deepl:free',
             text: $scenario['source'],
             filters: $scenario['filters'] ?? [],
+            variables: ['json_transport' => 'text_batch'],
             validateEmbeddedJson: ($scenario['format'] ?? 'json') !== 'html'
         );
         echo json_encode([

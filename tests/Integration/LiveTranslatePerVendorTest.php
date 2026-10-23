@@ -249,7 +249,7 @@ final class LiveTranslatePerVendorTest extends TestCase
             format:     'json',
             modelKey:   $modelKey,
             text:       (string)$json,
-            context:    'Translate as a professional technical translator',
+            context:    $vendor === 'deepl' ? null : 'Translate as a professional technical translator',
             dryRun:     false,
             filters:    [],
             onFeedback: null,
@@ -258,7 +258,8 @@ final class LiveTranslatePerVendorTest extends TestCase
             targetLang: 'DE',
             validate:   true,   // JSON syntax + schema validation
             variables:  $vars,
-            verbose:    true
+            verbose:    true,
+            validateEmbeddedJson: true
         );
 
         $this->assertGreaterThanOrEqual(200, $res['httpStatus']);

@@ -11,7 +11,7 @@ use Bblslug\Models\ModelDriverInterface;
 /**
  * DeepL model driver: builds requests and parses responses for DeepL API.
  *
- * Uses form requests for text/HTML and JSON text arrays for JSON documents.
+ * Uses form requests for text/HTML and native document translation for JSON.
  */
 class DeepLDriver implements ModelDriverInterface
 {
@@ -23,14 +23,18 @@ class DeepLDriver implements ModelDriverInterface
      * @param array<string,mixed> $options Options:
      *     - model_type (string) Translation engine: quality_optimized, prefer_quality_optimized, latency_optimized.
      *     - dryRun    (bool)   Skip real HTTP call
-     *     - format    (string) 'text', 'html' or 'json'
+     *     - format    (string) 'text', 'html', 'json' or 'linedJson'
+     *     - json_transport (string) 'document' (default) or explicit 'text_batch'.
+     *     - document_timeout (int) Upload timeout and polling/download deadline, in seconds.
      *     - verbose   (bool)   Include debug logs
      *
      * @return array{
      *     url:     string,   // Full endpoint URL
      *     headers: string[], // HTTP headers to send
-     *     body:    string,   // URL-encoded form body or JSON batch
-     *     responseContext?: DeepLJsonDocument|DeepLHtmlPlaceholders,
+     *     body:    string,   // URL-encoded form, multipart upload or JSON batch
+     *     responseContext?: DeepLJsonDocument|DeepLHtmlPlaceholders|DeepLDocumentWorkflow,
+     *     workflow?: DeepLDocumentWorkflow,
+     *     timeoutSeconds?: int,
      *     localResult?: string
      * }
      */
@@ -122,6 +126,13 @@ class DeepLDriver implements ModelDriverInterface
             'body'    => \http_build_query($payload),
         ];
         if ($jsonDocument !== null) {
+            $transport = $options['json_transport'] ?? 'document';
+            if (!in_array($transport, ['document', 'text_batch'], true)) {
+                throw new \InvalidArgumentException('Unsupported DeepL json_transport');
+            }
+            if ($transport === 'document') {
+                return $this->documentRequest($text, $payload, $request, $jsonDocument, $options);
+            }
             // JSON requests use DeepL's ordered text array, not HTML pseudo-tags.
             $request['headers'] = array_values(array_filter(
                 $headers,
@@ -147,6 +158,63 @@ class DeepLDriver implements ModelDriverInterface
     }
 
     /**
+     * @param array<string,mixed> $payload
+     * @param array{url:string,headers:array<int,string>,body:string} $request
+     * @param array<string,mixed> $options
+     * @return array{url:string,headers:array<int,string>,body:string,responseContext:DeepLDocumentWorkflow,workflow:DeepLDocumentWorkflow,timeoutSeconds:int,localResult?:string}
+     */
+    private function documentRequest(
+        string $text,
+        array $payload,
+        array $request,
+        DeepLJsonDocument $json,
+        array $options
+    ): array {
+        if (strlen($text) > 1_000_000) {
+            throw new \InvalidArgumentException('DeepL JSON document exceeds the 1 MB upload limit');
+        }
+        $timeout = $options['document_timeout'] ?? 120;
+        if (!is_int($timeout) || $timeout < 1) {
+            throw new \InvalidArgumentException('DeepL document_timeout must be a positive integer');
+        }
+        if (isset($payload['context']) || isset($payload['model_type'])) {
+            throw new \InvalidArgumentException(
+                'DeepL document translation does not support context or model_type; use json_transport=text_batch'
+            );
+        }
+        $url = preg_replace('~/translate$~', '/document', $request['url']);
+        if ($url === null || $url === $request['url']) {
+            throw new \InvalidArgumentException('DeepL document translation requires a /translate endpoint');
+        }
+        do {
+            $boundary = 'bblslug-' . bin2hex(random_bytes(18));
+        } while (str_contains($text, $boundary));
+        $body = '';
+        foreach (['source_lang', 'target_lang', 'formality'] as $field) {
+            if (isset($payload[$field]) && is_string($payload[$field])) {
+                $body .= "--{$boundary}\r\nContent-Disposition: form-data; name=\"{$field}\"\r\n\r\n"
+                    . $payload[$field] . "\r\n";
+            }
+        }
+        $body .= "--{$boundary}\r\nContent-Disposition: form-data; name=\"file\"; filename=\"translation.json\"\r\n"
+            . "Content-Type: application/json\r\n\r\n" . $text . "\r\n--{$boundary}--\r\n";
+        $headers = array_values(array_filter(
+            $request['headers'],
+            static fn (string $header): bool => stripos($header, 'Content-Type:') !== 0
+        ));
+        $headers[] = 'Content-Type: multipart/form-data; boundary=' . $boundary;
+        $workflow = new DeepLDocumentWorkflow($url, $timeout);
+        $result = [
+            'url' => $url, 'body' => $body, 'headers' => $headers,
+            'responseContext' => $workflow, 'workflow' => $workflow, 'timeoutSeconds' => $timeout,
+        ];
+        if ($json->getTexts() === []) {
+            $result['localResult'] = $text;
+        }
+        return $result;
+    }
+
+    /**
      * {@inheritdoc}
      *
      * @param array<string,mixed> $config       Model config (unused here).
@@ -160,6 +228,18 @@ class DeepLDriver implements ModelDriverInterface
      */
     public function parseResponse(array $config, string $responseBody, array $options = []): array
     {
+        $document = $options['responseContext'] ?? null;
+        if ($document instanceof DeepLDocumentWorkflow) {
+            if (!$document->isComplete()) {
+                throw new \RuntimeException('DeepL document response requires its completed workflow');
+            }
+            try {
+                json_decode($responseBody, false, 512, JSON_THROW_ON_ERROR);
+            } catch (\JsonException) {
+                throw new \RuntimeException('DeepL document response is not valid JSON');
+            }
+            return ['text' => $responseBody, 'usage' => null];
+        }
         $data = \json_decode($responseBody, true);
         if (!\is_array($data)) {
             throw new \RuntimeException("Invalid JSON response: {$responseBody}");

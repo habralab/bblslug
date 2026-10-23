@@ -243,7 +243,7 @@ anthropic:
       name: claude-mythos-5.1
 deepl:
   endpoint: 'https://api-free.deepl.com/v2/translate'
-  format: text|html
+  format: text|html|json|linedJson
   defaults:
     target_lang: EN
     formality: prefer_more
@@ -267,7 +267,7 @@ deepl:
       requirements:
         auth:
           env: DEEPL_FREE_API_KEY
-      notes: 'Best for structured HTML or plain text, with a limited monthly quota (free tier).'
+      notes: 'Text/HTML and native JSON document translation, with a limited monthly quota (free tier).'
     pro:
       name: 'DeepL API Pro'
       endpoint: 'https://api.deepl.com/v2/translate'

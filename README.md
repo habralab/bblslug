@@ -454,66 +454,58 @@ validation enabled, HTML URL/code filters, and opt-in embedded JSON validation:
 
 | Model | Text | HTML | JSON |
 | --- | --- | --- | --- |
-| `deepl:free` | Passed | Passed: protected block and inline code | Container passes; path quotation marks changed |
-| `deepl:pro` | Passed | Passed: protected block and inline code | Container passes; path quotation marks changed |
+| `deepl:free` | Passed | Passed: protected block and inline code | Passed through native Document API |
+| `deepl:pro` | Passed | Passed: protected block and inline code | Passed through native Document API |
 | `yandex:gpt-lite` | Passed | One response added an opening Markdown fence; now rejected | Passed |
 | `yandex:gpt-pro` | Passed | Passed | Passed |
 
 These are individual small scenarios, not a reliability or translation-quality
-benchmark. After replacing DeepL's JSON pseudo-tags with value batching, real
-`json` and `linedJson` requests preserve the outer and string-encoded JSON
-containers. DeepL still changes ASCII quotes to typographic quotes in a path-like
-string, including with `preserve_formatting` enabled. String content is translated;
-its semantic preservation is not guaranteed by container validation. After adding
-HTML transport wrappers, the previously moved protected block and a separate
-inline-code scenario passed on both DeepL tiers. These samples do not guarantee
-that every provider output preserves markup; the post-validation checks remain.
+benchmark. Native DeepL JSON document requests passed the path-quote scenario on
+both API tiers, including a string-encoded JSON object. This does not guarantee
+semantic preservation of arbitrary string data. Container and placeholder
+validation remain enabled by default.
 
 ### DeepL JSON transport
 
-For `json` and `linedJson`, the driver sends decoded nonempty string values in one
-[ordered DeepL text batch](https://developers.deepl.com/api-reference/translate/request-translation).
-Object keys, whitespace outside strings, numeric tokens, booleans, and `null` stay
-local and retain their original bytes. The returned strings are JSON-encoded
-before insertion. Valid JSON objects/arrays encoded inside string values are
-processed recursively, preserving their container syntax as well. Empty strings,
-whitespace-only values, and values consisting solely of placeholders stay local.
+For `json` and `linedJson`, DeepL Free and Pro use the native
+[Document API](https://developers.deepl.com/api-reference/document/upload-and-translate-a-document):
+upload the prepared JSON as a multipart `.json` file, poll its status, then download
+the translated JSON. The result goes through the existing placeholder restoration
+and JSON syntax, structure, exact non-string value, and optional embedded JSON checks.
 
-These string values are translated as independent text segments. The driver does
-not send JSON punctuation as HTML tags, and it does not interpret former pseudo-tags
-such as `<jlc/>` in ordinary provider responses. Any missing or extra translation
-causes an error. Requests larger than DeepL's 128 KiB body limit are rejected before
-HTTP. No request is sent when there are no translatable values (`httpStatus` is `0`).
+The source file limit is 1 MB; the facade also enforces the model registry's
+existing character limit. `variables: ['document_timeout' => 120]` sets a
+positive integer timeout in seconds: the upload has this HTTP timeout, and polling
+plus downloading share a separate deadline of that duration. Polling ignores the
+provider's estimated remaining time. An HTTP error, processing error, malformed
+status, or deadline expiry stops the operation. Uploads and downloads are not
+retried automatically. Document IDs and encryption keys are masked in debug logs
+and exceptions; `rawResponseBody` contains the downloaded document.
 
-Low-level driver integrations must forward the optional `responseContext` returned
-by `buildRequest()` to `parseResponse()` through its options. It belongs to that
-specific request; the driver keeps no mutable current-document state. An optional
-`localResult` indicates a prepared result requiring no HTTP request. The public
-`Bblslug::translate()` facade handles both fields automatically.
+The Document API has no `context` or `model_type` parameter. These options cause
+an explicit error in native JSON mode. To retain text-endpoint options or the
+previous local reconstruction behavior, select
+`variables: ['json_transport' => 'text_batch']` explicitly. No automatic fallback
+occurs after an unsuccessful document request. Text and HTML retain their existing
+transport.
 
-### Native DeepL JSON documents: investigated, not yet integrated
+In `text_batch` mode, decoded nonempty string values are sent as an
+[ordered text batch](https://developers.deepl.com/api-reference/translate/request-translation).
+Keys, container whitespace, and exact non-string tokens remain local; returned
+strings are JSON-encoded before insertion. Encoded JSON objects/arrays are processed
+recursively. This mode has a 128 KiB request-body limit and can change punctuation
+inside technical strings, as observed with ASCII quotes in a path.
 
-DeepL also supports `.json` files through its
-[Document API](https://developers.deepl.com/api-reference/document/upload-and-translate-a-document).
-This is a different transport: upload a multipart file, poll the returned document
-ID/key, then download the translated result. The text endpoint's `tag_handling`
-accepts HTML/XML, not JSON; sending an HTTP JSON body does not enable native JSON
-content handling.
+Both modes finish locally (`httpStatus` is `0`) when no translatable string values
+remain. Empty strings, whitespace-only values, and placeholder-only values are
+not translated.
 
-A direct Document API probe on 2026-10-23 passed on both API Free and Pro:
-ordinary strings translated, root/nested path strings retained their quotes and
-backslashes, and a string-encoded JSON object remained parseable with its path
-unchanged. The probe also retained `{stars}` in a template string. These are
-individual observations, not a guarantee for arbitrary string data.
-
-[DeepL documents](https://developers.deepl.com/docs/best-practices/document-translations)
-that JSON keys and non-string values are left untouched and only string values
-are translated. The `input_conversion_options` parameter can control brace
-placeholders; it is not a general switch to protect arbitrary technical strings.
-The documented JSON upload limit is 1 MB. Integration still needs bounded polling,
-document credential masking, failure handling, and the existing output validators.
-Bblslug currently uses the text-batch transport described above; it does not yet
-upload JSON documents or silently fall back between the two transports.
+Low-level integrations must forward each request's `responseContext` to
+`parseResponse()`. For native JSON, they must also execute its optional `workflow`
+continuation after the upload, using authenticated HTTP with the supplied timeout
+and mask patterns, then parse the downloaded response. The optional `localResult`
+means no HTTP exchange is needed. `Bblslug::translate()` handles this automatically.
+The driver keeps no shared current-document state.
 
 ### DeepL HTML placeholders
 

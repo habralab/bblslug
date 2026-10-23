@@ -22,6 +22,8 @@ interface ModelDriverInterface
      *     headers: string[],   // HTTP headers to send
      *     url:     string,     // Full endpoint URL
      *     responseContext?: mixed, // Request-local state forwarded only to parseResponse
+     *     workflow?: \Bblslug\HttpWorkflowInterface, // Optional HTTP continuation
+     *     timeoutSeconds?: int,
      *     localResult?: string // Prepared result requiring no HTTP request
      * }
      */

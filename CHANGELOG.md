@@ -15,13 +15,24 @@ The format is based on [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ### Fixed
 
+- DeepL `json`/`linedJson` now use native document upload, bounded status polling,
+  and download by default. Live Free/Pro checks preserve the previously changed
+  path quotation marks, including an encoded JSON object. Existing result
+  validators still run; document credentials are masked in logs and errors.
+  The source limit is 1 MB; `document_timeout` configures the waiting deadline.
+- The previous JSON value batching remains available explicitly through
+  `json_transport=text_batch`. Native document translation rejects unsupported
+  `context`/`model_type` options; errors do not trigger a silent transport fallback.
+- Driver request metadata may include an HTTP `workflow` continuation and an
+  upload timeout, handled by the facade without changing its public arguments.
+
 - DeepL HTML requests wrap normal-text placeholders in non-translatable spans
   tied to each request. This fixes the observed movement of a protected code block
   into a link. Only generated wrappers are removed; malformed or missing wrappers
   are rejected. Attribute, comment, and raw-text markers are left untouched.
 
-- DeepL `json`/`linedJson` now send string values as an ordered text batch and
-  reconstruct JSON locally, including string-encoded nested containers. Keys,
+- DeepL's explicit `text_batch` JSON transport sends string values as an ordered batch and
+  reconstructs JSON locally, including string-encoded nested containers. Keys,
   non-string tokens, and container whitespace are not sent for translation.
   Returned strings are safely escaped; incomplete batches are rejected.
 - DeepL JSON requests with no translatable values complete locally without HTTP.
@@ -61,14 +72,10 @@ The format is based on [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ### Known limitations
 
-- Native DeepL JSON document translation was checked directly on API Free and
-  Pro: the path-quote scenario passed, including an encoded JSON object. This
-  upload/status/download transport is not yet integrated into Bblslug; its
-  current JSON mode still uses text-value batches.
-
-- DeepL JSON containers now pass syntax/structure/value checks in live requests,
-  but the provider changes quotation marks inside a path-like string. Container
-  validation does not guarantee semantic preservation of string data.
+- DeepL string contents remain translatable. Native document checks passed the
+  observed path scenario, but neither container validation nor a small live sample
+  guarantees semantic preservation of all technical data. The explicit
+  `text_batch` transport still changes path quotation marks in the observed case.
 
 ## [0.9.0] – 2026-10-23
 

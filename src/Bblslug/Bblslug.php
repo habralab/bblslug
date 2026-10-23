@@ -256,7 +256,7 @@ class Bblslug
 
         // Build request
         $say($onFeedback, "Building request for endpoint: {$endpoint}", 'info');
-        /** @var array{url:mixed,body:mixed,headers:mixed,responseContext?:mixed,localResult?:string} $reqRaw */
+        /** @var array{url:mixed,body:mixed,headers:mixed,responseContext?:mixed,localResult?:string,workflow?:HttpWorkflowInterface,timeoutSeconds?:int} $reqRaw */
         $reqRaw = $driver->buildRequest(
             $model,
             $prepared,
@@ -323,8 +323,47 @@ class Bblslug
                 $apiKey,
             ],
             proxy: $proxy,
-            verbose: $verbose
+            verbose: $verbose,
+            timeoutSeconds: $reqRaw['timeoutSeconds'] ?? null
         );
+
+        $workflow = $reqRaw['workflow'] ?? null;
+        if (!$dryRun && $localResult === null && $workflow instanceof HttpWorkflowInterface) {
+            $http = $workflow->complete(
+                $http,
+                /**
+                 * @param array{url:string,body:string,headers:array<int,string>,
+                 *     maskPatterns:array<int,string>,timeoutSeconds:int} $next
+                 * @return array{status:int,body:string,headers:array<string,array<int,string>>,
+                 *     debugRequest:string,debugResponse:string}
+                 */
+                static function (array $next) use ($reqHeaders, $apiKey, $proxy, $verbose): array {
+                    $headers = array_values(array_filter(
+                        $reqHeaders,
+                        static fn (string $header): bool => stripos($header, 'Content-Type:') !== 0
+                    ));
+                    try {
+                        return HttpClient::request(
+                            method: 'POST',
+                            url: $next['url'],
+                            body: $next['body'],
+                            headers: array_merge($headers, $next['headers']),
+                            maskPatterns: array_merge([$apiKey], $next['maskPatterns']),
+                            proxy: $proxy,
+                            verbose: $verbose,
+                            timeoutSeconds: $next['timeoutSeconds']
+                        );
+                    } catch (\RuntimeException $e) {
+                        $encodedKey = json_encode($apiKey, JSON_THROW_ON_ERROR);
+                        throw new \RuntimeException(str_replace(
+                            [$apiKey, rawurlencode($apiKey), urlencode($apiKey), substr($encodedKey, 1, -1)],
+                            '***',
+                            $e->getMessage()
+                        ));
+                    }
+                }
+            );
+        }
 
         $httpStatus = $http['status'];
         $debugRequest = $valLogPre . $http['debugRequest'];

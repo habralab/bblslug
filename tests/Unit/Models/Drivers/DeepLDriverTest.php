@@ -86,7 +86,7 @@ final class DeepLDriverTest extends TestCase
         $req = $driver->buildRequest([
             'endpoint' => 'X',
             'requirements' => ['headers' => ['Content-Type: application/x-www-form-urlencoded', 'X-Test: retained']],
-        ], $input, ['format' => 'json']);
+        ], $input, ['format' => 'json', 'json_transport' => 'text_batch']);
         $params = json_decode($req['body'], true, 512, JSON_THROW_ON_ERROR);
         $this->assertSame(['Hello', 'World'], $params['text']);
         $this->assertArrayNotHasKey('tag_handling', $params);
@@ -156,8 +156,12 @@ final class DeepLDriverTest extends TestCase
     public function testIndependentRequestContextsCanBeParsedInReverseOrder(): void
     {
         $driver = new DeepLDriver();
-        $first = $driver->buildRequest([], '{"first":"One"}', ['format' => 'json']);
-        $second = $driver->buildRequest([], '{"second":"Two"}', ['format' => 'linedJson']);
+        $first = $driver->buildRequest([], '{"first":"One"}', ['format' => 'json', 'json_transport' => 'text_batch']);
+        $second = $driver->buildRequest(
+            [],
+            '{"second":"Two"}',
+            ['format' => 'linedJson', 'json_transport' => 'text_batch']
+        );
         $raw = json_encode(['translations' => [['text' => 'Zwei']]], JSON_THROW_ON_ERROR);
         $this->assertSame(
             '{"second":"Zwei"}',
@@ -172,7 +176,11 @@ final class DeepLDriverTest extends TestCase
 
     public function testJsonWithNoTranslatableValuesProvidesLocalResult(): void
     {
-        $request = (new DeepLDriver())->buildRequest([], '{"id":123,"empty":" "}', ['format' => 'json']);
+        $request = (new DeepLDriver())->buildRequest(
+            [],
+            '{"id":123,"empty":" "}',
+            ['format' => 'json', 'json_transport' => 'text_batch']
+        );
         $this->assertSame('{"id":123,"empty":" "}', $request['localResult']);
     }
 
@@ -180,13 +188,17 @@ final class DeepLDriverTest extends TestCase
     {
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('responseContext');
-        (new DeepLDriver())->parseResponse([], '{"translations":[{"text":"Hallo"}]}', ['format' => 'json']);
+        (new DeepLDriver())->parseResponse(
+            [],
+            '{"translations":[{"text":"Hallo"}]}',
+            ['format' => 'json', 'json_transport' => 'text_batch']
+        );
     }
 
     public function testMissingBatchTranslationsAreRejected(): void
     {
         $driver = new DeepLDriver();
-        $request = $driver->buildRequest([], '["One","Two"]', ['format' => 'json']);
+        $request = $driver->buildRequest([], '["One","Two"]', ['format' => 'json', 'json_transport' => 'text_batch']);
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('count mismatch');
         $raw = '{"translations":[{"text":"Eins"}]}';
@@ -197,7 +209,11 @@ final class DeepLDriverTest extends TestCase
     {
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('128 KiB');
-        (new DeepLDriver())->buildRequest([], json_encode(str_repeat('x', 131072)), ['format' => 'json']);
+        (new DeepLDriver())->buildRequest(
+            [],
+            json_encode(str_repeat('x', 131072)),
+            ['format' => 'json', 'json_transport' => 'text_batch']
+        );
     }
 
     /** @test */
