@@ -250,6 +250,14 @@ chmod +x vendor/bin/bblslug
 
   - If `--source` is omitted, Bblslug reads from **STDIN**.
   - If `--translated` is omitted, Bblslug writes to **STDOUT**.
+  - `--translated` accepts one nonempty path. Missing, empty and repeated values
+    fail before translation. For ordinary local paths, directories, missing parent
+    directories and obvious permission failures are checked before API calls.
+    The check does not create or truncate the output. Existing writable files can
+    be updated inside read-only parent directories. Stream outputs retain their
+    write-time checks, and dry-run continues to ignore a valid `--translated` path.
+    Disk space and permissions can still change after preflight; final write errors
+    remain checked separately.
   - Progress, errors, and translation statistics go to **STDERR**.
   - If STDERR is unavailable or its pipe is broken, diagnostic writes are skipped.
     Translation output remains unchanged, and failures still return a nonzero exit

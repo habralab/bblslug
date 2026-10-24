@@ -34,7 +34,7 @@ class Cli
     public static function run(): void
     {
         // Load CLI arguments
-        $options = getopt("", [
+        $longOptions = [
             "context:",      // extra context prompt
             "checkpoint:",   // resumable segment-batch checkpoint file
             "dry-run",       // placeholders only
@@ -63,7 +63,8 @@ class Cli
             "validate-html-json-pointer:", // opt-in HTML checks at JSON Pointer paths (repeatable)
             "variables:",    // model-specific overrides
             "verbose",       // enable debug logs
-        ]);
+        ];
+        $options = getopt("", $longOptions);
 
         // Initialize registry
         $registry = new ModelRegistry();
@@ -111,9 +112,10 @@ class Cli
         $modelKey   = isset($options['model']) && is_string($options['model'])
                         ? $options['model']
                         : null;
-        $outFile    = isset($options['translated']) && is_string($options['translated'])
-                        ? $options['translated']
-                        : null;
+        $outFile = $options['translated'] ?? null;
+        if ($outFile !== null && (!is_string($outFile) || $outFile === '')) {
+            Help::error('--translated requires a single non-empty path.');
+        }
         $promptKey  = isset($options['prompt-key']) && is_string($options['prompt-key'])
                         ? $options['prompt-key']
                         : 'translator';
@@ -142,12 +144,33 @@ class Cli
         $operationTimeoutOccurrences = 0;
         $checkpointOccurrences = 0;
         $textTransportOccurrences = 0;
-        foreach ($argv as $index => $argument) {
+        $translatedOccurrences = 0;
+        $requiredOptions = [];
+        foreach ($longOptions as $longOption) {
+            if (str_ends_with($longOption, ':')) {
+                $requiredOptions[substr($longOption, 0, -1)] = true;
+            }
+        }
+        $argumentCount = count($argv);
+        for ($index = 1; $index < $argumentCount; $index++) {
+            $argument = $argv[$index];
             if ($argument === '--') {
                 break;
             }
             if (!is_string($argument)) {
                 continue;
+            }
+            if ($argument === '--translated' || str_starts_with($argument, '--translated=')) {
+                $translatedOccurrences++;
+                if ($argument === '--translated=') {
+                    Help::error('--translated requires a non-empty path.');
+                }
+                if ($argument === '--translated') {
+                    $next = $argv[$index + 1] ?? null;
+                    if (!is_string($next) || $next === '' || str_starts_with($next, '--')) {
+                        Help::error('--translated requires a path.');
+                    }
+                }
             }
             if (
                 $argument === '--html-segment-batch-size'
@@ -250,6 +273,16 @@ class Cli
                     Help::error('--checkpoint requires a path.');
                 }
             }
+            // Values of required options may themselves look like option names.
+            if (str_starts_with($argument, '--') && !str_contains($argument, '=')) {
+                if (isset($requiredOptions[substr($argument, 2)])) {
+                    $index++;
+                }
+            }
+        }
+
+        if ($translatedOccurrences > 1) {
+            Help::error('--translated may only be specified once.');
         }
 
         if ($batchSizeOccurrences > 1) {
@@ -480,7 +513,7 @@ class Cli
                 $protected['--source'] = $sourceFile;
                 $protected['prepared output'] = $sourceFile . '.prepared';
             }
-            if ($outFile !== null && $outFile !== '') {
+            if ($outFile !== null) {
                 $protected['--translated'] = $outFile;
             }
             foreach ([$checkpointPath, $checkpointPath . '.lock'] as $statePath) {
@@ -546,6 +579,10 @@ class Cli
         }
         if ($textTransport === 'segments' && array_key_exists('response_schema', $cliVars)) {
             Help::error('--response-schema is incompatible with --text-transport=segments.');
+        }
+
+        if (!$dryRun && $outFile !== null) {
+            self::validateTranslationOutput($outFile);
         }
 
         // Handle input
@@ -857,7 +894,27 @@ class Cli
         return getenv($name);
     }
 
-    /** Resolve an existing path, or resolve its parent and retain its basename. */
+    /** Reject obvious local write failures without opening or changing the output. */
+    private static function validateTranslationOutput(string $path): void
+    {
+        if (str_contains($path, "\0")) {
+            Help::error('Failed to write translation file: invalid path.');
+        }
+        // Other stream wrappers retain their existing write-time behavior.
+        if (preg_match('~\A([a-z][a-z0-9+.-]*)://~i', $path, $scheme) === 1 && strtolower($scheme[1]) !== 'file') {
+            return;
+        }
+        clearstatcache(true, $path);
+        $exists = file_exists($path);
+        if (is_dir($path) || ($exists && !is_writable($path))) {
+            Help::error('Failed to write translation file: ' . $path);
+        }
+        // A dangling symlink may point to a creatable target in another directory.
+        if (!$exists && !is_link($path) && (!is_dir(dirname($path)) || !is_writable(dirname($path)))) {
+            Help::error('Failed to write translation file: ' . $path);
+        }
+    }
+
     private static function pathsAlias(string $left, string $right): bool
     {
         if (self::canonicalPath($left) === self::canonicalPath($right)) {
@@ -869,6 +926,7 @@ class Cli
             && $leftStat['dev'] === $rightStat['dev'] && $leftStat['ino'] === $rightStat['ino'];
     }
 
+    /** Resolve an existing path, or resolve its parent and retain its basename. */
     private static function canonicalPath(string $path): string
     {
         $resolved = realpath($path);
