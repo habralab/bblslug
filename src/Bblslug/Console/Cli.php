@@ -762,8 +762,8 @@ class Cli
 
         // at this point $dryRun already exited above, so only $verbose matters
         if (PHP_SAPI === 'cli' && ($verbose)) {
-            file_put_contents('php://stderr', $res['debugRequest'], FILE_APPEND);
-            file_put_contents('php://stderr', $res['debugResponse'], FILE_APPEND);
+            @file_put_contents('php://stderr', $res['debugRequest'], FILE_APPEND);
+            @file_put_contents('php://stderr', $res['debugResponse'], FILE_APPEND);
         }
 
         if ($res['httpStatus'] >= 400) {
@@ -786,24 +786,23 @@ class Cli
         $bold = "\033[1m";
         $reset = "\033[0m";
         $lh    = $res['lengths'];
-        $stderr = fopen('php://stderr', 'w');
+        $stderr = @fopen('php://stderr', 'w');
         if ($stderr === false) {
-            // As a last resort, write to STDOUT (shouldn't normally happen)
-            echo $reset;
+            // An unavailable diagnostic stream must leave the translation output intact.
             return;
         }
         // Characters processed visualization
-        fwrite($stderr, "\n{$bold}Characters processed:{$reset}\n");
-        fwrite($stderr, "\t{$bold}Original:{$reset}    {$lh['original']}\n");
-        fwrite($stderr, "\t{$bold}Prepared:{$reset}    {$lh['prepared']}\n");
-        fwrite($stderr, "\t{$bold}Translated:{$reset}  {$lh['translated']}\n");
+        @fwrite($stderr, "\n{$bold}Characters processed:{$reset}\n");
+        @fwrite($stderr, "\t{$bold}Original:{$reset}    {$lh['original']}\n");
+        @fwrite($stderr, "\t{$bold}Prepared:{$reset}    {$lh['prepared']}\n");
+        @fwrite($stderr, "\t{$bold}Translated:{$reset}  {$lh['translated']}\n");
         // Filter statistics visualization
-        fwrite($stderr, "\n{$bold}Filter statistics:{$reset}\n");
+        @fwrite($stderr, "\n{$bold}Filter statistics:{$reset}\n");
         if (empty($res['filterStats'])) {
-            fwrite($stderr, "\t(no filters applied)\n");
+            @fwrite($stderr, "\t(no filters applied)\n");
         } else {
             foreach ($res['filterStats'] as $stat) {
-                fwrite($stderr, "\t{$bold}{$stat['filter']}:{$reset}\t{$stat['count']} placeholder(s)\n");
+                @fwrite($stderr, "\t{$bold}{$stat['filter']}:{$reset}\t{$stat['count']} placeholder(s)\n");
             }
         }
         // Usage visualization
@@ -811,36 +810,36 @@ class Cli
         $consumed = $checkpointPath !== null ? ($res['consumedThisRun'] ?? []) : $res['consumed'];
 
         if ($checkpointPath !== null) {
-            fwrite($stderr, 'Checkpoint packets reused: ' . ($res['reusedBatches'] ?? 0) . "\n");
+            @fwrite($stderr, 'Checkpoint packets reused: ' . ($res['reusedBatches'] ?? 0) . "\n");
         }
         $usageTitle = $checkpointPath !== null ? 'Usage metrics (this run)' : 'Usage metrics';
-        fwrite($stderr, "\n{$bold}{$usageTitle}:{$reset}\n");
+        @fwrite($stderr, "\n{$bold}{$usageTitle}:{$reset}\n");
         if (empty($consumed)) {
-            fwrite($stderr, "\t(not provided)\n");
+            @fwrite($stderr, "\t(not provided)\n");
         } else {
             foreach ($consumed as $category => $metrics) {
                 // Category header, e.g. "Tokens:"
-                fwrite($stderr, "\t" . ucfirst((string)$category) . ":\n");
+                @fwrite($stderr, "\t" . ucfirst((string)$category) . ":\n");
                 if (isset($metrics['total'])) {
                     $total = (int) $metrics['total'];
-                    fwrite($stderr, sprintf("\t\t%-12s %d\n", 'Total:', $total));
+                    @fwrite($stderr, sprintf("\t\t%-12s %d\n", 'Total:', $total));
                     $sepLen = 12 + 1 + strlen((string) $total);
                     $sep = str_repeat('-', $sepLen);
-                    fwrite($stderr, "\t\t{$sep}\n");
+                    @fwrite($stderr, "\t\t{$sep}\n");
                 }
                 // Breakdown lines, e.g. Prompt, Completion
                 if (isset($metrics['breakdown'])) {
                     /** @var array<string,int> $bd */
                     $bd = $metrics['breakdown'];
                     foreach ($bd as $label => $cnt) {
-                        fwrite($stderr, sprintf("\t\t%-12s %d\n", ucfirst((string)$label) . ':', (int)$cnt));
+                        @fwrite($stderr, sprintf("\t\t%-12s %d\n", ucfirst((string)$label) . ':', (int)$cnt));
                     }
                 }
             }
         }
 
-        fwrite($stderr, $reset);
-        fclose($stderr);
+        @fwrite($stderr, $reset);
+        @fclose($stderr);
     }
 
     /**

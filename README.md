@@ -251,6 +251,9 @@ chmod +x vendor/bin/bblslug
   - If `--source` is omitted, Bblslug reads from **STDIN**.
   - If `--translated` is omitted, Bblslug writes to **STDOUT**.
   - Progress, errors, and translation statistics go to **STDERR**.
+  - If STDERR is unavailable or its pipe is broken, diagnostic writes are skipped.
+    Translation output remains unchanged, and failures still return a nonzero exit
+    code. Verbose logs and terminal formatting never fall back to STDOUT.
   - Failed requests or output writes exit with a nonzero status.
 
 4. **Optional proxy**:

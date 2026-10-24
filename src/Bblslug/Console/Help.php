@@ -11,7 +11,9 @@ class Help
 {
     public static function alert(string $label, string $message, string $color = "\033[0m", ?int $exitCode = null): void
     {
-        fwrite(STDERR, "{$color}{$label}:\033[0m {$message}\n");
+        if (defined('STDERR') && is_resource(STDERR)) {
+            @fwrite(STDERR, "{$color}{$label}:\033[0m {$message}\n");
+        }
         if ($exitCode !== null) {
             exit($exitCode);
         }
