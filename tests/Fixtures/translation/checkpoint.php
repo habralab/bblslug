@@ -96,7 +96,8 @@ namespace Bblslug {
                 'choices' => [['finish_reason' => 'stop', 'message' => [
                     'content' => "‹‹TRANSLATION››\n{$json}\n‹‹END››",
                 ]]],
-                'usage' => ['total_tokens' => 10, 'prompt_tokens' => 4, 'completion_tokens' => 6],
+                'usage' => self::$scenario['rawUsage']
+                    ?? ['total_tokens' => 10, 'prompt_tokens' => 4, 'completion_tokens' => 6],
             ], JSON_THROW_ON_ERROR));
         }
 

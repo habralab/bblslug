@@ -1324,6 +1324,14 @@ vendor/bin/bblslug \
 
 - **Usage metrics**
 
+  Counters accept nonnegative integers, decimal integer strings (including Yandex's
+  string counters), and finite whole-valued floats within PHP's integer range.
+  Missing or malformed values use the existing zero fallback. Negative, fractional,
+  nonfinite and out-of-range values are not truncated, rounded or saturated into
+  counts. Decimal fractions and exponent notation in strings are rejected rather
+  than passed through a floating-point conversion. This applies equally with or
+  without checkpointing.
+
   After each translation (when not in dry-run), Bblslug prints to stderr a summary of consumed usage metrics, for example:
 
   ```

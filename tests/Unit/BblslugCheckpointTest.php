@@ -54,6 +54,25 @@ final class BblslugCheckpointTest extends TestCase
         self::assertStringNotContainsString('debugRequest', $stored);
     }
 
+    public function testMalformedUsageDoesNotBreakTranslationOrCheckpointResume(): void
+    {
+        $settings = ['rawUsage' => [
+            'total_tokens' => -5, 'prompt_tokens' => 1.5, 'completion_tokens' => str_repeat('9', 40),
+        ]];
+        foreach ([null, $this->checkpoint] as $path) {
+            $r = $this->runFixture($settings + ['checkpointPath' => $path]);
+            self::assertSame('success', $r['type'], (string) ($r['message'] ?? ''));
+            self::assertSame("T:one\nT:two\nT:three", $r['result']['result']);
+            self::assertSame(0, $r['result']['consumed']['tokens']['total']);
+            self::assertSame(0, $r['result']['consumed']['tokens']['breakdown']['prompt']);
+            self::assertSame(0, $r['result']['consumed']['tokens']['breakdown']['completion']);
+        }
+        $resumed = $this->runFixture($settings);
+        self::assertSame('success', $resumed['type'], (string) ($resumed['message'] ?? ''));
+        self::assertSame(0, $resumed['networkCalls']);
+        self::assertSame(0, $resumed['result']['consumed']['tokens']['total']);
+    }
+
     public function testChangedInputModelSettingsOrPacketPlanRejectBeforeHttp(): void
     {
         $this->runFixture(['failAt' => 2, 'failure' => 'missing']);

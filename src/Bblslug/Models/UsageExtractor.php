@@ -110,7 +110,7 @@ class UsageExtractor
 
     /**
      * Traverse an array by a dot-notation path and return
-     * its integer value (or 0 if missing/not numeric).
+     * its nonnegative whole count (or 0 if missing, invalid or out of range).
      *
      * @param array<string,mixed> $data Raw usage array
      * @param string              $path Dot-notation path, e.g. 'usage.total_tokens'
@@ -128,14 +128,34 @@ class UsageExtractor
             $cursor = $cursor[$p];
         }
 
-        if (is_numeric($cursor)) {
-            return (int)$cursor;
+        if (is_int($cursor)) {
+            return $cursor >= 0 ? $cursor : 0;
         }
-
-        if (is_string($cursor) && ctype_digit($cursor)) {
-            return (int)$cursor;
+        if (is_string($cursor)) {
+            $integer = trim($cursor, " \t\n\r\v\f");
+            if (str_starts_with($integer, '+')) {
+                $integer = substr($integer, 1);
+            }
+            if ($integer === '' || !ctype_digit($integer)) {
+                return 0;
+            }
+            // Keep decimal integer strings exact, including PHP_INT_MAX, without rounding.
+            $integer = ltrim($integer, '0');
+            $maximum = (string) PHP_INT_MAX;
+            if (
+                strlen($integer) > strlen($maximum)
+                || (strlen($integer) === strlen($maximum) && strcmp($integer, $maximum) > 0)
+            ) {
+                return 0;
+            }
+            return (int) $integer;
         }
-
-        return 0;
+        if (
+            !is_float($cursor) || !is_finite($cursor) || $cursor < 0
+            || $cursor >= ((float) PHP_INT_MAX + 1.0) || floor($cursor) !== $cursor
+        ) {
+            return 0;
+        }
+        return (int) $cursor;
     }
 }
