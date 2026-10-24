@@ -102,3 +102,62 @@ the observed opening-only fence while the returned HTML passed the normal checks
 Native JSON-envelope probes were diagnostic only: passing a JSON-encoded HTML
 input corrupted closing tags, while a full marker prompt caused a Lite whitespace
 loop ending at the token limit. No native HTML-envelope mode was shipped.
+
+### End-to-end acceptance, 2026-10-25
+
+A separate local acceptance harness exercised the accumulated segment transport,
+packet limits, checkpoints, API and CLI changes. These were small synthetic
+Russian-to-English inputs: 252 characters of text, 342 characters of HTML, and
+644 characters of JSON containing two explicitly selected HTML strings. This
+harness is not the `live-smoke.php` runner described above.
+
+Every segment case used a count limit of four, a serialized payload limit of
+512 bytes, a checkpoint, and a 60-second operation timeout (45-second HTTP and
+10-second connection limits). Text used `textTransport=segments`; HTML and JSON
+used `htmlTransport=segments`, with JSON pointers `/body` and
+`/nested/items/0/html`. DeepL used `json_transport=text_batch`; an additional API
+JSON case on each tier exercised `json_transport=document`.
+
+| Configuration | Passed cases | Other outcome |
+| --- | ---: | --- |
+| `google:gemini-2.5-flash` | 6/6 | — |
+| `openai:gpt-5-mini` | 6/6 | — |
+| `anthropic:claude-haiku-4.5-20251001` | 6/6 | — |
+| `xai:grok-4.20-0309-non-reasoning` | 6/6 | — |
+| `yandex:gpt-lite` | 6/6 | — |
+| `yandex:gpt-pro` | 5/6 | CLI JSON: connection timed out after 10 seconds |
+| `deepl:free` | 7/7 | Includes the additional JSON Document case |
+| `deepl:pro` | 7/7 | Includes the additional JSON Document case |
+
+The first run exposed unmasked Yandex folder IDs in verbose request diagnostics.
+API authorization keys were masked. The fix extends request and error masking to
+folder IDs and proxies; dry-run and malformed-response regression tests cover the
+folder ID. Both Yandex configurations were then rerun. The table retains the
+connection timeout from that rerun: it occurred before any packet completed, and
+both the source and existing destination remained unchanged. No automatic retry
+was used to replace that result with a success.
+
+All 49 successful cases checked source preservation, exact protected code/URLs,
+HTML structure, text line separators where applicable, and a full-checkpoint
+rerun with identical output and no new translation requests. Selected-HTML JSON
+also preserved every byte outside the selected strings, including large numbers
+and numeric spelling. Diagnostics and checkpoint files passed the configured
+credential/folder-ID checks. No residual Cyrillic was observed in the selected
+translatable text; this is not a semantic translation-quality assessment.
+
+The existing `live-smoke.php` runner separately passed 12/12 default document-mode
+cases: Gemini 2.5 Flash and Yandex Lite, API and CLI, text/HTML/ordinary JSON. This
+small-sample success does not remove the previously documented risk of omitted
+prose in large document-mode translations, or prove fidelity for arbitrary
+HTML-bearing JSON strings.
+
+An offline CLI acceptance harness on PHP 8.2 and 8.5 covered all three segment
+formats with HTTP 402, timeouts, missing fragment IDs, and malformed JSON after a
+confirmed packet. Failures preserved the old output, left stdout empty, and
+retained the confirmed prefix. Resume sent only the unsaved packets; a fully
+cached run sent none. Changed source/model/context, corrupt checkpoints, and
+invalid output parents failed before HTTP. These controlled failures complement
+the real success cases; this run did not deliberately exhaust provider balances.
+
+This is evidence for the named configurations and samples, not every registered
+model, large-document throughput, or guaranteed translation completeness.
