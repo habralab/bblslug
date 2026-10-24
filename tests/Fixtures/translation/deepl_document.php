@@ -20,6 +20,7 @@ namespace Bblslug {
                 ];
             }
             $n = count(self::$calls);
+            usleep((int) (self::$scenario['delayMilliseconds'][$n] ?? 0) * 1000);
             $failure = self::$scenario['failure'] ?? null;
             $status = is_array($failure) && (($failure['call'] ?? 0) === $n) ? (int)($failure['status'] ?? 500) : 200;
             $url = (string)($arguments['url'] ?? '');
@@ -95,7 +96,8 @@ namespace {
             proxy: $scenario['proxy'] ?? null,
             dryRun: (bool)($scenario['dryRun'] ?? false),
             verbose: (bool)($scenario['verbose'] ?? true),
-            validateEmbeddedJson: true
+            validateEmbeddedJson: true,
+            operationTimeoutSeconds: $scenario['operationTimeoutSeconds'] ?? null
         );
         echo json_encode([
             'type' => 'success',

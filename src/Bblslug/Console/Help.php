@@ -64,6 +64,7 @@ class Help
         echo "\t{$bold}--list-models{$reset}        Show available translation models grouped by vendor\n";
         echo "\t{$bold}--list-prompts{$reset}       Show available prompt templates\n";
         echo "\t{$bold}--model=MODEL_ID{$reset}     Required model (see --list-models)\n";
+        echo "\t{$bold}--operation-timeout=N{$reset} Total translation operation deadline in seconds\n";
         echo "\t{$bold}--no-validate{$reset}        Disable container syntax and structure checks\n";
         echo "\t{$bold}--prompt-key=KEY{$reset}     Specify prompt template key (prompts.yaml)\n";
         echo "\t{$bold}--response-schema=FILE{$reset} JSON Schema for OpenAI/Google native JSON output\n";
@@ -99,6 +100,8 @@ class Help
         echo "\n\tHTTP timeouts (positive integer seconds):\n";
         echo "\t  BBLSLUG_HTTP_CONNECT_TIMEOUT=10; BBLSLUG_HTTP_TIMEOUT=120 (defaults)\n";
         echo "\tHTTP requests are not automatically retried. CLI dry-run does not use HTTP.\n";
+        echo "\tThe operation timeout covers all packets, including DeepL upload, polling, and download;\n";
+        echo "\trequests are not retried.\n";
 
         echo "\nExamples:\n";
         echo "\tList available models:\n";
@@ -106,7 +109,8 @@ class Help
 
         echo "\n\tTranslate HTML from file to file\n";
         echo "\tvendor/bin/bblslug --model=deepl:pro --format=html \\\n";
-        echo "\t    --source=doc.html --translated=out.html --filters=url,html_code,html_pre\n";
+        echo "\t    --source=doc.html --translated=out.html --operation-timeout=120 \\\n";
+        echo "\t    --filters=url,html_code,html_pre\n";
 
         echo "\n\tTranslate HTML using structured text segments\n";
         echo "\tvendor/bin/bblslug --model=google:gemini-2.5-flash --format=html --html-transport=segments \\\n";

@@ -281,6 +281,38 @@ chmod +x vendor/bin/bblslug
   error code (28 for a timeout). Requests are not automatically retried.
 
 
+### Limit the whole translation operation
+
+Use `operationTimeoutSeconds: 60` in PHP or `--operation-timeout=60` in the CLI to
+set a shared time budget in positive integer seconds. The default is `null`,
+retaining the existing per-request and provider workflow timeouts.
+
+```bash
+vendor/bin/bblslug --model=google:gemini-2.5-flash --format=text \
+  --text-transport=segments --text-segment-batch-size=25 --operation-timeout=60 \
+  --source=input.txt --translated=output.txt
+```
+
+The monotonic budget starts at `translate()` entry and includes preparation,
+packet requests, parsing and reconstruction. Every HTTP exchange is capped to
+the remaining budget in milliseconds, preserving any shorter existing request
+or connection timeout. DeepL document uploads, polling waits, status requests
+and downloads share the same operation budget; it does not restart per packet
+or after upload. Polling sleeps are shortened to the time remaining.
+
+Expiry prevents further requests and rejects a late result. A failed batch still
+reports its position and the number of earlier completed packets. No partial
+translation is returned, and CLI destination files are written only after the
+whole translation succeeds. Already completed provider work may have been billed;
+a local timeout does not cancel remote work or automatically retry it.
+
+Synchronous local processing and user feedback callbacks are checked at operation
+boundaries; they cannot be forcibly interrupted mid-call, but their elapsed time
+counts and a result completed after expiry is rejected. CLI dry-run validates
+the option without making HTTP requests; it keeps the existing preparation-only
+path. `HttpClient::request()` also accepts an optional positive
+`timeoutMilliseconds` cap, which cannot extend the resolved request timeout.
+
 ### Show available models
 
 ```bash

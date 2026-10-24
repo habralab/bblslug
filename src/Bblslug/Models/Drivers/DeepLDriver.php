@@ -206,7 +206,12 @@ class DeepLDriver implements ModelDriverInterface
             static fn (string $header): bool => stripos($header, 'Content-Type:') !== 0
         ));
         $headers[] = 'Content-Type: multipart/form-data; boundary=' . $boundary;
-        $workflow = new DeepLDocumentWorkflow($url, $timeout);
+        $workflow = new DeepLDocumentWorkflow(
+            $url,
+            $timeout,
+            ($options['operationDeadline'] ?? null) instanceof \Bblslug\OperationDeadline
+                ? $options['operationDeadline'] : null
+        );
         $result = [
             'url' => $url, 'body' => $body, 'headers' => $headers,
             'responseContext' => $workflow, 'workflow' => $workflow, 'timeoutSeconds' => $timeout,

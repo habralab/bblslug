@@ -19,7 +19,8 @@ namespace Bblslug {
             ?string $proxy = null,
             bool $verbose = false,
             ?int $timeoutSeconds = null,
-            ?int $connectTimeoutSeconds = null
+            ?int $connectTimeoutSeconds = null,
+            ?int $timeoutMilliseconds = null
         ): array {
             $payload = json_decode($body, true, 512, JSON_THROW_ON_ERROR);
             $messages = $payload['messages'] ?? [];

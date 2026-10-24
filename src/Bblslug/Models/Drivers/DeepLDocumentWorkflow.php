@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Bblslug\Models\Drivers;
 
 use Bblslug\HttpWorkflowInterface;
+use Bblslug\OperationDeadline;
 
 /**
  * Execute DeepL's asynchronous document upload, polling, and download flow.
@@ -22,8 +23,11 @@ class DeepLDocumentWorkflow implements HttpWorkflowInterface
 
     private bool $complete = false;
 
-    public function __construct(string $documentUrl, int $timeoutSeconds = 120)
-    {
+    public function __construct(
+        string $documentUrl,
+        int $timeoutSeconds = 120,
+        private ?OperationDeadline $operationDeadline = null
+    ) {
         if ($timeoutSeconds <= 0) {
             throw new \InvalidArgumentException('Document workflow timeout must be a positive integer in seconds.');
         }
@@ -192,7 +196,9 @@ class DeepLDocumentWorkflow implements HttpWorkflowInterface
 
     protected function pause(): void
     {
-        usleep(1_000_000);
+        $milliseconds = min(1000, $this->operationDeadline?->remainingMilliseconds() ?? 1000);
+        usleep($milliseconds * 1000);
+        $this->operationDeadline?->check();
     }
 
     /**
@@ -239,6 +245,7 @@ class DeepLDocumentWorkflow implements HttpWorkflowInterface
      */
     private function remainingTimeout(float $deadline, array $logs, array $credentials): int
     {
+        $this->operationDeadline?->check();
         $remaining = $deadline - $this->clock();
         if ($remaining <= 0) {
             throw $this->failure('Document workflow timed out', $logs, $credentials);

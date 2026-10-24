@@ -24,6 +24,7 @@ class HttpClient
      * @param int|null      $timeoutSeconds Total request timeout; overrides BBLSLUG_HTTP_TIMEOUT (default 120).
      * @param int|null      $connectTimeoutSeconds Connection timeout in seconds (default 10).
      *                                            Overrides BBLSLUG_HTTP_CONNECT_TIMEOUT.
+     * @param int|null      $timeoutMilliseconds Optional total request timeout cap in milliseconds.
      *
      * @return array{
      *     body: string,
@@ -46,10 +47,14 @@ class HttpClient
         ?string $proxy = null,
         bool $verbose = false,
         ?int $timeoutSeconds = null,
-        ?int $connectTimeoutSeconds = null
+        ?int $connectTimeoutSeconds = null,
+        ?int $timeoutMilliseconds = null
     ): array {
         $timeoutSeconds = self::resolveTimeout($timeoutSeconds, 'BBLSLUG_HTTP_TIMEOUT', 120);
         $connectTimeoutSeconds = self::resolveTimeout($connectTimeoutSeconds, 'BBLSLUG_HTTP_CONNECT_TIMEOUT', 10);
+        if ($timeoutMilliseconds !== null && $timeoutMilliseconds <= 0) {
+            throw new \InvalidArgumentException('timeoutMilliseconds must be a positive integer in milliseconds.');
+        }
 
         $masker = new SecretMasker($maskPatterns);
         $logUrl = $masker->redact($url);
@@ -89,6 +94,15 @@ class HttpClient
         \curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         \curl_setopt($ch, CURLOPT_TIMEOUT, $timeoutSeconds);
         \curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, $connectTimeoutSeconds);
+        if ($timeoutMilliseconds !== null) {
+            $effectiveTimeoutMilliseconds = self::capMilliseconds($timeoutSeconds, $timeoutMilliseconds);
+            $effectiveConnectTimeoutMilliseconds = self::capMilliseconds(
+                $connectTimeoutSeconds,
+                $effectiveTimeoutMilliseconds
+            );
+            \curl_setopt($ch, CURLOPT_TIMEOUT_MS, $effectiveTimeoutMilliseconds);
+            \curl_setopt($ch, CURLOPT_CONNECTTIMEOUT_MS, $effectiveConnectTimeoutMilliseconds);
+        }
         if (!empty($headers)) {
             \curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
         }
@@ -178,5 +192,16 @@ class HttpClient
             throw new \InvalidArgumentException("{$environmentName} must be a positive integer in seconds.");
         }
         return $seconds;
+    }
+
+    private static function capMilliseconds(int $seconds, int $cap): int
+    {
+        // Avoid overflowing when converting a valid, very large second timeout.
+        $maxSeconds = intdiv(PHP_INT_MAX, 1000);
+        if ($seconds > $maxSeconds) {
+            return $cap;
+        }
+
+        return min($seconds * 1000, $cap);
     }
 }

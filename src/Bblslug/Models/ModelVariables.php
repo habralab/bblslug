@@ -7,7 +7,9 @@ namespace Bblslug\Models;
 /** @internal Keep facade controls and request-local state out of model overrides. */
 final class ModelVariables
 {
-    private const RESERVED = ['format', 'dryRun', 'promptKey', 'verbose', 'context', 'responseContext'];
+    private const RESERVED = [
+        'format', 'dryRun', 'promptKey', 'verbose', 'context', 'responseContext', 'operationDeadline',
+    ];
 
     /** @param array<string,mixed> $variables */
     public static function validate(array $variables): void

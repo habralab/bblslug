@@ -578,4 +578,59 @@ final class HttpClientTest extends TestCase
             $this->assertSame(CURLE_OPERATION_TIMEDOUT, $exception->getCode());
         }
     }
+
+    /** @test */
+    public function millisecondTimeoutCapsRequestAndDoesNotLeakUrlSecret(): void
+    {
+        $secret = 'timeout-secret';
+
+        try {
+            HttpClient::request(
+                method: 'GET',
+                url: $this->url('/slow?secret=' . $secret),
+                timeoutSeconds: 2,
+                connectTimeoutSeconds: 1,
+                timeoutMilliseconds: 100
+            );
+            $this->fail('The millisecond timeout should interrupt the delayed response.');
+        } catch (\RuntimeException $exception) {
+            $this->assertSame(CURLE_OPERATION_TIMEDOUT, $exception->getCode());
+            $this->assertStringNotContainsString($secret, $exception->getMessage());
+        }
+    }
+
+    /** @test */
+    public function millisecondTimeoutIsCappedByResolvedSecondTimeout(): void
+    {
+        putenv('BBLSLUG_HTTP_TIMEOUT=1');
+
+        try {
+            HttpClient::request(
+                method: 'GET',
+                url: $this->url('/slow'),
+                timeoutMilliseconds: 1200
+            );
+            $this->fail('The resolved one-second timeout should interrupt the delayed response.');
+        } catch (\RuntimeException $exception) {
+            $this->assertSame(CURLE_OPERATION_TIMEDOUT, $exception->getCode());
+        }
+    }
+
+    /** @test */
+    public function nonpositiveMillisecondTimeoutIsRejectedEvenForDryRun(): void
+    {
+        foreach ([0, -1] as $timeoutMilliseconds) {
+            try {
+                HttpClient::request(
+                    method: 'GET',
+                    url: $this->url('/echo'),
+                    dryRun: true,
+                    timeoutMilliseconds: $timeoutMilliseconds
+                );
+                $this->fail('A nonpositive millisecond timeout should be rejected.');
+            } catch (\InvalidArgumentException $exception) {
+                $this->assertStringContainsString('timeoutMilliseconds', $exception->getMessage());
+            }
+        }
+    }
 }

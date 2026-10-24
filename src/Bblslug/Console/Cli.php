@@ -47,6 +47,7 @@ class Cli
             "list-models",   // show models and exit
             "list-prompts",  // show available prompt templates and exit
             "model:",        // model key
+            "operation-timeout:", // total translation operation deadline
             "no-validate",   // disable pre- and post-validation of container syntax
             "prompt-key:",   // prompt template key (from prompts.yaml)
             "response-schema:", // JSON Schema file for native JSON output
@@ -136,6 +137,7 @@ class Cli
         $batchSizeOccurrences = 0;
         $textBatchSizeOccurrences = 0;
         $segmentBatchMaxBytesOccurrences = 0;
+        $operationTimeoutOccurrences = 0;
         $textTransportOccurrences = 0;
         foreach ($argv as $index => $argument) {
             if ($argument === '--') {
@@ -161,6 +163,12 @@ class Cli
                 || str_starts_with($argument, '--segment-batch-max-bytes=')
             ) {
                 $segmentBatchMaxBytesOccurrences++;
+            }
+            if (
+                $argument === '--operation-timeout'
+                || str_starts_with($argument, '--operation-timeout=')
+            ) {
+                $operationTimeoutOccurrences++;
             }
             if ($argument === '--text-transport=') {
                 Help::error('--text-transport requires document or segments.');
@@ -221,6 +229,13 @@ class Cli
                 if (!is_string($next) || $next === '' || str_starts_with($next, '--')) {
                     Help::error('--segment-batch-max-bytes requires a value.');
                 }
+            } elseif ($argument === '--operation-timeout=') {
+                Help::error('--operation-timeout requires a positive integer value.');
+            } elseif ($argument === '--operation-timeout') {
+                $next = $argv[$index + 1] ?? null;
+                if (!is_string($next) || $next === '' || str_starts_with($next, '--')) {
+                    Help::error('--operation-timeout requires a value.');
+                }
             }
         }
 
@@ -235,6 +250,9 @@ class Cli
         }
         if ($segmentBatchMaxBytesOccurrences > 1) {
             Help::error('--segment-batch-max-bytes may only be specified once.');
+        }
+        if ($operationTimeoutOccurrences > 1) {
+            Help::error('--operation-timeout may only be specified once.');
         }
 
         // This option is intentionally singleton. getopt() returns an array for
@@ -290,6 +308,30 @@ class Cli
                 Help::error('--segment-batch-max-bytes is too large.');
             }
             $segmentBatchMaxBytes = (int) $rawMaxBytes;
+        }
+        $operationTimeoutSeconds = null;
+        if (isset($options['operation-timeout'])) {
+            $rawOperationTimeout = $options['operation-timeout'];
+            if (is_array($rawOperationTimeout)) {
+                Help::error('--operation-timeout may only be specified once.');
+            }
+            if (
+                !is_string($rawOperationTimeout)
+                || !preg_match('/\A[1-9][0-9]*\z/', $rawOperationTimeout)
+            ) {
+                Help::error('--operation-timeout requires a positive integer value.');
+            }
+            $maxInt = (string) PHP_INT_MAX;
+            if (
+                strlen($rawOperationTimeout) > strlen($maxInt)
+                || (
+                    strlen($rawOperationTimeout) === strlen($maxInt)
+                    && strcmp($rawOperationTimeout, $maxInt) > 0
+                )
+            ) {
+                Help::error('--operation-timeout is too large.');
+            }
+            $operationTimeoutSeconds = (int) $rawOperationTimeout;
         }
         if (isset($options['validate-html-json-pointer'])) {
             $rawPointers = $options['validate-html-json-pointer'];
@@ -652,6 +694,7 @@ class Cli
                 textTransport: $textTransport,
                 textSegmentBatchSize: $textSegmentBatchSize,
                 segmentBatchMaxBytes: $segmentBatchMaxBytes,
+                operationTimeoutSeconds: $operationTimeoutSeconds,
             );
         } catch (\Throwable $e) {
             Help::error($e->getMessage());

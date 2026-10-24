@@ -96,6 +96,7 @@ class Bblslug
      * @param string $textTransport Plain text document translation or locally reconstructed line segments.
      * @param int|null $textSegmentBatchSize Maximum text segments per sequential request; null keeps one request.
      * @param int|null $segmentBatchMaxBytes Maximum serialized segment JSON bytes; splits at whitespace if needed.
+     * @param int|null $operationTimeoutSeconds Total time budget for preparation and all provider requests.
      *
      * @return array{
      *     original: string,
@@ -138,8 +139,10 @@ class Bblslug
         ?int $htmlSegmentBatchSize = null,
         string $textTransport = 'document',
         ?int $textSegmentBatchSize = null,
-        ?int $segmentBatchMaxBytes = null
+        ?int $segmentBatchMaxBytes = null,
+        ?int $operationTimeoutSeconds = null
     ): array {
+        $deadline = $operationTimeoutSeconds !== null ? new OperationDeadline($operationTimeoutSeconds) : null;
         if (
             $segmentBatchMaxBytes !== null
             && ($segmentBatchMaxBytes < 1 || ($textTransport !== 'segments' && $htmlTransport !== 'segments'))
@@ -355,6 +358,7 @@ class Bblslug
                 'dryRun' => $dryRun,
                 'promptKey' => $promptKey,
                 'verbose' => $verbose,
+                'operationDeadline' => $deadline,
             ],
             $variables
         );
@@ -396,7 +400,8 @@ class Bblslug
                     static fn (string $message, string $level = 'info') => $say($onFeedback, $message, $level),
                     $index === 0 ? $valLogPre : '',
                     $emptySegments ? ($jsonHtmlDocument !== null ? $text : $prepared) : null,
-                    $requests[$index] ?? null
+                    $requests[$index] ?? null,
+                    $deadline
                 );
                 if ($batching) {
                     $protocolDebug = $verbose ? "\n\n" . $provider['debugRequest'] . $provider['debugResponse'] : '';
@@ -600,6 +605,7 @@ class Bblslug
         if ($batchConfigured) {
             $resultData['batches'] = $batchSummaries;
         }
+        $deadline?->check();
         return $resultData;
     }
 
@@ -624,7 +630,8 @@ class Bblslug
         callable $feedback,
         string $validationLog,
         ?string $localOverride = null,
-        ?array $prebuiltRequest = null
+        ?array $prebuiltRequest = null,
+        ?OperationDeadline $deadline = null
     ): array {
         $dryRun = (bool) ($options['dryRun'] ?? false);
         $verbose = (bool) ($options['verbose'] ?? false);
@@ -692,20 +699,27 @@ class Bblslug
             $requestMessage = "No translatable string values: skipping HTTP request";
         }
         $feedback($requestMessage, 'info');
-        $http = HttpClient::request(
-            method: 'POST',
-            url: $reqUrl,
-            body: $reqBody,
-            dryRun: $dryRun || $localResult !== null,
-            headers: $reqHeaders,
-            maskPatterns: [
-                $apiKey,
-            ],
-            proxy: $proxy,
-            verbose: $verbose,
-            timeoutSeconds: $reqRaw['timeoutSeconds'] ?? null
-        );
+        try {
+            $http = HttpClient::request(
+                method: 'POST',
+                url: $reqUrl,
+                body: $reqBody,
+                dryRun: $dryRun || $localResult !== null,
+                headers: $reqHeaders,
+                maskPatterns: [
+                    $apiKey,
+                ],
+                proxy: $proxy,
+                verbose: $verbose,
+                timeoutSeconds: $reqRaw['timeoutSeconds'] ?? null,
+                timeoutMilliseconds: $deadline?->remainingMilliseconds()
+            );
+        } catch (\RuntimeException $exception) {
+            $deadline?->check();
+            throw $exception;
+        }
 
+        $deadline?->check();
         $workflow = $reqRaw['workflow'] ?? null;
         if (!$dryRun && $localResult === null && $workflow instanceof HttpWorkflowInterface) {
             $http = $workflow->complete(
@@ -716,7 +730,7 @@ class Bblslug
                  * @return array{status:int,body:string,headers:array<string,array<int,string>>,
                  *     debugRequest:string,debugResponse:string}
                  */
-                static function (array $next) use ($reqHeaders, $apiKey, $proxy, $verbose): array {
+                static function (array $next) use ($reqHeaders, $apiKey, $proxy, $verbose, $deadline): array {
                     $headers = array_values(array_filter(
                         $reqHeaders,
                         static fn (string $header): bool => stripos($header, 'Content-Type:') !== 0
@@ -730,15 +744,18 @@ class Bblslug
                             maskPatterns: array_merge([$apiKey], $next['maskPatterns']),
                             proxy: $proxy,
                             verbose: $verbose,
-                            timeoutSeconds: $next['timeoutSeconds']
+                            timeoutSeconds: $next['timeoutSeconds'],
+                            timeoutMilliseconds: $deadline?->remainingMilliseconds()
                         );
                     } catch (\RuntimeException $e) {
+                        $deadline?->check();
                         throw new \RuntimeException((new SecretMasker([$apiKey]))->redact($e->getMessage()));
                     }
                 }
             );
         }
 
+        $deadline?->check();
         $httpStatus = $http['status'];
         $debugRequest = $validationLog . $http['debugRequest'];
         $debugResponse = $http['debugResponse'];
@@ -778,6 +795,7 @@ class Bblslug
             $feedback("Provider response parsed", 'info');
         }
 
+        $deadline?->check();
         return [
             'text' => $translated,
             'usage' => $rawUsage,
