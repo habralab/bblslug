@@ -56,6 +56,8 @@ class Help
         echo "\t{$bold}--html-transport=MODE{$reset} HTML transport: document (default) or segments\n";
         echo "\t{$bold}--html-segment-batch-size=N{$reset} Segments per request "
             . "(positive integer; segments transport only)\n";
+        echo "\t{$bold}--segment-batch-max-bytes=N{$reset} Maximum serialized segment packet size "
+            . "in bytes (positive integer; segments transport only)\n";
         echo "\t{$bold}--html-json-pointer=POINTER{$reset} Translate HTML at a JSON Pointer "
             . "(repeatable; segments only)\n";
         echo "\t{$bold}--help{$reset}               Show this help message\n";
@@ -124,6 +126,10 @@ class Help
         echo "\n\tTranslate plain text segments in batches\n";
         echo "\tvendor/bin/bblslug --model=openai:gpt-4o --format=text --text-transport=segments \\\n";
         echo "\t    --text-segment-batch-size=20 --source=in.txt --translated=out.txt\n";
+
+        echo "\n\tBound segment request payloads by serialized JSON bytes\n";
+        echo "\tvendor/bin/bblslug --model=openai:gpt-4o --format=text --text-transport=segments \\\n";
+        echo "\t    --segment-batch-max-bytes=4096 --source=in.txt --translated=out.txt\n";
 
         echo "\n\tDry-run to inspect placeholders in a file\n";
         echo "\tvendor/bin/bblslug --model=deepl:free --format=text --filters=url,html_pre \\\n";

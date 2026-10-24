@@ -393,8 +393,8 @@ translatable fragments make no HTTP requests; an input without fragments has an
 empty `batches` list and raw response array. Without the option, the existing
 single-response result shape is unchanged.
 
-The limit counts fragments, not characters or bytes. A single oversized fragment
-still fails before HTTP; it is never silently split or truncated. DeepL's default
+The count limit does not bound characters or bytes. Without the optional byte
+limit below, a single oversized fragment still fails before HTTP. DeepL's default
 JSON Document transport performs its upload, polling and download workflow for
 each packet. Its explicit `json_transport=text_batch` alternative keeps its own
 request limits.
@@ -404,6 +404,49 @@ Flash in five packets of 25, 25, 25, 25 and 9 fragments, preserving the source l
 separators. Yandex Pro also passed a small two-packet check. Output budgets were
 explicitly configured; these checks verify protocol and reconstruction, not
 translation fidelity.
+
+### Bound segment packets by serialized bytes
+
+Set `segmentBatchMaxBytes: 4000` in PHP or `--segment-batch-max-bytes=4000` in the
+CLI with text or HTML segment transport. The cap can operate alone or together
+with `textSegmentBatchSize` / `htmlSegmentBatchSize`; both limits then apply.
+
+```bash
+vendor/bin/bblslug --model=google:gemini-2.5-flash --format=text \
+  --text-transport=segments --segment-batch-max-bytes=4000 \
+  --source=input.txt --translated=output.txt
+```
+
+The positive integer cap measures the serialized fragment JSON in UTF-8 bytes,
+including keys, quotes, braces, commas and escaping. It does not measure the full
+provider request body, prompt tokens or output size. Existing model length and
+driver request-body guards still run on every packet before any HTTP request.
+Choose a cap that leaves room for provider-specific overhead and the output.
+
+An individual fragment that exceeds the cap is split at Unicode whitespace
+boundaries. Source separators between the resulting pieces stay local and are
+reinserted exactly. Original identifiers stay on the first piece; additional
+pieces get distinct identifiers and are joined before text/HTML reconstruction.
+This also works for explicitly selected HTML strings inside JSON; unselected JSON
+bytes remain unchanged. Missing pieces or invalid packet responses stop the
+operation without a partial result. Packet summaries count the pieces actually
+sent to the provider.
+
+Words and tokens are never cut in the middle. An unbreakable word, URL, or an
+input without suitable whitespace that cannot fit the cap causes an error before
+HTTP. Protect opaque values with filters where appropriate. Smaller fragments
+can reduce translation fluency and context; reconstruction checks cannot prove
+translation fidelity. Byte limits do not enable automatic retries or resume.
+CLI dry-run validates the byte plan while returning prepared source text.
+
+The default is `null`, preserving existing count-only and single-request behavior.
+Enabling the byte cap uses the same `batches`, usage aggregation and ordered raw
+response array as count-based batching. Empty documents make no HTTP requests.
+
+A 2026-10-24 Gemini 2.5 Flash check passed both plain text and HTML with a
+180-byte cap: each example used three packets, including pieces of a long source
+fragment. Text line separators and HTML structure were preserved. This verifies
+the transport and reconstruction on those examples, not translation fidelity.
 
 ### Keep HTML markup local during translation
 
@@ -565,8 +608,9 @@ There are no automatic retries or fallback requests. A successful earlier packet
 is a completed provider operation even when a later packet fails.
 
 Model input-length checks and request-body preparation run for **all** packets
-before the first HTTP call. A single oversized fragment fails; it is never clipped
-or silently divided. The limit counts fragments, not characters or bytes. Smaller
+before the first HTTP call. Without the optional byte limit below, a single
+oversized fragment fails; it is never clipped. The count limit counts fragments,
+not characters or bytes. Smaller
 packets also reduce context across inline text nodes, so translation fidelity still
 requires review. Source HTML and unselected JSON remain local as before.
 

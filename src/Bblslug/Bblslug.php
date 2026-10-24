@@ -14,6 +14,7 @@ use Bblslug\Models\UsageExtractor;
 use Bblslug\Translation\HtmlTextDocument;
 use Bblslug\Translation\JsonHtmlDocument;
 use Bblslug\Translation\SegmentBatches;
+use Bblslug\Translation\SegmentPlan;
 use Bblslug\Translation\SegmentTranslations;
 use Bblslug\Translation\TextDocument;
 use Bblslug\Validation\EmbeddedJsonValidator;
@@ -94,6 +95,7 @@ class Bblslug
      * @param int|null $htmlSegmentBatchSize Maximum segments per sequential request; null keeps one request.
      * @param string $textTransport Plain text document translation or locally reconstructed line segments.
      * @param int|null $textSegmentBatchSize Maximum text segments per sequential request; null keeps one request.
+     * @param int|null $segmentBatchMaxBytes Maximum serialized segment JSON bytes; splits at whitespace if needed.
      *
      * @return array{
      *     original: string,
@@ -135,8 +137,17 @@ class Bblslug
         array $htmlJsonPointers = [],
         ?int $htmlSegmentBatchSize = null,
         string $textTransport = 'document',
-        ?int $textSegmentBatchSize = null
+        ?int $textSegmentBatchSize = null,
+        ?int $segmentBatchMaxBytes = null
     ): array {
+        if (
+            $segmentBatchMaxBytes !== null
+            && ($segmentBatchMaxBytes < 1 || ($textTransport !== 'segments' && $htmlTransport !== 'segments'))
+        ) {
+            throw new \InvalidArgumentException(
+                'segmentBatchMaxBytes requires segments transport and a positive integer'
+            );
+        }
         if ($textSegmentBatchSize !== null && ($textSegmentBatchSize < 1 || $textTransport !== 'segments')) {
             throw new \InvalidArgumentException(
                 'textSegmentBatchSize requires text segments transport and a positive integer'
@@ -312,8 +323,13 @@ class Bblslug
         $requestText = $segmentDocument !== null ? $segmentDocument->getJson() : $prepared;
         $segmentBatchSize = $textSegmentBatchSize ?? $htmlSegmentBatchSize;
         $segmentLabel = $textTransport === 'segments' ? 'Text' : 'HTML';
-        $batching = $segmentBatchSize !== null && $segmentDocument !== null && $segmentDocument->hasTexts();
-        $payloads = $batching ? SegmentBatches::split($requestText, $segmentBatchSize) : [$requestText];
+        $batchConfigured = $segmentBatchSize !== null || $segmentBatchMaxBytes !== null;
+        $batching = $batchConfigured && $segmentDocument !== null && $segmentDocument->hasTexts();
+        $segmentPlan = $segmentBatchMaxBytes !== null
+            ? new SegmentPlan($requestText, $segmentBatchSize, $segmentBatchMaxBytes) : null;
+        $payloads = $segmentPlan !== null
+            ? ($batching ? $segmentPlan->getPayloads() : [$requestText])
+            : ($batching ? SegmentBatches::split($requestText, $segmentBatchSize ?? PHP_INT_MAX) : [$requestText]);
         if ($payloads === []) {
             throw new \LogicException('A nonempty segment document requires at least one packet');
         }
@@ -418,12 +434,15 @@ class Bblslug
             $debugResponse .= $logLabel . $provider['debugResponse'];
         }
         $httpStatus = $provider['httpStatus'];
-        $raw = $segmentBatchSize !== null
+        $raw = $batchConfigured
             ? json_encode(array_column($batching ? $providers : [], 'rawResponseBody'), JSON_THROW_ON_ERROR)
             : $provider['rawResponseBody'];
         $rawUsage = $provider['usage'];
         if ($batching) {
             $provider['text'] = json_encode((object) $combined, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+            if ($segmentPlan !== null) {
+                $provider['text'] = $segmentPlan->restore($provider['text']);
+            }
         }
         if ($dryRun || $emptySegments) {
             $translated = $jsonHtmlDocument !== null ? $text : $prepared;
@@ -578,7 +597,7 @@ class Bblslug
             ],
             'filterStats' => $filterStats,
         ];
-        if ($segmentBatchSize !== null) {
+        if ($batchConfigured) {
             $resultData['batches'] = $batchSummaries;
         }
         return $resultData;

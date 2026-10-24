@@ -11,6 +11,7 @@ use Bblslug\Models\ModelRegistry;
 use Bblslug\Models\ModelVariables;
 use Bblslug\Translation\HtmlTextDocument;
 use Bblslug\Translation\JsonHtmlDocument;
+use Bblslug\Translation\SegmentPlan;
 use Bblslug\Translation\TextDocument;
 use Bblslug\Validation\JsonHtmlValidator;
 
@@ -40,6 +41,7 @@ class Cli
             "format:",       // text, HTML or a JSON format
             "html-transport:", // HTML transport: document or segments
             "html-segment-batch-size:", // positive number of HTML segments per request
+            "segment-batch-max-bytes:", // positive serialized segment packet byte limit
             "html-json-pointer:", // JSON Pointer to HTML strings selected for segment translation (repeatable)
             "help",          // show help and exit
             "list-models",   // show models and exit
@@ -98,6 +100,7 @@ class Cli
         $textTransport = $textTransportOption ?? 'document';
         $htmlSegmentBatchSize = null;
         $textSegmentBatchSize = null;
+        $segmentBatchMaxBytes = null;
         $filters    = isset($options['filters']) && is_string($options['filters'])
                         && trim($options['filters']) !== ''
                         ? array_map('trim', explode(',', $options['filters']))
@@ -132,6 +135,7 @@ class Cli
         $argv = is_array($rawArgv) ? array_values($rawArgv) : [];
         $batchSizeOccurrences = 0;
         $textBatchSizeOccurrences = 0;
+        $segmentBatchMaxBytesOccurrences = 0;
         $textTransportOccurrences = 0;
         foreach ($argv as $index => $argument) {
             if ($argument === '--') {
@@ -151,6 +155,12 @@ class Cli
                 || str_starts_with($argument, '--text-segment-batch-size=')
             ) {
                 $textBatchSizeOccurrences++;
+            }
+            if (
+                $argument === '--segment-batch-max-bytes'
+                || str_starts_with($argument, '--segment-batch-max-bytes=')
+            ) {
+                $segmentBatchMaxBytesOccurrences++;
             }
             if ($argument === '--text-transport=') {
                 Help::error('--text-transport requires document or segments.');
@@ -204,6 +214,13 @@ class Cli
                 if (!is_string($next) || $next === '' || str_starts_with($next, '--')) {
                     Help::error('--text-segment-batch-size requires a value.');
                 }
+            } elseif ($argument === '--segment-batch-max-bytes=') {
+                Help::error('--segment-batch-max-bytes requires a positive integer value.');
+            } elseif ($argument === '--segment-batch-max-bytes') {
+                $next = $argv[$index + 1] ?? null;
+                if (!is_string($next) || $next === '' || str_starts_with($next, '--')) {
+                    Help::error('--segment-batch-max-bytes requires a value.');
+                }
             }
         }
 
@@ -215,6 +232,9 @@ class Cli
         }
         if ($textBatchSizeOccurrences > 1) {
             Help::error('--text-segment-batch-size may only be specified once.');
+        }
+        if ($segmentBatchMaxBytesOccurrences > 1) {
+            Help::error('--segment-batch-max-bytes may only be specified once.');
         }
 
         // This option is intentionally singleton. getopt() returns an array for
@@ -253,6 +273,23 @@ class Cli
                 Help::error('--text-segment-batch-size is too large.');
             }
             $textSegmentBatchSize = (int) $rawTextBatchSize;
+        }
+        if (isset($options['segment-batch-max-bytes'])) {
+            $rawMaxBytes = $options['segment-batch-max-bytes'];
+            if (is_array($rawMaxBytes)) {
+                Help::error('--segment-batch-max-bytes may only be specified once.');
+            }
+            if (!is_string($rawMaxBytes) || !preg_match('/\A[1-9][0-9]*\z/', $rawMaxBytes)) {
+                Help::error('--segment-batch-max-bytes requires a positive integer value.');
+            }
+            $maxInt = (string) PHP_INT_MAX;
+            if (
+                strlen($rawMaxBytes) > strlen($maxInt)
+                || (strlen($rawMaxBytes) === strlen($maxInt) && strcmp($rawMaxBytes, $maxInt) > 0)
+            ) {
+                Help::error('--segment-batch-max-bytes is too large.');
+            }
+            $segmentBatchMaxBytes = (int) $rawMaxBytes;
         }
         if (isset($options['validate-html-json-pointer'])) {
             $rawPointers = $options['validate-html-json-pointer'];
@@ -320,6 +357,15 @@ class Cli
         }
         if ($textSegmentBatchSize !== null && $textTransport !== 'segments') {
             Help::error('--text-segment-batch-size requires --text-transport=segments.');
+        }
+        if (
+            $segmentBatchMaxBytes !== null
+            && $textTransport !== 'segments'
+            && $htmlTransport !== 'segments'
+        ) {
+            Help::error(
+                '--segment-batch-max-bytes requires --text-transport=segments or --html-transport=segments.'
+            );
         }
         if ($textSegmentBatchSize !== null && $htmlSegmentBatchSize !== null) {
             Help::error('--text-segment-batch-size cannot be combined with --html-segment-batch-size.');
@@ -480,17 +526,26 @@ class Cli
                 }
             }
             try {
+                $segmentDocument = null;
                 if ($htmlTransport === 'segments' && in_array($format, ['json', 'linedJson'], true)) {
                     $jsonDocument = new JsonHtmlDocument($text, $htmlJsonSelectionPointers, $filters);
                     $prepared = $jsonDocument->getPrepared();
+                    $segmentDocument = $jsonDocument;
                 } else {
                     $prepared = $filterManager->apply($text);
                     if ($htmlTransport === 'segments') {
-                        new HtmlTextDocument($prepared);
+                        $segmentDocument = new HtmlTextDocument($prepared);
                     }
                     if ($textTransport === 'segments') {
-                        new TextDocument($prepared);
+                        $segmentDocument = new TextDocument($prepared);
                     }
+                }
+                if ($segmentBatchMaxBytes !== null && $segmentDocument !== null) {
+                    new SegmentPlan(
+                        $segmentDocument->getJson(),
+                        $textSegmentBatchSize ?? $htmlSegmentBatchSize,
+                        $segmentBatchMaxBytes
+                    );
                 }
             } catch (\Throwable $exception) {
                 Help::error($exception->getMessage());
@@ -596,6 +651,7 @@ class Cli
                 htmlSegmentBatchSize: $htmlSegmentBatchSize,
                 textTransport: $textTransport,
                 textSegmentBatchSize: $textSegmentBatchSize,
+                segmentBatchMaxBytes: $segmentBatchMaxBytes,
             );
         } catch (\Throwable $e) {
             Help::error($e->getMessage());
