@@ -59,13 +59,10 @@ final class TextDocument
     public function restore(string $translatedJson): string
     {
         $expected = array_map(static fn (int $index): string => 's' . $index, array_keys($this->spans));
-        $values = SegmentTranslations::decode($translatedJson, $expected, 'Text');
+        $values = SegmentTranslations::decode($translatedJson, $expected, 'Text', false);
         $output = '';
         $cursor = 0;
         foreach ($this->spans as $index => $span) {
-            if (strpbrk($values['s' . $index], "\r\n") !== false) {
-                throw new \RuntimeException('Text segment translations may not introduce line breaks');
-            }
             $output .= substr($this->text, $cursor, $span['start'] - $cursor) . $values['s' . $index];
             $cursor = $span['start'] + $span['length'];
         }

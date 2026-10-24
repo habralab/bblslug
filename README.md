@@ -350,9 +350,9 @@ Document mode does not detect omitted paragraphs. Segment mode detects missing
 fragment identifiers, but cannot prove that every sentence within a returned
 fragment was translated, or that the translation is accurate. Translating lines
 separately may reduce fluency across line boundaries. Custom prompt groups need
-a JSON template. Requests are not split into batches in this text mode; JSON
-payload overhead counts toward model limits, and output budgets must fit the
-whole translation. `--html-segment-batch-size` applies only to HTML segments.
+a JSON template. JSON payload overhead counts toward model limits. Requests stay unsplit unless
+`textSegmentBatchSize` / `--text-segment-batch-size` is set (below). Output budgets
+apply to each request. `--html-segment-batch-size` applies only to HTML segments.
 There is no automatic retry or fallback to document mode.
 
 A 2026-10-24 live check translated a 19,978-character text through Gemini 2.5
@@ -360,6 +360,50 @@ Flash with original CR/LF separators preserved and an explicitly increased outpu
 budget. Yandex Lite omitted `s108` on the same input; segment mode rejected the
 response. A small Yandex Pro request also passed. These checks verify the segment
 protocol and reconstruction, not translation fidelity.
+
+### Limit plain text segment batches
+
+Set `textSegmentBatchSize: 25` in PHP or `--text-segment-batch-size=25` in the CLI
+with text segment transport to send at most 25 fragments per request:
+
+```bash
+vendor/bin/bblslug --model=google:gemini-2.5-flash --format=text \
+  --text-transport=segments --text-segment-batch-size=25 \
+  --source=input.txt --translated=output.txt
+```
+
+The default is `null` (one request). The limit must be a positive integer and
+requires `textTransport: 'segments'` / `--text-transport=segments`. Requests run
+sequentially, retain the original fragment identifiers, and reconstruct source
+line separators, whitespace and protected placeholders locally. All packet input
+lengths and driver request limits are checked before the first HTTP call.
+
+Each response is checked before sending the next packet, including mandatory
+fragment identifiers, nonempty string values, duplicate keys, introduced
+placeholders and CR/LF. A failed packet stops the operation, reports its position
+and the number of earlier completed packets, and returns no partial document.
+CLI output files are written only after the complete translation succeeds.
+There is no automatic retry or resume; earlier successful packets may already
+have been billed. Network timeouts and output budgets apply per request.
+
+With a batch size set, the result includes `batches` with ordered packet summaries
+and aggregated `consumed` usage. `rawResponseBody` is a JSON array of raw response
+strings in request order, as in HTML batching. Dry-run and inputs without
+translatable fragments make no HTTP requests; an input without fragments has an
+empty `batches` list and raw response array. Without the option, the existing
+single-response result shape is unchanged.
+
+The limit counts fragments, not characters or bytes. A single oversized fragment
+still fails before HTTP; it is never silently split or truncated. DeepL's default
+JSON Document transport performs its upload, polling and download workflow for
+each packet. Its explicit `json_transport=text_batch` alternative keeps its own
+request limits.
+
+A 2026-10-24 live check translated the 19,978-character text through Gemini 2.5
+Flash in five packets of 25, 25, 25, 25 and 9 fragments, preserving the source line
+separators. Yandex Pro also passed a small two-packet check. Output budgets were
+explicitly configured; these checks verify protocol and reconstruction, not
+translation fidelity.
 
 ### Keep HTML markup local during translation
 

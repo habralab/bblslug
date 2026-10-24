@@ -52,6 +52,7 @@ class Cli
             "source:",       // input file (default = STDIN)
             "source-lang:",  // override source language
             "text-transport:", // text transport: document or segments
+            "text-segment-batch-size:", // positive number of text segments per request
             "target-lang:",  // override target language
             "translated:",   // output file (default = STDOUT)
             "validate-embedded-json", // opt-in checks for encoded JSON containers
@@ -96,6 +97,7 @@ class Cli
         }
         $textTransport = $textTransportOption ?? 'document';
         $htmlSegmentBatchSize = null;
+        $textSegmentBatchSize = null;
         $filters    = isset($options['filters']) && is_string($options['filters'])
                         && trim($options['filters']) !== ''
                         ? array_map('trim', explode(',', $options['filters']))
@@ -129,6 +131,7 @@ class Cli
         $rawArgv = $_SERVER['argv'] ?? [];
         $argv = is_array($rawArgv) ? array_values($rawArgv) : [];
         $batchSizeOccurrences = 0;
+        $textBatchSizeOccurrences = 0;
         $textTransportOccurrences = 0;
         foreach ($argv as $index => $argument) {
             if ($argument === '--') {
@@ -142,6 +145,12 @@ class Cli
                 || str_starts_with($argument, '--html-segment-batch-size=')
             ) {
                 $batchSizeOccurrences++;
+            }
+            if (
+                $argument === '--text-segment-batch-size'
+                || str_starts_with($argument, '--text-segment-batch-size=')
+            ) {
+                $textBatchSizeOccurrences++;
             }
             if ($argument === '--text-transport=') {
                 Help::error('--text-transport requires document or segments.');
@@ -188,6 +197,13 @@ class Cli
                 if (!is_string($next) || ($next !== '' && str_starts_with($next, '--'))) {
                     Help::error('--html-segment-batch-size requires a value.');
                 }
+            } elseif ($argument === '--text-segment-batch-size=') {
+                Help::error('--text-segment-batch-size requires a positive integer value.');
+            } elseif ($argument === '--text-segment-batch-size') {
+                $next = $argv[$index + 1] ?? null;
+                if (!is_string($next) || $next === '' || str_starts_with($next, '--')) {
+                    Help::error('--text-segment-batch-size requires a value.');
+                }
             }
         }
 
@@ -196,6 +212,9 @@ class Cli
         }
         if ($textTransportOccurrences > 1) {
             Help::error('--text-transport may only be specified once.');
+        }
+        if ($textBatchSizeOccurrences > 1) {
+            Help::error('--text-segment-batch-size may only be specified once.');
         }
 
         // This option is intentionally singleton. getopt() returns an array for
@@ -217,6 +236,23 @@ class Cli
                 Help::error('--html-segment-batch-size is too large.');
             }
             $htmlSegmentBatchSize = (int) $rawBatchSize;
+        }
+        if (isset($options['text-segment-batch-size'])) {
+            $rawTextBatchSize = $options['text-segment-batch-size'];
+            if (is_array($rawTextBatchSize)) {
+                Help::error('--text-segment-batch-size may only be specified once.');
+            }
+            if (!is_string($rawTextBatchSize) || !preg_match('/\A[1-9][0-9]*\z/', $rawTextBatchSize)) {
+                Help::error('--text-segment-batch-size requires a positive integer value.');
+            }
+            $maxInt = (string) PHP_INT_MAX;
+            if (
+                strlen($rawTextBatchSize) > strlen($maxInt)
+                || (strlen($rawTextBatchSize) === strlen($maxInt) && strcmp($rawTextBatchSize, $maxInt) > 0)
+            ) {
+                Help::error('--text-segment-batch-size is too large.');
+            }
+            $textSegmentBatchSize = (int) $rawTextBatchSize;
         }
         if (isset($options['validate-html-json-pointer'])) {
             $rawPointers = $options['validate-html-json-pointer'];
@@ -281,6 +317,12 @@ class Cli
         }
         if ($htmlSegmentBatchSize !== null && $htmlTransport !== 'segments') {
             Help::error('--html-segment-batch-size requires --html-transport=segments.');
+        }
+        if ($textSegmentBatchSize !== null && $textTransport !== 'segments') {
+            Help::error('--text-segment-batch-size requires --text-transport=segments.');
+        }
+        if ($textSegmentBatchSize !== null && $htmlSegmentBatchSize !== null) {
+            Help::error('--text-segment-batch-size cannot be combined with --html-segment-batch-size.');
         }
 
         if ($htmlJsonPointers !== [] && !in_array($format, ['json', 'structured_json', 'linedJson'], true)) {
@@ -553,6 +595,7 @@ class Cli
                 htmlTransport: $htmlTransport,
                 htmlSegmentBatchSize: $htmlSegmentBatchSize,
                 textTransport: $textTransport,
+                textSegmentBatchSize: $textSegmentBatchSize,
             );
         } catch (\Throwable $e) {
             Help::error($e->getMessage());

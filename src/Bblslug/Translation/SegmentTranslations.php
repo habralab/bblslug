@@ -13,8 +13,12 @@ final class SegmentTranslations
      * @param list<string> $expected
      * @return array<string,string>
      */
-    public static function decode(string $translatedJson, array $expected, string $label = 'HTML'): array
-    {
+    public static function decode(
+        string $translatedJson,
+        array $expected,
+        string $label = 'HTML',
+        bool $allowLineBreaks = true
+    ): array {
         try {
             $decoded = json_decode($translatedJson, false, 512, JSON_THROW_ON_ERROR);
         } catch (\JsonException $exception) {
@@ -54,6 +58,9 @@ REGEX;
         foreach ($values as $key => $value) {
             if (!is_string($value) || preg_match('/\A\s*\z/u', $value) === 1) {
                 throw new \RuntimeException($label . ' segments require nonempty translated strings');
+            }
+            if (!$allowLineBreaks && strpbrk($value, "\r\n") !== false) {
+                throw new \RuntimeException($label . ' segment translations may not introduce line breaks');
             }
             if (!(new PlaceholderValidator(''))->validate($value)->isValid()) {
                 throw new \RuntimeException($label . ' segment translations may not introduce placeholders');

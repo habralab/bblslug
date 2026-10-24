@@ -93,6 +93,7 @@ class Bblslug
      * @param array<int,string> $htmlJsonPointers Explicit HTML strings to translate in JSON segment mode.
      * @param int|null $htmlSegmentBatchSize Maximum segments per sequential request; null keeps one request.
      * @param string $textTransport Plain text document translation or locally reconstructed line segments.
+     * @param int|null $textSegmentBatchSize Maximum text segments per sequential request; null keeps one request.
      *
      * @return array{
      *     original: string,
@@ -133,8 +134,14 @@ class Bblslug
         string $htmlTransport = 'document',
         array $htmlJsonPointers = [],
         ?int $htmlSegmentBatchSize = null,
-        string $textTransport = 'document'
+        string $textTransport = 'document',
+        ?int $textSegmentBatchSize = null
     ): array {
+        if ($textSegmentBatchSize !== null && ($textSegmentBatchSize < 1 || $textTransport !== 'segments')) {
+            throw new \InvalidArgumentException(
+                'textSegmentBatchSize requires text segments transport and a positive integer'
+            );
+        }
         if (!\in_array($textTransport, ['document', 'segments'], true)) {
             throw new \InvalidArgumentException('textTransport must be document or segments');
         }
@@ -303,8 +310,10 @@ class Bblslug
             ?? ($htmlTransport === 'segments' ? new HtmlTextDocument($prepared)
                 : ($textTransport === 'segments' ? new TextDocument($prepared) : null));
         $requestText = $segmentDocument !== null ? $segmentDocument->getJson() : $prepared;
-        $batching = $htmlSegmentBatchSize !== null && $segmentDocument !== null && $segmentDocument->hasTexts();
-        $payloads = $batching ? SegmentBatches::split($requestText, $htmlSegmentBatchSize) : [$requestText];
+        $segmentBatchSize = $textSegmentBatchSize ?? $htmlSegmentBatchSize;
+        $segmentLabel = $textTransport === 'segments' ? 'Text' : 'HTML';
+        $batching = $segmentBatchSize !== null && $segmentDocument !== null && $segmentDocument->hasTexts();
+        $payloads = $batching ? SegmentBatches::split($requestText, $segmentBatchSize) : [$requestText];
         if ($payloads === []) {
             throw new \LogicException('A nonempty segment document requires at least one packet');
         }
@@ -354,7 +363,7 @@ class Bblslug
         $debugRequest = '';
         $debugResponse = '';
         foreach ($payloads as $index => $payload) {
-            $batchLabel = 'HTML segment batch ' . ($index + 1) . '/' . count($payloads);
+            $batchLabel = $segmentLabel . ' segment batch ' . ($index + 1) . '/' . count($payloads);
             if ($batching) {
                 $say($onFeedback, 'Starting ' . $batchLabel, 'info');
             }
@@ -377,10 +386,15 @@ class Bblslug
                     $protocolDebug = $verbose ? "\n\n" . $provider['debugRequest'] . $provider['debugResponse'] : '';
                     $packet = json_decode($payload, false, 512, JSON_THROW_ON_ERROR);
                     if (!$packet instanceof \stdClass) {
-                        throw new \LogicException('An HTML segment packet must be an object');
+                        throw new \LogicException($segmentLabel . ' segment packet must be an object');
                     }
                     $expected = array_keys(get_object_vars($packet));
-                    $combined += SegmentTranslations::decode($provider['text'], $expected);
+                    $combined += SegmentTranslations::decode(
+                        $provider['text'],
+                        $expected,
+                        $segmentLabel,
+                        $textTransport !== 'segments'
+                    );
                     $usage = UsageExtractor::extract($model, $provider['usage']);
                     $batchUsages[] = $usage;
                     $batchSummaries[] = [
@@ -404,7 +418,7 @@ class Bblslug
             $debugResponse .= $logLabel . $provider['debugResponse'];
         }
         $httpStatus = $provider['httpStatus'];
-        $raw = $htmlSegmentBatchSize !== null
+        $raw = $segmentBatchSize !== null
             ? json_encode(array_column($batching ? $providers : [], 'rawResponseBody'), JSON_THROW_ON_ERROR)
             : $provider['rawResponseBody'];
         $rawUsage = $provider['usage'];
@@ -564,7 +578,7 @@ class Bblslug
             ],
             'filterStats' => $filterStats,
         ];
-        if ($htmlSegmentBatchSize !== null) {
+        if ($segmentBatchSize !== null) {
             $resultData['batches'] = $batchSummaries;
         }
         return $resultData;
