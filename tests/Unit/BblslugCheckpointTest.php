@@ -73,6 +73,40 @@ final class BblslugCheckpointTest extends TestCase
         self::assertSame(0, $resumed['result']['consumed']['tokens']['total']);
     }
 
+    public function testOverflowingCheckpointUsageOmitsTotalButRetainsBreakdownAcrossResume(): void
+    {
+        foreach ([PHP_INT_MAX, (string) PHP_INT_MAX] as $total) {
+            $this->checkpoint = $this->directory . '/state-' . (is_string($total) ? 'string' : 'int') . '.json';
+            $settings = ['rawUsage' => [
+                'total_tokens' => $total, 'prompt_tokens' => 4, 'completion_tokens' => 6,
+            ]];
+            $failed = $this->runFixture($settings + ['failAt' => 2, 'failure' => 'http']);
+            self::assertSame(\RuntimeException::class, $failed['type']);
+            self::assertSame(2, $failed['networkCalls']);
+
+            $resumed = $this->runFixture($settings);
+            self::assertSame('success', $resumed['type'], (string) ($resumed['message'] ?? ''));
+            self::assertSame(1, $resumed['result']['reusedBatches']);
+            self::assertArrayNotHasKey('total', $resumed['result']['consumed']['tokens']);
+            self::assertSame(12, $resumed['result']['consumed']['tokens']['breakdown']['prompt']);
+            self::assertSame(18, $resumed['result']['consumed']['tokens']['breakdown']['completion']);
+            self::assertSame(0, $resumed['result']['consumed']['tokens']['breakdown']['reasoning']);
+            self::assertArrayNotHasKey('total', $resumed['result']['consumedThisRun']['tokens']);
+            self::assertSame(8, $resumed['result']['consumedThisRun']['tokens']['breakdown']['prompt']);
+            self::assertSame(12, $resumed['result']['consumedThisRun']['tokens']['breakdown']['completion']);
+            self::assertSame(0, $resumed['result']['consumedThisRun']['tokens']['breakdown']['reasoning']);
+
+            $complete = $this->runFixture($settings);
+            self::assertSame('success', $complete['type'], (string) ($complete['message'] ?? ''));
+            self::assertSame(0, $complete['networkCalls']);
+            self::assertSame([], $complete['result']['consumedThisRun']);
+            self::assertArrayNotHasKey('total', $complete['result']['consumed']['tokens']);
+            self::assertSame(12, $complete['result']['consumed']['tokens']['breakdown']['prompt']);
+            self::assertSame(18, $complete['result']['consumed']['tokens']['breakdown']['completion']);
+            self::assertSame(0, $complete['result']['consumed']['tokens']['breakdown']['reasoning']);
+        }
+    }
+
     public function testChangedInputModelSettingsOrPacketPlanRejectBeforeHttp(): void
     {
         $this->runFixture(['failAt' => 2, 'failure' => 'missing']);

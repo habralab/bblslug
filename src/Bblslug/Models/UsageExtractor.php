@@ -13,10 +13,11 @@ namespace Bblslug\Models;
 class UsageExtractor
 {
     /**
-     * Sum normalized usage metrics across requests.
+     * Sum normalized nonnegative usage counters across requests.
      *
      * A metric is included only when it is present in at least one input
-     * entry; absent totals and breakdown categories are not invented.
+     * entry; absent totals and breakdown categories are not invented. A sum that
+     * exceeds PHP_INT_MAX is omitted instead of becoming an imprecise float.
      *
      * @param list<array<string, array{total?: int, breakdown?: array<string, int>}>> $usages
      * @return array<string, array{total?: int, breakdown?: array<string, int>}>
@@ -25,6 +26,8 @@ class UsageExtractor
     {
         /** @var array<string, array{total?: int, breakdown?: array<string, int>}> $result */
         $result = [];
+        $overflowedTotals = [];
+        $overflowedBreakdowns = [];
 
         foreach ($usages as $usage) {
             foreach ($usage as $category => $entry) {
@@ -32,8 +35,14 @@ class UsageExtractor
                     $result[$category] = [];
                 }
 
-                if (array_key_exists('total', $entry)) {
-                    $result[$category]['total'] = ($result[$category]['total'] ?? 0) + $entry['total'];
+                if (array_key_exists('total', $entry) && !isset($overflowedTotals[$category])) {
+                    $current = $result[$category]['total'] ?? 0;
+                    if ($entry['total'] > PHP_INT_MAX - $current) {
+                        unset($result[$category]['total']);
+                        $overflowedTotals[$category] = true;
+                    } else {
+                        $result[$category]['total'] = $current + $entry['total'];
+                    }
                 }
 
                 if (array_key_exists('breakdown', $entry)) {
@@ -41,13 +50,35 @@ class UsageExtractor
                         $result[$category]['breakdown'] = [];
                     }
                     foreach ($entry['breakdown'] as $name => $value) {
-                        $result[$category]['breakdown'][$name] =
-                            ($result[$category]['breakdown'][$name] ?? 0) + $value;
+                        if (isset($overflowedBreakdowns[$category][$name])) {
+                            continue;
+                        }
+                        $current = $result[$category]['breakdown'][$name] ?? 0;
+                        if ($value > PHP_INT_MAX - $current) {
+                            unset($result[$category]['breakdown'][$name]);
+                            $overflowedBreakdowns[$category][$name] = true;
+                        } else {
+                            $result[$category]['breakdown'][$name] = $current + $value;
+                        }
                     }
                 }
             }
         }
 
+        foreach ($result as $category => $entry) {
+            if (
+                (isset($overflowedTotals[$category]) || isset($overflowedBreakdowns[$category]))
+                && ($entry['breakdown'] ?? null) === []
+            ) {
+                unset($result[$category]['breakdown']);
+            }
+            if (
+                $result[$category] === []
+                && (isset($overflowedTotals[$category]) || isset($overflowedBreakdowns[$category]))
+            ) {
+                unset($result[$category]);
+            }
+        }
         return $result;
     }
 

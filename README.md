@@ -1332,6 +1332,12 @@ vendor/bin/bblslug \
   than passed through a floating-point conversion. This applies equally with or
   without checkpointing.
 
+  When summing packets, a total or breakdown counter that exceeds `PHP_INT_MAX`
+  is omitted for the entire aggregation. Other representable counters remain.
+  Later packets do not restart an incomplete sum. No overflowed count is returned
+  as a float, saturated value or artificial zero; the CLI omits its line too.
+  This applies to both whole-document and current-run checkpoint statistics.
+
   After each translation (when not in dry-run), Bblslug prints to stderr a summary of consumed usage metrics, for example:
 
   ```

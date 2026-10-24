@@ -821,13 +821,13 @@ class Cli
             foreach ($consumed as $category => $metrics) {
                 // Category header, e.g. "Tokens:"
                 fwrite($stderr, "\t" . ucfirst((string)$category) . ":\n");
-                // Total line
-                $total = isset($metrics['total']) ? (int)$metrics['total'] : 0;
-                fwrite($stderr, sprintf("\t\t%-12s %d\n", 'Total:', $total));
-                // Separator line of appropriate length
-                $sepLen = 12 + 1 + strlen((string)$total);
-                $sep    = str_repeat('-', $sepLen);
-                fwrite($stderr, "\t\t{$sep}\n");
+                if (isset($metrics['total'])) {
+                    $total = (int) $metrics['total'];
+                    fwrite($stderr, sprintf("\t\t%-12s %d\n", 'Total:', $total));
+                    $sepLen = 12 + 1 + strlen((string) $total);
+                    $sep = str_repeat('-', $sepLen);
+                    fwrite($stderr, "\t\t{$sep}\n");
+                }
                 // Breakdown lines, e.g. Prompt, Completion
                 if (isset($metrics['breakdown'])) {
                     /** @var array<string,int> $bd */
