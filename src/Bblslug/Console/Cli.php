@@ -689,7 +689,9 @@ class Cli
                 Help::error($exception->getMessage());
             }
             if ($sourceFile !== null) {
-                if (@file_put_contents($sourceFile . '.prepared', $prepared) !== strlen($prepared)) {
+                try {
+                    OutputFileWriter::write($sourceFile . '.prepared', $prepared);
+                } catch (\RuntimeException $e) {
                     Help::error("Failed to write prepared file: {$sourceFile}.prepared");
                 }
                 Help::info("Dry-run: saved prepared file as {$sourceFile}.prepared");
@@ -811,7 +813,9 @@ class Cli
 
         // Write output (file or STDOUT)
         if ($outFile !== null) {
-            if (@file_put_contents($outFile, $res['result']) !== strlen($res['result'])) {
+            try {
+                OutputFileWriter::write($outFile, $res['result']);
+            } catch (\RuntimeException $e) {
                 Help::error("Failed to write translation file: {$outFile}");
             }
             Help::info("Translation complete: {$outFile}");
@@ -903,6 +907,9 @@ class Cli
         // Other stream wrappers retain their existing write-time behavior.
         if (preg_match('~\A([a-z][a-z0-9+.-]*)://~i', $path, $scheme) === 1 && strtolower($scheme[1]) !== 'file') {
             return;
+        }
+        if (str_ends_with($path, '/') || (DIRECTORY_SEPARATOR === '\\' && str_ends_with($path, '\\'))) {
+            Help::error('Failed to write translation file: ' . $path);
         }
         clearstatcache(true, $path);
         $exists = file_exists($path);

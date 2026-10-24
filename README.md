@@ -258,6 +258,19 @@ chmod +x vendor/bin/bblslug
     write-time checks, and dry-run continues to ignore a valid `--translated` path.
     Disk space and permissions can still change after preflight; final write errors
     remain checked separately.
+  - Ordinary local output files are staged in their destination directory, flushed
+    and replaced only after the complete write succeeds. The same writer protects
+    dry-run `.prepared` files. A failed staged write leaves the previous file intact
+    and does not install a partial new file. Existing symlinks to regular files are
+    retained while their targets are replaced. Basic permission bits are preserved;
+    new files use `0666 & ~umask`. Replacement creates a new inode and does not copy
+    extended metadata such as ACLs or extended attributes.
+  - Compatibility cases retain checked direct writes: stream URIs (including
+    `file://`), special files, hardlinks, dangling symlinks, existing writable files
+    inside read-only directories, and files whose ownership/group would change on
+    replacement. These paths do not have the staged-write protection and can still
+    receive a partial write on an I/O failure. Failed atomic replacement is reported
+    without retrying through a destructive direct write.
   - Progress, errors, and translation statistics go to **STDERR**.
   - If STDERR is unavailable or its pipe is broken, diagnostic writes are skipped.
     Translation output remains unchanged, and failures still return a nonzero exit
