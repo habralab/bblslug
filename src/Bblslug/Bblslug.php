@@ -15,6 +15,7 @@ use Bblslug\Translation\HtmlTextDocument;
 use Bblslug\Translation\JsonHtmlDocument;
 use Bblslug\Translation\SegmentBatches;
 use Bblslug\Translation\SegmentTranslations;
+use Bblslug\Translation\TextDocument;
 use Bblslug\Validation\EmbeddedJsonValidator;
 use Bblslug\Validation\JsonHtmlValidator;
 use Bblslug\Validation\HtmlValidator;
@@ -91,6 +92,7 @@ class Bblslug
      * @param string $htmlTransport HTML document translation or locally reconstructed text segments.
      * @param array<int,string> $htmlJsonPointers Explicit HTML strings to translate in JSON segment mode.
      * @param int|null $htmlSegmentBatchSize Maximum segments per sequential request; null keeps one request.
+     * @param string $textTransport Plain text document translation or locally reconstructed line segments.
      *
      * @return array{
      *     original: string,
@@ -130,8 +132,18 @@ class Bblslug
         array $validateHtmlJsonPointers = [],
         string $htmlTransport = 'document',
         array $htmlJsonPointers = [],
-        ?int $htmlSegmentBatchSize = null
+        ?int $htmlSegmentBatchSize = null,
+        string $textTransport = 'document'
     ): array {
+        if (!\in_array($textTransport, ['document', 'segments'], true)) {
+            throw new \InvalidArgumentException('textTransport must be document or segments');
+        }
+        if ($textTransport === 'segments' && $format !== 'text') {
+            throw new \InvalidArgumentException('textTransport segments requires format text');
+        }
+        if ($textTransport === 'segments' && \array_key_exists('response_schema', $variables)) {
+            throw new \InvalidArgumentException('response_schema cannot describe a text segment transport payload');
+        }
         if ($htmlSegmentBatchSize !== null && ($htmlSegmentBatchSize < 1 || $htmlTransport !== 'segments')) {
             throw new \InvalidArgumentException(
                 'htmlSegmentBatchSize requires segments transport and a positive integer'
@@ -287,10 +299,11 @@ class Bblslug
             self::dumpPlaceholdersVerbose($jsonHtmlDocument ?? $filterManager, $onFeedback, $diagnosticMasker);
         }
 
-        $htmlDocument = $jsonHtmlDocument
-            ?? ($htmlTransport === 'segments' ? new HtmlTextDocument($prepared) : null);
-        $requestText = $htmlDocument !== null ? $htmlDocument->getJson() : $prepared;
-        $batching = $htmlSegmentBatchSize !== null && $htmlDocument !== null && $htmlDocument->hasTexts();
+        $segmentDocument = $jsonHtmlDocument
+            ?? ($htmlTransport === 'segments' ? new HtmlTextDocument($prepared)
+                : ($textTransport === 'segments' ? new TextDocument($prepared) : null));
+        $requestText = $segmentDocument !== null ? $segmentDocument->getJson() : $prepared;
+        $batching = $htmlSegmentBatchSize !== null && $segmentDocument !== null && $segmentDocument->hasTexts();
         $payloads = $batching ? SegmentBatches::split($requestText, $htmlSegmentBatchSize) : [$requestText];
         if ($payloads === []) {
             throw new \LogicException('A nonempty segment document requires at least one packet');
@@ -313,7 +326,7 @@ class Bblslug
         // Prepare options for driver, merging in any CLI-provided variables
         $options = array_merge(
             [
-                'format' => $htmlDocument !== null ? 'json' : $format,
+                'format' => $segmentDocument !== null ? 'json' : $format,
                 'dryRun' => $dryRun,
                 'promptKey' => $promptKey,
                 'verbose' => $verbose,
@@ -333,7 +346,7 @@ class Bblslug
                 $requests[] = $driver->buildRequest($model, $payload, $options);
             }
         }
-        $emptySegments = $htmlDocument !== null && !$htmlDocument->hasTexts();
+        $emptySegments = $segmentDocument !== null && !$segmentDocument->hasTexts();
         $providers = [];
         $batchSummaries = [];
         $batchUsages = [];
@@ -402,7 +415,8 @@ class Bblslug
             $translated = $jsonHtmlDocument !== null ? $text : $prepared;
         } else {
             try {
-                $translated = $htmlDocument !== null ? $htmlDocument->restore($provider['text']) : $provider['text'];
+                $translated = $segmentDocument !== null
+                    ? $segmentDocument->restore($provider['text']) : $provider['text'];
             } catch (\RuntimeException $exception) {
                 throw new \RuntimeException((new SecretMasker([$apiKey]))->redact(
                     $exception->getMessage() . "\n\n" . $debugRequest . $debugResponse

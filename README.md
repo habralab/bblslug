@@ -324,6 +324,43 @@ vendor/bin/bblslug \
   --filters=url,html_code,html_pre
 ```
 
+### Detect missing fragments in plain text
+
+Use `--format=text --text-transport=segments` (PHP: `textTransport: 'segments'`)
+to translate each nonempty source line through the provider's JSON transport.
+Bblslug requires exactly one nonempty string for every fragment identifier and
+reassembles the text in source order. Missing, extra, duplicate or invalid values
+fail even with `--no-validate`. Returned fragments may not introduce CR or LF.
+Lines containing protected placeholders are split around those placeholders;
+their source bytes remain local.
+
+```bash
+vendor/bin/bblslug --model=google:gemini-2.5-flash --format=text \
+  --text-transport=segments --source=input.txt --translated=output.txt
+```
+
+Line separators (LF, CRLF and CR), blank lines, and leading/trailing Unicode
+whitespace stay unchanged. Text remains literal: HTML entities and markup are not
+decoded or escaped. Existing filters still apply and restore locally. Dry-run
+returns prepared plain text; whitespace-only or placeholder-only input needs no
+HTTP request. Segment mode requires valid UTF-8 and rejects `response_schema`.
+
+The default is still `textTransport: 'document'` / `--text-transport=document`.
+Document mode does not detect omitted paragraphs. Segment mode detects missing
+fragment identifiers, but cannot prove that every sentence within a returned
+fragment was translated, or that the translation is accurate. Translating lines
+separately may reduce fluency across line boundaries. Custom prompt groups need
+a JSON template. Requests are not split into batches in this text mode; JSON
+payload overhead counts toward model limits, and output budgets must fit the
+whole translation. `--html-segment-batch-size` applies only to HTML segments.
+There is no automatic retry or fallback to document mode.
+
+A 2026-10-24 live check translated a 19,978-character text through Gemini 2.5
+Flash with original CR/LF separators preserved and an explicitly increased output
+budget. Yandex Lite omitted `s108` on the same input; segment mode rejected the
+response. A small Yandex Pro request also passed. These checks verify the segment
+protocol and reconstruction, not translation fidelity.
+
 ### Keep HTML markup local during translation
 
 The optional `segments` transport sends text fragments as a JSON object with

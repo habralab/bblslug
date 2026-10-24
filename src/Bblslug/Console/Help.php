@@ -68,6 +68,7 @@ class Help
         echo "\t{$bold}--proxy=URI{$reset}          Optional proxy URI (see examples) or set BBLSLUG_PROXY\n";
         echo "\t{$bold}--source=FILE{$reset}        Input file to translate (omit to read from STDIN)\n";
         echo "\t{$bold}--source-lang=LANG{$reset}   Source language code (e.g. EN, DE) - default autodetect\n";
+        echo "\t{$bold}--text-transport=MODE{$reset} Text transport: document (default) or segments (text only)\n";
         echo "\t{$bold}--target-lang=LANG{$reset}   Target language (e.g. EN, DE) - default EN\n";
         echo "\t{$bold}--translated=FILE{$reset}    Output file for translated content (omit to write to STDOUT)\n";
         echo "\t{$bold}--validate-embedded-json{$reset} Check JSON objects/arrays encoded inside string values\n";
@@ -113,6 +114,10 @@ class Help
 
         echo "\n\tTranslate plain text via STDIN → STDOUT\n";
         echo "\tcat in.txt | vendor/bin/bblslug --model=openai:gpt-4o --format=text > out.txt\n";
+
+        echo "\n\tTranslate plain text using structured text segments\n";
+        echo "\tvendor/bin/bblslug --model=openai:gpt-4o --format=text --text-transport=segments \\\n";
+        echo "\t    --source=in.txt --translated=out.txt\n";
 
         echo "\n\tDry-run to inspect placeholders in a file\n";
         echo "\tvendor/bin/bblslug --model=deepl:free --format=text --filters=url,html_pre \\\n";

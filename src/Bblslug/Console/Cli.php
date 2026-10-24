@@ -11,6 +11,7 @@ use Bblslug\Models\ModelRegistry;
 use Bblslug\Models\ModelVariables;
 use Bblslug\Translation\HtmlTextDocument;
 use Bblslug\Translation\JsonHtmlDocument;
+use Bblslug\Translation\TextDocument;
 use Bblslug\Validation\JsonHtmlValidator;
 
 /**
@@ -50,6 +51,7 @@ class Cli
             "proxy:",        // optional proxy URI
             "source:",       // input file (default = STDIN)
             "source-lang:",  // override source language
+            "text-transport:", // text transport: document or segments
             "target-lang:",  // override target language
             "translated:",   // output file (default = STDOUT)
             "validate-embedded-json", // opt-in checks for encoded JSON containers
@@ -88,6 +90,11 @@ class Cli
             Help::error('--html-transport requires a single string value.');
         }
         $htmlTransport = $htmlTransportOption ?? 'document';
+        $textTransportOption = $options['text-transport'] ?? null;
+        if ($textTransportOption !== null && !is_string($textTransportOption)) {
+            Help::error('--text-transport requires a single string value.');
+        }
+        $textTransport = $textTransportOption ?? 'document';
         $htmlSegmentBatchSize = null;
         $filters    = isset($options['filters']) && is_string($options['filters'])
                         && trim($options['filters']) !== ''
@@ -122,6 +129,7 @@ class Cli
         $rawArgv = $_SERVER['argv'] ?? [];
         $argv = is_array($rawArgv) ? array_values($rawArgv) : [];
         $batchSizeOccurrences = 0;
+        $textTransportOccurrences = 0;
         foreach ($argv as $index => $argument) {
             if ($argument === '--') {
                 break;
@@ -134,6 +142,17 @@ class Cli
                 || str_starts_with($argument, '--html-segment-batch-size=')
             ) {
                 $batchSizeOccurrences++;
+            }
+            if ($argument === '--text-transport=') {
+                Help::error('--text-transport requires document or segments.');
+            } elseif ($argument === '--text-transport') {
+                $textTransportOccurrences++;
+                $next = $argv[$index + 1] ?? null;
+                if (!is_string($next) || $next === '' || str_starts_with($next, '--')) {
+                    Help::error('--text-transport requires a value.');
+                }
+            } elseif (str_starts_with($argument, '--text-transport=')) {
+                $textTransportOccurrences++;
             }
             if ($argument === '--validate-html-json-pointer=') {
                 Help::error(
@@ -174,6 +193,9 @@ class Cli
 
         if ($batchSizeOccurrences > 1) {
             Help::error('--html-segment-batch-size may only be specified once.');
+        }
+        if ($textTransportOccurrences > 1) {
+            Help::error('--text-transport may only be specified once.');
         }
 
         // This option is intentionally singleton. getopt() returns an array for
@@ -271,6 +293,16 @@ class Cli
             Help::error('--response-schema is incompatible with --html-transport=segments.');
         }
 
+        if (!in_array($textTransport, ['document', 'segments'], true)) {
+            Help::error("Invalid text transport: '{$textTransport}'. Allowed: document, segments.");
+        }
+        if ($textTransport === 'segments' && $format !== 'text') {
+            Help::error('--text-transport=segments requires --format=text.');
+        }
+        if ($textTransport === 'segments' && isset($options['response-schema'])) {
+            Help::error('--response-schema is incompatible with --text-transport=segments.');
+        }
+
 
         if (!$registry->has($modelKey)) {
             Help::error(
@@ -322,6 +354,9 @@ class Cli
         }
         if ($htmlTransport === 'segments' && array_key_exists('response_schema', $cliVars)) {
             Help::error('--response-schema is incompatible with --html-transport=segments.');
+        }
+        if ($textTransport === 'segments' && array_key_exists('response_schema', $cliVars)) {
+            Help::error('--response-schema is incompatible with --text-transport=segments.');
         }
 
         // Handle input
@@ -410,6 +445,9 @@ class Cli
                     $prepared = $filterManager->apply($text);
                     if ($htmlTransport === 'segments') {
                         new HtmlTextDocument($prepared);
+                    }
+                    if ($textTransport === 'segments') {
+                        new TextDocument($prepared);
                     }
                 }
             } catch (\Throwable $exception) {
@@ -514,6 +552,7 @@ class Cli
                 htmlJsonPointers: $htmlJsonSelectionPointers,
                 htmlTransport: $htmlTransport,
                 htmlSegmentBatchSize: $htmlSegmentBatchSize,
+                textTransport: $textTransport,
             );
         } catch (\Throwable $e) {
             Help::error($e->getMessage());

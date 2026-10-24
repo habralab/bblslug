@@ -6,22 +6,22 @@ namespace Bblslug\Translation;
 
 use Bblslug\Validation\PlaceholderValidator;
 
-/** Strict response protocol shared by HTML fragments and selected HTML-in-JSON. */
+/** Strict response protocol shared by locally reconstructed text and HTML fragments. */
 final class SegmentTranslations
 {
     /**
      * @param list<string> $expected
      * @return array<string,string>
      */
-    public static function decode(string $translatedJson, array $expected): array
+    public static function decode(string $translatedJson, array $expected, string $label = 'HTML'): array
     {
         try {
             $decoded = json_decode($translatedJson, false, 512, JSON_THROW_ON_ERROR);
         } catch (\JsonException $exception) {
-            throw new \RuntimeException('Invalid HTML segment JSON', 0, $exception);
+            throw new \RuntimeException('Invalid ' . $label . ' segment JSON', 0, $exception);
         }
         if (!$decoded instanceof \stdClass) {
-            throw new \RuntimeException('HTML segment JSON must be an object');
+            throw new \RuntimeException($label . ' segment JSON must be an object');
         }
         $values = get_object_vars($decoded);
         $actual = array_keys($values);
@@ -30,7 +30,7 @@ final class SegmentTranslations
         if ($expected !== $actual) {
             $missing = array_values(array_diff($expected, $actual));
             throw new \RuntimeException(
-                'HTML segment ids mismatch: missing [' . implode(', ', array_slice($missing, 0, 10)) . ']; '
+                $label . ' segment ids mismatch: missing [' . implode(', ', array_slice($missing, 0, 10)) . ']; '
                 . 'unexpected count ' . count(array_diff($actual, $expected))
             );
         }
@@ -46,17 +46,17 @@ REGEX;
             }
             $key = json_decode($token, true, 512, JSON_THROW_ON_ERROR);
             if (isset($seen[$key])) {
-                throw new \RuntimeException('Duplicate HTML segment ids');
+                throw new \RuntimeException('Duplicate ' . $label . ' segment ids');
             }
             $seen[$key] = true;
         }
         $strings = [];
         foreach ($values as $key => $value) {
             if (!is_string($value) || preg_match('/\A\s*\z/u', $value) === 1) {
-                throw new \RuntimeException('HTML segments require nonempty translated strings');
+                throw new \RuntimeException($label . ' segments require nonempty translated strings');
             }
             if (!(new PlaceholderValidator(''))->validate($value)->isValid()) {
-                throw new \RuntimeException('HTML segment translations may not introduce placeholders');
+                throw new \RuntimeException($label . ' segment translations may not introduce placeholders');
             }
             $strings[$key] = $value;
         }
