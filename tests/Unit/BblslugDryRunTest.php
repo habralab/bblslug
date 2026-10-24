@@ -8,6 +8,7 @@ use PHPUnit\Framework\TestCase;
 use Bblslug\Bblslug;
 use Bblslug\Models\ModelRegistry;
 use Bblslug\Models\Drivers\DeepLDriver;
+use Bblslug\Models\Drivers\YandexDriver;
 
 /**
  * Atomic dry-run tests for the main facade Bblslug::translate().
@@ -92,6 +93,29 @@ final class BblslugDryRunTest extends TestCase
 
         // Consumed usage is empty in dry-run
         $this->assertSame([], $out['consumed']);
+    }
+
+    /** @test */
+    public function dryRunYandexMasksFolderIdInVerboseRequestDiagnostics(): void
+    {
+        $modelKey = $this->findModelKeyForDriver(YandexDriver::class);
+        if ($modelKey === null) {
+            $this->markTestSkipped('No Yandex model found in registry.');
+        }
+
+        $folderId = 'fixture-folder-secret';
+        $out = Bblslug::translate(
+            apiKey: 'fixture-yandex-api-key',
+            format: 'text',
+            modelKey: $modelKey,
+            text: 'Hello',
+            dryRun: true,
+            verbose: true,
+            variables: ['folder_id' => $folderId]
+        );
+
+        self::assertStringNotContainsString($folderId, $out['debugRequest']);
+        self::assertStringContainsString('***', $out['debugRequest']);
     }
 
     public function testDryRunPreservesSourceMarkerTextAcrossFilterOrders(): void

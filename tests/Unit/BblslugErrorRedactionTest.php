@@ -122,8 +122,25 @@ final class BblslugErrorRedactionTest extends TestCase
         );
     }
 
+    public function testMalformedProviderResponseDoesNotEchoYandexFolderIdInDiagnostics(): void
+    {
+        $folderId = 'fixture-folder-secret';
+        $result = $this->runFixture([
+            'model' => 'yandex:gpt-lite',
+            'status' => 200,
+            'body' => json_encode(['folder' => $folderId], JSON_THROW_ON_ERROR),
+            'reason' => 'Yandex',
+            'verbose' => true,
+            'folderId' => $folderId,
+        ]);
+
+        self::assertSame('RuntimeException', $result['type']);
+        self::assertStringContainsString('Yandex', $result['message']);
+        self::assertStringNotContainsString($folderId, $result['message']);
+    }
+
     /**
-     * @param array{model:string,status:int,body:string,reason:string,verbose:bool} $scenario
+     * @param array{model:string,status:int,body:string,reason:string,verbose:bool,folderId?:string} $scenario
      * @return array{type:string,message:string,requestCount:int}
      */
     private function runFixture(array $scenario): array
@@ -138,6 +155,9 @@ final class BblslugErrorRedactionTest extends TestCase
             '--api-key=' . self::API_KEY,
             '--verbose=' . ($scenario['verbose'] ? '1' : '0'),
         ];
+        if (isset($scenario['folderId'])) {
+            $command[] = '--folder-id=' . $scenario['folderId'];
+        }
         $process = proc_open($command, [
             0 => ['pipe', 'r'],
             1 => ['pipe', 'w'],

@@ -63,12 +63,18 @@ namespace {
 
     require dirname(__DIR__, 3) . '/vendor/autoload.php';
 
+    $variables = [];
+    if (($options['folder-id'] ?? '') !== '') {
+        $variables['folder_id'] = $options['folder-id'];
+    }
+
     try {
         \Bblslug\Bblslug::translate(
             apiKey: (string)($options['api-key'] ?? ''),
             format: 'text',
             modelKey: (string)($options['model'] ?? ''),
             text: 'source text',
+            variables: $variables,
             validate: false,
             verbose: ($options['verbose'] ?? '0') === '1'
         );

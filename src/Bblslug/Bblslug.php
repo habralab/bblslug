@@ -768,6 +768,12 @@ class Bblslug
             }
         }
 
+        $maskPatterns = [
+            $apiKey,
+            $proxy ?? '',
+            \is_string($options['folder_id'] ?? null) ? $options['folder_id'] : '',
+        ];
+
         // Perform HTTP request
         $requestMessage = $dryRun ? "Dry-run: skipping HTTP request" : "Sending HTTP request";
         if ($localResult !== null) {
@@ -781,9 +787,7 @@ class Bblslug
                 body: $reqBody,
                 dryRun: $dryRun || $localResult !== null,
                 headers: $reqHeaders,
-                maskPatterns: [
-                    $apiKey,
-                ],
+                maskPatterns: $maskPatterns,
                 proxy: $proxy,
                 verbose: $verbose,
                 timeoutSeconds: $reqRaw['timeoutSeconds'] ?? null,
@@ -805,7 +809,7 @@ class Bblslug
                  * @return array{status:int,body:string,headers:array<string,array<int,string>>,
                  *     debugRequest:string,debugResponse:string}
                  */
-                static function (array $next) use ($reqHeaders, $apiKey, $proxy, $verbose, $deadline): array {
+                static function (array $next) use ($reqHeaders, $maskPatterns, $proxy, $verbose, $deadline): array {
                     $headers = array_values(array_filter(
                         $reqHeaders,
                         static fn (string $header): bool => stripos($header, 'Content-Type:') !== 0
@@ -816,7 +820,7 @@ class Bblslug
                             url: $next['url'],
                             body: $next['body'],
                             headers: array_merge($headers, $next['headers']),
-                            maskPatterns: array_merge([$apiKey], $next['maskPatterns']),
+                            maskPatterns: array_merge($maskPatterns, $next['maskPatterns']),
                             proxy: $proxy,
                             verbose: $verbose,
                             timeoutSeconds: $next['timeoutSeconds'],
@@ -824,7 +828,7 @@ class Bblslug
                         );
                     } catch (\RuntimeException $e) {
                         $deadline?->check();
-                        throw new \RuntimeException((new SecretMasker([$apiKey]))->redact($e->getMessage()));
+                        throw new \RuntimeException((new SecretMasker($maskPatterns))->redact($e->getMessage()));
                     }
                 }
             );
@@ -836,7 +840,7 @@ class Bblslug
         $debugResponse = $http['debugResponse'];
         $raw = $http['body'];
 
-        $errorMasker = new SecretMasker([$apiKey]);
+        $errorMasker = new SecretMasker($maskPatterns);
 
         // Parse response
         if ($dryRun || $localResult !== null) {
