@@ -50,6 +50,7 @@ class Help
 
         echo "\nOptions:\n";
         echo "\t{$bold}--context=TEXT{$reset}       Add translation context prompt\n";
+        echo "\t{$bold}--checkpoint=FILE{$reset}    Resume segment batches from this optional checkpoint file\n";
         echo "\t{$bold}--dry-run{$reset}            Apply filters only; save SOURCE.prepared or write STDOUT\n";
         echo "\t{$bold}--filters=F1,F2,...{$reset}  Comma-separated filters to (e.g. url, html_pre, html_code)\n";
         echo "\t{$bold}--format=FORMAT{$reset}      Required: text, html, json, structured_json, or linedJson\n";
@@ -134,6 +135,11 @@ class Help
         echo "\n\tBound segment request payloads by serialized JSON bytes\n";
         echo "\tvendor/bin/bblslug --model=openai:gpt-4o --format=text --text-transport=segments \\\n";
         echo "\t    --segment-batch-max-bytes=4096 --source=in.txt --translated=out.txt\n";
+
+        echo "\n\tResume a failed segment-batch translation\n";
+        echo "\tvendor/bin/bblslug --model=openai:gpt-4o --format=text --text-transport=segments \\\n";
+        echo "\t    --text-segment-batch-size=20 --checkpoint=translation.checkpoint \\\n";
+        echo "\t    --source=in.txt --translated=out.txt\n";
 
         echo "\n\tDry-run to inspect placeholders in a file\n";
         echo "\tvendor/bin/bblslug --model=deepl:free --format=text --filters=url,html_pre \\\n";

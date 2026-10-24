@@ -36,6 +36,7 @@ class Cli
         // Load CLI arguments
         $options = getopt("", [
             "context:",      // extra context prompt
+            "checkpoint:",   // resumable segment-batch checkpoint file
             "dry-run",       // placeholders only
             "filters:",      // comma-separated filter list
             "format:",       // text, HTML or a JSON format
@@ -87,6 +88,7 @@ class Cli
         $context    = isset($options['context']) && is_string($options['context'])
                         ? $options['context'] : null;
         $dryRun     = isset($options['dry-run']);
+        $checkpointPath = null;
         $format     = isset($options['format']) && is_string($options['format'])
                         ? $options['format'] : null;
         $htmlTransportOption = $options['html-transport'] ?? null;
@@ -138,6 +140,7 @@ class Cli
         $textBatchSizeOccurrences = 0;
         $segmentBatchMaxBytesOccurrences = 0;
         $operationTimeoutOccurrences = 0;
+        $checkpointOccurrences = 0;
         $textTransportOccurrences = 0;
         foreach ($argv as $index => $argument) {
             if ($argument === '--') {
@@ -169,6 +172,9 @@ class Cli
                 || str_starts_with($argument, '--operation-timeout=')
             ) {
                 $operationTimeoutOccurrences++;
+            }
+            if ($argument === '--checkpoint' || str_starts_with($argument, '--checkpoint=')) {
+                $checkpointOccurrences++;
             }
             if ($argument === '--text-transport=') {
                 Help::error('--text-transport requires document or segments.');
@@ -236,6 +242,13 @@ class Cli
                 if (!is_string($next) || $next === '' || str_starts_with($next, '--')) {
                     Help::error('--operation-timeout requires a value.');
                 }
+            } elseif ($argument === '--checkpoint=') {
+                Help::error('--checkpoint requires a non-empty path.');
+            } elseif ($argument === '--checkpoint') {
+                $next = $argv[$index + 1] ?? null;
+                if (!is_string($next) || $next === '' || str_starts_with($next, '--')) {
+                    Help::error('--checkpoint requires a path.');
+                }
             }
         }
 
@@ -253,6 +266,23 @@ class Cli
         }
         if ($operationTimeoutOccurrences > 1) {
             Help::error('--operation-timeout may only be specified once.');
+        }
+        if ($checkpointOccurrences > 1) {
+            Help::error('--checkpoint may only be specified once.');
+        }
+        if (isset($options['checkpoint'])) {
+            $rawCheckpointPath = $options['checkpoint'];
+            if (is_array($rawCheckpointPath)) {
+                Help::error('--checkpoint may only be specified once.');
+            }
+            if (
+                !is_string($rawCheckpointPath) || $rawCheckpointPath === ''
+                || str_contains($rawCheckpointPath, "\0")
+                || preg_match('/\A[A-Za-z][A-Za-z0-9+.-]*:/', $rawCheckpointPath) === 1
+            ) {
+                Help::error('--checkpoint requires a non-empty path.');
+            }
+            $checkpointPath = $rawCheckpointPath;
         }
 
         // This option is intentionally singleton. getopt() returns an array for
@@ -412,6 +442,17 @@ class Cli
         if ($textSegmentBatchSize !== null && $htmlSegmentBatchSize !== null) {
             Help::error('--text-segment-batch-size cannot be combined with --html-segment-batch-size.');
         }
+        if ($checkpointPath !== null) {
+            if ($textTransport !== 'segments' && $htmlTransport !== 'segments') {
+                Help::error('--checkpoint requires --text-transport=segments or --html-transport=segments.');
+            }
+            if ($textSegmentBatchSize === null && $htmlSegmentBatchSize === null && $segmentBatchMaxBytes === null) {
+                Help::error(
+                    '--checkpoint requires --text-segment-batch-size, --html-segment-batch-size, '
+                    . 'or --segment-batch-max-bytes.'
+                );
+            }
+        }
 
         if ($htmlJsonPointers !== [] && !in_array($format, ['json', 'structured_json', 'linedJson'], true)) {
             Help::error('--validate-html-json-pointer requires a JSON format.');
@@ -431,6 +472,24 @@ class Cli
         }
         if ($textTransport === 'segments' && isset($options['response-schema'])) {
             Help::error('--response-schema is incompatible with --text-transport=segments.');
+        }
+
+        if ($checkpointPath !== null) {
+            $protected = [];
+            if ($sourceFile !== null) {
+                $protected['--source'] = $sourceFile;
+                $protected['prepared output'] = $sourceFile . '.prepared';
+            }
+            if ($outFile !== null && $outFile !== '') {
+                $protected['--translated'] = $outFile;
+            }
+            foreach ([$checkpointPath, $checkpointPath . '.lock'] as $statePath) {
+                foreach ($protected as $label => $protectedPath) {
+                    if (self::pathsAlias($statePath, $protectedPath)) {
+                        Help::error('--checkpoint and its lock must not overwrite ' . $label . '.');
+                    }
+                }
+            }
         }
 
 
@@ -695,6 +754,7 @@ class Cli
                 textSegmentBatchSize: $textSegmentBatchSize,
                 segmentBatchMaxBytes: $segmentBatchMaxBytes,
                 operationTimeoutSeconds: $operationTimeoutSeconds,
+                checkpointPath: $checkpointPath,
             );
         } catch (\Throwable $e) {
             Help::error($e->getMessage());
@@ -748,9 +808,13 @@ class Cli
         }
         // Usage visualization
         /** @var array<string, array{total?: int, breakdown?: array<string,int>}> $consumed */
-        $consumed = $res['consumed'];
+        $consumed = $checkpointPath !== null ? ($res['consumedThisRun'] ?? []) : $res['consumed'];
 
-        fwrite($stderr, "\n{$bold}Usage metrics:{$reset}\n");
+        if ($checkpointPath !== null) {
+            fwrite($stderr, 'Checkpoint packets reused: ' . ($res['reusedBatches'] ?? 0) . "\n");
+        }
+        $usageTitle = $checkpointPath !== null ? 'Usage metrics (this run)' : 'Usage metrics';
+        fwrite($stderr, "\n{$bold}{$usageTitle}:{$reset}\n");
         if (empty($consumed)) {
             fwrite($stderr, "\t(not provided)\n");
         } else {
@@ -792,5 +856,33 @@ class Cli
         }
 
         return getenv($name);
+    }
+
+    /** Resolve an existing path, or resolve its parent and retain its basename. */
+    private static function pathsAlias(string $left, string $right): bool
+    {
+        if (self::canonicalPath($left) === self::canonicalPath($right)) {
+            return true;
+        }
+        $leftStat = @stat($left);
+        $rightStat = @stat($right);
+        return $leftStat !== false && $rightStat !== false
+            && $leftStat['dev'] === $rightStat['dev'] && $leftStat['ino'] === $rightStat['ino'];
+    }
+
+    private static function canonicalPath(string $path): string
+    {
+        $resolved = realpath($path);
+        if ($resolved !== false) {
+            return $resolved;
+        }
+        $directory = dirname($path);
+        $parent = realpath($directory);
+        if ($parent === false) {
+            $parent = str_starts_with($directory, DIRECTORY_SEPARATOR)
+                ? $directory
+                : getcwd() . DIRECTORY_SEPARATOR . $directory;
+        }
+        return rtrim($parent, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . basename($path);
     }
 }

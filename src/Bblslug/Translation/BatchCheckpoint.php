@@ -1,0 +1,283 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Bblslug\Translation;
+
+/** Durable, resumable storage for a sequence of translated packets. */
+final class BatchCheckpoint
+{
+    private const VERSION = 1;
+
+    /** @var resource */
+    private $lock;
+    private string $path;
+    private string $fingerprint;
+    private int $packetCount;
+    /** @var list<array{text:string,httpStatus:int,consumed:array<string,array{total?:int,breakdown?:array<string,int>}>}> */
+    private array $records = [];
+    /** @var list<string> */
+    private array $checksums = [];
+
+    public function __construct(string $path, string $fingerprint, int $packetCount)
+    {
+        self::validatePath($path);
+        if ($fingerprint === '' || str_contains($fingerprint, "\0") || $packetCount < 0) {
+            throw new \InvalidArgumentException('Invalid checkpoint identity');
+        }
+        $parent = dirname($path);
+        if (!is_dir($parent)) {
+            throw new \RuntimeException('Checkpoint parent directory does not exist');
+        }
+        $this->path = $path;
+        $this->fingerprint = $fingerprint;
+        $this->packetCount = $packetCount;
+        $this->lock = self::openLock($path . '.lock');
+
+        if (file_exists($path) || is_link($path)) {
+            self::assertRegular($path, 'checkpoint');
+            $data = @file_get_contents($path);
+            if ($data === false) {
+                throw new \RuntimeException('Could not read checkpoint');
+            }
+            [$storedFingerprint, $storedCount, $records, $checksums] = self::decode($data);
+            if ($storedFingerprint !== $fingerprint || $storedCount !== $packetCount) {
+                throw new \RuntimeException('Checkpoint identity mismatch');
+            }
+            $this->records = $records;
+            $this->checksums = $checksums;
+        } else {
+            $this->persist();
+        }
+    }
+
+    public function __destruct()
+    {
+        if (is_resource($this->lock)) {
+            flock($this->lock, LOCK_UN);
+            fclose($this->lock);
+        }
+    }
+
+    /** @return array{text:string,httpStatus:int,consumed:array<string,array{total?:int,breakdown?:array<string,int>}>}|null */
+    public function get(int $index): ?array
+    {
+        if ($index < 0 || $index >= count($this->records)) {
+            return null;
+        }
+        return $this->records[$index];
+    }
+
+    /** @param array<string,mixed> $record */
+    public function append(int $index, array $record): void
+    {
+        if ($index < 0 || $index !== count($this->records) || $index >= $this->packetCount) {
+            throw new \InvalidArgumentException('Checkpoint append index is not the current prefix');
+        }
+        $record = self::normalizeRecord($record);
+        $this->records[] = $record;
+        $this->checksums[] = self::checksum($record);
+        try {
+            $this->persist();
+        } catch (\Throwable $exception) {
+            array_pop($this->records);
+            array_pop($this->checksums);
+            throw new \RuntimeException('Could not persist checkpoint', 0, $exception);
+        }
+    }
+
+    /** @return array{string,int,list<array{text:string,httpStatus:int,consumed:array<string,array{total?:int,breakdown?:array<string,int>}>}>,list<string>} */
+    private static function decode(string $data): array
+    {
+        try {
+            $value = json_decode($data, true, 512, JSON_THROW_ON_ERROR);
+        } catch (\Throwable $exception) {
+            throw new \RuntimeException('Malformed checkpoint', 0, $exception);
+        }
+        if (!is_array($value)) {
+            throw new \RuntimeException('Malformed checkpoint');
+        }
+        $keys = array_keys($value);
+        sort($keys);
+        $expected = ['checksums', 'contiguousPrefixRecords', 'fingerprint', 'packetCount', 'version'];
+        sort($expected);
+        if (
+            $keys !== $expected || $value['version'] !== self::VERSION || !is_string($value['fingerprint'])
+            || !is_int($value['packetCount']) || $value['packetCount'] < 0
+            || !is_array($value['contiguousPrefixRecords']) || !array_is_list($value['contiguousPrefixRecords'])
+            || !is_array($value['checksums']) || !array_is_list($value['checksums'])
+            || count($value['contiguousPrefixRecords']) !== count($value['checksums'])
+            || count($value['contiguousPrefixRecords']) > $value['packetCount']
+        ) {
+            throw new \RuntimeException('Malformed checkpoint');
+        }
+        /** @var list<array{text:string,httpStatus:int,consumed:array<string,array{total?:int,breakdown?:array<string,int>}>}> $records */
+        $records = [];
+        /** @var list<string> $checksums */
+        $checksums = [];
+        foreach ($value['contiguousPrefixRecords'] as $i => $raw) {
+            if (!is_array($raw)) {
+                throw new \RuntimeException('Malformed checkpoint');
+            }
+            /** @var array<string,mixed> $raw */
+            $record = self::normalizeRecord($raw);
+            $checksum = $value['checksums'][$i];
+            if (
+                !is_string($checksum) || !preg_match('/\A[0-9a-f]{64}\z/', $checksum)
+                || !hash_equals($checksum, self::checksum($record))
+            ) {
+                throw new \RuntimeException('Checkpoint checksum mismatch');
+            }
+            $records[] = $record;
+            $checksums[] = $checksum;
+        }
+        return [$value['fingerprint'], $value['packetCount'], $records, $checksums];
+    }
+
+    /**
+     * @param array<string,mixed> $record
+     * @return array{text:string,httpStatus:int,consumed:array<string,array{total?:int,breakdown?:array<string,int>}>}
+     */
+    private static function normalizeRecord(array $record): array
+    {
+        $keys = array_keys($record);
+        sort($keys);
+        $expected = ['consumed', 'httpStatus', 'text'];
+        sort($expected);
+        if (
+            $keys !== $expected || !is_string($record['text']) || !is_int($record['httpStatus'])
+            || $record['httpStatus'] < 200 || $record['httpStatus'] > 299 || !is_array($record['consumed'])
+        ) {
+            throw new \InvalidArgumentException('Invalid checkpoint record');
+        }
+        $consumed = [];
+        foreach ($record['consumed'] as $name => $usage) {
+            if (!is_string($name) || $name === '' || !is_array($usage)) {
+                throw new \InvalidArgumentException('Invalid checkpoint usage');
+            }
+            $usageKeys = array_keys($usage);
+            sort($usageKeys);
+            $allowed = ['breakdown', 'total'];
+            sort($allowed);
+            if (array_diff($usageKeys, $allowed) !== []) {
+                throw new \InvalidArgumentException('Invalid checkpoint usage');
+            }
+            $normalized = [];
+            if (array_key_exists('total', $usage)) {
+                if (!is_int($usage['total']) || $usage['total'] < 0) {
+                    throw new \InvalidArgumentException('Invalid checkpoint usage');
+                }
+                $normalized['total'] = $usage['total'];
+            }
+            if (array_key_exists('breakdown', $usage)) {
+                if (!is_array($usage['breakdown'])) {
+                    throw new \InvalidArgumentException('Invalid checkpoint usage');
+                }
+                $breakdown = [];
+                foreach ($usage['breakdown'] as $key => $amount) {
+                    if (!is_string($key) || !is_int($amount) || $amount < 0) {
+                        throw new \InvalidArgumentException('Invalid checkpoint usage');
+                    }
+                    $breakdown[$key] = $amount;
+                }
+                ksort($breakdown, SORT_STRING);
+                $normalized['breakdown'] = $breakdown;
+            }
+            $consumed[$name] = $normalized;
+        }
+        ksort($consumed, SORT_STRING);
+        return [
+            'text' => $record['text'],
+            'httpStatus' => $record['httpStatus'],
+            'consumed' => $consumed,
+        ];
+    }
+
+    /** @param array<string,mixed> $record */
+    private static function checksum(array $record): string
+    {
+        $encoded = json_encode(
+            $record,
+            JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR
+        );
+        return hash('sha256', $encoded);
+    }
+
+    private function persist(): void
+    {
+        $json = json_encode([
+            'version' => self::VERSION,
+            'fingerprint' => $this->fingerprint,
+            'packetCount' => $this->packetCount,
+            'contiguousPrefixRecords' => $this->records,
+            'checksums' => $this->checksums,
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR) . "\n";
+        $temp = @tempnam(dirname($this->path), '.batch-checkpoint-');
+        if ($temp === false) {
+            throw new \RuntimeException('Could not create checkpoint temporary file');
+        }
+        try {
+            if (realpath(dirname($temp)) !== realpath(dirname($this->path))) {
+                throw new \RuntimeException('Checkpoint temporary file must share its parent directory');
+            }
+            if (!@chmod($temp, 0600)) {
+                throw new \RuntimeException('Could not restrict checkpoint file permissions');
+            }
+            $handle = @fopen($temp, 'wb');
+            if ($handle === false || fwrite($handle, $json) !== strlen($json) || !fflush($handle)) {
+                if (is_resource($handle)) {
+                    fclose($handle);
+                }
+                throw new \RuntimeException('Could not write checkpoint temporary file');
+            }
+            if (function_exists('fsync') && !@fsync($handle)) {
+                fclose($handle);
+                throw new \RuntimeException('Could not sync checkpoint temporary file');
+            }
+            fclose($handle);
+            if (!@rename($temp, $this->path)) {
+                throw new \RuntimeException('Could not install checkpoint');
+            }
+            $temp = '';
+            @chmod($this->path, 0600);
+        } finally {
+            if ($temp !== '') {
+                @unlink($temp);
+            }
+        }
+    }
+
+    private static function validatePath(string $path): void
+    {
+        if ($path === '' || str_contains($path, "\0") || preg_match('/\A[A-Za-z][A-Za-z0-9+.-]*:/', $path)) {
+            throw new \InvalidArgumentException('Checkpoint path must be a local filesystem path');
+        }
+    }
+
+    /** @return resource */
+    private static function openLock(string $path)
+    {
+        if (is_link($path)) {
+            throw new \RuntimeException('Checkpoint lock must not be a symlink');
+        }
+        if (file_exists($path) && !is_file($path)) {
+            throw new \RuntimeException('Checkpoint lock is not regular');
+        }
+        $handle = @fopen($path, file_exists($path) ? 'r+b' : 'x+b');
+        if ($handle === false || !flock($handle, LOCK_EX | LOCK_NB)) {
+            if (is_resource($handle)) {
+                fclose($handle);
+            }
+            throw new \RuntimeException('Checkpoint is locked');
+        }
+        @chmod($path, 0600);
+        return $handle;
+    }
+
+    private static function assertRegular(string $path, string $label): void
+    {
+        if (is_link($path) || !is_file($path)) {
+            throw new \RuntimeException('Checkpoint ' . $label . ' is not regular');
+        }
+    }
+}

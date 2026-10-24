@@ -415,8 +415,8 @@ fragment identifiers, nonempty string values, duplicate keys, introduced
 placeholders and CR/LF. A failed packet stops the operation, reports its position
 and the number of earlier completed packets, and returns no partial document.
 CLI output files are written only after the complete translation succeeds.
-There is no automatic retry or resume; earlier successful packets may already
-have been billed. Network timeouts and output budgets apply per request.
+There is no automatic retry. The optional checkpoint below can retain successful
+packets for a later run; earlier successful packets may already have been billed. Network timeouts and output budgets apply per request.
 
 With a batch size set, the result includes `batches` with ordered packet summaries
 and aggregated `consumed` usage. `rawResponseBody` is a JSON array of raw response
@@ -468,7 +468,8 @@ Words and tokens are never cut in the middle. An unbreakable word, URL, or an
 input without suitable whitespace that cannot fit the cap causes an error before
 HTTP. Protect opaque values with filters where appropriate. Smaller fragments
 can reduce translation fluency and context; reconstruction checks cannot prove
-translation fidelity. Byte limits do not enable automatic retries or resume.
+translation fidelity. Byte limits do not enable retries or persistence by
+themselves; use a checkpoint below to resume confirmed successful packets.
 CLI dry-run validates the byte plan while returning prepared source text.
 
 The default is `null`, preserving existing count-only and single-request behavior.
@@ -479,6 +480,67 @@ A 2026-10-24 Gemini 2.5 Flash check passed both plain text and HTML with a
 180-byte cap: each example used three packets, including pieces of a long source
 fragment. Text line separators and HTML structure were preserved. This verifies
 the transport and reconstruction on those examples, not translation fidelity.
+
+### Resume confirmed successful segment packets
+
+Pass `checkpointPath: '/private/work/translation.checkpoint.json'` in PHP or
+`--checkpoint=translation.checkpoint.json` in the CLI alongside a segment count
+or byte cap. This works for text, HTML and selected HTML strings in JSON.
+
+```bash
+vendor/bin/bblslug --model=google:gemini-2.5-flash --format=text \
+  --text-transport=segments --text-segment-batch-size=25 \
+  --checkpoint=translation.checkpoint.json \
+  --source=input.txt --translated=output.txt
+```
+
+After a failed run, repeat the same command. Missing state is created before the
+first HTTP request; existing state reuses its contiguous prefix of confirmed,
+validated packets and sends only the rest. A fully completed checkpoint rebuilds
+the translation without HTTP. Each new packet is persisted after its response
+passes the mandatory segment protocol checks. Invalid or missing fragments are
+never saved. The final output file is still written only after complete success.
+
+Compatibility is checked against source bytes, effective model configuration,
+translation settings, filters, actual loaded prompt templates, validation flags,
+packet boundaries and library source code. A mismatch or corrupt checkpoint
+fails before new HTTP requests and preserves the file. A library update also
+invalidates the checkpoint conservatively. An API key or proxy may change;
+HTTP environment settings and the operation timeout may also change. Each new
+invocation gets a fresh operation time budget.
+
+The local JSON file contains translated fragments, normalized usage and success
+statuses, plus identity/checksum metadata. It does not serialize authentication
+settings, input requests, raw provider responses or debug logs. It still contains
+translation content and should be handled like an output document. New state and
+lock files use mode `0600`. Writes use a temporary file in the same directory and
+atomic replacement. A nonblocking exclusive lock prevents two processes from
+using the same checkpoint concurrently. The empty `.lock` file remains after the
+run; the lock itself is released when the operation ends. Parent directories must
+already exist. State/lock symlinks are rejected. CLI state and lock paths must
+not alias source, prepared output or translated output paths. Dry-run and inputs
+without translatable fragments do not read or create state files.
+
+With a checkpoint enabled, `batches` includes `reused` for each packet and the
+result adds `reusedBatches` and `consumedThisRun`. Existing `consumed` describes the
+whole document, including historical saved usage; `consumedThisRun` includes only
+new successful requests in this invocation. The CLI displays current-run usage.
+A reused packet has its historical success status, empty debug fields, and an
+empty string in the ordered `rawResponseBody` array because raw responses are not
+stored. Without `checkpointPath`, result fields and behavior stay unchanged.
+
+Checkpoints are trusted local state, not a signed archive or a distributed job
+queue. They retain only confirmed responses: a timed-out request or a crash
+between receiving and persisting a response may have been billed without a saved
+record. Retrying such a packet may incur another charge. In-flight DeepL uploads
+are not resumed; only completed translated packets are retained. No automatic
+request retries are introduced.
+
+A 2026-10-24 Gemini 2.5 Flash check stopped the process after saving packet one
+of three. The next invocation reused that packet and sent only the remaining
+two. A third invocation reused all three with no HTTP requests and produced an
+identical result. Source CR/LF separators were preserved; known API/proxy
+credentials were absent from the saved state.
 
 ### Keep HTML markup local during translation
 

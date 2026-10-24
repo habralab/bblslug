@@ -11,6 +11,8 @@ use Bblslug\Models\ModelDriverInterface;
 use Bblslug\Models\ModelVariables;
 use Bblslug\Models\Prompts;
 use Bblslug\Models\UsageExtractor;
+use Bblslug\Translation\BatchCheckpoint;
+use Bblslug\Translation\CheckpointIdentity;
 use Bblslug\Translation\HtmlTextDocument;
 use Bblslug\Translation\JsonHtmlDocument;
 use Bblslug\Translation\SegmentBatches;
@@ -97,6 +99,7 @@ class Bblslug
      * @param int|null $textSegmentBatchSize Maximum text segments per sequential request; null keeps one request.
      * @param int|null $segmentBatchMaxBytes Maximum serialized segment JSON bytes; splits at whitespace if needed.
      * @param int|null $operationTimeoutSeconds Total time budget for preparation and all provider requests.
+     * @param string|null $checkpointPath Optional local file retaining validated segment packets for resume.
      *
      * @return array{
      *     original: string,
@@ -109,7 +112,9 @@ class Bblslug
      *     consumed: array<string,mixed>,
      *     lengths: array{original:int,prepared:int,translated:int},
      *     filterStats: array<array{filter:string,count:int}>,
-     *     batches?: list<array{index:int,segments:int,httpStatus:int,consumed:array<string,mixed>}>
+     *     batches?: list<array{index:int,segments:int,httpStatus:int,consumed:array<string,mixed>,reused?:bool}>,
+     *     reusedBatches?: int,
+     *     consumedThisRun?: array<string,array{total?:int,breakdown?:array<string,int>}>
      * }
      *
      * @throws \InvalidArgumentException If inputs are invalid.
@@ -140,9 +145,20 @@ class Bblslug
         string $textTransport = 'document',
         ?int $textSegmentBatchSize = null,
         ?int $segmentBatchMaxBytes = null,
-        ?int $operationTimeoutSeconds = null
+        ?int $operationTimeoutSeconds = null,
+        ?string $checkpointPath = null
     ): array {
         $deadline = $operationTimeoutSeconds !== null ? new OperationDeadline($operationTimeoutSeconds) : null;
+        if (
+            $checkpointPath !== null
+            && (
+                $checkpointPath === '' || str_contains($checkpointPath, "\0")
+                || preg_match('/\A[A-Za-z][A-Za-z0-9+.-]*:/', $checkpointPath) === 1
+                || ($htmlSegmentBatchSize === null && $textSegmentBatchSize === null && $segmentBatchMaxBytes === null)
+            )
+        ) {
+            throw new \InvalidArgumentException('checkpointPath requires a local path and configured segment batching');
+        }
         if (
             $segmentBatchMaxBytes !== null
             && ($segmentBatchMaxBytes < 1 || ($textTransport !== 'segments' && $htmlTransport !== 'segments'))
@@ -375,10 +391,40 @@ class Bblslug
                 $requests[] = $driver->buildRequest($model, $payload, $options);
             }
         }
+        $checkpoint = null;
+        if ($checkpointPath !== null && $batching && !$dryRun) {
+            $identity = CheckpointIdentity::create([
+                'source' => $text, 'format' => $format, 'modelKey' => $modelKey, 'model' => $model,
+                'variables' => $variables, 'filters' => $filtersList, 'promptKey' => $promptKey,
+                'validate' => $validate, 'validateEmbeddedJson' => $validateEmbeddedJson,
+                'validateHtmlJsonPointers' => $validateHtmlJsonPointers, 'htmlJsonPointers' => $htmlJsonPointers,
+                'htmlTransport' => $htmlTransport, 'textTransport' => $textTransport, 'payloads' => $payloads,
+                'htmlSegmentBatchSize' => $htmlSegmentBatchSize, 'textSegmentBatchSize' => $textSegmentBatchSize,
+                'segmentBatchMaxBytes' => $segmentBatchMaxBytes,
+            ], $promptKey);
+            $deadline?->check();
+            $checkpoint = new BatchCheckpoint($checkpointPath, $identity, count($payloads));
+            // Validate every retained packet before issuing any new paid request.
+            foreach ($payloads as $savedIndex => $savedPayload) {
+                $deadline?->check();
+                $saved = $checkpoint->get($savedIndex);
+                if ($saved === null) {
+                    break;
+                }
+                $savedPacket = json_decode($savedPayload, false, 512, JSON_THROW_ON_ERROR);
+                if (!$savedPacket instanceof \stdClass) {
+                    throw new \LogicException('Checkpoint packet must be an object');
+                }
+                $savedIds = array_keys(get_object_vars($savedPacket));
+                SegmentTranslations::decode($saved['text'], $savedIds, $segmentLabel, $textTransport !== 'segments');
+            }
+        }
         $emptySegments = $segmentDocument !== null && !$segmentDocument->hasTexts();
         $providers = [];
         $batchSummaries = [];
         $batchUsages = [];
+        $freshUsages = [];
+        $reusedBatches = 0;
         $combined = [];
         $debugRequest = '';
         $debugResponse = '';
@@ -389,20 +435,32 @@ class Bblslug
             }
             $protocolDebug = '';
             try {
-                $provider = self::executePrepared(
-                    $driver,
-                    $model,
-                    $modelKey,
-                    $payload,
-                    $options,
-                    $apiKey,
-                    $proxy,
-                    static fn (string $message, string $level = 'info') => $say($onFeedback, $message, $level),
-                    $index === 0 ? $valLogPre : '',
-                    $emptySegments ? ($jsonHtmlDocument !== null ? $text : $prepared) : null,
-                    $requests[$index] ?? null,
-                    $deadline
-                );
+                $deadline?->check();
+                $saved = $checkpoint?->get($index);
+                $reused = $saved !== null;
+                if ($saved !== null) {
+                    $provider = [
+                        'text' => $saved['text'], 'usage' => null, 'httpStatus' => $saved['httpStatus'],
+                        'debugRequest' => '', 'debugResponse' => '', 'rawResponseBody' => '',
+                    ];
+                    ++$reusedBatches;
+                    $say($onFeedback, 'Reusing ' . $batchLabel, 'info');
+                } else {
+                    $provider = self::executePrepared(
+                        $driver,
+                        $model,
+                        $modelKey,
+                        $payload,
+                        $options,
+                        $apiKey,
+                        $proxy,
+                        static fn (string $message, string $level = 'info') => $say($onFeedback, $message, $level),
+                        $index === 0 ? $valLogPre : '',
+                        $emptySegments ? ($jsonHtmlDocument !== null ? $text : $prepared) : null,
+                        $requests[$index] ?? null,
+                        $deadline
+                    );
+                }
                 if ($batching) {
                     $protocolDebug = $verbose ? "\n\n" . $provider['debugRequest'] . $provider['debugResponse'] : '';
                     $packet = json_decode($payload, false, 512, JSON_THROW_ON_ERROR);
@@ -416,12 +474,25 @@ class Bblslug
                         $segmentLabel,
                         $textTransport !== 'segments'
                     );
-                    $usage = UsageExtractor::extract($model, $provider['usage']);
+                    $usage = $saved !== null
+                        ? $saved['consumed'] : UsageExtractor::extract($model, $provider['usage']);
+                    if (!$reused) {
+                        $freshUsages[] = $usage;
+                        if ($checkpoint !== null) {
+                            $checkpoint->append($index, [
+                                'text' => $provider['text'], 'httpStatus' => $provider['httpStatus'],
+                                'consumed' => $usage,
+                            ]);
+                        }
+                    }
                     $batchUsages[] = $usage;
                     $batchSummaries[] = [
                         'index' => $index + 1, 'segments' => count($expected),
                         'httpStatus' => $provider['httpStatus'], 'consumed' => $usage,
                     ];
+                    if ($checkpointPath !== null) {
+                        $batchSummaries[array_key_last($batchSummaries)]['reused'] = $reused;
+                    }
                     $say($onFeedback, 'Completed ' . $batchLabel, 'info');
                 }
             } catch (\RuntimeException $exception) {
@@ -604,6 +675,10 @@ class Bblslug
         ];
         if ($batchConfigured) {
             $resultData['batches'] = $batchSummaries;
+        }
+        if ($checkpointPath !== null) {
+            $resultData['reusedBatches'] = $reusedBatches;
+            $resultData['consumedThisRun'] = UsageExtractor::sum($freshUsages);
         }
         $deadline?->check();
         return $resultData;
