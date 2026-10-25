@@ -402,7 +402,10 @@ returns prepared plain text; whitespace-only or placeholder-only input needs no
 HTTP request. Segment mode requires valid UTF-8 and rejects `response_schema`.
 
 The default is still `textTransport: 'document'` / `--text-transport=document`.
-Document mode does not detect omitted paragraphs. Segment mode detects missing
+Document mode does not detect omitted paragraphs. Empty or whitespace-only
+provider translations for nonempty prepared input are rejected, including with
+`--no-validate`; dry-run and empty/whitespace-only input are exempt. This catches
+empty replies, not omissions inside a nonempty reply. Segment mode detects missing
 fragment identifiers, but cannot prove that every sentence within a returned
 fragment was translated, or that the translation is accurate. Translating lines
 separately may reduce fluency across line boundaries. Custom prompt groups need

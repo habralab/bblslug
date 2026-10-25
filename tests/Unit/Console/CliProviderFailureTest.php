@@ -68,9 +68,58 @@ final class CliProviderFailureTest extends TestCase
         self::assertFileDoesNotExist($source . '.prepared');
     }
 
-    /** @return array{exitCode:int,stdout:string,stderr:string} */
-    private function runCli(string $case, string $model, string $key, string $source, string $destination): array
+    /**
+     * @dataProvider emptyTranslationCases
+     */
+    public function testEmptyProviderTranslationDoesNotOverwriteFilesOrWriteStdout(
+        string $case,
+        bool $noValidate
+    ): void {
+        $source = $this->temporaryDirectory . '/source.txt';
+        $destination = $this->temporaryDirectory . '/translated.txt';
+        $sourceContents = "source line one\nsource line two";
+        $destinationContents = 'existing destination marker';
+        file_put_contents($source, $sourceContents);
+        file_put_contents($destination, $destinationContents);
+
+        $result = $this->runCli(
+            $case,
+            'openai:gpt-5-mini',
+            'cli-secret +/key=value',
+            $source,
+            $destination,
+            $noValidate
+        );
+
+        self::assertNotSame(0, $result['exitCode']);
+        self::assertSame('', $result['stdout']);
+        self::assertStringContainsString(
+            'Provider returned an empty translation for nonempty input',
+            $result['stderr']
+        );
+        self::assertSame($sourceContents, file_get_contents($source));
+        self::assertSame($destinationContents, file_get_contents($destination));
+        self::assertFileDoesNotExist($source . '.prepared');
+    }
+
+    /** @return array<string,array{case:string,noValidate:bool}> */
+    public static function emptyTranslationCases(): array
     {
+        return [
+            'empty with validation' => ['empty-translation', false],
+            'whitespace without validation' => ['whitespace-translation', true],
+        ];
+    }
+
+    /** @return array{exitCode:int,stdout:string,stderr:string} */
+    private function runCli(
+        string $case,
+        string $model,
+        string $key,
+        string $source,
+        string $destination,
+        bool $noValidate = false
+    ): array {
         $command = [
             PHP_BINARY,
             dirname(__DIR__, 2) . '/Fixtures/console/provider_failure.php',
@@ -80,6 +129,9 @@ final class CliProviderFailureTest extends TestCase
             '--translated=' . $destination,
             '--verbose',
         ];
+        if ($noValidate) {
+            $command[] = '--no-validate';
+        }
         $environment = [
             'BBLSLUG_TEST_CASE' => $case,
             'BBLSLUG_OPENAI_API_KEY' => $key,

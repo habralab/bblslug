@@ -871,6 +871,12 @@ class Bblslug
                     )
                 );
             }
+            if (
+                preg_match('/\A\s*\z/u', $requestText) !== 1
+                && preg_match('/\A\s*\z/u', $translated) === 1
+            ) {
+                throw new \RuntimeException('Provider returned an empty translation for nonempty input');
+            }
             $feedback("Provider response parsed", 'info');
         }
 
