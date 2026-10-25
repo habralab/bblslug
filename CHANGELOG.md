@@ -8,263 +8,144 @@ The format is based on [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ### Added
 
-- Yandex native JSON-object output using Foundation `jsonObject` or Chat
-  Completions `response_format`, with `json_transport=auto|native|markers`.
-  Auto selects object-root JSON with the standard prompt on declared-capable
-  Lite/Pro models; other roots, formats, models, and custom groups keep markers.
-  Native responses are checked as JSON objects without fence cleanup or escape
-  repair. Completion/refusal, schema/scalar, and strict segment checks remain.
-  Chat Completions usage now reaches the existing usage normalizer.
-  Pro passed large 179-fragment native API/CLI batch runs; Lite still exhibited omitted
-  keys and a later content-filter rejection, correctly stopping without partial
-  results. Valid JSON alone does not establish translation completeness.
-
-
-- Explicit sequential HTML segment batches through `htmlSegmentBatchSize` and
-  `--html-segment-batch-size`, for HTML and selected HTML-in-JSON. Every packet
-  retains its original identifiers and must pass strict response checks before
-  the next request. Length/body preflight covers all packets before HTTP. Errors
-  stop further requests without returning a partial document or overwriting files.
-  No retries or fallback requests are added. Optional batch summaries and summed
-  provider usage expose the multiple operations; raw responses remain available
-  as an ordered JSON array of strings. Default single-request behavior is unchanged.
-  A small Grok CLI JSON case passed three packets. The large check remained
-  incomplete: Grok timed out on packet 7/8, and Yandex Lite/Pro returned invalid
-  JSON framing (Lite also had a syntax error). No automatic retries were made.
-
-
-- HTML segment translation inside caller-selected JSON strings through
-  `htmlJsonPointers` / repeatable `--html-json-pointer`, with `htmlTransport=segments`
-  and `json`/`linedJson`. Filters run within selected HTML strings; unselected JSON
-  bytes and exact scalar tokens stay local and unchanged. Pointer resolution,
-  source JSON ambiguity, and fragment protocol checks remain mandatory even with
-  container validation disabled. `structured_json`/`response_schema` are rejected
-  because their outer schema does not describe the internal fragment payload.
-  Ordinary HTML and selected HTML-in-JSON share the strict segment response parser.
-  Five recorded-response replays and fresh Gemini API/CLI checks passed on a large
-  JSON example, preserving unselected bytes and protected HTML fragments.
-
-
-- Opt-in HTML `segments` transport (`htmlTransport` in PHP and `--html-transport`
-  in CLI). Only keyed text fragments and natural-language attribute values are
-  translated through the existing JSON transports; markup, protected blocks,
-  placeholders, and source whitespace edges are reconstructed locally. Missing,
-  duplicated, non-string, or empty fragments fail even with validation disabled.
-  Default document translation remains unchanged. Extraction is conservative and
-  does not guarantee translation fidelity across inline markup boundaries.
-  A large-document check passed 5/8 API configurations plus Gemini CLI; xAI and
-  Yandex Lite/Pro replies were rejected by the segment protocol checks.
-
-
-- Opt-in HTML validation at caller-selected JSON Pointers through
-  `validateHtmlJsonPointers` and repeatable CLI `--validate-html-json-pointer`.
-  Source selections are checked before HTTP; translated HTML syntax and structure
-  are checked after placeholder restoration. No field names are inferred. Existing
-  default JSON behavior is unchanged, and `--no-validate` disables the checks.
-
-
-- Preserved the pending XML-style JSON prompt prototype as opt-in
-  `experimental_xml`, keeping `translator.json` as the default. Clarified marker
-  framing and JSON escape examples. The template is sent verbatim without a POML
-  compiler and supports only marker-based JSON. Smoke tooling accepts an explicit
-  prompt key for API/CLI comparisons. In a small 36-request comparison, default
-  and reviewed XML prompts each passed 12/12; the original prototype passed 10/12
-  after Yandex Pro API/CLI responses added Markdown fences. This does not establish
-  an advantage for XML markup or guarantee model reliability.
-
-- Completed the pending verbose diagnostics prototype: URL and HTML filters expose
-  captured maps through an optional `DebuggableFilterInterface`, without changing
-  the existing `FilterInterface`. CLI stderr/library feedback show masked,
-  JSON-quoted previews, limited to 50 captures per filter and 200 characters per
-  value. JSON syntax and HTML syntax/structure errors include a masked restored
-  document preview in verbose mode, limited to 2000 characters. Masking happens
-  before truncation; raw capture accessors and translation payloads remain raw.
-
-- Google `json_transport=native` enables native JSON output for `json`/`linedJson`
-  without a required response schema. The request uses `application/json` and the
-  generic `structured_json` prompt; responses do not depend on translation markers.
-  Source structure, scalar, placeholder, and optional embedded JSON validation
-  remain active. Automatic selection preserves marker-only custom prompts and
-  models without a declared native JSON capability.
-  `structured_json` still requires a schema; explicit markers conflict with a schema.
-  Native Google API/CLI smoke requests passed three times each on Gemini 2.5 Flash.
-
-- Repeatable `tools/live-smoke.php` checks library and CLI translation across
-  configured providers using synthetic text, HTML, and recursively encoded JSON.
-  Credentials stay in the environment and saved diagnostics are masked. The README
-  records successful cases, provider output rejections, and a connection timeout.
-
-- Opt-in `validateEmbeddedJson` API argument and `--validate-embedded-json` CLI
-  flag validate JSON objects/arrays encoded inside source string values,
-  recursively checking translated syntax, structure, and exact non-string values.
-  Disabled by default; ordinary strings and encoded scalar values remain translatable.
+- Plain text `segments` transport (`textTransport` / `--text-transport`) with
+  required fragment IDs and local preservation of line separators, whitespace,
+  and protected placeholders. Missing, duplicate, non-string, or empty fragments
+  fail independently of optional container validation.
+- HTML `segments` transport (`htmlTransport` / `--html-transport`), including HTML
+  strings explicitly selected by `htmlJsonPointers` / `--html-json-pointer` in
+  `json` and `linedJson`. Markup and protected blocks remain local. Selected-HTML
+  JSON preserves every byte outside the selected values, including numeric tokens.
+- Sequential text/HTML packets using `textSegmentBatchSize`,
+  `htmlSegmentBatchSize`, and the corresponding CLI options. The shared
+  `segmentBatchMaxBytes` / `--segment-batch-max-bytes` limit measures serialized
+  fragment JSON; whitespace splitting retains local separators. All requests
+  are preflighted before the first HTTP call; an unsplittable token fails locally.
+- Shared `operationTimeoutSeconds` / `--operation-timeout` deadline across
+  preparation, requests, and provider workflows, including DeepL polling/download.
+- Opt-in `checkpointPath` / `--checkpoint` for batched segments. Resume validates
+  the source/model/settings/code fingerprint, checksums, and every cached packet
+  before HTTP. Only a confirmed prefix is saved, using atomic writes and a file
+  lock. Results distinguish historical usage from `consumedThisRun` and expose
+  reused packets; CLI usage reflects the current run.
+- Optional recursive validation of JSON objects/arrays encoded inside strings
+  (`validateEmbeddedJson` / `--validate-embedded-json`). Optional HTML validation
+  at explicit JSON Pointers (`validateHtmlJsonPointers` /
+  `--validate-html-json-pointer`). No consumer-specific field names are inferred.
+- Native Google JSON transport without a required response schema, and native
+  Yandex JSON-object transport on declared-capable models. `json_transport`
+  accepts `auto`, `native`, or `markers`; automatic selection respects the root,
+  format, model capabilities, and prompt group. Unsupported/custom combinations
+  retain markers; native response framing is checked without JSON escape repair.
+- Opt-in `experimental_xml` JSON prompt prototype. The standard `translator`
+  remains the default; XML markup is sent verbatim without a POML compiler.
+- Bounded, masked URL/HTML filter previews through the optional
+  `DebuggableFilterInterface`, and masked restored-container diagnostics.
+- `tools/live-smoke.php` for paid synthetic API/CLI checks with credentials kept
+  in the environment and sanitized local reports.
 
 ### Fixed
 
-- HTML structure validation compares Markdown fence delimiter sequences and
-  boundary labels, catching changed fence types/lengths, removed delimiters, and
-  duplicated existing fences. HTML entity equivalents remain comparable and
-  surrounding whitespace may vary. The previous presence-only check could accept
-  a different fence type or label when both source and output were fenced.
+- Nonempty prepared input can no longer produce a successful empty or
+  whitespace-only provider translation, even with `--no-validate`. Empty source,
+  dry-run, and local no-translation results retain their existing behavior.
+- JSON validation rejects previously nonempty strings becoming empty or Unicode
+  whitespace, with property/index diagnostics. Recursive encoded strings receive
+  the same check only when embedded JSON validation is enabled.
+- HTML validation rejects cleared prose in text containers and cleared nonempty
+  `title`, `alt`, or `aria-label` attributes. Inline text may move within its
+  container; retained opaque code, script/style, SVG, or MathML text cannot hide
+  lost prose. The same rules apply at explicitly selected HTML-in-JSON locations.
+- JSON validation accepts reordered object properties while preserving array
+  positions, container types, and exact numbers/booleans/null at each location.
+  Large integers, precise decimals, and numeric spelling changes no longer hide
+  behind floating-point rounding. Output is not repaired or reordered.
+- HTML validation preserves tag structure, non-translatable attributes, comments,
+  doctype, and Markdown fence delimiters and boundary labels. Attribute order and
+  equivalent entity spellings remain permitted.
+- Placeholder restoration rejects missing, duplicated, or unexpected markers,
+  including with container validation disabled. Literal marker-like source text
+  and overlapping placeholders no longer collide or cascade during restoration.
+- URL/HTML filters preserve exact escaped source bytes inside ordinary and
+  recursively encoded JSON strings. Complete nested HTML blocks and full tag
+  names are matched without spanning separate JSON strings. Comments, CDATA,
+  attributes, and raw-text contexts do not create false tag boundaries.
+- Unclosed protected HTML blocks, incomplete tags, unknown filters, and malformed
+  selected tag names now fail explicitly before HTTP. Self-closing SVG/MathML
+  blocks remain protected. Long URL matching failures stop translation instead
+  of silently dropping protection.
+- DeepL JSON defaults to native document upload/poll/download with bounded waits,
+  a 1 MB source limit, masked document credentials, and CLI-compatible positive
+  integer `document_timeout` values. Unsupported document options fail explicitly;
+  failures do not silently select another transport.
+- DeepL's explicit `json_transport=text_batch` translates string values in order
+  and reconstructs JSON locally with safe escaping; no-value JSON completes
+  without HTTP. Literal technical strings remain translatable.
+- DeepL HTML protects normal-text placeholders in request-local non-translatable
+  spans, preventing observed movement of a protected code block into a link.
+  Only generated wrappers are removed; invalid wrappers fail restoration.
+- Yandex rejects truncated, filtered, refused, tool-call, and invalid completion
+  states before accepting translated content. Its narrow observed opening-only
+  HTML fence compatibility path preserves source fences and rejects other
+  introduced wrappers. Chat Completions usage reaches the common normalizer.
+- Request/error diagnostics mask API keys, Yandex folder IDs, proxies, and their
+  URL/form/JSON-escaped representations. Raw translation data remains unchanged.
+- Invalid, negative, fractional, or unrepresentable usage counters retain the
+  existing zero fallback. Aggregate overflow omits only the affected metric;
+  CLI output does not invent a zero total.
+- CLI diagnostic-write failures no longer contaminate stdout. Invalid ordinary
+  output paths fail before paid requests. Regular local outputs are staged and
+  atomically replaced; provider/validation failures leave existing files intact.
+- Reserved model variables cannot override facade/CLI format, dry-run, prompt,
+  context, verbosity, or internal response context.
+- Removed obsolete cURL/reflection calls deprecated by PHP 8.5; PHP 8.2 remains
+  supported. Composer distribution archives now include the README.
+- Prompt instructions consistently describe boundary markers and prohibit added
+  Markdown fences; strict response validation remains authoritative.
 
-- Yandex HTML parsing removes the observed single opening-only Markdown fence
-  only when the request's prepared source contains no fences, including HTML
-  entity representations. Other introduced fences fail explicitly; existing source
-  fences are not stripped. Request-local context keeps concurrent calls separate.
-  Placeholder restoration and HTML validation remain active, with the original
-  response preserved. Lite/Pro text/HTML/JSON passed all 12 live API/CLI checks;
-  both Lite HTML replies exercised the compatibility path.
+### Compatibility and known limitations
 
-- Selected HTML block filters now reject unclosed non-void/raw-text blocks and
-  incomplete opening tags before HTTP, including recursively encoded JSON values.
-  Separate JSON strings cannot complete one another's tag pair. The guard applies
-  even with validation disabled or dry-run. Valid unpaired void elements retain
-  their prior behavior; `plaintext` protects through its HTML-defined end at EOF.
-  CLI dry-run catches filter errors and preserves source/destination/prepared files
-  instead of exposing a fatal stack trace.
+- Text and HTML still default to `document`. A nonempty document response may
+  omit prose; validation does not establish semantic completeness. Segment IDs
+  detect missing fragments, not omissions inside a returned nonempty fragment or
+  translation fidelity. Smaller independent fragments may reduce fluency.
+- HTML content checks do not render CSS or require each inline text node to stay
+  nonempty. Opaque/raw-text blocks are excluded from prose checks. JSON strings
+  are not interpreted as HTML or nested JSON without explicit selection/opt-in.
+- `--no-validate` / `validate: false` disables optional container/content checks;
+  placeholder integrity, required segment protocol, and the empty-response guard
+  remain mandatory. Newly rejected invalid inputs/outputs previously could appear
+  successful. Custom segment prompt groups need a JSON template.
+- Batching is sequential and opt-in. No automatic HTTP retry or transport fallback
+  is added. Byte caps measure serialized fragment JSON, not the full HTTP body or
+  exact token counts. CPU work and callbacks observe the shared deadline at
+  boundaries; it does not preempt an arbitrary blocking callback.
+- A checkpoint cannot guarantee exactly-once billing for a request interrupted
+  before its confirmed result was saved, or resume an in-flight DeepL document job.
+  It contains translated values and usage, so it should be treated as private data.
+- Atomic replacement covers eligible regular local files. Streams, hard links,
+  some ownership/permission combinations, and other compatibility cases use direct
+  writes; ACLs/extended attributes are not copied to a new inode. See the README.
+- Protected non-void HTML blocks require explicit closing tags; malformed markup
+  is not repaired. DeepL technical string contents may change and must be protected
+  explicitly when their bytes must remain unchanged.
+- Provider access, quotas, output budgets, content filters, and availability remain
+  external constraints. Registry support is not a live test of every listed model.
 
-- Gemini `json`/`linedJson` with the standard translator now use native JSON in
-  the default `auto` mode when the registry declares support. No marker matching
-  is needed on that path. Text/HTML, custom marker prompts, and undeclared models
-  retain their prior protocol. Explicit `native`/`markers` overrides remain
-  available; build and parse share the same selection. Fifteen current Gemini
-  entries declare native JSON support; Gemma entries remain conservative.
+### Verification
 
-- Composer distribution archives now include the README alongside the license and
-  changelog, so installed consumers retain usage instructions and known limitations.
-
-- Yandex rejects incomplete, truncated, content-filtered, tool-call, and invalid
-  completion states before parsing translated content, even when both translation
-  markers are present. Chat Completions refusals are also rejected. Foundation,
-  Chat Completions, and legacy completion response shapes retain compatibility
-  when metadata is absent. CLI regression checks verify that truncation/filter
-  errors leave existing source and destination files unchanged. Four live Yandex
-  Lite text/JSON requests passed through API and CLI after the fix.
-
-- DeepL native JSON document requests accept a positive integer timeout passed
-  as a CLI variable string. Zero, fractional, nonnumeric, boolean, and overflowing
-  values remain invalid. Previously `--variables=document_timeout=45` failed before
-  upload even though the equivalent integer library option worked.
-
-- JSON prompt instructions now describe the required boundary markers consistently
-  rather than simultaneously demanding a bare JSON document. HTML instructions
-  explicitly prohibit added Markdown fences. These clarifications do not guarantee
-  provider compliance; strict marker and structure validation remains enabled.
-
-- URL filters recognize Unicode-escaped schemes, slashes, hosts, paths, and query
-  strings in JSON values, including recursively encoded JSON. Matching uses
-  decoded strings and restores exact source slices; keys, numeric spellings,
-  and unrelated escapes remain unchanged. URLs cannot span separate JSON values.
-
-- Unknown filter names and malformed `html_*` tag names now fail explicitly
-  instead of silently leaving content unprotected. CLI validation runs before
-  input/output handling, including dry-run. Empty filter lists remain valid;
-  custom, namespaced, and Unicode-containing tag names remain supported.
-
-- Facade and CLI model variables reject reserved `format`, `dryRun`, `promptKey`,
-  `verbose`, `context`, and internal `responseContext` names before filtering or
-  HTTP, including dry-run and `null` values. Model overrides can no longer
-  silently replace the format or prompt selected through explicit arguments.
-  Error messages name the reserved option without exposing its supplied value.
-
-- HTTP diagnostics mask raw, URL/form-encoded, and JSON-escaped secrets in
-  request URLs, headers, bodies, response logs, and cURL network exceptions.
-  Nested JSON escaping and mixed-case hexadecimal escapes are covered;
-  overlapping secrets are replaced longest first. Transport error codes and
-  original request/response data are preserved. Provider error exceptions use
-  the same masking rules.
-
-- URL filtering avoids regex stack exhaustion on long plain or JSON-escaped
-  URLs. A regex failure now stops translation with an explicit error instead of
-  silently passing the unprotected source to the provider.
-
-- HTML filters protect escaped fragments inside JSON string values, including
-  recursively encoded JSON strings. Byte-offset mapping handles slash, quote,
-  and Unicode escapes without reserializing containers, keys, unrelated strings,
-  or exact numeric tokens. Tag pairs cannot span separate JSON values.
-
-- HTML tag filters protect complete outermost blocks when the selected tag is
-  nested inside itself. A token scan ignores apparent tags inside comments,
-  CDATA, attributes, and raw-text/RCDATA elements and restores the original bytes
-  without DOM serialization. Deep nesting does not use recursive regex matching.
-
-- HTML tag filters match the complete selected tag name, so `html_pre` no longer
-  hides `<prelude>` and `html_code` no longer hides `<code-block>`. Closing-tag
-  whitespace is accepted, tag names are treated literally, and a regex failure
-  stops filtering instead of silently sending unprotected content for translation.
-
-- DeepL `json`/`linedJson` now use native document upload, bounded status polling,
-  and download by default. Live Free/Pro checks preserve the previously changed
-  path quotation marks, including an encoded JSON object. Existing result
-  validators still run; document credentials are masked in logs and errors.
-  The source limit is 1 MB; `document_timeout` configures the waiting deadline.
-- The previous JSON value batching remains available explicitly through
-  `json_transport=text_batch`. Native document translation rejects unsupported
-  `context`/`model_type` options; errors do not trigger a silent transport fallback.
-- Driver request metadata may include an HTTP `workflow` continuation and an
-  upload timeout, handled by the facade without changing its public arguments.
-
-- DeepL HTML requests wrap normal-text placeholders in non-translatable spans
-  tied to each request. This fixes the observed movement of a protected code block
-  into a link. Only generated wrappers are removed; malformed or missing wrappers
-  are rejected. Attribute, comment, and raw-text markers are left untouched.
-
-- DeepL's explicit `text_batch` JSON transport sends string values as an ordered batch and
-  reconstructs JSON locally, including string-encoded nested containers. Keys,
-  non-string tokens, and container whitespace are not sent for translation.
-  Returned strings are safely escaped; incomplete batches are rejected.
-- DeepL JSON requests with no translatable values complete locally without HTTP.
-  Driver requests may supply per-request `responseContext` and `localResult`;
-  the facade handles these without changing existing method signatures.
-- DeepL text/HTML responses no longer decode literal former JSON pseudo-tags.
-
-- HTML validation rejects newly introduced Markdown fences at document boundaries,
-  including an opening-only fence observed in a real Yandex Lite response.
-
-- HTML validation rejects changes to the parsed tag tree, non-translatable
-  attributes, comments, and doctype. Text and `title`, `alt`, `aria-label` values
-  may translate; attribute ordering and equivalent entity spellings may change.
-
-- Removed obsolete cURL close and reflection accessibility calls that emit
-  deprecation warnings on PHP 8.5. PHP 8.2 remains supported.
-
-- JSON validation accepts reordered object properties at any depth while retaining
-  array positions and exact non-string values at each property/index. Returned
-  JSON keeps the provider's property order.
-
-- JSON validation rejects changes to numbers, booleans, and `null`, including
-  numeric changes hidden by PHP floating-point rounding. Numeric tokens must keep
-  their exact JSON spelling; translated string values remain unrestricted.
-
-- Filtered translations reject missing, duplicated, or unexpected placeholder
-  markers before restoration. Marker order may change; occurrence counts must
-  match the prepared input, even when container validation is disabled.
-
-- URL filtering preserves escaped quote boundaries inside JSON strings and HTML
-  attributes, recognizes escaped slashes at nested JSON encoding depths, and
-  supports standard `mailto:` links. Matched URL bytes are restored unchanged.
-
-- URL and HTML filters preserve literal placeholder-like text, including partial
-  and overlapping markers. Restoration avoids cascading replacements and remains
-  safe when filter instances process multiple inputs.
-
-### Known limitations
-
-- Explicit/custom marker-based Gemini JSON responses can still omit markers and
-  are rejected; default capable-model JSON uses native output. Yandex's narrow
-  opening-only HTML compatibility handling does not accept arbitrary Markdown
-  wrappers or normalize sources that already contain fences. Other malformed
-  provider output remains an error; no automatic HTTP retry is performed.
-
-- Selected non-void HTML blocks require explicit closing tags, even when HTML
-  permits an omitted end tag. Missing boundaries fail before translation; filters
-  do not repair markup. JSON-aware filtering requires valid JSON; malformed input
-  is not repaired by filters.
-
-- DeepL string contents remain translatable. Native document checks passed the
-  observed path scenario, but neither container validation nor a small live sample
-  guarantees semantic preservation of all technical data. The explicit
-  `text_batch` transport still changes path quotation marks in the observed case.
+- PHP 8.2.34 and 8.5.11: 1117 unit tests, 6421 assertions on each; PHPCS and
+  PHPStan at maximum level pass.
+- Fresh paid acceptance: 48/48 small segment cases across Gemini 2.5 Flash,
+  GPT-5 mini, Claude Haiku 4.5, Grok 4.20 non-reasoning, Yandex Lite/Pro, and
+  DeepL Free/Pro, using API/CLI and text/HTML/selected HTML-in-JSON. Checkpoint
+  reuse, protected fragments, and unselected JSON bytes were checked. This run
+  used DeepL `text_batch`; earlier native JSON Document results remain recorded.
+- Default document-mode smoke: 12/12 cases on Gemini 2.5 Flash and Yandex Lite.
+  Offline failure/resume acceptance passed for all three formats on both PHP
+  versions. This is not exhaustive model-catalogue or translation-quality testing.
+  See [the acceptance record](tools/README.md#follow-up-acceptance-for-release-preparation)
+  for scope and the separately retained earlier connection timeout.
 
 ## [0.9.0] – 2026-10-23
 

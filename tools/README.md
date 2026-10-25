@@ -161,3 +161,26 @@ the real success cases; this run did not deliberately exhaust provider balances.
 
 This is evidence for the named configurations and samples, not every registered
 model, large-document throughput, or guaranteed translation completeness.
+
+### Follow-up acceptance for release preparation
+
+After the empty-response, cleared-JSON-string, and cleared-HTML-content fixes, a
+fresh run passed **48/48** segment scenarios on the same eight configurations
+listed above, through API and CLI for text, HTML, and selected HTML-in-JSON. The
+count/byte limits and checkpoints were unchanged. Every case also passed a full
+checkpoint reuse run with identical output and no fresh translation requests.
+The two additional DeepL JSON Document cases from the earlier 50-case run were
+not repeated; this follow-up used `json_transport=text_batch` on both DeepL tiers.
+
+A fresh default document-mode check passed **12/12** cases on Gemini 2.5 Flash and
+Yandex Lite (text/HTML/JSON, API/CLI). The previous Yandex Pro connection timeout
+remains recorded above; a later success does not establish that network timeouts
+cannot recur or that a provider's translation is always complete.
+
+The offline three-format failure/resume acceptance was repeated on PHP 8.2 and
+8.5, with zero failed checks. HTTP 402, timeout, missing IDs, and malformed JSON
+retained the confirmed prefix and preserved the old destination; resume sent
+only unsaved packets and a full cache sent none. The unit suite passed on both
+versions: **1117 tests, 6421 assertions**, with PHPCS and PHPStan at maximum level
+also passing. These results prepare the next release; no additional models or
+large-document quality claims are implied.
