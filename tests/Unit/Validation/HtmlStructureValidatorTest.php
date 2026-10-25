@@ -80,6 +80,81 @@ final class HtmlStructureValidatorTest extends TestCase
         self::assertTrue((new HtmlStructureValidator($source))->validate($output)->isValid());
     }
 
+    /** @dataProvider clearedTextContainers */
+    public function testNonemptyVisibleTextCannotBeCleared(string $source, string $output): void
+    {
+        $result = (new HtmlStructureValidator($source))->validate($output);
+
+        self::assertFalse($result->isValid());
+        self::assertNotEmpty($result->getErrors());
+    }
+
+    /** @return array<string,array{string,string}> */
+    public static function clearedTextContainers(): array
+    {
+        return [
+            'plain fragment' => ['Visible text', "\u{00a0}\u{2003}"],
+            'paragraph' => ['<p>Visible text</p>', '<p> </p>'],
+            'division' => ['<div>Visible text</div>', '<div></div>'],
+            'heading' => ['<h2>Visible heading</h2>', '<h2></h2>'],
+            'list item' => ['<ul><li>Visible item</li></ul>', '<ul><li></li></ul>'],
+            'table cell' => [
+                '<table><tr><td>Visible cell</td></tr></table>',
+                '<table><tr><td></td></tr></table>',
+            ],
+            'literal zero' => ['<p>0</p>', '<p></p>'],
+            'second paragraph hidden by sibling text' => [
+                '<div><p>First</p><p>Second</p></div>', '<div><p>Premier</p><p></p></div>',
+            ],
+            'code cannot hide cleared prose' => [
+                '<p>Source <code>literal</code></p>', '<p><code>literal</code></p>',
+            ],
+            'entities are whitespace' => ['<p>Source</p>', '<p>&nbsp;&#x2003;</p>'],
+        ];
+    }
+
+    /** @dataProvider clearedAttributes */
+    public function testNonemptyTranslatableAttributesCannotBeCleared(string $source, string $output): void
+    {
+        $result = (new HtmlStructureValidator($source))->validate($output);
+
+        self::assertFalse($result->isValid());
+        self::assertNotEmpty($result->getErrors());
+    }
+
+    /** @return array<string,array{string,string}> */
+    public static function clearedAttributes(): array
+    {
+        return [
+            'alt' => ['<img alt="Source image">', '<img alt="' . "\u{00a0}" . '">'],
+            'title' => ['<button title="Source hint">Action</button>', '<button title="">Действие</button>'],
+            'aria-label' => [
+                '<button aria-label="Close dialog">X</button>',
+                '<button aria-label="' . "\u{2003}" . '">X</button>',
+            ],
+        ];
+    }
+
+    public function testInlineTextMayMoveToItsParentAndOpaqueContentIsNotInspected(): void
+    {
+        $source = '<p>Hello <strong>world</strong></p><pre><code>KEEP 0</code></pre>'
+            . '<script>const keep = "opaque";</script><svg><text>KEEP SVG</text></svg>'
+            . '<math><mi>KEEP MATH</mi></math>';
+        $output = '<p>Привет мир <strong></strong></p><pre><code>KEEP 0</code></pre>'
+            . '<script>const keep = "opaque";</script><svg><text></text></svg>'
+            . '<math><mi></mi></math>';
+
+        self::assertTrue((new HtmlStructureValidator($source))->validate($output)->isValid());
+    }
+
+    public function testEmptySourceContainersAndAttributesMayRemainEmptyOrGainText(): void
+    {
+        $source = '<div><p></p><img alt="" title="" aria-label=""></div>';
+        $output = '<div><p>Добавленный текст</p><img alt="Изображение" title="Подсказка" aria-label="Открыть"></div>';
+
+        self::assertTrue((new HtmlStructureValidator($source))->validate($output)->isValid());
+    }
+
     public function testLiteralBoundaryFencesAlreadyInSourceAreAllowed(): void
     {
         $source = "```html\n<p>Hello</p>\n```";

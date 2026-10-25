@@ -46,6 +46,13 @@ namespace Bblslug {
                     $status = 200;
                     $body = '{}';
                     break;
+                case 'cleared-html':
+                    $status = 200;
+                    $body = json_encode(['choices' => [[
+                        'finish_reason' => 'stop',
+                        'message' => ['content' => "‹‹TRANSLATION››\n<p></p>\n‹‹END››"],
+                    ]]], JSON_THROW_ON_ERROR);
+                    break;
                 case 'empty-translation':
                 case 'whitespace-translation':
                     $status = 200;

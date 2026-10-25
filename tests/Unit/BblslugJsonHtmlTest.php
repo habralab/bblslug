@@ -36,6 +36,41 @@ final class BblslugJsonHtmlTest extends TestCase
         self::assertSame('{"body":"<p>Bonjour <code>fixed</code></p>"}', $result['result']);
     }
 
+    public function testSelectedJsonHtmlRejectsClearedVisibleTextAndAttributes(): void
+    {
+        foreach (['json', 'linedJson', 'structured_json'] as $format) {
+            $result = $this->runFixture([
+                'format' => $format,
+                'input' => '{"message":"<p title=\"Source hint\">Hello</p>"}',
+                'translated' => '{"message":"<p title=\"\"> </p>"}',
+                'validateHtmlJsonPointers' => ['/message'],
+            ]);
+
+            self::assertSame(\RuntimeException::class, $result['type']);
+            self::assertSame(1, $result['httpCalls']);
+            self::assertStringContainsString('HTML inside JSON mismatch', $result['message']);
+            self::assertStringContainsString('/message', $result['message']);
+            self::assertStringContainsString('became empty', $result['message']);
+        }
+    }
+
+    public function testSelectedJsonHtmlAllowsInlineRedistributionAndOpaqueContent(): void
+    {
+        foreach (['json', 'linedJson', 'structured_json'] as $format) {
+            $input = '{"message":"<p>Hello <strong>world</strong></p><pre><code>KEEP</code></pre>"}';
+            $translated = '{"message":"<p>Bonjour monde <strong></strong></p><pre><code>KEEP</code></pre>"}';
+            $result = $this->runFixture([
+                'format' => $format,
+                'input' => $input,
+                'translated' => $translated,
+                'validateHtmlJsonPointers' => ['/message'],
+            ]);
+
+            self::assertSame('success', $result['type'], (string) ($result['message'] ?? ''));
+            self::assertSame($translated, $result['result']);
+        }
+    }
+
     public function testDefaultBehaviorAndExplicitValidationOptOutRemainAvailable(): void
     {
         foreach ([[], ['validate' => false, 'validateHtmlJsonPointers' => ['/body']]] as $options) {
@@ -44,6 +79,16 @@ final class BblslugJsonHtmlTest extends TestCase
                 'translated' => '{"body":"<div>Bonjour</div>"}',
             ], $options));
             self::assertSame('success', $result['type']);
+        }
+    }
+
+    public function testClearedHtmlStringsRemainUncheckedWithoutSelectionOrWithValidationDisabled(): void
+    {
+        foreach ([[], ['validate' => false, 'validateHtmlJsonPointers' => ['/body']]] as $options) {
+            $scenario = ['input' => '{"body":"<p>Hello</p>"}', 'translated' => '{"body":"<p></p>"}'];
+            $result = $this->runFixture($scenario + $options);
+            self::assertSame('success', $result['type']);
+            self::assertSame($scenario['translated'], $result['result']);
         }
     }
 

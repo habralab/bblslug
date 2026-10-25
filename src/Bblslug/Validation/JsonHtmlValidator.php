@@ -51,8 +51,12 @@ class JsonHtmlValidator implements ValidatorInterface
             }
             if (!(new HtmlValidator())->validate($html)->isValid()) {
                 $errors[] = 'HTML syntax changed at JSON Pointer ' . self::label($pointer);
-            } elseif (!$validator->validate($html)->isValid()) {
-                $errors[] = 'HTML structure changed at JSON Pointer ' . self::label($pointer);
+                continue;
+            }
+            $structure = $validator->validate($html);
+            if (!$structure->isValid()) {
+                $errors[] = 'HTML structure changed at JSON Pointer ' . self::label($pointer)
+                    . ': ' . implode('; ', $structure->getErrors());
             }
         }
         return $errors === [] ? ValidationResult::success() : ValidationResult::failure($errors);

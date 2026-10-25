@@ -142,6 +142,17 @@ final class BblslugHtmlOutputTest extends TestCase
         self::assertSame($translated, $result['result']);
     }
 
+    public function testClearedProseAndAttributesAreRejectedUnlessValidationIsDisabled(): void
+    {
+        $scenario = ['input' => '<p title="Source hint">Hello</p>', 'translated' => '<p title=""></p>'];
+        $checked = $this->runFixture($scenario);
+        self::assertSame(\RuntimeException::class, $checked['type']);
+        self::assertStringContainsString('became empty', $checked['message']);
+        $unchecked = $this->runFixture($scenario + ['validate' => false]);
+        self::assertSame('success', $unchecked['type']);
+        self::assertSame($scenario['translated'], $unchecked['result']);
+    }
+
     /** @param array{input:string,translated:string,validate?:bool} $scenario */
     private function runFixture(array $scenario): array
     {

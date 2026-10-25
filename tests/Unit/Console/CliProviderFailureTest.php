@@ -33,6 +33,7 @@ final class CliProviderFailureTest extends TestCase
             'authentication' => ['http401', 'openai:gpt-5-mini', 'HTTP 401 error'],
             'rate limit' => ['http429', 'openai:gpt-5-mini', 'HTTP 429 error'],
             'anthropic credit' => ['anthropic-credit', 'anthropic:claude-haiku-5.5', 'Credit balance too low'],
+            'cleared HTML' => ['cleared-html', 'openai:gpt-5-mini', 'became empty'],
             'malformed response' => ['malformed', 'openai:gpt-5-mini', 'OpenAI translation failed'],
             'timeout' => ['timeout', 'openai:gpt-5-mini', 'timed out'],
             'Yandex truncation with markers' => ['yandex-truncated', 'yandex:gpt-lite', 'translation was truncated'],
@@ -48,7 +49,7 @@ final class CliProviderFailureTest extends TestCase
     ): void {
         $source = $this->temporaryDirectory . '/source.txt';
         $destination = $this->temporaryDirectory . '/translated.txt';
-        $sourceContents = 'source marker https://source.example/keep';
+        $sourceContents = $case === 'cleared-html' ? '<p>source text</p>' : 'source marker https://source.example/keep';
         $destinationContents = 'existing destination marker';
         file_put_contents($source, $sourceContents);
         file_put_contents($destination, $destinationContents);
@@ -124,7 +125,7 @@ final class CliProviderFailureTest extends TestCase
             PHP_BINARY,
             dirname(__DIR__, 2) . '/Fixtures/console/provider_failure.php',
             '--model=' . $model,
-            '--format=text',
+            '--format=' . ($case === 'cleared-html' ? 'html' : 'text'),
             '--source=' . $source,
             '--translated=' . $destination,
             '--verbose',

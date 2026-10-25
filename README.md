@@ -1317,6 +1317,18 @@ Encoded JSON strings receive the same check recursively only when
 strings remain ordinary strings unless their HTML is explicitly selected for
 validation or segment transport.
 
+HTML validation also rejects clearing previously nonempty `title`, `alt`, or
+`aria-label` values, and clearing all prose in the whole fragment or a text
+container such as a paragraph, heading, list item, or table cell. Inline text may
+move between `span`, `strong`, `em`, or link elements within that container;
+individual text nodes need not retain text. Already empty or whitespace-only
+source content may remain empty or gain text. Code/preformatted, script/style,
+legacy raw-text/fallback, SVG, and MathML contents are excluded from prose checks;
+retained code does not hide an emptied paragraph. The comparison does not render
+CSS, check translation fidelity, or prove completeness of a nonempty container.
+These checks apply to explicitly selected HTML-in-JSON too, and are disabled by
+`--no-validate` / `validate: false`. Unselected JSON strings are not parsed as HTML.
+
 HTML inside a JSON string is checked only at locations explicitly selected by
 `validateHtmlJsonPointers` in the PHP API:
 
