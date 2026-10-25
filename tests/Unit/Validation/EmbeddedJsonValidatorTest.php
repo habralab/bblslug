@@ -22,6 +22,7 @@ final class EmbeddedJsonValidatorTest extends TestCase
     public static function changedContainers(): array
     {
         return [
+            'cleared string' => ['{"text":"Hello"}', '{"text":""}'],
             'syntax' => ['{"text":"Hello"}', '{"text":"broken "quote""}'],
             'container type' => ['{}', '[]'],
             'missing null' => ['{"text":"Hello","optional":null}', '{"text":"Привет"}'],
@@ -66,6 +67,16 @@ final class EmbeddedJsonValidatorTest extends TestCase
         self::assertStringContainsString('$/a~1b~0c', $result->getErrors()[0]);
         self::assertStringNotContainsString('12345', $result->getErrors()[0]);
         self::assertStringNotContainsString('54321', $result->getErrors()[0]);
+    }
+
+    public function testRecursivelyEncodedStringsCannotBeCleared(): void
+    {
+        $source = self::outer(json_encode(['child' => '{"label":"Source"}'], JSON_THROW_ON_ERROR));
+        $output = self::outer(json_encode(['child' => '{"label":""}'], JSON_THROW_ON_ERROR));
+        $result = (new EmbeddedJsonValidator($source))->validate($output);
+        self::assertFalse($result->isValid());
+        self::assertStringContainsString('$/payload (encoded)/child (encoded)', $result->getErrors()[0]);
+        self::assertStringContainsString('$/label', $result->getErrors()[0]);
     }
 
     private static function outer(string $payload): string

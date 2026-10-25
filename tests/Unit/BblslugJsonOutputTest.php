@@ -354,14 +354,44 @@ final class BblslugJsonOutputTest extends TestCase
         $this->assertSame($translated, $result['result']);
     }
 
+    public function testJsonFormatsRejectClearedStringsAndAllowDisablingContainerChecks(): void
+    {
+        foreach (['json', 'linedJson'] as $format) {
+            $scenario = [
+                'format' => $format,
+                'input' => '{"items":[{"title":"Source"}],"empty":""}',
+                'translated' => '{"items":[{"title":""}],"empty":""}',
+            ];
+            $checked = $this->runFixture($scenario);
+            self::assertSame(\RuntimeException::class, $checked['type']);
+            self::assertStringContainsString('JSON string content lost: $/items/0/title', $checked['message']);
+            $unchecked = $this->runFixture($scenario + ['validate' => false]);
+            self::assertSame('success', $unchecked['type']);
+            self::assertSame($scenario['translated'], $unchecked['result']);
+        }
+    }
+
+    public function testNativeStructuredJsonRejectsClearedStrings(): void
+    {
+        foreach (['openai:gpt-5-mini', 'google:gemini-2.5-flash'] as $model) {
+            $checked = $this->runFixture([
+                'model' => $model,
+                'input' => '{"message":"Source"}',
+                'translated' => '{"message":""}',
+            ], 'structured_output.php');
+            self::assertSame(\RuntimeException::class, $checked['type']);
+            self::assertStringContainsString('JSON string content lost: $/message', $checked['message']);
+        }
+    }
+
     /**
-     * @param array{input:string,translated:string,validate?:bool} $scenario
+     * @param array<string,mixed> $scenario
      * @return array<string,mixed>
      */
-    private function runFixture(array $scenario): array
+    private function runFixture(array $scenario, string $fixture = 'json_output.php'): array
     {
         $process = proc_open(
-            [PHP_BINARY, dirname(__DIR__) . '/Fixtures/translation/json_output.php'],
+            [PHP_BINARY, dirname(__DIR__) . '/Fixtures/translation/' . $fixture],
             [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']],
             $pipes,
             dirname(__DIR__, 2),

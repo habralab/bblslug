@@ -25,6 +25,7 @@ use Bblslug\Validation\HtmlValidator;
 use Bblslug\Validation\HtmlStructureValidator;
 use Bblslug\Validation\JsonValidator;
 use Bblslug\Validation\JsonScalarValidator;
+use Bblslug\Validation\JsonStringContentValidator;
 use Bblslug\Validation\PlaceholderValidator;
 use Bblslug\Validation\Schema;
 use Bblslug\Validation\TextLengthValidator;
@@ -596,6 +597,12 @@ class Bblslug
                 if (!$scalarValidation->isValid()) {
                     throw new \RuntimeException(
                         "JSON scalar values changed: " . implode('; ', $scalarValidation->getErrors())
+                    );
+                }
+                $stringValidation = (new JsonStringContentValidator($text))->validate($result);
+                if (!$stringValidation->isValid()) {
+                    throw new \RuntimeException(
+                        "JSON string content lost: " . implode('; ', $stringValidation->getErrors())
                     );
                 }
                 if ($jsonHtmlValidator !== null) {

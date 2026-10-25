@@ -1306,6 +1306,17 @@ as `123`, `true`, or `null` remain translatable. The option is off by default be
 JSON-looking text can be intentional prose or a code example. `validate: false`
 or `--no-validate` also disables these checks.
 
+With validation enabled, nonempty JSON string values may not become empty or
+Unicode-whitespace-only strings. A violation raises `JSON string content lost`
+with the property/index path. Already empty or whitespace-only source values are
+allowed; nonempty translations may be shorter. This check applies to `json`,
+`linedJson`, and `structured_json`, and is disabled by `--no-validate` or
+`validate: false`. It does not establish completeness inside a nonempty string.
+Encoded JSON strings receive the same check recursively only when
+`validateEmbeddedJson` / `--validate-embedded-json` is enabled. HTML-bearing
+strings remain ordinary strings unless their HTML is explicitly selected for
+validation or segment transport.
+
 HTML inside a JSON string is checked only at locations explicitly selected by
 `validateHtmlJsonPointers` in the PHP API:
 

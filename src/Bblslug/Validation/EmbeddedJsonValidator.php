@@ -43,6 +43,10 @@ class EmbeddedJsonValidator implements ValidatorInterface
             if (!(new JsonScalarValidator($source))->validate($translated)->isValid()) {
                 return self::failure($path, 'non-string values changed');
             }
+            $strings = (new JsonStringContentValidator($source))->validate($translated);
+            if (!$strings->isValid()) {
+                return self::failure($path . ' (encoded)', implode('; ', $strings->getErrors()));
+            }
             return self::compare($nested, $output, $path . ' (encoded)');
         }
         if ($source instanceof \stdClass) {

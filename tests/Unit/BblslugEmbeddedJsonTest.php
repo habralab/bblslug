@@ -111,6 +111,20 @@ final class BblslugEmbeddedJsonTest extends TestCase
         }
     }
 
+    public function testClearedEmbeddedStringsAreRejectedOnlyWhenRequested(): void
+    {
+        $scenario = [
+            'input' => $this->outerWithPayload('{"title":"Source"}'),
+            'translated' => $this->outerWithPayload('{"title":""}'),
+        ];
+        $checked = $this->runJsonFixture($scenario + ['validateEmbeddedJson' => true]);
+        self::assertSame(\RuntimeException::class, $checked['type']);
+        self::assertStringContainsString('Embedded JSON mismatch', $checked['message']);
+        $unchecked = $this->runJsonFixture($scenario);
+        self::assertSame('success', $unchecked['type']);
+        self::assertSame($scenario['translated'], $unchecked['result']);
+    }
+
     /** @test */
     public function embeddedJsonValidationIsRejectedForNonJsonFormats(): void
     {
