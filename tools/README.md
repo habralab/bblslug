@@ -45,7 +45,7 @@ Auto mode uses declared model capabilities with the standard translator template
 custom JSON-only prompt groups retain their marker protocol. Use `markers` to
 reproduce the historical protocol checks explicitly.
 
-Defaults cover the eight model/tier entries in the README live-check table, all
+Defaults cover eight model/tier entries configured in `tools/live-smoke.php`, all
 three formats (`text,html,json`), and both entry points (`api,cli`). Credentials
 prefer `BBLSLUG_` names with unprefixed fallback, matching the application. Missing
 credentials cause a nonzero exit. Yandex also needs its folder ID. Authentication,
@@ -71,8 +71,8 @@ runner's scope. Controlled provider failures are tested offline by
 not deliberately exhaust real quotas or submit bad real credentials.
 
 The 2026-10-23 run made 48 initial requests on `61610e4`, then 32 HTML/JSON requests
-with the timeout and prompt fixes. The README shows the latest result per case,
-retaining the original 16 text results. DeepL CLI JSON changed from local timeout
+with the timeout and prompt fixes; the original 16 text results were retained in
+that historical summary. DeepL CLI JSON changed from local timeout
 validation errors to successful uploads on both tiers. Gemini JSON was inconsistent
 about markers; Yandex Lite HTML remained rejected; one Yandex Pro connection timed
 out. Do not treat a single later success as a fix for those provider failures.
@@ -88,7 +88,8 @@ both entry points: default `translator` passed 12/12, the original local XML
 prototype passed 10/12, and the reviewed `experimental_xml` passed 12/12. The
 original prototype's Yandex Pro responses added Markdown fences and were rejected.
 It was loaded under a temporary local key for comparison and is not a shipped
-prompt group. See the README for scope and limitations of this single-sample run.
+prompt group. This single-sample comparison is not a quality benchmark or reliability estimate
+and does not establish that XML markup improves on the default prompt.
 
 The subsequent automatic-selection check covered five Gemini models with ten
 API/CLI JSON requests: nine passed, and 4 Argon CLI timed out at 45 seconds. A
@@ -227,3 +228,19 @@ locally, without a baseline or relaxed checks.
 The final ID-boundary helper was checked with both PHPStan 2.1.22 and 2.3.2 at
 maximum level; 107 targeted segment/checkpoint cases also passed. No analyzer
 version was pinned down and no checks were disabled.
+
+## PHPUnit live integration checks
+
+With provider credentials configured, run the integration suite for an exact model
+or use `all` for the first model of each vendor with credentials:
+
+```bash
+RUN_LIVE_TESTS=1 BBLSLUG_LIVE_MODEL=google:gemini-2.5-flash \
+  vendor/bin/phpunit --testsuite integration --testdox
+```
+
+Only exactly `RUN_LIVE_TESTS=1` enables paid requests; other values keep them disabled.
+Credentials prefer `BBLSLUG_` names with unprefixed fallback. Yandex also requires
+its folder ID. Select `deepl:pro` separately to check that tier. These checks verify
+basic translation and container invariants, including a JSON-encoded string with
+backslashes and quotes; they are not a translation-quality benchmark.

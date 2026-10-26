@@ -1,0 +1,250 @@
+# Provider options and protocols
+
+[README](../README.md) · [Usage](usage.md) · [Transports](transports.md) · [Providers](providers.md) · [Models](models.md)
+
+These are integration-specific settings and response contracts. Available model keys are listed in the [model catalogue](models.md); account access and provider limits still apply. The library does not automatically retry requests or substitute another model after a failure.
+
+- [Model defaults](#model-defaults)
+- [Native structured JSON](#native-structured-json)
+- [Google native JSON transport](#google-native-json-transport)
+- [Yandex completion status](#yandex-completion-status)
+- [Yandex native JSON transport](#yandex-native-json-transport)
+- [Yandex HTML response prefixes](#yandex-html-response-prefixes)
+- [DeepL JSON transport](#deepl-json-transport)
+- [DeepL HTML placeholders](#deepl-html-placeholders)
+
+## Model defaults
+
+The GPT-6 defaults use Chat Completions with `reasoning_effort=low` and omit `temperature`.
+Responses-only models use the Responses API with its own request and usage fields.
+Older OpenAI model identifiers remain available for existing integrations; registry presence does not guarantee access for your API account.
+
+The Claude 5.5 entries use the [Anthropic Messages API](https://platform.claude.com/docs/en/api/messages/create)
+with `effort=low`, no `temperature`, and an initial output budget of 4096 tokens.
+Use `--variables=maxTokens=8192` to override the output budget. Use `--variables=effort=low,maxTokens=8192` for models supporting effort; older
+Claude snapshots omit unsupported thinking and effort parameters.
+
+DeepL Free and Pro are service tiers. Select any documented translation engine
+with `--variables=model_type=quality_optimized`, `prefer_quality_optimized`, or
+`latency_optimized`. The provider default applies when omitted. These are engine
+options, rather than additional model IDs.
+
+Yandex models using the OpenAI-compatible API retain the `yandex:` prefix and the
+same credentials/folder variables. The registry selects the required endpoint;
+the application does not substitute another model after a failure.
+
+## Native structured JSON
+
+Use `format: 'structured_json'` with an explicit JSON Schema in
+`variables['response_schema']`. This mode is implemented for OpenAI Chat
+Completions/Responses and Google Gemini; the selected model must support native
+structured output. Unsupported providers and legacy OpenAI Completions are
+rejected locally. Provider schema restrictions and access rules still apply.
+
+```php
+$translation = \Bblslug\Bblslug::translate(
+    apiKey: getenv('BBLSLUG_OPENAI_API_KEY'),
+    format: 'structured_json',
+    modelKey: 'openai:gpt-5-mini',
+    text: '{"message":"Hello"}',
+    targetLang: 'DE',
+    variables: ['response_schema' => [
+        'type' => 'object',
+        'properties' => ['message' => ['type' => 'string']],
+        'required' => ['message'],
+        'additionalProperties' => false,
+    ]]
+);
+```
+
+The CLI reads the schema from a JSON file:
+
+```bash
+bblslug --model=openai:gpt-5-mini --format=structured_json \
+  --response-schema=translation.schema.json --source=input.json --target-lang=DE
+```
+
+Input and output are JSON **strings**, not PHP arrays. Native mode sends the
+schema without rewriting it and reads the JSON response without translation
+markers. OpenAI uses strict schema mode by default; PHP callers may override
+`strict` with a boolean and `response_schema_name` with a name of 1–64 letters,
+digits, underscores, or dashes. A schema supplied with `format: 'json'` also enables
+native mode. The library still validates returned JSON syntax and source structure;
+it does not independently implement every JSON Schema constraint.
+
+`linedJson` selects an alternative JSON translation prompt with the same container
+validation as `json`. It processes one JSON document, not JSON Lines, and does not
+silently repair malformed output. Neither new mode assumes particular field names
+or a document domain. Use the existing context or a custom prompt for application
+rules. Custom prompt templates must provide the requested format; native mode
+requests the `structured_json` template.
+
+## Google native JSON transport
+
+Google JSON requests default to `json_transport=auto`. For registered Gemini models
+with a declared native JSON capability, `json` and `linedJson` with the standard
+`translator` group request `application/json` output without translation markers
+or a required JSON Schema. The registry declares this capability per model; the
+driver does not infer it from names or endpoints. The current Gemini entries have
+it enabled; Gemma and undeclared custom configurations retain markers.
+
+```bash
+printf '%s' '{"title":"Hello"}' | bblslug --model=google:gemini-2.5-flash \
+  --format=json --source-lang=EN --target-lang=DE
+```
+
+The driver uses the same automatic selection to build requests and parse responses.
+Text and default document-mode HTML retain markers. [HTML segment mode](transports.md#keep-html-markup-local-during-translation)
+uses the JSON transport instead. Custom prompt groups retain their existing marker
+contract in auto mode; a custom `translator` group without `structured_json` also
+retains markers. To select a protocol explicitly, pass
+`variables: ['json_transport' => 'native']` or `['json_transport' => 'markers']`,
+or CLI `--variables=json_transport=markers`. A failed HTTP request or invalid
+response never triggers an automatic protocol retry.
+
+Explicit native mode requests the selected group's `structured_json` template;
+missing templates fail explicitly. `structured_json` format still requires
+`response_schema`, and supplying a schema selects native output even in auto mode.
+Explicit markers conflict with a schema. Syntax, source structure, exact non-string
+values, placeholders, and opt-in embedded JSON validation remain enabled by default.
+Native JSON syntax does not guarantee semantic correctness of translated strings.
+See the provider's [JSON output documentation](https://ai.google.dev/api/generate-content#v1beta.GenerationConfig).
+Google transport choices are separate from DeepL's transport choices.
+
+## Yandex completion status
+
+The driver checks completion metadata before extracting text, even when translation
+markers are present. Foundation API alternatives must have
+`ALTERNATIVE_STATUS_FINAL`; Chat Completions and legacy completion responses must
+have `finish_reason=stop`, when that field is supplied. Truncated, partial,
+content-filtered, tool-call, unknown, and malformed completion states are rejected.
+An explicit Chat Completions refusal is also rejected. Only the first alternative
+is considered; another alternative does not replace a rejected one.
+
+Older response shapes without completion metadata remain accepted for compatibility;
+the selected framing and enabled output validation still apply. CLI provider failures leave the
+source and an existing destination file unchanged. No automatic retry is performed.
+The documented Yandex API format controls target JSON; this change does not add an
+HTML output mode or strip Markdown wrappers from a model response.
+
+## Yandex native JSON transport
+
+Yandex supports JSON-object generation through
+[`jsonObject` in the Foundation API](https://aistudio.yandex.ru/ru/docs/ai-studio/text-generation/api-ref/TextGeneration/completion)
+and [`response_format: {type: json_object}` in Chat Completions](https://aistudio.yandex.ru/ru/docs/ai-studio/api/Chat-Completions/createChatCompletion).
+The driver uses these controls with the existing generic `structured_json` prompt,
+without translation markers. It does not strip JSON fences or repair escaping.
+
+`json_transport=auto` is the default. It selects native mode for `json`/`linedJson`
+only when the source root is an object, the model declares `native_json`, and the
+standard `translator` group has a `structured_json` template. Native capability is
+currently declared for `yandex:gpt-lite` and `yandex:gpt-pro`. HTML segment packets
+are objects, so they qualify automatically. Text, document-mode HTML, array/scalar
+JSON roots, other models, and custom prompt groups retain their marker protocol.
+
+```php
+$result = Bblslug::translate(
+    apiKey: $key,
+    format: 'json',
+    modelKey: 'yandex:gpt-pro',
+    text: $json,
+    variables: ['folder_id' => $folderId, 'json_transport' => 'native'],
+);
+```
+
+CLI overrides use `--variables=json_transport=native` or `json_transport=markers`.
+Explicit native mode requires `json`/`linedJson` and a valid object-root source;
+custom groups need a `structured_json` template. Explicit markers preserve the
+previous protocol. `structured_json` and `response_schema` remain unsupported by
+the Yandex integration; JSON-object mode does not enforce a caller-supplied schema.
+There is no fallback or retry when a native request is rejected.
+
+The response must be a JSON object even with container validation disabled.
+Truncation, content-filter, refusal, and completion-state checks happen first.
+Enabled schema/scalar checks and mandatory segment checks still reject changed,
+missing, duplicated, or empty values as appropriate. Request-local state fixes the
+selected framing at build time. `rawResponseBody` remains the raw provider response
+(or the ordered raw-response array when batching is enabled). Chat Completions
+usage is preserved from its top-level `usage` field.
+
+Native JSON does not guarantee completeness, translation fidelity, or acceptance by the provider's content filter.
+
+## Yandex HTML response prefixes
+
+For HTML input whose prepared text contains no Markdown fence, the Yandex driver
+handles the opening-only artifact observed in Lite responses. It removes exactly
+one initial line containing three backticks and an optional `html` label. LF and
+CRLF, whitespace around the label, and `HTML` casing are supported. No other fence
+may remain in the response. The remaining HTML still passes placeholder, syntax,
+and structure validation; the original HTTP response remains in `rawResponseBody`.
+
+The source check considers backtick/tilde triples anywhere in prepared HTML,
+including HTML entity representations. Protected code blocks are placeholders at
+this stage and are restored unchanged afterward. If visible source fences are
+present, this compatibility handling is
+disabled and their content is not stripped. Added paired, trailing-only, nested,
+inline, tilde, or unfamiliar labelled fences fail explicitly for fence-free input,
+also when container validation is disabled. Text and JSON responses are unchanged.
+This is not a Markdown parser or general repair of model output.
+
+The facade forwards the request-local `responseContext` automatically. Low-level
+driver integrations must pass that context to `parseResponse()`; without it, the
+driver retains its previous parsing behavior and does not guess source formatting.
+No shared mutable request state or automatic HTTP retry is used.
+
+## DeepL JSON transport
+
+For `json` and `linedJson`, DeepL Free and Pro use the native
+[Document API](https://developers.deepl.com/api-reference/document/upload-and-translate-a-document):
+upload the prepared JSON as a multipart `.json` file, poll its status, then download
+the translated JSON. The result goes through the existing placeholder restoration
+and JSON syntax, structure, exact non-string value, and optional embedded JSON checks.
+
+The source file limit is 1 MB; the facade also enforces the model registry's
+existing character limit. `variables: ['document_timeout' => 120]` sets a
+positive integer timeout in seconds: the upload has this HTTP timeout, and polling
+plus downloading share a separate deadline of that duration. CLI variables may use
+a canonical positive integer string, for example `--variables=document_timeout=45`.
+Polling ignores the provider's estimated remaining time. An HTTP error, processing error, malformed
+status, or deadline expiry stops the operation. Uploads and downloads are not
+retried automatically. Document IDs and encryption keys are masked in debug logs
+and exceptions; `rawResponseBody` contains the downloaded document.
+
+The Document API has no `context` or `model_type` parameter. These options cause
+an explicit error in native JSON mode. To retain text-endpoint options or the
+previous local reconstruction behavior, select
+`variables: ['json_transport' => 'text_batch']` explicitly. No automatic fallback
+occurs after an unsuccessful document request. Text and default document-mode
+HTML retain their existing transport. HTML segment mode uses the JSON transport.
+
+In `text_batch` mode, decoded nonempty string values are sent as an
+[ordered text batch](https://developers.deepl.com/api-reference/translate/request-translation).
+Keys, container whitespace, and exact non-string tokens remain local; returned
+strings are JSON-encoded before insertion. Encoded JSON objects/arrays are processed
+recursively. This mode has a 128 KiB request-body limit and can change punctuation
+inside technical strings, as observed with ASCII quotes in a path.
+
+Both modes finish locally (`httpStatus` is `0`) when no translatable string values
+remain. Empty strings, whitespace-only values, and placeholder-only values are
+not translated.
+
+Low-level integrations must forward each request's `responseContext` to
+`parseResponse()`. For native JSON, they must also execute its optional `workflow`
+continuation after the upload, using authenticated HTTP with the supplied timeout
+and mask patterns, then parse the downloaded response. The optional `localResult`
+means no HTTP exchange is needed. `Bblslug::translate()` handles this automatically.
+The driver keeps no shared current-document state.
+
+## DeepL HTML placeholders
+
+For HTML requests, markers in normal text are temporarily wrapped in spans using
+[DeepL's `translate="no"` support](https://developers.deepl.com/docs/translate/translating-html).
+Only wrappers created for that request are removed before restoring the original
+fragments. User markup is not reserialized. Markers in attributes, comments, CDATA,
+and raw-text/RCDATA elements such as `script`, `style`, `title`, and `textarea`
+are left without these wrappers.
+
+A missing, duplicated, malformed, or modified transport wrapper causes an error.
+Post-validation still compares the restored HTML tree, so the wrappers do not
+bypass structure checks. The 128 KiB request-body limit is checked
+after wrapping so transport overhead cannot silently exceed the provider limit.

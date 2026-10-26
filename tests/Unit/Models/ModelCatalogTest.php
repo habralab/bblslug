@@ -10,11 +10,11 @@ use PHPUnit\Framework\TestCase;
 
 final class ModelCatalogTest extends TestCase
 {
-    public function testReadmeListsExactlyTheRegisteredModelKeys(): void
+    public function testModelCatalogDocListsExactlyTheRegisteredModelKeys(): void
     {
-        $readme = file_get_contents(__DIR__ . '/../../../README.md');
-        self::assertIsString($readme);
-        self::assertIsInt(preg_match('/APIs supported:\n(.*?)\nThis list mirrors/s', $readme, $match));
+        $modelCatalogDoc = file_get_contents(__DIR__ . '/../../../docs/models.md');
+        self::assertIsString($modelCatalogDoc);
+        self::assertIsInt(preg_match('/APIs supported:\n(.*?)\nThis list mirrors/s', $modelCatalogDoc, $match));
         self::assertArrayHasKey(1, $match);
 
         preg_match_all('/^\s*-\s+`([^`]+)`/m', $match[1], $found);
@@ -24,7 +24,7 @@ final class ModelCatalogTest extends TestCase
         $registered = (new ModelRegistry())->list();
         sort($registered);
 
-        self::assertSame($registered, $listed);
+        self::assertSame($registered, $listed, 'docs/models.md model list differs from the registry');
     }
 
     public function testCatalogPayloadIdsMatchTheRegistry(): void
