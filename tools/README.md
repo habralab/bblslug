@@ -216,3 +216,10 @@ A separate regression confirmed and fixed stale libxml errors contaminating vali
 HTML checks and the error-handling mode being reset. The updated local suites
 passed **1162 unit tests, 6592 assertions** on both PHP versions; PSR-12 and
 PHPStan max remained clean. The earlier failed CI run is retained in GitHub.
+
+The next CI run passed PHPUnit and reached PHPStan 2.3.2, while the earlier local
+analysis used 2.1.22. Its stricter array-shape checks exposed partially assembled
+metadata and unproved decoded-key types. Records are now assembled with all
+required fields, string IDs are checked at the decoding boundary, and a redundant
+CLI guard was removed. The same official PHPStan 2.3.2 passes at maximum level
+locally, without a baseline or relaxed checks.

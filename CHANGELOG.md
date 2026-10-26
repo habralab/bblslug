@@ -162,7 +162,7 @@ The format is based on [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 ### Verification
 
 - PHP 8.2.34 and 8.5.11: 1162 unit tests, 6592 assertions on each; PHPCS and
-  PHPStan at maximum level pass.
+  PHPStan 2.3.2 at maximum level pass.
 - Paid acceptance on 2026-10-25, before the audit corrections: 48/48 small
   segment cases across Gemini 2.5 Flash,
   GPT-5 mini, Claude Haiku 4.5, Grok 4.20 non-reasoning, Yandex Lite/Pro, and
