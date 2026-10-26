@@ -85,6 +85,25 @@ final class XaiDriverTest extends TestCase
         ], JSON_UNESCAPED_UNICODE));
     }
 
+    /** @dataProvider invalidResponsesStatusProvider */
+    public function testResponsesStatusMustBeCompletedWhenPresent(mixed $status): void
+    {
+        $this->expectException(\RuntimeException::class);
+        (new XaiDriver())->parseResponse([], json_encode([
+            'status' => $status,
+            'output' => [[
+                'type' => 'message',
+                'content' => [['type' => 'output_text', 'text' => "‹‹TRANSLATION››partial‹‹END››"]],
+            ]],
+        ], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR));
+    }
+
+    /** @return array<string,array{mixed}> */
+    public static function invalidResponsesStatusProvider(): array
+    {
+        return ['null' => [null], 'integer' => [1], 'queued' => ['queued']];
+    }
+
     /** @test */
     public function outputTextPartsAreJoinedBeforeMarkerParsing(): void
     {
@@ -112,5 +131,38 @@ final class XaiDriverTest extends TestCase
                 ['type' => 'refusal', 'refusal' => 'Cannot translate this'],
             ]]],
         ], JSON_UNESCAPED_UNICODE));
+    }
+
+    /** @dataProvider rejectedChatFinishReasonProvider */
+    public function testChatFinishReasonMustBeStopWhenPresent(mixed $finishReason): void
+    {
+        $this->expectException(\RuntimeException::class);
+        (new XaiDriver())->parseResponse([], json_encode([
+            'choices' => [[
+                'finish_reason' => $finishReason,
+                'message' => ['content' => "‹‹TRANSLATION››partial‹‹END››"],
+            ]],
+        ], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR));
+    }
+
+    /** @return array<string,array{mixed}> */
+    public static function rejectedChatFinishReasonProvider(): array
+    {
+        return [
+            'content filter' => ['content_filter'],
+            'tool calls' => ['tool_calls'],
+            'function call' => ['function_call'],
+            'unknown' => ['other'],
+            'null' => [null],
+            'array' => [[]],
+        ];
+    }
+
+    public function testLegacyChatMayOmitFinishReason(): void
+    {
+        $result = (new XaiDriver())->parseResponse([], json_encode([
+            'choices' => [['message' => ['content' => "‹‹TRANSLATION››ok‹‹END››"]]],
+        ], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR));
+        $this->assertSame('ok', $result['text']);
     }
 }
