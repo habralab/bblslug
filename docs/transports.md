@@ -2,6 +2,9 @@
 
 [README](../README.md) · [Usage](usage.md) · [Transports](transports.md) · [Providers](providers.md) · [Models](models.md)
 
+File commands use a [prepared repository checkout](usage.md#running-the-file-examples).
+PHP fragments assume the import, credentials and input variables from the [usage guide](usage.md#php-library).
+
 Document transport sends the prepared document to the provider. Optional segment transport keeps source structure local and checks responses by fragment identifier. Select these options explicitly; neither mode proves translation fidelity.
 
 - [Detect missing fragments in plain text](#detect-missing-fragments-in-plain-text)
@@ -26,8 +29,8 @@ Lines containing protected placeholders are split around those placeholders;
 their source bytes remain local.
 
 ```bash
-vendor/bin/bblslug --model=google:gemini-2.5-flash --format=text \
-  --text-transport=segments --source=input.txt --translated=output.txt
+bin/bblslug --model=google:gemini-flash-latest --format=text \
+  --text-transport=segments --source=samples/quickstart/input.txt --translated=output.txt
 ```
 
 Line separators (LF, CRLF and CR), blank lines, and leading/trailing Unicode
@@ -56,16 +59,16 @@ stable identifiers. Bblslug reconstructs the HTML from the original source slice
 the provider does not rewrite its tags or non-language attributes.
 
 ```bash
-vendor/bin/bblslug --model=google:gemini-2.5-flash --format=html \
+bin/bblslug --model=google:gemini-flash-latest --format=html \
   --html-transport=segments --filters=url,html_code,html_pre \
-  --source=input.html --translated=out.html
+  --source=samples/quickstart/input.html --translated=out.html
 ```
 
 ```php
 $result = Bblslug::translate(
     apiKey: $key,
     format: 'html',
-    modelKey: 'google:gemini-2.5-flash',
+    modelKey: 'google:gemini-flash-latest',
     text: $html,
     filters: ['url', 'html_code', 'html_pre'],
     htmlTransport: 'segments',
@@ -113,7 +116,7 @@ only selected HTML string values. Supported formats are `json` and `linedJson`.
 $result = Bblslug::translate(
     apiKey: $key,
     format: 'json',
-    modelKey: 'google:gemini-2.5-flash',
+    modelKey: 'google:gemini-flash-latest',
     text: $json,
     filters: ['url', 'html_code'],
     htmlTransport: 'segments',
@@ -122,10 +125,10 @@ $result = Bblslug::translate(
 ```
 
 ```bash
-vendor/bin/bblslug --model=google:gemini-2.5-flash --format=json \
+bin/bblslug --model=google:gemini-flash-latest --format=json \
   --html-transport=segments --html-json-pointer=/body \
   --html-json-pointer=/items/0/html --filters=url,html_code \
-  --source=input.json --translated=out.json
+  --source=samples/quickstart/input.json --translated=out.json
 ```
 
 Only HTML fragments from those strings are sent. All unselected values, keys,
@@ -167,9 +170,9 @@ Set `textSegmentBatchSize: 25` in PHP or `--text-segment-batch-size=25` in the C
 with text segment transport to send at most 25 fragments per request:
 
 ```bash
-vendor/bin/bblslug --model=google:gemini-2.5-flash --format=text \
+bin/bblslug --model=google:gemini-flash-latest --format=text \
   --text-transport=segments --text-segment-batch-size=25 \
-  --source=input.txt --translated=output.txt
+  --source=samples/quickstart/input.txt --translated=output.txt
 ```
 
 The default is `null` (one request). The limit must be a positive integer and
@@ -210,7 +213,7 @@ works for HTML and selected HTML strings inside `json`/`linedJson`.
 $result = Bblslug::translate(
     apiKey: $key,
     format: 'json',
-    modelKey: 'xai:grok-4.20-0309-non-reasoning',
+    modelKey: 'xai:grok-4.7',
     text: $json,
     htmlTransport: 'segments',
     htmlJsonPointers: ['/body'],
@@ -219,9 +222,9 @@ $result = Bblslug::translate(
 ```
 
 ```bash
-vendor/bin/bblslug --model=xai:grok-4.20-0309-non-reasoning --format=html \
+bin/bblslug --model=xai:grok-4.7 --format=html \
   --html-transport=segments --html-segment-batch-size=25 \
-  --source=input.html --translated=out.html
+  --source=samples/quickstart/input.html --translated=out.html
 ```
 
 The default is `null` (no batching). Packets run sequentially, preserving the
@@ -265,9 +268,9 @@ CLI with text or HTML segment transport. The cap can operate alone or together
 with `textSegmentBatchSize` / `htmlSegmentBatchSize`; both limits then apply.
 
 ```bash
-vendor/bin/bblslug --model=google:gemini-2.5-flash --format=text \
+bin/bblslug --model=google:gemini-flash-latest --format=text \
   --text-transport=segments --segment-batch-max-bytes=4000 \
-  --source=input.txt --translated=output.txt
+  --source=samples/quickstart/input.txt --translated=output.txt
 ```
 
 The positive integer cap measures the serialized fragment JSON in UTF-8 bytes,
@@ -304,10 +307,10 @@ Pass `checkpointPath: '/private/work/translation.checkpoint.json'` in PHP or
 or byte cap. This works for text, HTML and selected HTML strings in JSON.
 
 ```bash
-vendor/bin/bblslug --model=google:gemini-2.5-flash --format=text \
+bin/bblslug --model=google:gemini-flash-latest --format=text \
   --text-transport=segments --text-segment-batch-size=25 \
   --checkpoint=translation.checkpoint.json \
-  --source=input.txt --translated=output.txt
+  --source=samples/quickstart/input.txt --translated=output.txt
 ```
 
 After a failed run, repeat the same command. Missing state is created before the
@@ -359,9 +362,9 @@ set a shared time budget in positive integer seconds. The default is `null`,
 retaining the existing per-request and provider workflow timeouts.
 
 ```bash
-vendor/bin/bblslug --model=google:gemini-2.5-flash --format=text \
+bin/bblslug --model=google:gemini-flash-latest --format=text \
   --text-transport=segments --text-segment-batch-size=25 --operation-timeout=60 \
-  --source=input.txt --translated=output.txt
+  --source=samples/quickstart/input.txt --translated=output.txt
 ```
 
 The monotonic budget starts at `translate()` entry and includes preparation,
@@ -506,7 +509,7 @@ HTML inside a JSON string is checked only at locations explicitly selected by
 $result = Bblslug::translate(
     apiKey: $key,
     format: 'json',
-    modelKey: 'openai:gpt-5-mini',
+    modelKey: 'openai:gpt-6-luna',
     text: $json,
     validateHtmlJsonPointers: ['/body', '/items/0/html'],
 );
@@ -532,10 +535,10 @@ use filters to protect code and other text that must remain unchanged.
 To skip validation, add:
 
 ```bash
-vendor/bin/bblslug \
-  --model=vendor:name \
+bin/bblslug \
+  --model=google:gemini-flash-latest \
   --format=html \
   --no-validate \
-  --source=input.html \
+  --source=samples/quickstart/input.html \
   --translated=out.html
 ```

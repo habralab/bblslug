@@ -2,8 +2,9 @@
 
 [README](../README.md) · [Usage](usage.md) · [Transports](transports.md) · [Providers](providers.md) · [Models](models.md)
 
-Start with the CLI and PHP examples in the [README](../README.md). This page covers configuration, I/O, diagnostics and the library result. For all CLI flags, run `vendor/bin/bblslug --help`.
+Start with the CLI and PHP examples in the [README](../README.md). This page covers configuration, I/O, diagnostics and the library result. For all CLI flags, run `bin/bblslug --help`.
 
+- [Running the file examples](#running-the-file-examples)
 - [Credentials, input and output](#credentials-input-and-output)
 - [Formats](#formats)
 - [Filters and model options](#filters-and-model-options)
@@ -19,6 +20,16 @@ Start with the CLI and PHP examples in the [README](../README.md). This page cov
 - [Verbose filter and validation diagnostics](#verbose-filter-and-validation-diagnostics)
 - [Statistics](#statistics)
 - [PHP library](#php-library)
+
+## Running the file examples
+
+The file examples in this guide, [transports](transports.md) and [providers](providers.md)
+run from a repository checkout with `composer install` completed. They use `bin/bblslug`
+and the authored inputs in [samples/quickstart](../samples/quickstart/).
+For a Composer-installed package, use `vendor/bin/bblslug`; the same samples live under
+`vendor/habr/bblslug/samples/quickstart/`. Supply your own source paths or use those bundled inputs.
+Translation examples contact the selected provider. Add `--dry-run` for preparation only;
+that mode still requires a key value but does not prove that the provider accepts a request.
 
 ## Credentials, input and output
 
@@ -101,7 +112,7 @@ timeout). Requests are not automatically retried.
 | `structured_json` | JSON with an explicit provider-supported response schema; see [native structured JSON](providers.md#native-structured-json) |
 
 Translation and dry-run require both a registered model and a format. Use
-`vendor/bin/bblslug --list-models` and `--list-prompts` to inspect available keys
+`bin/bblslug --list-models` and `--list-prompts` to inspect available keys
 and template formats without credentials or a translation request.
 
 ## Filters and model options
@@ -125,20 +136,20 @@ available through variables.
 ## Translate a JSON file and write to another file
 
 ```bash
-vendor/bin/bblslug \
-  --model=vendor:name \
+bin/bblslug \
+  --model=google:gemini-flash-latest \
   --format=json \
-  --source=input.json \
+  --source=samples/quickstart/input.json \
   --translated=output.json
 ```
 
 ## Translate an HTML file and write to another file with filters
 
 ```bash
-vendor/bin/bblslug \
-  --model=vendor:name \
+bin/bblslug \
+  --model=google:gemini-flash-latest \
   --format=html \
-  --source=input.html \
+  --source=samples/quickstart/input.html \
   --translated=output.html \
   --filters=url,html_code,html_pre
 ```
@@ -146,13 +157,13 @@ vendor/bin/bblslug \
 ## Add translation context (prompt), source and target language
 
 ```bash
-vendor/bin/bblslug \
-  --model=vendor:name \
+bin/bblslug \
+  --model=google:gemini-flash-latest \
   --format=html \
-  --source=input.html \
+  --source=samples/quickstart/input.html \
   --translated=output.html \
-  --target-lang=EN \
-  --source-lang=DE \
+  --target-lang=DE \
+  --source-lang=EN \
   --context="Translate as a professional technical translator"
 ```
 
@@ -168,11 +179,11 @@ options using a PHP boolean cast, such as Gemini's `includeThoughts`, use `0` or
 the non-empty string `false` is treated as true.
 
 ```bash
-vendor/bin/bblslug \
-  --model=vendor:name \
+bin/bblslug \
+  --model=openai:gpt-6-luna \
   --format=text \
   --variables=max_completion_tokens=8192,reasoning_effort=low \
-  --source=in.txt \
+  --source=samples/quickstart/input.txt \
   --translated=out.txt
 ```
 
@@ -182,10 +193,10 @@ Use `--list-prompts` to check supported formats. The `experimental` and
 `experimental_xml` groups support JSON only.
 
 ```bash
-vendor/bin/bblslug \
+bin/bblslug \
   --model=openai:gpt-6-luna \
   --format=json \
-  --source=input.json \
+  --source=samples/quickstart/input.json \
   --translated=out.json \
   --prompt-key=experimental
 ```
@@ -193,8 +204,8 @@ vendor/bin/bblslug \
 The opt-in `experimental_xml` group uses an XML-style JSON prompt:
 
 ```bash
-vendor/bin/bblslug --model=openai:gpt-5-mini --format=json \
-  --source=input.json --target-lang=DE --prompt-key=experimental_xml
+bin/bblslug --model=openai:gpt-6-luna --format=json \
+  --source=samples/quickstart/input.json --target-lang=DE --prompt-key=experimental_xml
 ```
 
 PHP callers select `promptKey: 'experimental_xml'`. The template is sent verbatim
@@ -208,36 +219,36 @@ parse XML, expand entities, or run a [POML renderer](https://microsoft.github.io
 
 CLI dry-run applies filters without calling a provider or validating the container.
 It still requires a registered model, format, and API-key environment variable.
-With `--source=input.txt`, it writes `input.txt.prepared`; with STDIN, it writes
+With `--source=samples/quickstart/input.txt`, it writes `input.txt.prepared`; with STDIN, it writes
 the prepared text to STDOUT. `--translated` is not used in this mode.
 The library's `dryRun: true` follows the full preparation and validation path and
 returns a request preview without sending a request.
 
 ```bash
-vendor/bin/bblslug \
-  --model=vendor:name \
+bin/bblslug \
+  --model=google:gemini-flash-latest \
   --format=text \
   --filters=url \
-  --source=input.txt \
+  --source=samples/quickstart/input.txt \
   --dry-run
 ```
 
 ## Verbose mode (prints request preview to stderr)
 
 ```bash
-vendor/bin/bblslug \
-  --model=vendor:name \
+bin/bblslug \
+  --model=google:gemini-flash-latest \
   --format=html \
   --verbose \
-  --source=input.html \
+  --source=samples/quickstart/input.html \
   --translated=out.html
 ```
 
 ## Standard input and output
 
 ```bash
-printf 'Hello world\n' | vendor/bin/bblslug \
-  --model=google:gemini-2.5-flash --format=text --target-lang=DE > translated.txt
+printf 'Hello world\n' | bin/bblslug \
+  --model=google:gemini-flash-latest --format=text --target-lang=DE > translated.txt
 ```
 
 Use `--translated=translated.txt` instead of shell redirection to use the CLI output writer and its preflight checks.
@@ -314,6 +325,8 @@ require 'vendor/autoload.php';
 use Bblslug\Bblslug;
 ```
 
+The remaining PHP snippets assume this import, a configured `$apiKey` (`$key` in shorter snippets),
+and source strings `$html` / `$json` where shown. Yandex also needs `$folderId`.
 Credentials are supplied explicitly to `translate()`; the CLI resolves provider environment variables automatically.
 
 ### Translation result and options
@@ -321,9 +334,9 @@ Credentials are supplied explicitly to `translate()`; the CLI resolves provider 
 Translate an HTML document with optional settings:
 
 ```php
-$text = file_get_contents('input.html');
+$text = file_get_contents('samples/quickstart/input.html');
 if ($text === false) {
-    throw new \RuntimeException('Cannot read input.html');
+    throw new \RuntimeException('Cannot read samples/quickstart/input.html');
 }
 $apiKey = getenv('BBLSLUG_OPENAI_API_KEY') ?: getenv('OPENAI_API_KEY');
 if ($apiKey === false || $apiKey === '') {
@@ -338,14 +351,14 @@ $result = Bblslug::translate(
     // optional:
     // Additional context/prompt pass to model
     context:    'Translate as a professional technical translator',
-    filters:    ['url','html_code'],           // List of placeholder filters
+    filters:    ['url', 'html_code'],           // List of placeholder filters
     onFeedback: $verbose ? static function (string $message, string $level = 'info'): void { error_log("[$level] $message"); } : null, // Optional progress callback
     promptKey: 'translator',                   // which prompt template to use
     proxy:      getenv('BBLSLUG_PROXY') ?: null, // Optional proxy URI
-    sourceLang: 'DE',                          // Source language code (optional; autodetect if null)
-    targetLang: 'EN',                          // Target language code (optional; default from driver settings)
+    sourceLang: 'EN',                          // Source language code (optional; autodetect if null)
+    targetLang: 'DE',                          // Target language code (optional; default from driver settings)
     validate: true,                            // Container syntax and JSON structure validation
-    variables:  ['max_completion_tokens'=>'8192'], // Model-specific overrides
+    variables:  ['max_completion_tokens' => '8192'], // Model-specific overrides
     verbose:    true,                          // If true, returns debug request/response
 );
 echo $result['result'];
@@ -356,7 +369,7 @@ where `$level` includes `'info' | 'warning' | 'error'`. Pass null to switch it o
 
 Result structure:
 
-```php
+```text
 [
   'original'        => string,   // Original input
   'prepared'        => string,   // After placeholder filters

@@ -2,11 +2,15 @@
 
 [README](../README.md) · [Usage](usage.md) · [Transports](transports.md) · [Providers](providers.md) · [Models](models.md)
 
+File commands use a [prepared repository checkout](usage.md#running-the-file-examples).
+PHP fragments assume the import, credentials and input variables from the [usage guide](usage.md#php-library).
+
 These are integration-specific settings and response contracts. Available model keys are listed in the [model catalogue](models.md); account access and provider limits still apply. The library does not automatically retry requests or substitute another model after a failure.
 
 - [Model defaults](#model-defaults)
 - [Native structured JSON](#native-structured-json)
 - [Google native JSON transport](#google-native-json-transport)
+- [Grok 4.7 request settings](#grok-47-request-settings)
 - [Yandex completion status](#yandex-completion-status)
 - [Yandex native JSON transport](#yandex-native-json-transport)
 - [Yandex HTML response prefixes](#yandex-html-response-prefixes)
@@ -43,9 +47,9 @@ rejected locally. Provider schema restrictions and access rules still apply.
 
 ```php
 $translation = \Bblslug\Bblslug::translate(
-    apiKey: getenv('BBLSLUG_OPENAI_API_KEY'),
+    apiKey: $apiKey,
     format: 'structured_json',
-    modelKey: 'openai:gpt-5-mini',
+    modelKey: 'openai:gpt-6-luna',
     text: '{"message":"Hello"}',
     targetLang: 'DE',
     variables: ['response_schema' => [
@@ -57,11 +61,11 @@ $translation = \Bblslug\Bblslug::translate(
 );
 ```
 
-The CLI reads the schema from a JSON file:
+The CLI reads a schema from a JSON file. The bundled schema describes the bundled JSON input:
 
 ```bash
-bblslug --model=openai:gpt-5-mini --format=structured_json \
-  --response-schema=translation.schema.json --source=input.json --target-lang=DE
+bin/bblslug --model=openai:gpt-6-luna --format=structured_json \
+  --response-schema=samples/quickstart/translation.schema.json --source=samples/quickstart/input.json --target-lang=DE
 ```
 
 Input and output are JSON **strings**, not PHP arrays. Native mode sends the
@@ -89,7 +93,7 @@ driver does not infer it from names or endpoints. The current Gemini entries hav
 it enabled; Gemma and undeclared custom configurations retain markers.
 
 ```bash
-printf '%s' '{"title":"Hello"}' | bblslug --model=google:gemini-2.5-flash \
+printf '%s' '{"title":"Hello"}' | bin/bblslug --model=google:gemini-flash-latest \
   --format=json --source-lang=EN --target-lang=DE
 ```
 
@@ -110,6 +114,16 @@ values, placeholders, and opt-in embedded JSON validation remain enabled by defa
 Native JSON syntax does not guarantee semantic correctness of translated strings.
 See the provider's [JSON output documentation](https://ai.google.dev/api/generate-content#v1beta.GenerationConfig).
 Google transport choices are separate from DeepL's transport choices.
+
+## Grok 4.7 request settings
+
+The `xai:grok-4.7` registry entry uses the Responses API with explicit
+`reasoning_effort=low`. Its output budget can be overridden with
+`variables: ['max_completion_tokens' => 8192]`; the driver maps that option to
+`max_output_tokens` on this endpoint. Reasoning consumes part of the output budget.
+`none` is not accepted by this model. Other Grok entries retain their configured
+protocol and settings; the library does not retry a rejected response on another endpoint.
+See [xAI reasoning settings](https://docs.x.ai/developers/model-capabilities/text/reasoning).
 
 ## Yandex completion status
 

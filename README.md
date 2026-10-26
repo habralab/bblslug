@@ -14,7 +14,7 @@ Requires **PHP 8.2+** with the cURL, DOM and mbstring extensions.
 composer require habr/bblslug
 ```
 
-For upgrades and compatibility changes, see the [changelog](CHANGELOG.md).
+For upgrades, see the [migration guide](docs/upgrading.md); release changes are in the [changelog](CHANGELOG.md).
 
 ## First translation with the CLI
 
@@ -24,17 +24,12 @@ Export the key for your chosen provider. For example:
 export BBLSLUG_GOOGLE_API_KEY='your-api-key'
 ```
 
-Translate an HTML file, protecting code blocks and URLs:
+Translate HTML from STDIN, protecting code blocks and URLs:
 
 ```bash
-vendor/bin/bblslug \
-  --model=google:gemini-2.5-flash \
-  --format=html \
-  --source=input.html \
-  --translated=output.html \
-  --source-lang=EN \
-  --target-lang=DE \
-  --filters=url,html_code,html_pre
+printf '%s' '<p>Hello! Read <code>status=ready</code> at https://example.invalid/guide</p>' | \
+  vendor/bin/bblslug --model=google:gemini-flash-latest --format=html \
+    --source-lang=EN --target-lang=DE --filters=url,html_code,html_pre
 ```
 
 Use `--format=text` for plain text or `--format=json` for a JSON document.
@@ -43,6 +38,7 @@ Diagnostics and usage statistics go to STDERR. Failed translations return a nonz
 
 ```bash
 vendor/bin/bblslug --list-models
+vendor/bin/bblslug --list-models=all
 vendor/bin/bblslug --list-prompts
 vendor/bin/bblslug --help
 ```
@@ -66,7 +62,7 @@ if ($apiKey === false || $apiKey === '') {
 $result = Bblslug::translate(
     apiKey: $apiKey,
     format: 'json',
-    modelKey: 'google:gemini-2.5-flash',
+    modelKey: 'google:gemini-flash-latest',
     text: '{"message":"Hello, world!","count":2}',
     sourceLang: 'EN',
     targetLang: 'DE',
@@ -114,7 +110,7 @@ that content; handle them as private translation data.
 - [Model catalogue](docs/models.md): registered keys and links to catalogue evidence.
 - [Changelog](CHANGELOG.md): releases and compatibility changes.
 - [Development checks](tools/README.md): live smoke tools, verification scope and recorded results.
-- [Input samples](samples/): example documents.
+- [Input samples](samples/README.md): authored quickstart files and historical corpora.
 
 ## License
 

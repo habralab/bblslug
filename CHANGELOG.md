@@ -1,313 +1,74 @@
 # Changelog
 
-All notable changes to this project will be documented in this file.
-
-The format is based on [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+This file follows the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format. Release numbers follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+### Changed
+
+- Model discovery is sorted by provider and model name. `--list-models` shows models for new integrations; `--list-models=all` includes served snapshots, previews, restricted and deprecated entries. The PHP model list still returns all registered keys.
+- Grok 4.7 uses the Responses API with explicit low reasoning effort.
+- Provider lifecycle metadata and example models are updated. Generated catalogue documentation is checked against the registry.
+- Documentation examples use authored quickstart inputs; upgrade notes and developer tool instructions are separated from release history.
+
+### Removed
+
+- Nineteen retired OpenAI identifiers and the shut-down Gemini 3.1 Flash-Lite preview. Removed keys fail locally; no replacement is silently selected. See [upgrading](docs/upgrading.md#unreleased-model-catalogue).
+
 
 ## [0.10.0] – 2026-10-26
 
 ### Added
 
-- Plain text `segments` transport (`textTransport` / `--text-transport`) with
-  required fragment IDs and local preservation of line separators, whitespace,
-  and protected placeholders. Missing, duplicate, non-string, or empty fragments
-  fail independently of optional container validation.
-- HTML `segments` transport (`htmlTransport` / `--html-transport`), including HTML
-  strings explicitly selected by `htmlJsonPointers` / `--html-json-pointer` in
-  `json` and `linedJson`. Markup and protected blocks remain local. Selected-HTML
-  JSON preserves every byte outside the selected values, including numeric tokens.
-- Sequential text/HTML packets using `textSegmentBatchSize`,
-  `htmlSegmentBatchSize`, and the corresponding CLI options. The shared
-  `segmentBatchMaxBytes` / `--segment-batch-max-bytes` limit measures serialized
-  fragment JSON; whitespace splitting retains local separators. All requests
-  are preflighted before the first HTTP call; an unsplittable token fails locally.
-- Shared `operationTimeoutSeconds` / `--operation-timeout` deadline across
-  preparation, requests, and provider workflows, including DeepL polling/download.
-- Opt-in `checkpointPath` / `--checkpoint` for batched segments. Resume validates
-  the source/model/settings/code fingerprint, checksums, and every cached packet
-  before HTTP. Only a confirmed prefix is saved, using atomic writes and a file
-  lock. Results distinguish historical usage from `consumedThisRun` and expose
-  reused packets; CLI usage reflects the current run.
-- Optional recursive validation of JSON objects/arrays encoded inside strings
-  (`validateEmbeddedJson` / `--validate-embedded-json`). Optional HTML validation
-  at explicit JSON Pointers (`validateHtmlJsonPointers` /
-  `--validate-html-json-pointer`). No consumer-specific field names are inferred.
-- Native Google JSON transport without a required response schema, and native
-  Yandex JSON-object transport on declared-capable models. `json_transport`
-  accepts `auto`, `native`, or `markers`; automatic selection respects the root,
-  format, model capabilities, and prompt group. Unsupported/custom combinations
-  retain markers; native response framing is checked without JSON escape repair.
-- Opt-in `experimental_xml` JSON prompt prototype. The standard `translator`
-  remains the default; XML markup is sent verbatim without a POML compiler.
-- Bounded, masked URL/HTML filter previews through the optional
-  `DebuggableFilterInterface`, and masked restored-container diagnostics.
-- `tools/live-smoke.php` for paid synthetic API/CLI checks with credentials kept
-  in the environment and sanitized local reports.
+- Opt-in text and HTML segment transports, including explicitly selected HTML strings in JSON, sequential batching, and resumable checkpoints. See [upgrading to 0.10.0](docs/upgrading.md#upgrading-to-0100).
+- A shared operation deadline for preparation and provider workflows.
+- Optional recursive validation of JSON encoded in strings and HTML at selected JSON Pointers.
+- Native JSON transports for Google and Yandex where supported, plus the experimental `experimental_xml` prompt.
+- Masked filter previews and `tools/live-smoke.php` for small paid API and CLI checks.
+
+### Changed
+
+- Segment and selected HTML JSON protocols require complete, unique fragment IDs. Batching and checkpoints remain opt-in; `document` remains the default text and HTML transport.
+- Validation now preserves exact JSON scalar values and container types, checks HTML structure and selected visible content. Empty provider responses and placeholder corruption are rejected even when container validation is disabled.
+- DeepL JSON now defaults to the Document API; ordered string reconstruction remains available with `json_transport=text_batch`.
+- Provider completion states, DeepL request limits, and diagnostic masking are checked more strictly. Invalid or incomplete responses that could previously pass may now fail.
 
 ### Fixed
 
-- HTML validation reads only the current parse's errors and restores the caller's
-  libxml error-handling mode. Previous XML errors no longer invalidate valid HTML.
-  The invalid-HTML diagnostic fixture now uses an unterminated attribute instead
-  of relying on platform-dependent handling of a trailing literal `<`.
-- Live PHPUnit datasets no longer contain API keys or Yandex folder IDs. Tests
-  resolve credentials after setup and run only with exactly `RUN_LIVE_TESTS=1`.
-  Skipped tests and failed diagnostic assertions cannot echo credential values
-  through dataset or assertion formatting; controlled regressions inspect JUnit
-  and console output without contacting providers.
-- OpenAI/xAI reject present non-success completion reasons even when markers or
-  native JSON are valid. Explicit Responses statuses must be `completed`;
-  missing legacy metadata remains supported. OpenAI uses the same merged
-  defaults/options protocol selection when building and parsing schema requests.
-- DeepL checks the serialized 128 KiB body limit for every text, HTML, and
-  `text_batch` request, including unchanged HTML and multibyte/context expansion.
-  Native document uploads retain their separate source-size limit.
-- Selected void HTML elements (`html_img`, `html_br`, `html_input`, and others)
-  are protected as complete individual opening tags, including in recursively
-  encoded JSON. They previously accepted the filter name but matched no block.
-- Numeric transport error codes survive document polling/download and batch
-  wrapping. Document-workflow deadline expiry uses timeout code 28; error messages
-  remain sanitized without retaining the original unmasked transport exception.
-- Restored `composer lint` and `composer phpunit` aliases alongside `test:*`
-  commands, and corrected the README example's supported-format list.
-
-- Nonempty prepared input can no longer produce a successful empty or
-  whitespace-only provider translation, even with `--no-validate`. Empty source,
-  dry-run, and local no-translation results retain their existing behavior.
-- JSON validation rejects previously nonempty strings becoming empty or Unicode
-  whitespace, with property/index diagnostics. Recursive encoded strings receive
-  the same check only when embedded JSON validation is enabled.
-- HTML validation rejects cleared prose in text containers and cleared nonempty
-  `title`, `alt`, or `aria-label` attributes. Inline text may move within its
-  container; retained opaque code, script/style, SVG, or MathML text cannot hide
-  lost prose. The same rules apply at explicitly selected HTML-in-JSON locations.
-- JSON validation accepts reordered object properties while preserving array
-  positions, container types, and exact numbers/booleans/null at each location.
-  Large integers, precise decimals, and numeric spelling changes no longer hide
-  behind floating-point rounding. Output is not repaired or reordered.
-- HTML validation preserves tag structure, non-translatable attributes, comments,
-  doctype, and Markdown fence delimiters and boundary labels. Attribute order and
-  equivalent entity spellings remain permitted.
-- Placeholder restoration rejects missing, duplicated, or unexpected markers,
-  including with container validation disabled. Literal marker-like source text
-  and overlapping placeholders no longer collide or cascade during restoration.
-- URL/HTML filters preserve exact escaped source bytes inside ordinary and
-  recursively encoded JSON strings. Complete nested HTML blocks and full tag
-  names are matched without spanning separate JSON strings. Comments, CDATA,
-  attributes, and raw-text contexts do not create false tag boundaries.
-- Unclosed protected HTML blocks, incomplete tags, unknown filters, and malformed
-  selected tag names now fail explicitly before HTTP. Self-closing SVG/MathML
-  blocks remain protected. Long URL matching failures stop translation instead
-  of silently dropping protection.
-- DeepL JSON defaults to native document upload/poll/download with bounded waits,
-  a 1 MB source limit, masked document credentials, and CLI-compatible positive
-  integer `document_timeout` values. Unsupported document options fail explicitly;
-  failures do not silently select another transport.
-- DeepL's explicit `json_transport=text_batch` translates string values in order
-  and reconstructs JSON locally with safe escaping; no-value JSON completes
-  without HTTP. Literal technical strings remain translatable.
-- DeepL HTML protects normal-text placeholders in request-local non-translatable
-  spans, preventing observed movement of a protected code block into a link.
-  Only generated wrappers are removed; invalid wrappers fail restoration.
-- Yandex rejects truncated, filtered, refused, tool-call, and invalid completion
-  states before accepting translated content. Its narrow observed opening-only
-  HTML fence compatibility path preserves source fences and rejects other
-  introduced wrappers. Chat Completions usage reaches the common normalizer.
-- Request/error diagnostics mask API keys, Yandex folder IDs, proxies, and their
-  URL/form/JSON-escaped representations. Raw translation data remains unchanged.
-- Invalid, negative, fractional, or unrepresentable usage counters retain the
-  existing zero fallback. Aggregate overflow omits only the affected metric;
-  CLI output does not invent a zero total.
-- CLI diagnostic-write failures no longer contaminate stdout. Invalid ordinary
-  output paths fail before paid requests. Regular local outputs are staged and
-  atomically replaced; provider/validation failures leave existing files intact.
-- Reserved model variables cannot override facade/CLI format, dry-run, prompt,
-  context, verbosity, or internal response context.
-- Removed obsolete cURL/reflection calls deprecated by PHP 8.5; PHP 8.2 remains
-  supported. Composer distribution archives now include the README.
-- Prompt instructions consistently describe boundary markers and prohibit added
-  Markdown fences; strict response validation remains authoritative.
-
-### Compatibility and known limitations
-
-- Text and HTML still default to `document`. A nonempty document response may
-  omit prose; validation does not establish semantic completeness. Segment IDs
-  detect missing fragments, not omissions inside a returned nonempty fragment or
-  translation fidelity. Smaller independent fragments may reduce fluency.
-- HTML content checks do not render CSS or require each inline text node to stay
-  nonempty. Opaque/raw-text blocks are excluded from prose checks. JSON strings
-  are not interpreted as HTML or nested JSON without explicit selection/opt-in.
-- `--no-validate` / `validate: false` disables optional container/content checks;
-  placeholder integrity, required segment protocol, and the empty-response guard
-  remain mandatory. Newly rejected invalid inputs/outputs previously could appear
-  successful. Custom segment prompt groups need a JSON template.
-- Batching is sequential and opt-in. No automatic HTTP retry or transport fallback
-  is added. Byte caps measure serialized fragment JSON, not the full HTTP body or
-  exact token counts. CPU work and callbacks observe the shared deadline at
-  boundaries; it does not preempt an arbitrary blocking callback.
-- A checkpoint cannot guarantee exactly-once billing for a request interrupted
-  before its confirmed result was saved, or resume an in-flight DeepL document job.
-  It contains translated values and usage, so it should be treated as private data.
-- Atomic replacement covers eligible regular local files. Streams, hard links,
-  some ownership/permission combinations, and other compatibility cases use direct
-  writes; ACLs/extended attributes are not copied to a new inode. See the README.
-- Protected non-void HTML blocks require explicit closing tags; malformed markup
-  is not repaired. DeepL technical string contents may change and must be protected
-  explicitly when their bytes must remain unchanged.
-- Provider access, quotas, output budgets, content filters, and availability remain
-  external constraints. Registry support is not a live test of every listed model.
-
-### Verification
-
-- PHP 8.2.34 and 8.5.11: 1162 unit tests, 6592 assertions on each; PHPCS and
-  PHPStan 2.3.2 at maximum level pass.
-- Paid acceptance on 2026-10-25, before the audit corrections: 48/48 small
-  segment cases across Gemini 2.5 Flash,
-  GPT-5 mini, Claude Haiku 4.5, Grok 4.20 non-reasoning, Yandex Lite/Pro, and
-  DeepL Free/Pro, using API/CLI and text/HTML/selected HTML-in-JSON. Checkpoint
-  reuse, protected fragments, and unselected JSON bytes were checked. This run
-  used DeepL `text_batch`; earlier native JSON Document results remain recorded.
-- After the audit corrections, 112/112 recorded provider response packets from
-  those 48 cases pass the current driver decoders. DeepL replays use synthetic
-  value-count contexts and verify decoding only. Negative completion states,
-  credential-free PHPUnit/JUnit output, body limits, void filtering, and transport
-  codes have controlled regressions; no additional paid requests were made.
-- Default document-mode smoke on 2026-10-25: 12/12 cases on Gemini 2.5 Flash and Yandex Lite.
-  Offline failure/resume acceptance passed for all three formats on both PHP
-  versions. This is not exhaustive model-catalogue or translation-quality testing.
-  See [the acceptance record](tools/README.md#follow-up-acceptance-for-release-preparation)
-  for scope and the separately retained earlier connection timeout.
+- Preserved escaped URL/HTML source bytes inside nested JSON and rejected malformed protected blocks.
+- Accepted reordered JSON object properties while preserving list positions and exact scalar values.
+- Corrected HTML validation's handling of prior libxml errors and restored the caller's libxml error mode.
+- Fixed protected void HTML elements, DeepL body-size checks, transport error codes, and OpenAI schema mode consistency.
+- Prevented partial replacement of eligible local output files and checked output errors.
+- Live test datasets and diagnostic assertions no longer expose credentials.
+- Restored the `composer lint` and `composer phpunit` aliases and corrected supported-format documentation.
 
 ## [0.9.0] – 2026-10-23
 
-This release supersedes the withdrawn `v0.8.0` Git release. Packagist retains
-published version references, so the updated code is distributed under a new
-version number. Consumers pinned to `0.8.0` must update their constraint.
+This release supersedes the withdrawn 0.8.0. See [upgrade guidance](docs/upgrading.md#upgrading-to-090) for API and configuration changes.
 
 ### Added
 
-- Integrated the developer's generic JSON prototypes: `structured_json` uses an
-  explicit caller-provided `response_schema` with OpenAI Chat Completions/Responses
-  or Gemini native schema output; `linedJson` selects an alternative prompt with
-  ordinary JSON container validation. Neither mode assumes application field names.
-- Added CLI `--response-schema=FILE` for native structured JSON. Native responses
-  do not use translation markers. Gemini thought parts are excluded from output.
-- Expanded the six-provider registry to 132 entries as checked on 2026-10-22:
-  72 OpenAI, 17 Anthropic, 17 Google, 16 Yandex, eight xAI models, and two DeepL
-  service tiers. Includes served legacy models, previews, dated snapshots, and
-  restricted-access models. Availability remains dependent on the provider and account.
-- Added `resources/model-catalog.json` with provider API identifiers, source links,
-  exclusions, and results of plain-text translation checks.
-- Added OpenAI and xAI Responses API requests and response parsing, legacy OpenAI
-  Completions requests, and Yandex OpenAI-compatible requests alongside the
-  Foundation API. The registry selects the API required by each model.
-- Added model-specific reasoning settings for OpenAI, Claude adaptive thinking and
-  effort, Gemini thinking levels, and DeepL engine selection through `model_type`.
-- Added the optional `onFeedback` translation progress callback, wired to verbose
-  CLI output. It was described in the 0.7.0 notes but absent from that tagged code.
-- CLI credentials and required model variables accept non-empty `BBLSLUG_` prefixed
-  environment variables before their unprefixed equivalents; explicit CLI values win.
-- Added unit tests for translation, drivers, validation, filters, HTTP, CLI output,
-  and registry/documentation consistency. Live integration tests are opt-in and
-  can select an exact model with `BBLSLUG_LIVE_MODEL`.
+- Expanded provider model registration and added machine-readable catalogue provenance.
+- Generic `structured_json` with caller-provided schemas for OpenAI and Gemini, and `linedJson` with JSON container validation.
+- OpenAI and xAI Responses API support, legacy OpenAI Completions, and Yandex OpenAI-compatible requests.
+- Model-specific reasoning controls, DeepL engine selection, and `onFeedback` progress callbacks.
+- `BBLSLUG_`-prefixed credential and model-variable environment names, which take precedence over unprefixed names.
+
+### Changed
+
+- The model registry and provider request protocols were updated; unavailable or removed model keys now fail locally instead of silently selecting a replacement.
+- HTTP requests now have configurable connection and total timeouts, defaulting to 10 and 120 seconds.
+- JSON validation checks returned values and structure without repairing incomplete output.
 
 ### Fixed
 
-- Anthropic now uses the Messages API. DeepL now uses header authentication and
-  the correct Pro endpoint.
-- OpenAI and xAI response parsing handles the corresponding API response shapes,
-  refusals, and incomplete responses rather than accepting them as translations.
-- JSON validation checks the actual returned document. Missing fields or list
-  elements, including `null`, are rejected rather than silently validating a
-  repaired tree while returning incomplete output.
-- The alternative JSON prompt now requires consistent output markers rather than
-  simultaneously requesting marked output and JSON alone. Test YAML files use
-  unique names so concurrent test runs do not overwrite each other's fixtures.
-- JSON structure checks distinguish objects from arrays, including empty
-  containers and objects with numeric keys.
-- Translation HTTP and provider parsing errors mask API keys in URLs, response
-  bodies, and diagnostic logs, including encoded and JSON-escaped forms.
-- HTTP request logs mask URL credentials in verbose and dry-run modes. Requests
-  have configurable connection and total timeouts, defaulting to 10 and 120
-  seconds; network exceptions preserve the cURL error code.
-- CLI exits with an error when translated or dry-run prepared output cannot be
-  fully written.
-- Composer distributions include the CLI executable. Composer binary proxies use
-  the consuming project's autoloader.
-- README examples and CLI help describe credential precedence, prompt selection,
-  dry-run behavior, and validation limits. Removed duplicated provider guidance.
-
-### Compatibility and upgrade notes
-
-- PHP **8.2 or newer**, cURL, DOM, and mbstring are required. The PHP floor matches
-  the existing Symfony YAML dependency; older manifests understated it.
-- `onFeedback` is appended to `Bblslug::translate()` so the original positional
-  argument order is preserved. Named callback arguments remain supported.
-- `ModelDriverInterface::parseResponse()` accepts an optional third
-  `array $options = []` argument. Update custom driver implementations to that
-  signature; direct two-argument calls to built-in drivers remain supported.
-- Compared with the withdrawn tag, `structured_json` now requires an explicit
-  schema and is limited to the two implemented providers; the CLI can supply it
-  with `--response-schema`. Translation input remains a string. The old array
-  input declaration did not provide a working array translation path.
-- `linedJson` rejects malformed or structurally incomplete output instead of
-  attempting to repair quotes with a regular expression. It is not JSON Lines.
-- Removed retired or invalid keys: `anthropic:claude-haiku-3.5`,
-  `anthropic:claude-opus-4`, `anthropic:claude-sonnet-4`,
-  `google:gemini-2.0-flash`, `yandex:llama`, and `yandex:llama-lite`.
-  Removed compatibility redirects `xai:grok-4`, `xai:grok-3`, and
-  `xai:grok-3-mini`, which no longer select those models at the provider.
-  Removed keys fail locally; the library does not silently substitute a model.
-- JSON outputs accepted by earlier structure checks can now fail validation if
-  they omit values or change an object into an array. Object key order is still
-  compared strictly.
-- Requests that previously waited indefinitely can now time out. Override
-  `BBLSLUG_HTTP_CONNECT_TIMEOUT` and `BBLSLUG_HTTP_TIMEOUT` when needed. Invalid
-  timeout settings fail locally. Requests are not automatically retried.
-- **Upgrade consumers pinned to `0.8.0` to `0.9.0`.** For example, run
-  `composer require habr/bblslug:0.9.0`, review the updated source/dist reference,
-  and commit both `composer.json` and `composer.lock`. Existing `composer install`
-  commands continue to use their locked copy.
-- Packagist's [version immutability policy](https://packagist.org/about/version-immutability)
-  prevents replacing stable source/dist references when a Git tag moves. The
-  attempted Git republication of `0.8.0` was therefore withdrawn. Cache clearing
-  and update webhooks do not replace that snapshot; use `0.9.0` instead. A VCS
-  override is not required for this release.
-
-### Verification and known limitations
-
-- The release candidate passes 209 unit tests with 2,073 assertions on PHP 8.2,
-  8.3, 8.4, and 8.5. PHP_CodeSniffer and PHPStan at maximum level pass. PHP 8.5
-  emits deprecation notices for existing cURL cleanup and test reflection calls.
-- Live checks on 2026-10-23 confirmed nested JSON translation through OpenAI Chat
-  Completions, OpenAI Responses, and Gemini native schema output. `linedJson`
-  passed small JSON translations with OpenAI and Gemini after correcting its
-  contradictory marker instructions. These checks cover representative models,
-  not every registered model or arbitrary production input.
-- Provider checks recorded on 2026-10-22 confirmed plain-text translation for 123
-  registry entries. Eight entries were unavailable to the test credentials, and
-  `openai:gpt-5-pro` timed out. Registry presence is not a successful live test.
-- HTML and JSON have not been verified across every model. DeepL JSON and Yandex
-  HTML/JSON remain known problem areas from earlier live checks. This release
-  does not promise reliable structured-content translation with every provider.
-- JSON checks cover syntax and captured structure, not translation quality or
-  preservation of numeric and boolean values. JSON encoded inside a string is not validated
-  independently. Escaping and placeholder restoration can still produce invalid
-  output, which validation rejects instead of repairing.
-- HTML validation checks parsing, not preservation of the original DOM tree.
-  Placeholder loss and duplication are not checked automatically.
-- Model retirement dates and access restrictions still apply after release;
-  the catalog is a dated record, not a guarantee of continuing availability.
+- Corrected Anthropic Messages API and DeepL authentication/endpoint handling.
+- Improved provider response validation, credential masking, CLI output-write errors, and Composer distribution binaries.
 
 ## [0.8.0] – Withdrawn
 
-The original tag contained unfinished JSON translation prototypes. A Git
-republication was withdrawn because Packagist retained the original immutable
-source/dist references. The generic prototypes were completed and integrated
-into **0.9.0** with their original authorship preserved. Use 0.9.0 for the updated
-code; changing the old tag cannot update existing Packagist snapshots or lock files.
+The original tag contained unfinished JSON translation prototypes. A Git republication was withdrawn because Packagist retained the original immutable source/dist references. The generic prototypes were completed and integrated into **0.9.0** with their original authorship preserved. Use 0.9.0 for the updated code; changing the old tag cannot update existing Packagist snapshots or lock files. See [upgrade guidance](docs/upgrading.md#withdrawn-080).
 
 ## [0.7.0] – 2025-08-09
 

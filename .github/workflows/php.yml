@@ -37,6 +37,11 @@ jobs:
       - name: Lint PHP code (PSR-12)
         run: make test-phplint
 
+      - name: Check documentation and generated catalogue
+        run: |
+          php tools/model-catalog.php --check
+          php tools/check-docs.php
+
       - name: Run PHPUnit tests
         run: make test-phpunit
 
