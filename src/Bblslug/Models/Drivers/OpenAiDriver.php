@@ -71,13 +71,13 @@ class OpenAiDriver implements ModelDriverInterface
         $settings = array_replace($defaults, $options);
         $hasSchema = \array_key_exists('response_schema', $settings);
         $schema = $settings['response_schema'] ?? null;
-        $native = $hasSchema;
-        if ($native && (!\is_array($schema) || $schema === [] || \array_is_list($schema))) {
+        if ($hasSchema && (!\is_array($schema) || $schema === [] || \array_is_list($schema))) {
             throw new \InvalidArgumentException('response_schema must be a non-empty associative array');
         }
-        if ($format === 'structured_json' && !$native) {
+        if ($format === 'structured_json' && !$hasSchema) {
             throw new \InvalidArgumentException('format=structured_json requires response_schema');
         }
+        $native = $this->usesNativeJson($config, $options);
         if ($native && !\in_array($format, ['json', 'structured_json', 'linedJson'], true)) {
             throw new \InvalidArgumentException('response_schema requires format json, structured_json, or linedJson');
         }
@@ -271,8 +271,7 @@ class OpenAiDriver implements ModelDriverInterface
             $usage = $typed;
         }
 
-        $native = \array_key_exists('response_schema', $options)
-            || (($options['format'] ?? null) === 'structured_json');
+        $native = $this->usesNativeJson($config, $options);
         if ($native) {
             return ['text' => \trim($content), 'usage' => $usage];
         }
@@ -285,6 +284,22 @@ class OpenAiDriver implements ModelDriverInterface
         $text = trim($matches[1]);
 
         return ['text' => $text, 'usage' => $usage];
+    }
+
+    /**
+     * @param array<string,mixed> $config
+     * @param array<string,mixed> $options
+     */
+    private function usesNativeJson(array $config, array $options): bool
+    {
+        $defaults = \is_array($config['defaults'] ?? null) ? $config['defaults'] : [];
+        $settings = \array_replace($defaults, $options);
+        $format = \is_string($options['format'] ?? null)
+            ? $options['format']
+            : (\is_string($defaults['format'] ?? null) ? $defaults['format'] : 'text');
+
+        return \array_key_exists('response_schema', $settings)
+            || $format === 'structured_json';
     }
 
     /** @param array<array-key,mixed>|null $choice */
