@@ -28,55 +28,19 @@ anthropic:
         cache_creation: cache_creation_input_tokens
         cache_read: cache_read_input_tokens
   models:
-    claude-haiku-5.5:
+    claude-fable-5:
       defaults:
-        model: claude-haiku-5-5
+        model: claude-fable-5
         max_tokens: 4096
         temperature: null
-        effort: low
         thinking: adaptive
+        effort: low
       limits:
         max_tokens: 1000000
         max_output_tokens: 128000
         estimated_max_chars: 4000000
-      notes: 'Current efficient Claude model for high-volume translation.'
-      name: claude-haiku-5.5
-      status: available
-      kind: model
-      access: standard
-      checked_at: '2026-10-26'
-      lifecycle_source: 'https://platform.claude.com/docs/en/about-claude/model-deprecations'
-    claude-sonnet-5.5:
-      defaults:
-        model: claude-sonnet-5-5
-        max_tokens: 4096
-        temperature: null
-        effort: low
-        thinking: adaptive
-      limits:
-        max_tokens: 1000000
-        max_output_tokens: 128000
-        estimated_max_chars: 4000000
-      notes: 'Current balanced Claude model for translation.'
-      name: claude-sonnet-5.5
-      status: available
-      kind: model
-      access: standard
-      checked_at: '2026-10-26'
-      lifecycle_source: 'https://platform.claude.com/docs/en/about-claude/model-deprecations'
-    claude-opus-5.5:
-      defaults:
-        model: claude-opus-5-5
-        max_tokens: 4096
-        temperature: null
-        effort: low
-        thinking: adaptive
-      limits:
-        max_tokens: 1000000
-        max_output_tokens: 128000
-        estimated_max_chars: 4000000
-      notes: 'Current capable Claude model for demanding translation.'
-      name: claude-opus-5.5
+      name: claude-fable-5
+      notes: 'Provider text-generation model; account access may vary.'
       status: available
       kind: model
       access: standard
@@ -100,45 +64,110 @@ anthropic:
       access: standard
       checked_at: '2026-10-26'
       lifecycle_source: 'https://platform.claude.com/docs/en/about-claude/model-deprecations'
-    claude-opus-5:
+    claude-haiku-4.5-20251001:
       defaults:
-        model: claude-opus-5
+        model: claude-haiku-4-5-20251001
+        max_tokens: 4096
+        temperature: 0.0
+      limits:
+        max_tokens: 200000
+        max_output_tokens: 64000
+        estimated_max_chars: 800000
+      name: claude-haiku-4.5-20251001
+      notes: 'Provider text-generation model; account access may vary.'
+      status: available
+      kind: snapshot
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://platform.claude.com/docs/en/about-claude/model-deprecations'
+    claude-haiku-5.5:
+      defaults:
+        model: claude-haiku-5-5
         max_tokens: 4096
         temperature: null
-        thinking: adaptive
         effort: low
+        thinking: adaptive
       limits:
         max_tokens: 1000000
         max_output_tokens: 128000
         estimated_max_chars: 4000000
-      name: claude-opus-5
-      notes: 'Provider text-generation model; account access may vary.'
+      notes: 'Current efficient Claude model for high-volume translation.'
+      name: claude-haiku-5.5
       status: available
       kind: model
       access: standard
       checked_at: '2026-10-26'
       lifecycle_source: 'https://platform.claude.com/docs/en/about-claude/model-deprecations'
-    claude-sonnet-5:
+    claude-mythos-5:
       defaults:
-        model: claude-sonnet-5
+        model: claude-mythos-5
         max_tokens: 4096
         temperature: null
         thinking: adaptive
-        effort: low
       limits:
         max_tokens: 1000000
         max_output_tokens: 128000
         estimated_max_chars: 4000000
-      name: claude-sonnet-5
-      notes: 'Provider text-generation model; account access may vary.'
+      notes: 'Restricted Project Glasswing model; direct API access requires approval.'
+      name: claude-mythos-5
       status: available
       kind: model
+      access: restricted
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://platform.claude.com/docs/en/about-claude/model-deprecations'
+    claude-mythos-5.1:
+      defaults:
+        model: claude-mythos-5-1
+        max_tokens: 4096
+        temperature: null
+        thinking: adaptive
+      limits:
+        max_tokens: 1000000
+        max_output_tokens: 128000
+        estimated_max_chars: 4000000
+      notes: 'Restricted-access model; availability depends on provider approval.'
+      name: claude-mythos-5.1
+      status: available
+      kind: model
+      access: restricted
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://platform.claude.com/docs/en/about-claude/model-deprecations'
+    claude-mythos-preview:
+      defaults:
+        model: claude-mythos-preview
+        max_tokens: 4096
+        temperature: null
+        thinking: adaptive
+      limits:
+        max_tokens: 1000000
+        max_output_tokens: 128000
+        estimated_max_chars: 4000000
+      notes: 'Deprecated research preview; still documented as a served migration source, invite-only.'
+      name: claude-mythos-preview
+      status: deprecated
+      kind: preview
+      access: restricted
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://platform.claude.com/docs/en/about-claude/model-deprecations'
+    claude-opus-4.5-20251101:
+      defaults:
+        model: claude-opus-4-5-20251101
+        max_tokens: 4096
+        temperature: 0.0
+      limits:
+        max_tokens: 200000
+        max_output_tokens: 64000
+        estimated_max_chars: 800000
+      name: claude-opus-4.5-20251101
+      notes: 'Provider text-generation model; account access may vary.'
+      status: available
+      kind: snapshot
       access: standard
       checked_at: '2026-10-26'
       lifecycle_source: 'https://platform.claude.com/docs/en/about-claude/model-deprecations'
-    claude-fable-5:
+    claude-opus-4.6:
       defaults:
-        model: claude-fable-5
+        model: claude-opus-4-6
         max_tokens: 4096
         temperature: null
         thinking: adaptive
@@ -147,25 +176,7 @@ anthropic:
         max_tokens: 1000000
         max_output_tokens: 128000
         estimated_max_chars: 4000000
-      name: claude-fable-5
-      notes: 'Provider text-generation model; account access may vary.'
-      status: available
-      kind: model
-      access: standard
-      checked_at: '2026-10-26'
-      lifecycle_source: 'https://platform.claude.com/docs/en/about-claude/model-deprecations'
-    claude-opus-4.8:
-      defaults:
-        model: claude-opus-4-8
-        max_tokens: 4096
-        temperature: null
-        thinking: adaptive
-        effort: low
-      limits:
-        max_tokens: 1000000
-        max_output_tokens: 128000
-        estimated_max_chars: 4000000
-      name: claude-opus-4.8
+      name: claude-opus-4.6
       notes: 'Provider text-generation model; account access may vary.'
       status: available
       kind: model
@@ -190,9 +201,9 @@ anthropic:
       access: standard
       checked_at: '2026-10-26'
       lifecycle_source: 'https://platform.claude.com/docs/en/about-claude/model-deprecations'
-    claude-sonnet-4.6:
+    claude-opus-4.8:
       defaults:
-        model: claude-sonnet-4-6
+        model: claude-opus-4-8
         max_tokens: 4096
         temperature: null
         thinking: adaptive
@@ -201,16 +212,16 @@ anthropic:
         max_tokens: 1000000
         max_output_tokens: 128000
         estimated_max_chars: 4000000
-      name: claude-sonnet-4.6
+      name: claude-opus-4.8
       notes: 'Provider text-generation model; account access may vary.'
       status: available
       kind: model
       access: standard
       checked_at: '2026-10-26'
       lifecycle_source: 'https://platform.claude.com/docs/en/about-claude/model-deprecations'
-    claude-opus-4.6:
+    claude-opus-5:
       defaults:
-        model: claude-opus-4-6
+        model: claude-opus-5
         max_tokens: 4096
         temperature: null
         thinking: adaptive
@@ -219,42 +230,28 @@ anthropic:
         max_tokens: 1000000
         max_output_tokens: 128000
         estimated_max_chars: 4000000
-      name: claude-opus-4.6
+      name: claude-opus-5
       notes: 'Provider text-generation model; account access may vary.'
       status: available
       kind: model
       access: standard
       checked_at: '2026-10-26'
       lifecycle_source: 'https://platform.claude.com/docs/en/about-claude/model-deprecations'
-    claude-opus-4.5-20251101:
+    claude-opus-5.5:
       defaults:
-        model: claude-opus-4-5-20251101
+        model: claude-opus-5-5
         max_tokens: 4096
-        temperature: 0.0
+        temperature: null
+        effort: low
+        thinking: adaptive
       limits:
-        max_tokens: 200000
-        max_output_tokens: 64000
-        estimated_max_chars: 800000
-      name: claude-opus-4.5-20251101
-      notes: 'Provider text-generation model; account access may vary.'
+        max_tokens: 1000000
+        max_output_tokens: 128000
+        estimated_max_chars: 4000000
+      notes: 'Current capable Claude model for demanding translation.'
+      name: claude-opus-5.5
       status: available
-      kind: snapshot
-      access: standard
-      checked_at: '2026-10-26'
-      lifecycle_source: 'https://platform.claude.com/docs/en/about-claude/model-deprecations'
-    claude-haiku-4.5-20251001:
-      defaults:
-        model: claude-haiku-4-5-20251001
-        max_tokens: 4096
-        temperature: 0.0
-      limits:
-        max_tokens: 200000
-        max_output_tokens: 64000
-        estimated_max_chars: 800000
-      name: claude-haiku-4.5-20251001
-      notes: 'Provider text-generation model; account access may vary.'
-      status: available
-      kind: snapshot
+      kind: model
       access: standard
       checked_at: '2026-10-26'
       lifecycle_source: 'https://platform.claude.com/docs/en/about-claude/model-deprecations'
@@ -276,55 +273,58 @@ anthropic:
       lifecycle_source: 'https://platform.claude.com/docs/en/about-claude/model-deprecations'
       shutdown_date: '2026-11-30'
       replacement: 'anthropic:claude-sonnet-5.5'
-    claude-mythos-5:
+    claude-sonnet-4.6:
       defaults:
-        model: claude-mythos-5
+        model: claude-sonnet-4-6
         max_tokens: 4096
         temperature: null
         thinking: adaptive
+        effort: low
       limits:
         max_tokens: 1000000
         max_output_tokens: 128000
         estimated_max_chars: 4000000
-      notes: 'Restricted Project Glasswing model; direct API access requires approval.'
-      name: claude-mythos-5
+      name: claude-sonnet-4.6
+      notes: 'Provider text-generation model; account access may vary.'
       status: available
       kind: model
-      access: restricted
+      access: standard
       checked_at: '2026-10-26'
       lifecycle_source: 'https://platform.claude.com/docs/en/about-claude/model-deprecations'
-    claude-mythos-preview:
+    claude-sonnet-5:
       defaults:
-        model: claude-mythos-preview
+        model: claude-sonnet-5
         max_tokens: 4096
         temperature: null
         thinking: adaptive
+        effort: low
       limits:
         max_tokens: 1000000
         max_output_tokens: 128000
         estimated_max_chars: 4000000
-      notes: 'Deprecated research preview; still documented as a served migration source, invite-only.'
-      name: claude-mythos-preview
-      status: deprecated
-      kind: preview
-      access: restricted
-      checked_at: '2026-10-26'
-      lifecycle_source: 'https://platform.claude.com/docs/en/about-claude/model-deprecations'
-    claude-mythos-5.1:
-      defaults:
-        model: claude-mythos-5-1
-        max_tokens: 4096
-        temperature: null
-        thinking: adaptive
-      limits:
-        max_tokens: 1000000
-        max_output_tokens: 128000
-        estimated_max_chars: 4000000
-      notes: 'Restricted-access model; availability depends on provider approval.'
-      name: claude-mythos-5.1
+      name: claude-sonnet-5
+      notes: 'Provider text-generation model; account access may vary.'
       status: available
       kind: model
-      access: restricted
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://platform.claude.com/docs/en/about-claude/model-deprecations'
+    claude-sonnet-5.5:
+      defaults:
+        model: claude-sonnet-5-5
+        max_tokens: 4096
+        temperature: null
+        effort: low
+        thinking: adaptive
+      limits:
+        max_tokens: 1000000
+        max_output_tokens: 128000
+        estimated_max_chars: 4000000
+      notes: 'Current balanced Claude model for translation.'
+      name: claude-sonnet-5.5
+      status: available
+      kind: model
+      access: standard
       checked_at: '2026-10-26'
       lifecycle_source: 'https://platform.claude.com/docs/en/about-claude/model-deprecations'
 deepl:
@@ -418,13 +418,13 @@ google:
       access: existing_customers
       checked_at: '2026-10-26'
       lifecycle_source: 'https://ai.google.dev/gemini-api/docs/deprecations'
-    gemini-2.5-pro:
+    gemini-2.5-flash-lite:
       capabilities:
         native_json: true
-      name: 'Gemini 2.5 Pro'
-      endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent'
+      name: 'Gemini 2.5 Flash-Lite'
+      endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent'
       defaults:
-        model: gemini-2.5-pro
+        model: gemini-2.5-flash-lite
         thinkingBudget: null
         includeThoughts: null
       limits:
@@ -438,101 +438,13 @@ google:
       access: existing_customers
       checked_at: '2026-10-26'
       lifecycle_source: 'https://ai.google.dev/gemini-api/docs/deprecations'
-    gemma-4-26b-a4b-it:
-      defaults:
-        model: gemma-4-26b-a4b-it
-        thinkingBudget: null
-        temperature: 1.0
-      limits:
-        max_tokens: 262144
-        max_output_tokens: 32768
-        estimated_max_chars: 1048576
-      endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemma-4-26b-a4b-it:generateContent'
-      name: gemma-4-26b-a4b-it
-      notes: 'Provider text-generation model; account access may vary.'
-      status: available
-      kind: model
-      access: standard
-      checked_at: '2026-10-26'
-      lifecycle_source: 'https://ai.google.dev/gemini-api/docs/deprecations'
-    gemma-4-31b-it:
-      defaults:
-        model: gemma-4-31b-it
-        thinkingBudget: null
-        temperature: 1.0
-      limits:
-        max_tokens: 262144
-        max_output_tokens: 32768
-        estimated_max_chars: 1048576
-      endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemma-4-31b-it:generateContent'
-      name: gemma-4-31b-it
-      notes: 'Provider text-generation model; account access may vary.'
-      status: available
-      kind: model
-      access: standard
-      checked_at: '2026-10-26'
-      lifecycle_source: 'https://ai.google.dev/gemini-api/docs/deprecations'
-    gemini-flash-latest:
+    gemini-2.5-pro:
       capabilities:
         native_json: true
+      name: 'Gemini 2.5 Pro'
+      endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent'
       defaults:
-        model: gemini-flash-latest
-        thinkingBudget: null
-      limits:
-        max_tokens: 1048576
-        max_output_tokens: 65536
-        estimated_max_chars: 4194304
-      endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent'
-      name: gemini-flash-latest
-      notes: 'Provider text-generation model; account access may vary.'
-      status: available
-      kind: alias
-      access: standard
-      checked_at: '2026-10-26'
-      lifecycle_source: 'https://ai.google.dev/gemini-api/docs/deprecations'
-    gemini-flash-lite-latest:
-      capabilities:
-        native_json: true
-      defaults:
-        model: gemini-flash-lite-latest
-        thinkingBudget: null
-      limits:
-        max_tokens: 1048576
-        max_output_tokens: 65536
-        estimated_max_chars: 4194304
-      endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-lite-latest:generateContent'
-      name: gemini-flash-lite-latest
-      notes: 'Provider text-generation model; account access may vary.'
-      status: available
-      kind: alias
-      access: standard
-      checked_at: '2026-10-26'
-      lifecycle_source: 'https://ai.google.dev/gemini-api/docs/deprecations'
-    gemini-pro-latest:
-      capabilities:
-        native_json: true
-      defaults:
-        model: gemini-pro-latest
-        thinkingBudget: null
-      limits:
-        max_tokens: 1048576
-        max_output_tokens: 65536
-        estimated_max_chars: 4194304
-      endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-latest:generateContent'
-      name: gemini-pro-latest
-      notes: 'Provider text-generation model; account access may vary.'
-      status: available
-      kind: alias
-      access: standard
-      checked_at: '2026-10-26'
-      lifecycle_source: 'https://ai.google.dev/gemini-api/docs/deprecations'
-    gemini-2.5-flash-lite:
-      capabilities:
-        native_json: true
-      name: 'Gemini 2.5 Flash-Lite'
-      endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent'
-      defaults:
-        model: gemini-2.5-flash-lite
+        model: gemini-2.5-pro
         thinkingBudget: null
         includeThoughts: null
       limits:
@@ -566,6 +478,28 @@ google:
       access: standard
       checked_at: '2026-10-26'
       lifecycle_source: 'https://ai.google.dev/gemini-api/docs/deprecations'
+    gemini-3.1-flash-lite:
+      capabilities:
+        native_json: true
+      defaults:
+        model: gemini-3.1-flash-lite
+        thinkingLevel: low
+        includeThoughts: false
+        temperature: 1.0
+      limits:
+        max_tokens: 1048576
+        max_output_tokens: 65536
+        estimated_max_chars: 4194304
+      endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent'
+      name: gemini-3.1-flash-lite
+      notes: "Provider lists an earliest possible shutdown date; exact retirement may change."
+      status: deprecated
+      kind: model
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://ai.google.dev/gemini-api/docs/deprecations'
+      shutdown_date: '2027-05-07'
+      replacement: 'google:gemini-3.5-flash-lite'
     gemini-3.1-pro-preview:
       capabilities:
         native_json: true
@@ -606,28 +540,6 @@ google:
       access: standard
       checked_at: '2026-10-26'
       lifecycle_source: 'https://ai.google.dev/gemini-api/docs/deprecations'
-    gemini-3.1-flash-lite:
-      capabilities:
-        native_json: true
-      defaults:
-        model: gemini-3.1-flash-lite
-        thinkingLevel: low
-        includeThoughts: false
-        temperature: 1.0
-      limits:
-        max_tokens: 1048576
-        max_output_tokens: 65536
-        estimated_max_chars: 4194304
-      endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent'
-      name: gemini-3.1-flash-lite
-      notes: "Provider lists an earliest possible shutdown date; exact retirement may change."
-      status: deprecated
-      kind: model
-      access: standard
-      checked_at: '2026-10-26'
-      lifecycle_source: 'https://ai.google.dev/gemini-api/docs/deprecations'
-      shutdown_date: '2027-05-07'
-      replacement: 'google:gemini-3.5-flash-lite'
     gemini-3.5-flash-lite:
       capabilities:
         native_json: true
@@ -708,6 +620,94 @@ google:
       access: standard
       checked_at: '2026-10-26'
       lifecycle_source: 'https://ai.google.dev/gemini-api/docs/deprecations'
+    gemini-flash-latest:
+      capabilities:
+        native_json: true
+      defaults:
+        model: gemini-flash-latest
+        thinkingBudget: null
+      limits:
+        max_tokens: 1048576
+        max_output_tokens: 65536
+        estimated_max_chars: 4194304
+      endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent'
+      name: gemini-flash-latest
+      notes: 'Provider text-generation model; account access may vary.'
+      status: available
+      kind: alias
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://ai.google.dev/gemini-api/docs/deprecations'
+    gemini-flash-lite-latest:
+      capabilities:
+        native_json: true
+      defaults:
+        model: gemini-flash-lite-latest
+        thinkingBudget: null
+      limits:
+        max_tokens: 1048576
+        max_output_tokens: 65536
+        estimated_max_chars: 4194304
+      endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-lite-latest:generateContent'
+      name: gemini-flash-lite-latest
+      notes: 'Provider text-generation model; account access may vary.'
+      status: available
+      kind: alias
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://ai.google.dev/gemini-api/docs/deprecations'
+    gemini-pro-latest:
+      capabilities:
+        native_json: true
+      defaults:
+        model: gemini-pro-latest
+        thinkingBudget: null
+      limits:
+        max_tokens: 1048576
+        max_output_tokens: 65536
+        estimated_max_chars: 4194304
+      endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-latest:generateContent'
+      name: gemini-pro-latest
+      notes: 'Provider text-generation model; account access may vary.'
+      status: available
+      kind: alias
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://ai.google.dev/gemini-api/docs/deprecations'
+    gemma-4-26b-a4b-it:
+      defaults:
+        model: gemma-4-26b-a4b-it
+        thinkingBudget: null
+        temperature: 1.0
+      limits:
+        max_tokens: 262144
+        max_output_tokens: 32768
+        estimated_max_chars: 1048576
+      endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemma-4-26b-a4b-it:generateContent'
+      name: gemma-4-26b-a4b-it
+      notes: 'Provider text-generation model; account access may vary.'
+      status: available
+      kind: model
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://ai.google.dev/gemini-api/docs/deprecations'
+    gemma-4-31b-it:
+      defaults:
+        model: gemma-4-31b-it
+        thinkingBudget: null
+        temperature: 1.0
+      limits:
+        max_tokens: 262144
+        max_output_tokens: 32768
+        estimated_max_chars: 1048576
+      endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemma-4-31b-it:generateContent'
+      name: gemma-4-31b-it
+      notes: 'Provider text-generation model; account access may vary.'
+      status: available
+      kind: model
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://ai.google.dev/gemini-api/docs/deprecations'
 openai:
   endpoint: 'https://api.openai.com/v1/chat/completions'
   defaults:
@@ -731,78 +731,185 @@ openai:
         completion: completion_tokens
         reasoning: completion_tokens_details.reasoning_tokens
   models:
-    gpt-5.6-luna:
+    chat-latest:
       api_type: chat_completions
       endpoint: 'https://api.openai.com/v1/chat/completions'
       defaults:
-        model: gpt-5.6-luna
+        model: chat-latest
         max_completion_tokens: 2048
-        reasoning_effort: low
         temperature: null
       limits: {  }
       source: 'GET /v1/models + official API model reference (2026-10-22)'
-      name: gpt-5.6-luna
+      name: chat-latest
       notes: 'Provider text-generation model; account access may vary.'
       status: available
       kind: alias
       access: standard
       checked_at: '2026-10-26'
       lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
-    gpt-5-search-api:
+    gpt-4.1:
       api_type: chat_completions
       endpoint: 'https://api.openai.com/v1/chat/completions'
       defaults:
-        model: gpt-5-search-api
+        model: gpt-4.1
         max_completion_tokens: 2048
-        reasoning_effort: null
-        temperature: null
+        temperature: 0.0
       limits: {  }
       source: 'GET /v1/models + official API model reference (2026-10-22)'
-      name: gpt-5-search-api
-      notes: 'Provider text-generation model; account access may vary.'
-      status: available
+      name: gpt-4.1
+      notes: "Provider text-generation model; account access may vary."
+      status: deprecated
       kind: alias
       access: standard
       checked_at: '2026-10-26'
       lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
-    gpt-5.5-2026-04-23:
+      shutdown_date: '2027-01-14'
+    gpt-4.1-2025-04-14:
       api_type: chat_completions
       endpoint: 'https://api.openai.com/v1/chat/completions'
       defaults:
-        model: gpt-5.5-2026-04-23
+        model: gpt-4.1-2025-04-14
         max_completion_tokens: 2048
-        reasoning_effort: low
-        temperature: null
+        temperature: 0.0
       limits: {  }
       source: 'GET /v1/models + official API model reference (2026-10-22)'
-      name: gpt-5.5-2026-04-23
-      notes: 'Provider text-generation model; account access may vary.'
-      status: available
+      name: gpt-4.1-2025-04-14
+      notes: "Provider text-generation model; account access may vary."
+      status: deprecated
       kind: snapshot
       access: standard
       checked_at: '2026-10-26'
       lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
-    gpt-5.4-2026-03-05:
+      shutdown_date: '2027-01-14'
+    gpt-4.1-mini:
       api_type: chat_completions
       endpoint: 'https://api.openai.com/v1/chat/completions'
       defaults:
-        model: gpt-5.4-2026-03-05
+        model: gpt-4.1-mini
         max_completion_tokens: 2048
-        reasoning_effort: low
-        temperature: null
+        temperature: 0.0
       limits: {  }
       source: 'GET /v1/models + official API model reference (2026-10-22)'
-      name: gpt-5.4-2026-03-05
-      notes: 'Provider text-generation model; account access may vary.'
-      status: available
+      name: gpt-4.1-mini
+      notes: "Provider text-generation model; account access may vary."
+      status: deprecated
+      kind: alias
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
+      shutdown_date: '2027-01-14'
+    gpt-4.1-mini-2025-04-14:
+      api_type: chat_completions
+      endpoint: 'https://api.openai.com/v1/chat/completions'
+      defaults:
+        model: gpt-4.1-mini-2025-04-14
+        max_completion_tokens: 2048
+        temperature: 0.0
+      limits: {  }
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      name: gpt-4.1-mini-2025-04-14
+      notes: "Provider text-generation model; account access may vary."
+      status: deprecated
       kind: snapshot
       access: standard
       checked_at: '2026-10-26'
       lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
-    gpt-5-nano:
-      name: 'OpenAI GPT-5 Nano'
+      shutdown_date: '2027-01-14'
+    gpt-4o:
+      name: 'OpenAI GPT-4o'
       defaults:
-        model: gpt-5-nano
+        model: gpt-4o
+        max_completion_tokens: 2048
+        temperature: 0.0
+      limits:
+        max_tokens: 128000
+        max_output_tokens: 16384
+        estimated_max_chars: 512000
+      api_type: chat_completions
+      endpoint: 'https://api.openai.com/v1/chat/completions'
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      notes: "Highly accurate with flexible prompts, ideal for AI-assisted adaptive translation."
+      status: deprecated
+      kind: alias
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
+      shutdown_date: '2027-01-14'
+    gpt-4o-2024-08-06:
+      api_type: chat_completions
+      endpoint: 'https://api.openai.com/v1/chat/completions'
+      defaults:
+        model: gpt-4o-2024-08-06
+        max_completion_tokens: 2048
+        temperature: 0.0
+      limits: {  }
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      name: gpt-4o-2024-08-06
+      notes: "Provider text-generation model; account access may vary."
+      status: deprecated
+      kind: snapshot
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
+      shutdown_date: '2027-01-14'
+    gpt-4o-2024-11-20:
+      api_type: chat_completions
+      endpoint: 'https://api.openai.com/v1/chat/completions'
+      defaults:
+        model: gpt-4o-2024-11-20
+        max_completion_tokens: 2048
+        temperature: 0.0
+      limits: {  }
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      name: gpt-4o-2024-11-20
+      notes: "Provider text-generation model; account access may vary."
+      status: deprecated
+      kind: snapshot
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
+      shutdown_date: '2027-01-14'
+    gpt-4o-mini:
+      name: 'OpenAI GPT-4o Mini'
+      defaults:
+        model: gpt-4o-mini
+        max_completion_tokens: 2048
+        temperature: 0.0
+      limits:
+        max_tokens: 128000
+        max_output_tokens: 16384
+        estimated_max_chars: 512000
+      api_type: chat_completions
+      endpoint: 'https://api.openai.com/v1/chat/completions'
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      notes: "Lightweight GPT-4o: lower latency/cost."
+      status: deprecated
+      kind: alias
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
+      shutdown_date: '2027-01-14'
+    gpt-4o-mini-2024-07-18:
+      api_type: chat_completions
+      endpoint: 'https://api.openai.com/v1/chat/completions'
+      defaults:
+        model: gpt-4o-mini-2024-07-18
+        max_completion_tokens: 2048
+        temperature: 0.0
+      limits: {  }
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      name: gpt-4o-mini-2024-07-18
+      notes: "Provider text-generation model; account access may vary."
+      status: deprecated
+      kind: snapshot
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
+      shutdown_date: '2027-01-14'
+    gpt-5:
+      name: 'OpenAI GPT-5'
+      defaults:
+        model: gpt-5
         temperature: null
         max_completion_tokens: 2048
         reasoning_effort: low
@@ -810,7 +917,7 @@ openai:
         max_tokens: 400000
         max_output_tokens: 128000
         estimated_max_chars: 1600000
-      notes: 'Ultra-fast GPT-5 variant optimized for small-scale and real-time translation tasks.'
+      notes: 'Flagship model with enhanced reasoning, multimodal capabilities, and extended context support.'
       api_type: chat_completions
       endpoint: 'https://api.openai.com/v1/chat/completions'
       source: 'GET /v1/models + official API model reference (2026-10-22)'
@@ -819,23 +926,24 @@ openai:
       access: standard
       checked_at: '2026-10-26'
       lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
-    gpt-5.4-mini:
+    gpt-5-2025-08-07:
       api_type: chat_completions
       endpoint: 'https://api.openai.com/v1/chat/completions'
       defaults:
-        model: gpt-5.4-mini
+        model: gpt-5-2025-08-07
         max_completion_tokens: 2048
         reasoning_effort: low
         temperature: null
       limits: {  }
       source: 'GET /v1/models + official API model reference (2026-10-22)'
-      name: gpt-5.4-mini
-      notes: 'Provider text-generation model; account access may vary.'
-      status: available
-      kind: alias
+      name: gpt-5-2025-08-07
+      notes: "Provider text-generation model; account access may vary."
+      status: deprecated
+      kind: snapshot
       access: standard
       checked_at: '2026-10-26'
       lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
+      shutdown_date: '2026-12-11'
     gpt-5-mini:
       name: 'OpenAI GPT-5 Mini'
       defaults:
@@ -874,17 +982,55 @@ openai:
       checked_at: '2026-10-26'
       lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
       shutdown_date: '2026-12-11'
-    gpt-5.2-pro:
+    gpt-5-nano:
+      name: 'OpenAI GPT-5 Nano'
+      defaults:
+        model: gpt-5-nano
+        temperature: null
+        max_completion_tokens: 2048
+        reasoning_effort: low
+      limits:
+        max_tokens: 400000
+        max_output_tokens: 128000
+        estimated_max_chars: 1600000
+      notes: 'Ultra-fast GPT-5 variant optimized for small-scale and real-time translation tasks.'
+      api_type: chat_completions
+      endpoint: 'https://api.openai.com/v1/chat/completions'
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      status: available
+      kind: alias
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
+    gpt-5-nano-2025-08-07:
+      api_type: chat_completions
+      endpoint: 'https://api.openai.com/v1/chat/completions'
+      defaults:
+        model: gpt-5-nano-2025-08-07
+        max_completion_tokens: 2048
+        reasoning_effort: low
+        temperature: null
+      limits: {  }
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      name: gpt-5-nano-2025-08-07
+      notes: "Provider text-generation model; account access may vary."
+      status: deprecated
+      kind: snapshot
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
+      shutdown_date: '2026-12-11'
+    gpt-5-pro:
       api_type: responses
       endpoint: 'https://api.openai.com/v1/responses'
       defaults:
-        model: gpt-5.2-pro
+        model: gpt-5-pro
         max_completion_tokens: 2048
         reasoning_effort: high
         temperature: null
       limits: {  }
       source: 'GET /v1/models + official API model reference (2026-10-22)'
-      name: gpt-5.2-pro
+      name: gpt-5-pro
       notes: 'Provider text-generation model; account access may vary.'
       usage:
         tokens:
@@ -923,34 +1069,120 @@ openai:
       checked_at: '2026-10-26'
       lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
       shutdown_date: '2026-12-11'
-    gpt-5.6-sol:
+    gpt-5-search-api:
       api_type: chat_completions
       endpoint: 'https://api.openai.com/v1/chat/completions'
       defaults:
-        model: gpt-5.6-sol
+        model: gpt-5-search-api
         max_completion_tokens: 2048
-        reasoning_effort: low
+        reasoning_effort: null
         temperature: null
       limits: {  }
       source: 'GET /v1/models + official API model reference (2026-10-22)'
-      name: gpt-5.6-sol
+      name: gpt-5-search-api
       notes: 'Provider text-generation model; account access may vary.'
       status: available
       kind: alias
       access: standard
       checked_at: '2026-10-26'
       lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
-    gpt-5.5-pro:
+    gpt-5-search-api-2025-10-14:
+      api_type: chat_completions
+      endpoint: 'https://api.openai.com/v1/chat/completions'
+      defaults:
+        model: gpt-5-search-api-2025-10-14
+        max_completion_tokens: 2048
+        reasoning_effort: null
+        temperature: null
+      limits: {  }
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      name: gpt-5-search-api-2025-10-14
+      notes: 'Provider text-generation model; account access may vary.'
+      status: available
+      kind: snapshot
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
+    gpt-5.1:
+      api_type: chat_completions
+      endpoint: 'https://api.openai.com/v1/chat/completions'
+      defaults:
+        model: gpt-5.1
+        max_completion_tokens: 2048
+        reasoning_effort: low
+        temperature: null
+      limits: {  }
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      name: gpt-5.1
+      notes: "Provider text-generation model; account access may vary."
+      status: deprecated
+      kind: alias
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
+      shutdown_date: '2027-04-01'
+    gpt-5.1-2025-11-13:
+      api_type: chat_completions
+      endpoint: 'https://api.openai.com/v1/chat/completions'
+      defaults:
+        model: gpt-5.1-2025-11-13
+        max_completion_tokens: 2048
+        reasoning_effort: low
+        temperature: null
+      limits: {  }
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      name: gpt-5.1-2025-11-13
+      notes: 'Provider text-generation model; account access may vary.'
+      status: available
+      kind: snapshot
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
+    gpt-5.2:
+      api_type: chat_completions
+      endpoint: 'https://api.openai.com/v1/chat/completions'
+      defaults:
+        model: gpt-5.2
+        max_completion_tokens: 2048
+        reasoning_effort: low
+        temperature: null
+      limits: {  }
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      name: gpt-5.2
+      notes: 'Provider text-generation model; account access may vary.'
+      status: available
+      kind: alias
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
+    gpt-5.2-2025-12-11:
+      api_type: chat_completions
+      endpoint: 'https://api.openai.com/v1/chat/completions'
+      defaults:
+        model: gpt-5.2-2025-12-11
+        max_completion_tokens: 2048
+        reasoning_effort: low
+        temperature: null
+      limits: {  }
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      name: gpt-5.2-2025-12-11
+      notes: 'Provider text-generation model; account access may vary.'
+      status: available
+      kind: snapshot
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
+    gpt-5.2-pro:
       api_type: responses
       endpoint: 'https://api.openai.com/v1/responses'
       defaults:
-        model: gpt-5.5-pro
+        model: gpt-5.2-pro
         max_completion_tokens: 2048
         reasoning_effort: high
         temperature: null
       limits: {  }
       source: 'GET /v1/models + official API model reference (2026-10-22)'
-      name: gpt-5.5-pro
+      name: gpt-5.2-pro
       notes: 'Provider text-generation model; account access may vary.'
       usage:
         tokens:
@@ -964,24 +1196,6 @@ openai:
       access: standard
       checked_at: '2026-10-26'
       lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
-    gpt-5-2025-08-07:
-      api_type: chat_completions
-      endpoint: 'https://api.openai.com/v1/chat/completions'
-      defaults:
-        model: gpt-5-2025-08-07
-        max_completion_tokens: 2048
-        reasoning_effort: low
-        temperature: null
-      limits: {  }
-      source: 'GET /v1/models + official API model reference (2026-10-22)'
-      name: gpt-5-2025-08-07
-      notes: "Provider text-generation model; account access may vary."
-      status: deprecated
-      kind: snapshot
-      access: standard
-      checked_at: '2026-10-26'
-      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
-      shutdown_date: '2026-12-11'
     gpt-5.2-pro-2025-12-11:
       api_type: responses
       endpoint: 'https://api.openai.com/v1/responses'
@@ -1006,18 +1220,16 @@ openai:
       access: standard
       checked_at: '2026-10-26'
       lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
-    gpt-5.5-pro-2026-04-23:
+    gpt-5.3-codex:
       api_type: responses
       endpoint: 'https://api.openai.com/v1/responses'
       defaults:
-        model: gpt-5.5-pro-2026-04-23
+        model: gpt-5.3-codex
         max_completion_tokens: 2048
-        reasoning_effort: high
         temperature: null
       limits: {  }
       source: 'GET /v1/models + official API model reference (2026-10-22)'
-      name: gpt-5.5-pro-2026-04-23
-      notes: 'Provider text-generation model; account access may vary.'
+      name: gpt-5.3-codex
       usage:
         tokens:
           total: total_tokens
@@ -1025,6 +1237,111 @@ openai:
             prompt: input_tokens
             completion: output_tokens
             reasoning: output_tokens_details.reasoning_tokens
+      notes: "Provider text-generation model; account access may vary."
+      status: deprecated
+      kind: alias
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
+      shutdown_date: '2027-04-01'
+    gpt-5.4:
+      api_type: chat_completions
+      endpoint: 'https://api.openai.com/v1/chat/completions'
+      defaults:
+        model: gpt-5.4
+        max_completion_tokens: 2048
+        reasoning_effort: low
+        temperature: null
+      limits: {  }
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      name: gpt-5.4
+      notes: 'Provider text-generation model; account access may vary.'
+      status: available
+      kind: alias
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
+    gpt-5.4-2026-03-05:
+      api_type: chat_completions
+      endpoint: 'https://api.openai.com/v1/chat/completions'
+      defaults:
+        model: gpt-5.4-2026-03-05
+        max_completion_tokens: 2048
+        reasoning_effort: low
+        temperature: null
+      limits: {  }
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      name: gpt-5.4-2026-03-05
+      notes: 'Provider text-generation model; account access may vary.'
+      status: available
+      kind: snapshot
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
+    gpt-5.4-mini:
+      api_type: chat_completions
+      endpoint: 'https://api.openai.com/v1/chat/completions'
+      defaults:
+        model: gpt-5.4-mini
+        max_completion_tokens: 2048
+        reasoning_effort: low
+        temperature: null
+      limits: {  }
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      name: gpt-5.4-mini
+      notes: 'Provider text-generation model; account access may vary.'
+      status: available
+      kind: alias
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
+    gpt-5.4-mini-2026-03-17:
+      api_type: chat_completions
+      endpoint: 'https://api.openai.com/v1/chat/completions'
+      defaults:
+        model: gpt-5.4-mini-2026-03-17
+        max_completion_tokens: 2048
+        reasoning_effort: low
+        temperature: null
+      limits: {  }
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      name: gpt-5.4-mini-2026-03-17
+      notes: 'Provider text-generation model; account access may vary.'
+      status: available
+      kind: snapshot
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
+    gpt-5.4-nano:
+      api_type: chat_completions
+      endpoint: 'https://api.openai.com/v1/chat/completions'
+      defaults:
+        model: gpt-5.4-nano
+        max_completion_tokens: 2048
+        reasoning_effort: low
+        temperature: null
+      limits: {  }
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      name: gpt-5.4-nano
+      notes: "Provider text-generation model; account access may vary."
+      status: deprecated
+      kind: alias
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
+      shutdown_date: '2027-04-01'
+    gpt-5.4-nano-2026-03-17:
+      api_type: chat_completions
+      endpoint: 'https://api.openai.com/v1/chat/completions'
+      defaults:
+        model: gpt-5.4-nano-2026-03-17
+        max_completion_tokens: 2048
+        reasoning_effort: low
+        temperature: null
+      limits: {  }
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      name: gpt-5.4-nano-2026-03-17
+      notes: 'Provider text-generation model; account access may vary.'
       status: available
       kind: snapshot
       access: standard
@@ -1054,174 +1371,6 @@ openai:
       access: standard
       checked_at: '2026-10-26'
       lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
-    gpt-4o-2024-11-20:
-      api_type: chat_completions
-      endpoint: 'https://api.openai.com/v1/chat/completions'
-      defaults:
-        model: gpt-4o-2024-11-20
-        max_completion_tokens: 2048
-        temperature: 0.0
-      limits: {  }
-      source: 'GET /v1/models + official API model reference (2026-10-22)'
-      name: gpt-4o-2024-11-20
-      notes: "Provider text-generation model; account access may vary."
-      status: deprecated
-      kind: snapshot
-      access: standard
-      checked_at: '2026-10-26'
-      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
-      shutdown_date: '2027-01-14'
-    gpt-5.1:
-      api_type: chat_completions
-      endpoint: 'https://api.openai.com/v1/chat/completions'
-      defaults:
-        model: gpt-5.1
-        max_completion_tokens: 2048
-        reasoning_effort: low
-        temperature: null
-      limits: {  }
-      source: 'GET /v1/models + official API model reference (2026-10-22)'
-      name: gpt-5.1
-      notes: "Provider text-generation model; account access may vary."
-      status: deprecated
-      kind: alias
-      access: standard
-      checked_at: '2026-10-26'
-      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
-      shutdown_date: '2027-04-01'
-    gpt-5-pro:
-      api_type: responses
-      endpoint: 'https://api.openai.com/v1/responses'
-      defaults:
-        model: gpt-5-pro
-        max_completion_tokens: 2048
-        reasoning_effort: high
-        temperature: null
-      limits: {  }
-      source: 'GET /v1/models + official API model reference (2026-10-22)'
-      name: gpt-5-pro
-      notes: 'Provider text-generation model; account access may vary.'
-      usage:
-        tokens:
-          total: total_tokens
-          breakdown:
-            prompt: input_tokens
-            completion: output_tokens
-            reasoning: output_tokens_details.reasoning_tokens
-      status: available
-      kind: alias
-      access: standard
-      checked_at: '2026-10-26'
-      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
-    gpt-5.4-mini-2026-03-17:
-      api_type: chat_completions
-      endpoint: 'https://api.openai.com/v1/chat/completions'
-      defaults:
-        model: gpt-5.4-mini-2026-03-17
-        max_completion_tokens: 2048
-        reasoning_effort: low
-        temperature: null
-      limits: {  }
-      source: 'GET /v1/models + official API model reference (2026-10-22)'
-      name: gpt-5.4-mini-2026-03-17
-      notes: 'Provider text-generation model; account access may vary.'
-      status: available
-      kind: snapshot
-      access: standard
-      checked_at: '2026-10-26'
-      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
-    gpt-5.4:
-      api_type: chat_completions
-      endpoint: 'https://api.openai.com/v1/chat/completions'
-      defaults:
-        model: gpt-5.4
-        max_completion_tokens: 2048
-        reasoning_effort: low
-        temperature: null
-      limits: {  }
-      source: 'GET /v1/models + official API model reference (2026-10-22)'
-      name: gpt-5.4
-      notes: 'Provider text-generation model; account access may vary.'
-      status: available
-      kind: alias
-      access: standard
-      checked_at: '2026-10-26'
-      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
-    gpt-4.1:
-      api_type: chat_completions
-      endpoint: 'https://api.openai.com/v1/chat/completions'
-      defaults:
-        model: gpt-4.1
-        max_completion_tokens: 2048
-        temperature: 0.0
-      limits: {  }
-      source: 'GET /v1/models + official API model reference (2026-10-22)'
-      name: gpt-4.1
-      notes: "Provider text-generation model; account access may vary."
-      status: deprecated
-      kind: alias
-      access: standard
-      checked_at: '2026-10-26'
-      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
-      shutdown_date: '2027-01-14'
-    gpt-5.5:
-      api_type: chat_completions
-      endpoint: 'https://api.openai.com/v1/chat/completions'
-      defaults:
-        model: gpt-5.5
-        max_completion_tokens: 2048
-        reasoning_effort: low
-        temperature: null
-      limits: {  }
-      source: 'GET /v1/models + official API model reference (2026-10-22)'
-      name: gpt-5.5
-      notes: 'Provider text-generation model; account access may vary.'
-      status: available
-      kind: alias
-      access: standard
-      checked_at: '2026-10-26'
-      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
-    o3-pro-2025-06-10:
-      api_type: responses
-      endpoint: 'https://api.openai.com/v1/responses'
-      defaults:
-        model: o3-pro-2025-06-10
-        max_completion_tokens: 2048
-        reasoning_effort: high
-        temperature: null
-      limits: {  }
-      source: 'GET /v1/models + official API model reference (2026-10-22)'
-      name: o3-pro-2025-06-10
-      usage:
-        tokens:
-          total: total_tokens
-          breakdown:
-            prompt: input_tokens
-            completion: output_tokens
-            reasoning: output_tokens_details.reasoning_tokens
-      notes: "Provider text-generation model; account access may vary."
-      status: deprecated
-      kind: snapshot
-      access: standard
-      checked_at: '2026-10-26'
-      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
-      shutdown_date: '2026-12-11'
-    chat-latest:
-      api_type: chat_completions
-      endpoint: 'https://api.openai.com/v1/chat/completions'
-      defaults:
-        model: chat-latest
-        max_completion_tokens: 2048
-        temperature: null
-      limits: {  }
-      source: 'GET /v1/models + official API model reference (2026-10-22)'
-      name: chat-latest
-      notes: 'Provider text-generation model; account access may vary.'
-      status: available
-      kind: alias
-      access: standard
-      checked_at: '2026-10-26'
-      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
     gpt-5.4-pro-2026-03-05:
       api_type: responses
       endpoint: 'https://api.openai.com/v1/responses'
@@ -1246,38 +1395,142 @@ openai:
       access: standard
       checked_at: '2026-10-26'
       lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
-    o3-2025-04-16:
+    gpt-5.5:
       api_type: chat_completions
       endpoint: 'https://api.openai.com/v1/chat/completions'
       defaults:
-        model: o3-2025-04-16
+        model: gpt-5.5
         max_completion_tokens: 2048
         reasoning_effort: low
         temperature: null
       limits: {  }
       source: 'GET /v1/models + official API model reference (2026-10-22)'
-      name: o3-2025-04-16
-      notes: "Provider text-generation model; account access may vary."
-      status: deprecated
+      name: gpt-5.5
+      notes: 'Provider text-generation model; account access may vary.'
+      status: available
+      kind: alias
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
+    gpt-5.5-2026-04-23:
+      api_type: chat_completions
+      endpoint: 'https://api.openai.com/v1/chat/completions'
+      defaults:
+        model: gpt-5.5-2026-04-23
+        max_completion_tokens: 2048
+        reasoning_effort: low
+        temperature: null
+      limits: {  }
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      name: gpt-5.5-2026-04-23
+      notes: 'Provider text-generation model; account access may vary.'
+      status: available
       kind: snapshot
       access: standard
       checked_at: '2026-10-26'
       lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
-      shutdown_date: '2026-12-11'
-    gpt-5.2-2025-12-11:
+    gpt-5.5-pro:
+      api_type: responses
+      endpoint: 'https://api.openai.com/v1/responses'
+      defaults:
+        model: gpt-5.5-pro
+        max_completion_tokens: 2048
+        reasoning_effort: high
+        temperature: null
+      limits: {  }
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      name: gpt-5.5-pro
+      notes: 'Provider text-generation model; account access may vary.'
+      usage:
+        tokens:
+          total: total_tokens
+          breakdown:
+            prompt: input_tokens
+            completion: output_tokens
+            reasoning: output_tokens_details.reasoning_tokens
+      status: available
+      kind: alias
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
+    gpt-5.5-pro-2026-04-23:
+      api_type: responses
+      endpoint: 'https://api.openai.com/v1/responses'
+      defaults:
+        model: gpt-5.5-pro-2026-04-23
+        max_completion_tokens: 2048
+        reasoning_effort: high
+        temperature: null
+      limits: {  }
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      name: gpt-5.5-pro-2026-04-23
+      notes: 'Provider text-generation model; account access may vary.'
+      usage:
+        tokens:
+          total: total_tokens
+          breakdown:
+            prompt: input_tokens
+            completion: output_tokens
+            reasoning: output_tokens_details.reasoning_tokens
+      status: available
+      kind: snapshot
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
+    gpt-5.6-cyber:
+      api_type: responses
+      endpoint: 'https://api.openai.com/v1/responses'
+      defaults:
+        model: gpt-5.6-cyber
+        temperature: null
+        max_completion_tokens: 2048
+      notes: 'Restricted-access text model; separate provider approval required.'
+      source: 'https://developers.openai.com/api/docs/pricing'
+      name: gpt-5.6-cyber
+      usage:
+        tokens:
+          total: total_tokens
+          breakdown:
+            prompt: input_tokens
+            completion: output_tokens
+            reasoning: output_tokens_details.reasoning_tokens
+      limits: {  }
+      status: available
+      kind: alias
+      access: restricted
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
+    gpt-5.6-luna:
       api_type: chat_completions
       endpoint: 'https://api.openai.com/v1/chat/completions'
       defaults:
-        model: gpt-5.2-2025-12-11
+        model: gpt-5.6-luna
         max_completion_tokens: 2048
         reasoning_effort: low
         temperature: null
       limits: {  }
       source: 'GET /v1/models + official API model reference (2026-10-22)'
-      name: gpt-5.2-2025-12-11
+      name: gpt-5.6-luna
       notes: 'Provider text-generation model; account access may vary.'
       status: available
-      kind: snapshot
+      kind: alias
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
+    gpt-5.6-sol:
+      api_type: chat_completions
+      endpoint: 'https://api.openai.com/v1/chat/completions'
+      defaults:
+        model: gpt-5.6-sol
+        max_completion_tokens: 2048
+        reasoning_effort: low
+        temperature: null
+      limits: {  }
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      name: gpt-5.6-sol
+      notes: 'Provider text-generation model; account access may vary.'
+      status: available
+      kind: alias
       access: standard
       checked_at: '2026-10-26'
       lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
@@ -1298,357 +1551,6 @@ openai:
       access: standard
       checked_at: '2026-10-26'
       lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
-    gpt-5.4-nano:
-      api_type: chat_completions
-      endpoint: 'https://api.openai.com/v1/chat/completions'
-      defaults:
-        model: gpt-5.4-nano
-        max_completion_tokens: 2048
-        reasoning_effort: low
-        temperature: null
-      limits: {  }
-      source: 'GET /v1/models + official API model reference (2026-10-22)'
-      name: gpt-5.4-nano
-      notes: "Provider text-generation model; account access may vary."
-      status: deprecated
-      kind: alias
-      access: standard
-      checked_at: '2026-10-26'
-      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
-      shutdown_date: '2027-04-01'
-    o3-pro:
-      api_type: responses
-      endpoint: 'https://api.openai.com/v1/responses'
-      defaults:
-        model: o3-pro
-        max_completion_tokens: 2048
-        reasoning_effort: high
-        temperature: null
-      limits: {  }
-      source: 'GET /v1/models + official API model reference (2026-10-22)'
-      name: o3-pro
-      notes: 'Provider text-generation model; account access may vary.'
-      usage:
-        tokens:
-          total: total_tokens
-          breakdown:
-            prompt: input_tokens
-            completion: output_tokens
-            reasoning: output_tokens_details.reasoning_tokens
-      status: available
-      kind: alias
-      access: standard
-      checked_at: '2026-10-26'
-      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
-    gpt-4o-2024-08-06:
-      api_type: chat_completions
-      endpoint: 'https://api.openai.com/v1/chat/completions'
-      defaults:
-        model: gpt-4o-2024-08-06
-        max_completion_tokens: 2048
-        temperature: 0.0
-      limits: {  }
-      source: 'GET /v1/models + official API model reference (2026-10-22)'
-      name: gpt-4o-2024-08-06
-      notes: "Provider text-generation model; account access may vary."
-      status: deprecated
-      kind: snapshot
-      access: standard
-      checked_at: '2026-10-26'
-      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
-      shutdown_date: '2027-01-14'
-    o3:
-      api_type: chat_completions
-      endpoint: 'https://api.openai.com/v1/chat/completions'
-      defaults:
-        model: o3
-        max_completion_tokens: 2048
-        reasoning_effort: low
-        temperature: null
-      limits: {  }
-      source: 'GET /v1/models + official API model reference (2026-10-22)'
-      name: o3
-      notes: 'Provider text-generation model; account access may vary.'
-      status: available
-      kind: alias
-      access: standard
-      checked_at: '2026-10-26'
-      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
-    gpt-4.1-mini-2025-04-14:
-      api_type: chat_completions
-      endpoint: 'https://api.openai.com/v1/chat/completions'
-      defaults:
-        model: gpt-4.1-mini-2025-04-14
-        max_completion_tokens: 2048
-        temperature: 0.0
-      limits: {  }
-      source: 'GET /v1/models + official API model reference (2026-10-22)'
-      name: gpt-4.1-mini-2025-04-14
-      notes: "Provider text-generation model; account access may vary."
-      status: deprecated
-      kind: snapshot
-      access: standard
-      checked_at: '2026-10-26'
-      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
-      shutdown_date: '2027-01-14'
-    gpt-5.1-2025-11-13:
-      api_type: chat_completions
-      endpoint: 'https://api.openai.com/v1/chat/completions'
-      defaults:
-        model: gpt-5.1-2025-11-13
-        max_completion_tokens: 2048
-        reasoning_effort: low
-        temperature: null
-      limits: {  }
-      source: 'GET /v1/models + official API model reference (2026-10-22)'
-      name: gpt-5.1-2025-11-13
-      notes: 'Provider text-generation model; account access may vary.'
-      status: available
-      kind: snapshot
-      access: standard
-      checked_at: '2026-10-26'
-      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
-    gpt-4o:
-      name: 'OpenAI GPT-4o'
-      defaults:
-        model: gpt-4o
-        max_completion_tokens: 2048
-        temperature: 0.0
-      limits:
-        max_tokens: 128000
-        max_output_tokens: 16384
-        estimated_max_chars: 512000
-      api_type: chat_completions
-      endpoint: 'https://api.openai.com/v1/chat/completions'
-      source: 'GET /v1/models + official API model reference (2026-10-22)'
-      notes: "Highly accurate with flexible prompts, ideal for AI-assisted adaptive translation."
-      status: deprecated
-      kind: alias
-      access: standard
-      checked_at: '2026-10-26'
-      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
-      shutdown_date: '2027-01-14'
-    gpt-4.1-mini:
-      api_type: chat_completions
-      endpoint: 'https://api.openai.com/v1/chat/completions'
-      defaults:
-        model: gpt-4.1-mini
-        max_completion_tokens: 2048
-        temperature: 0.0
-      limits: {  }
-      source: 'GET /v1/models + official API model reference (2026-10-22)'
-      name: gpt-4.1-mini
-      notes: "Provider text-generation model; account access may vary."
-      status: deprecated
-      kind: alias
-      access: standard
-      checked_at: '2026-10-26'
-      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
-      shutdown_date: '2027-01-14'
-    gpt-4o-mini:
-      name: 'OpenAI GPT-4o Mini'
-      defaults:
-        model: gpt-4o-mini
-        max_completion_tokens: 2048
-        temperature: 0.0
-      limits:
-        max_tokens: 128000
-        max_output_tokens: 16384
-        estimated_max_chars: 512000
-      api_type: chat_completions
-      endpoint: 'https://api.openai.com/v1/chat/completions'
-      source: 'GET /v1/models + official API model reference (2026-10-22)'
-      notes: "Lightweight GPT-4o: lower latency/cost."
-      status: deprecated
-      kind: alias
-      access: standard
-      checked_at: '2026-10-26'
-      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
-      shutdown_date: '2027-01-14'
-    gpt-6-sol:
-      api_type: chat_completions
-      endpoint: 'https://api.openai.com/v1/chat/completions'
-      defaults:
-        model: gpt-6-sol
-        max_completion_tokens: 2048
-        reasoning_effort: low
-        temperature: null
-      limits: {  }
-      source: 'GET /v1/models + official API model reference (2026-10-22)'
-      name: gpt-6-sol
-      notes: 'Provider text-generation model; account access may vary.'
-      status: available
-      kind: alias
-      access: standard
-      checked_at: '2026-10-26'
-      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
-    gpt-5.2:
-      api_type: chat_completions
-      endpoint: 'https://api.openai.com/v1/chat/completions'
-      defaults:
-        model: gpt-5.2
-        max_completion_tokens: 2048
-        reasoning_effort: low
-        temperature: null
-      limits: {  }
-      source: 'GET /v1/models + official API model reference (2026-10-22)'
-      name: gpt-5.2
-      notes: 'Provider text-generation model; account access may vary.'
-      status: available
-      kind: alias
-      access: standard
-      checked_at: '2026-10-26'
-      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
-    gpt-5.4-nano-2026-03-17:
-      api_type: chat_completions
-      endpoint: 'https://api.openai.com/v1/chat/completions'
-      defaults:
-        model: gpt-5.4-nano-2026-03-17
-        max_completion_tokens: 2048
-        reasoning_effort: low
-        temperature: null
-      limits: {  }
-      source: 'GET /v1/models + official API model reference (2026-10-22)'
-      name: gpt-5.4-nano-2026-03-17
-      notes: 'Provider text-generation model; account access may vary.'
-      status: available
-      kind: snapshot
-      access: standard
-      checked_at: '2026-10-26'
-      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
-    gpt-6.1-sol:
-      name: 'OpenAI GPT-6.1 Sol'
-      defaults:
-        model: gpt-6.1-sol
-        temperature: null
-        reasoning_effort: low
-        max_completion_tokens: 2048
-      limits:
-        max_tokens: 1050000
-        max_output_tokens: 128000
-        estimated_max_chars: 4200000
-      notes: 'Current general-purpose model for more demanding translation; low reasoning effort.'
-      api_type: chat_completions
-      endpoint: 'https://api.openai.com/v1/chat/completions'
-      source: 'GET /v1/models + official API model reference (2026-10-22)'
-      status: available
-      kind: alias
-      access: standard
-      checked_at: '2026-10-26'
-      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
-    gpt-5.3-codex:
-      api_type: responses
-      endpoint: 'https://api.openai.com/v1/responses'
-      defaults:
-        model: gpt-5.3-codex
-        max_completion_tokens: 2048
-        temperature: null
-      limits: {  }
-      source: 'GET /v1/models + official API model reference (2026-10-22)'
-      name: gpt-5.3-codex
-      usage:
-        tokens:
-          total: total_tokens
-          breakdown:
-            prompt: input_tokens
-            completion: output_tokens
-            reasoning: output_tokens_details.reasoning_tokens
-      notes: "Provider text-generation model; account access may vary."
-      status: deprecated
-      kind: alias
-      access: standard
-      checked_at: '2026-10-26'
-      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
-      shutdown_date: '2027-04-01'
-    gpt-5-search-api-2025-10-14:
-      api_type: chat_completions
-      endpoint: 'https://api.openai.com/v1/chat/completions'
-      defaults:
-        model: gpt-5-search-api-2025-10-14
-        max_completion_tokens: 2048
-        reasoning_effort: null
-        temperature: null
-      limits: {  }
-      source: 'GET /v1/models + official API model reference (2026-10-22)'
-      name: gpt-5-search-api-2025-10-14
-      notes: 'Provider text-generation model; account access may vary.'
-      status: available
-      kind: snapshot
-      access: standard
-      checked_at: '2026-10-26'
-      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
-    gpt-5:
-      name: 'OpenAI GPT-5'
-      defaults:
-        model: gpt-5
-        temperature: null
-        max_completion_tokens: 2048
-        reasoning_effort: low
-      limits:
-        max_tokens: 400000
-        max_output_tokens: 128000
-        estimated_max_chars: 1600000
-      notes: 'Flagship model with enhanced reasoning, multimodal capabilities, and extended context support.'
-      api_type: chat_completions
-      endpoint: 'https://api.openai.com/v1/chat/completions'
-      source: 'GET /v1/models + official API model reference (2026-10-22)'
-      status: available
-      kind: alias
-      access: standard
-      checked_at: '2026-10-26'
-      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
-    gpt-4.1-2025-04-14:
-      api_type: chat_completions
-      endpoint: 'https://api.openai.com/v1/chat/completions'
-      defaults:
-        model: gpt-4.1-2025-04-14
-        max_completion_tokens: 2048
-        temperature: 0.0
-      limits: {  }
-      source: 'GET /v1/models + official API model reference (2026-10-22)'
-      name: gpt-4.1-2025-04-14
-      notes: "Provider text-generation model; account access may vary."
-      status: deprecated
-      kind: snapshot
-      access: standard
-      checked_at: '2026-10-26'
-      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
-      shutdown_date: '2027-01-14'
-    gpt-4o-mini-2024-07-18:
-      api_type: chat_completions
-      endpoint: 'https://api.openai.com/v1/chat/completions'
-      defaults:
-        model: gpt-4o-mini-2024-07-18
-        max_completion_tokens: 2048
-        temperature: 0.0
-      limits: {  }
-      source: 'GET /v1/models + official API model reference (2026-10-22)'
-      name: gpt-4o-mini-2024-07-18
-      notes: "Provider text-generation model; account access may vary."
-      status: deprecated
-      kind: snapshot
-      access: standard
-      checked_at: '2026-10-26'
-      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
-      shutdown_date: '2027-01-14'
-    gpt-5-nano-2025-08-07:
-      api_type: chat_completions
-      endpoint: 'https://api.openai.com/v1/chat/completions'
-      defaults:
-        model: gpt-5-nano-2025-08-07
-        max_completion_tokens: 2048
-        reasoning_effort: low
-        temperature: null
-      limits: {  }
-      source: 'GET /v1/models + official API model reference (2026-10-22)'
-      name: gpt-5-nano-2025-08-07
-      notes: "Provider text-generation model; account access may vary."
-      status: deprecated
-      kind: snapshot
-      access: standard
-      checked_at: '2026-10-26'
-      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
-      shutdown_date: '2026-12-11'
     gpt-6-astra:
       name: 'OpenAI GPT-6 Astra'
       defaults:
@@ -1689,16 +1591,53 @@ openai:
       access: standard
       checked_at: '2026-10-26'
       lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
-    gpt-5.6-cyber:
+    gpt-6-sol:
+      api_type: chat_completions
+      endpoint: 'https://api.openai.com/v1/chat/completions'
+      defaults:
+        model: gpt-6-sol
+        max_completion_tokens: 2048
+        reasoning_effort: low
+        temperature: null
+      limits: {  }
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      name: gpt-6-sol
+      notes: 'Provider text-generation model; account access may vary.'
+      status: available
+      kind: alias
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
+    gpt-6.1-sol:
+      name: 'OpenAI GPT-6.1 Sol'
+      defaults:
+        model: gpt-6.1-sol
+        temperature: null
+        reasoning_effort: low
+        max_completion_tokens: 2048
+      limits:
+        max_tokens: 1050000
+        max_output_tokens: 128000
+        estimated_max_chars: 4200000
+      notes: 'Current general-purpose model for more demanding translation; low reasoning effort.'
+      api_type: chat_completions
+      endpoint: 'https://api.openai.com/v1/chat/completions'
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      status: available
+      kind: alias
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
+    gpt-rosalind-discovery:
       api_type: responses
       endpoint: 'https://api.openai.com/v1/responses'
       defaults:
-        model: gpt-5.6-cyber
+        model: gpt-rosalind-discovery
         temperature: null
         max_completion_tokens: 2048
       notes: 'Restricted-access text model; separate provider approval required.'
       source: 'https://developers.openai.com/api/docs/pricing'
-      name: gpt-5.6-cyber
+      name: gpt-rosalind-discovery
       usage:
         tokens:
           total: total_tokens
@@ -1736,16 +1675,53 @@ openai:
       access: restricted
       checked_at: '2026-10-26'
       lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
-    gpt-rosalind-discovery:
+    o3:
+      api_type: chat_completions
+      endpoint: 'https://api.openai.com/v1/chat/completions'
+      defaults:
+        model: o3
+        max_completion_tokens: 2048
+        reasoning_effort: low
+        temperature: null
+      limits: {  }
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      name: o3
+      notes: 'Provider text-generation model; account access may vary.'
+      status: available
+      kind: alias
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
+    o3-2025-04-16:
+      api_type: chat_completions
+      endpoint: 'https://api.openai.com/v1/chat/completions'
+      defaults:
+        model: o3-2025-04-16
+        max_completion_tokens: 2048
+        reasoning_effort: low
+        temperature: null
+      limits: {  }
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      name: o3-2025-04-16
+      notes: "Provider text-generation model; account access may vary."
+      status: deprecated
+      kind: snapshot
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
+      shutdown_date: '2026-12-11'
+    o3-pro:
       api_type: responses
       endpoint: 'https://api.openai.com/v1/responses'
       defaults:
-        model: gpt-rosalind-discovery
-        temperature: null
+        model: o3-pro
         max_completion_tokens: 2048
-      notes: 'Restricted-access text model; separate provider approval required.'
-      source: 'https://developers.openai.com/api/docs/pricing'
-      name: gpt-rosalind-discovery
+        reasoning_effort: high
+        temperature: null
+      limits: {  }
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      name: o3-pro
+      notes: 'Provider text-generation model; account access may vary.'
       usage:
         tokens:
           total: total_tokens
@@ -1753,332 +1729,36 @@ openai:
             prompt: input_tokens
             completion: output_tokens
             reasoning: output_tokens_details.reasoning_tokens
-      limits: {  }
       status: available
       kind: alias
-      access: restricted
+      access: standard
       checked_at: '2026-10-26'
       lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
-yandex:
-  endpoint: 'https://llm.api.cloud.yandex.net/foundationModels/v1/completion'
-  format: text
-  defaults:
-    temperature: 0
-    max_tokens: 8192
-  requirements:
-    auth:
-      help_url: 'https://yandex.cloud/en/docs/foundation-models/api-ref/authentication'
-      type: header
-      key_name: Authorization
-      prefix: Bearer
-      env: YANDEX_API_KEY
-    variables:
-      folder_id: YANDEX_FOLDER_ID
-    headers:
-      - 'Content-Type: application/json'
-  limits:
-    max_tokens: 8192
-    token_estimator: gpt
-    estimated_max_chars: 32768
-  http_error_handling: true
-  usage:
-    tokens:
-      total: totalTokens
-      breakdown:
-        input: inputTextTokens
-        completion: completionTokens
-  models:
-    gpt-lite:
-      capabilities:
-        native_json: true
-      name: 'Yandex GPT Lite'
+    o3-pro-2025-06-10:
+      api_type: responses
+      endpoint: 'https://api.openai.com/v1/responses'
       defaults:
-        model: yandexgpt-lite/latest
-      notes: 'Low-latency model with up to 8 k tokens sync or 32 k async.'
-      status: available
-      kind: alias
-      access: standard
-      checked_at: '2026-10-26'
-      lifecycle_source: 'https://aistudio.yandex.ru/ru/docs/ai-studio/concepts/generation/models'
-    gpt-pro:
-      capabilities:
-        native_json: true
-      name: 'Yandex GPT Pro'
-      defaults:
-        model: yandexgpt/latest
-      notes: 'High-capacity 5th-gen model, up to 8 k tokens sync or 32 k async.'
-      status: available
-      kind: alias
-      access: standard
-      checked_at: '2026-10-26'
-      lifecycle_source: 'https://aistudio.yandex.ru/ru/docs/ai-studio/concepts/generation/models'
-    gpt-32k:
-      name: 'Yandex GPT Pro 32K'
-      defaults:
-        model: yandexgpt-32k/latest
-        max_tokens: 32000
-      limits:
-        max_tokens: 32000
-        estimated_max_chars: 128000
-      notes: 'Extended-context model: up to 32 k tokens (sync only).'
-      status: available
-      kind: alias
-      access: standard
-      checked_at: '2026-10-26'
-      lifecycle_source: 'https://aistudio.yandex.ru/ru/docs/ai-studio/concepts/generation/models'
-    aliceai-llm:
-      defaults:
-        model: aliceai-llm
-        max_tokens: 2048
-      limits:
-        max_tokens: 131072
-        estimated_max_chars: 524288
-      api_type: foundation
-      name: aliceai-llm
-      notes: 'Provider text-generation model; account access may vary.'
-      status: available
-      kind: model
-      access: standard
-      checked_at: '2026-10-26'
-      lifecycle_source: 'https://aistudio.yandex.ru/ru/docs/ai-studio/concepts/generation/models'
-    aliceai-llm-flash:
-      defaults:
-        model: aliceai-llm-flash
-        max_tokens: 2048
-      limits:
-        max_tokens: 65536
-        estimated_max_chars: 262144
-      api_type: chat_completions
-      name: aliceai-llm-flash
-      notes: 'Provider text-generation model; account access may vary.'
-      endpoint: 'https://llm.api.cloud.yandex.net/v1/chat/completions'
-      usage:
-        tokens:
-          total: total_tokens
-          breakdown:
-            prompt: prompt_tokens
-            completion: completion_tokens
-      status: available
-      kind: model
-      access: standard
-      checked_at: '2026-10-26'
-      lifecycle_source: 'https://aistudio.yandex.ru/ru/docs/ai-studio/concepts/generation/models'
-    yandexgpt-5.1:
-      defaults:
-        model: yandexgpt-5.1
-        max_tokens: 2048
-      limits:
-        max_tokens: 32768
-        estimated_max_chars: 131072
-      api_type: foundation
-      name: yandexgpt-5.1
-      notes: 'Provider text-generation model; account access may vary.'
-      status: available
-      kind: model
-      access: standard
-      checked_at: '2026-10-26'
-      lifecycle_source: 'https://aistudio.yandex.ru/ru/docs/ai-studio/concepts/generation/models'
-    yandexgpt-5-pro:
-      defaults:
-        model: yandexgpt-5-pro
-        max_tokens: 2048
-      limits:
-        max_tokens: 32768
-        estimated_max_chars: 131072
-      api_type: foundation
-      name: yandexgpt-5-pro
-      notes: 'Provider text-generation model; account access may vary.'
-      status: available
-      kind: model
-      access: standard
-      checked_at: '2026-10-26'
-      lifecycle_source: 'https://aistudio.yandex.ru/ru/docs/ai-studio/concepts/generation/models'
-    yandexgpt-5-lite:
-      defaults:
-        model: yandexgpt-5-lite
-        max_tokens: 2048
-      limits:
-        max_tokens: 32768
-        estimated_max_chars: 131072
-      api_type: chat_completions
-      name: yandexgpt-5-lite
-      notes: 'Provider text-generation model; account access may vary.'
-      endpoint: 'https://llm.api.cloud.yandex.net/v1/chat/completions'
-      usage:
-        tokens:
-          total: total_tokens
-          breakdown:
-            prompt: prompt_tokens
-            completion: completion_tokens
-      status: deprecated
-      kind: model
-      access: standard
-      checked_at: '2026-10-26'
-      lifecycle_source: 'https://aistudio.yandex.ru/ru/docs/ai-studio/concepts/generation/models'
-      shutdown_date: '2026-11-15'
-      replacement: 'yandex:deepseek-v4.1-flash'
-    deepseek-v4-flash:
-      defaults:
-        model: deepseek-v4-flash
-        max_tokens: 2048
-      limits:
-        max_tokens: 1048576
-        estimated_max_chars: 4194304
-      api_type: chat_completions
-      name: deepseek-v4-flash
-      notes: 'Provider text-generation model; account access may vary.'
-      endpoint: 'https://llm.api.cloud.yandex.net/v1/chat/completions'
-      usage:
-        tokens:
-          total: total_tokens
-          breakdown:
-            prompt: prompt_tokens
-            completion: completion_tokens
-      status: deprecated
-      kind: model
-      access: standard
-      checked_at: '2026-10-26'
-      lifecycle_source: 'https://aistudio.yandex.ru/ru/docs/ai-studio/concepts/generation/models'
-      shutdown_date: '2026-11-15'
-      replacement: 'yandex:deepseek-v4.1-flash'
-    deepseek-v4.1-flash:
-      defaults:
-        model: deepseek-v4.1-flash
-        max_tokens: 2048
-      limits:
-        max_tokens: 1048576
-        estimated_max_chars: 4194304
-      api_type: chat_completions
-      name: deepseek-v4.1-flash
-      notes: 'Provider text-generation model; account access may vary.'
-      endpoint: 'https://llm.api.cloud.yandex.net/v1/chat/completions'
-      usage:
-        tokens:
-          total: total_tokens
-          breakdown:
-            prompt: prompt_tokens
-            completion: completion_tokens
-      status: available
-      kind: model
-      access: standard
-      checked_at: '2026-10-26'
-      lifecycle_source: 'https://aistudio.yandex.ru/ru/docs/ai-studio/concepts/generation/models'
-    qwen3-235b-a22b-fp8:
-      defaults:
-        model: qwen3-235b-a22b-fp8
-        max_tokens: 2048
-      limits:
-        max_tokens: 262144
-        estimated_max_chars: 1048576
-      api_type: chat_completions
-      name: qwen3-235b-a22b-fp8
-      notes: 'Provider text-generation model; account access may vary.'
-      endpoint: 'https://llm.api.cloud.yandex.net/v1/chat/completions'
-      usage:
-        tokens:
-          total: total_tokens
-          breakdown:
-            prompt: prompt_tokens
-            completion: completion_tokens
-      status: available
-      kind: model
-      access: standard
-      checked_at: '2026-10-26'
-      lifecycle_source: 'https://aistudio.yandex.ru/ru/docs/ai-studio/concepts/generation/models'
-    gpt-oss-120b:
-      defaults:
-        model: gpt-oss-120b
-        max_tokens: 2048
-      limits:
-        max_tokens: 131072
-        estimated_max_chars: 524288
-      api_type: chat_completions
-      name: gpt-oss-120b
-      notes: 'Provider text-generation model; account access may vary.'
-      endpoint: 'https://llm.api.cloud.yandex.net/v1/chat/completions'
-      usage:
-        tokens:
-          total: total_tokens
-          breakdown:
-            prompt: prompt_tokens
-            completion: completion_tokens
-      status: deprecated
-      kind: model
-      access: standard
-      checked_at: '2026-10-26'
-      lifecycle_source: 'https://aistudio.yandex.ru/ru/docs/ai-studio/concepts/generation/models'
-      shutdown_date: '2026-10-30'
-    gpt-oss-20b:
-      defaults:
-        model: gpt-oss-20b
-        max_tokens: 2048
-      limits:
-        max_tokens: 131072
-        estimated_max_chars: 524288
-      api_type: chat_completions
-      name: gpt-oss-20b
-      notes: 'Provider text-generation model; account access may vary.'
-      endpoint: 'https://llm.api.cloud.yandex.net/v1/chat/completions'
-      usage:
-        tokens:
-          total: total_tokens
-          breakdown:
-            prompt: prompt_tokens
-            completion: completion_tokens
-      status: deprecated
-      kind: model
-      access: standard
-      checked_at: '2026-10-26'
-      lifecycle_source: 'https://aistudio.yandex.ru/ru/docs/ai-studio/concepts/generation/models'
-      shutdown_date: '2026-10-30'
-    qwen3.6-35b-a3b:
-      defaults:
-        model: qwen3.6-35b-a3b
-        max_tokens: 2048
-      limits:
-        max_tokens: 262144
-        estimated_max_chars: 1048576
-      api_type: chat_completions
-      name: qwen3.6-35b-a3b
-      notes: 'Provider text-generation model; account access may vary.'
-      endpoint: 'https://llm.api.cloud.yandex.net/v1/chat/completions'
-      usage:
-        tokens:
-          total: total_tokens
-          breakdown:
-            prompt: prompt_tokens
-            completion: completion_tokens
-      status: available
-      kind: model
-      access: standard
-      checked_at: '2026-10-26'
-      lifecycle_source: 'https://aistudio.yandex.ru/ru/docs/ai-studio/concepts/generation/models'
-    yandexgpt-latest:
-      defaults:
-        model: yandexgpt/latest
-        max_tokens: 2048
-      api_type: foundation
-      name: yandexgpt-latest
-      notes: 'Provider text-generation model; account access may vary.'
+        model: o3-pro-2025-06-10
+        max_completion_tokens: 2048
+        reasoning_effort: high
+        temperature: null
       limits: {  }
-      status: available
-      kind: alias
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
+      name: o3-pro-2025-06-10
+      usage:
+        tokens:
+          total: total_tokens
+          breakdown:
+            prompt: input_tokens
+            completion: output_tokens
+            reasoning: output_tokens_details.reasoning_tokens
+      notes: "Provider text-generation model; account access may vary."
+      status: deprecated
+      kind: snapshot
       access: standard
       checked_at: '2026-10-26'
-      lifecycle_source: 'https://aistudio.yandex.ru/ru/docs/ai-studio/concepts/generation/models'
-    yandexgpt-rc:
-      defaults:
-        model: yandexgpt/rc
-        max_tokens: 2048
-      api_type: foundation
-      name: yandexgpt-rc
-      notes: 'Provider text-generation model; account access may vary.'
-      limits: {  }
-      status: available
-      kind: preview
-      access: standard
-      checked_at: '2026-10-26'
-      lifecycle_source: 'https://aistudio.yandex.ru/ru/docs/ai-studio/concepts/generation/models'
+      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
+      shutdown_date: '2026-12-11'
 xai:
   endpoint: 'https://api.x.ai/v1/chat/completions'
   format: text
@@ -2105,61 +1785,6 @@ xai:
         completion: completion_tokens
         reasoning: completion_tokens_details.reasoning_tokens
   models:
-    grok-4.20-0309-reasoning:
-      defaults:
-        model: grok-4.20-0309-reasoning
-        temperature: null
-        max_completion_tokens: 2048
-      limits:
-        max_tokens: 1000000
-        estimated_max_chars: 4000000
-      api_type: chat_completions
-      name: grok-4.20-0309-reasoning
-      notes: 'Provider text-generation model; account access may vary.'
-      status: available
-      kind: snapshot
-      access: standard
-      checked_at: '2026-10-26'
-      lifecycle_source: 'https://docs.x.ai/developers/models'
-    grok-4.20-0309-non-reasoning:
-      defaults:
-        model: grok-4.20-0309-non-reasoning
-        temperature: null
-        max_completion_tokens: 2048
-      limits:
-        max_tokens: 1000000
-        estimated_max_chars: 4000000
-      api_type: chat_completions
-      name: grok-4.20-0309-non-reasoning
-      notes: 'Provider text-generation model; account access may vary.'
-      status: available
-      kind: snapshot
-      access: standard
-      checked_at: '2026-10-26'
-      lifecycle_source: 'https://docs.x.ai/developers/models'
-    grok-4.20-multi-agent-0309:
-      defaults:
-        model: grok-4.20-multi-agent-0309
-        temperature: null
-        max_completion_tokens: 2048
-      limits:
-        max_tokens: 1000000
-        estimated_max_chars: 4000000
-      api_type: responses
-      endpoint: 'https://api.x.ai/v1/responses'
-      name: grok-4.20-multi-agent-0309
-      notes: 'Provider text-generation model; account access may vary.'
-      usage:
-        tokens:
-          total: total_tokens
-          breakdown:
-            prompt: input_tokens
-            completion: output_tokens
-      status: available
-      kind: snapshot
-      access: standard
-      checked_at: '2026-10-26'
-      lifecycle_source: 'https://docs.x.ai/developers/models'
     grok-4.3:
       defaults:
         model: grok-4.3
@@ -2226,6 +1851,61 @@ xai:
       access: standard
       checked_at: '2026-10-26'
       lifecycle_source: 'https://docs.x.ai/developers/models'
+    grok-4.20-0309-non-reasoning:
+      defaults:
+        model: grok-4.20-0309-non-reasoning
+        temperature: null
+        max_completion_tokens: 2048
+      limits:
+        max_tokens: 1000000
+        estimated_max_chars: 4000000
+      api_type: chat_completions
+      name: grok-4.20-0309-non-reasoning
+      notes: 'Provider text-generation model; account access may vary.'
+      status: available
+      kind: snapshot
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://docs.x.ai/developers/models'
+    grok-4.20-0309-reasoning:
+      defaults:
+        model: grok-4.20-0309-reasoning
+        temperature: null
+        max_completion_tokens: 2048
+      limits:
+        max_tokens: 1000000
+        estimated_max_chars: 4000000
+      api_type: chat_completions
+      name: grok-4.20-0309-reasoning
+      notes: 'Provider text-generation model; account access may vary.'
+      status: available
+      kind: snapshot
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://docs.x.ai/developers/models'
+    grok-4.20-multi-agent-0309:
+      defaults:
+        model: grok-4.20-multi-agent-0309
+        temperature: null
+        max_completion_tokens: 2048
+      limits:
+        max_tokens: 1000000
+        estimated_max_chars: 4000000
+      api_type: responses
+      endpoint: 'https://api.x.ai/v1/responses'
+      name: grok-4.20-multi-agent-0309
+      notes: 'Provider text-generation model; account access may vary.'
+      usage:
+        tokens:
+          total: total_tokens
+          breakdown:
+            prompt: input_tokens
+            completion: output_tokens
+      status: available
+      kind: snapshot
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://docs.x.ai/developers/models'
     grok-build-0.1:
       defaults:
         model: grok-build-0.1
@@ -2242,3 +1922,323 @@ xai:
       access: standard
       checked_at: '2026-10-26'
       lifecycle_source: 'https://docs.x.ai/developers/models'
+yandex:
+  endpoint: 'https://llm.api.cloud.yandex.net/foundationModels/v1/completion'
+  format: text
+  defaults:
+    temperature: 0
+    max_tokens: 8192
+  requirements:
+    auth:
+      help_url: 'https://yandex.cloud/en/docs/foundation-models/api-ref/authentication'
+      type: header
+      key_name: Authorization
+      prefix: Bearer
+      env: YANDEX_API_KEY
+    variables:
+      folder_id: YANDEX_FOLDER_ID
+    headers:
+      - 'Content-Type: application/json'
+  limits:
+    max_tokens: 8192
+    token_estimator: gpt
+    estimated_max_chars: 32768
+  http_error_handling: true
+  usage:
+    tokens:
+      total: totalTokens
+      breakdown:
+        input: inputTextTokens
+        completion: completionTokens
+  models:
+    aliceai-llm:
+      defaults:
+        model: aliceai-llm
+        max_tokens: 2048
+      limits:
+        max_tokens: 131072
+        estimated_max_chars: 524288
+      api_type: foundation
+      name: aliceai-llm
+      notes: 'Provider text-generation model; account access may vary.'
+      status: available
+      kind: model
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://aistudio.yandex.ru/ru/docs/ai-studio/concepts/generation/models'
+    aliceai-llm-flash:
+      defaults:
+        model: aliceai-llm-flash
+        max_tokens: 2048
+      limits:
+        max_tokens: 65536
+        estimated_max_chars: 262144
+      api_type: chat_completions
+      name: aliceai-llm-flash
+      notes: 'Provider text-generation model; account access may vary.'
+      endpoint: 'https://llm.api.cloud.yandex.net/v1/chat/completions'
+      usage:
+        tokens:
+          total: total_tokens
+          breakdown:
+            prompt: prompt_tokens
+            completion: completion_tokens
+      status: available
+      kind: model
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://aistudio.yandex.ru/ru/docs/ai-studio/concepts/generation/models'
+    deepseek-v4-flash:
+      defaults:
+        model: deepseek-v4-flash
+        max_tokens: 2048
+      limits:
+        max_tokens: 1048576
+        estimated_max_chars: 4194304
+      api_type: chat_completions
+      name: deepseek-v4-flash
+      notes: 'Provider text-generation model; account access may vary.'
+      endpoint: 'https://llm.api.cloud.yandex.net/v1/chat/completions'
+      usage:
+        tokens:
+          total: total_tokens
+          breakdown:
+            prompt: prompt_tokens
+            completion: completion_tokens
+      status: deprecated
+      kind: model
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://aistudio.yandex.ru/ru/docs/ai-studio/concepts/generation/models'
+      shutdown_date: '2026-11-15'
+      replacement: 'yandex:deepseek-v4.1-flash'
+    deepseek-v4.1-flash:
+      defaults:
+        model: deepseek-v4.1-flash
+        max_tokens: 2048
+      limits:
+        max_tokens: 1048576
+        estimated_max_chars: 4194304
+      api_type: chat_completions
+      name: deepseek-v4.1-flash
+      notes: 'Provider text-generation model; account access may vary.'
+      endpoint: 'https://llm.api.cloud.yandex.net/v1/chat/completions'
+      usage:
+        tokens:
+          total: total_tokens
+          breakdown:
+            prompt: prompt_tokens
+            completion: completion_tokens
+      status: available
+      kind: model
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://aistudio.yandex.ru/ru/docs/ai-studio/concepts/generation/models'
+    gpt-32k:
+      name: 'Yandex GPT Pro 32K'
+      defaults:
+        model: yandexgpt-32k/latest
+        max_tokens: 32000
+      limits:
+        max_tokens: 32000
+        estimated_max_chars: 128000
+      notes: 'Extended-context model: up to 32 k tokens (sync only).'
+      status: available
+      kind: alias
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://aistudio.yandex.ru/ru/docs/ai-studio/concepts/generation/models'
+    gpt-lite:
+      capabilities:
+        native_json: true
+      name: 'Yandex GPT Lite'
+      defaults:
+        model: yandexgpt-lite/latest
+      notes: 'Low-latency model with up to 8 k tokens sync or 32 k async.'
+      status: available
+      kind: alias
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://aistudio.yandex.ru/ru/docs/ai-studio/concepts/generation/models'
+    gpt-oss-20b:
+      defaults:
+        model: gpt-oss-20b
+        max_tokens: 2048
+      limits:
+        max_tokens: 131072
+        estimated_max_chars: 524288
+      api_type: chat_completions
+      name: gpt-oss-20b
+      notes: 'Provider text-generation model; account access may vary.'
+      endpoint: 'https://llm.api.cloud.yandex.net/v1/chat/completions'
+      usage:
+        tokens:
+          total: total_tokens
+          breakdown:
+            prompt: prompt_tokens
+            completion: completion_tokens
+      status: deprecated
+      kind: model
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://aistudio.yandex.ru/ru/docs/ai-studio/concepts/generation/models'
+      shutdown_date: '2026-10-30'
+    gpt-oss-120b:
+      defaults:
+        model: gpt-oss-120b
+        max_tokens: 2048
+      limits:
+        max_tokens: 131072
+        estimated_max_chars: 524288
+      api_type: chat_completions
+      name: gpt-oss-120b
+      notes: 'Provider text-generation model; account access may vary.'
+      endpoint: 'https://llm.api.cloud.yandex.net/v1/chat/completions'
+      usage:
+        tokens:
+          total: total_tokens
+          breakdown:
+            prompt: prompt_tokens
+            completion: completion_tokens
+      status: deprecated
+      kind: model
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://aistudio.yandex.ru/ru/docs/ai-studio/concepts/generation/models'
+      shutdown_date: '2026-10-30'
+    gpt-pro:
+      capabilities:
+        native_json: true
+      name: 'Yandex GPT Pro'
+      defaults:
+        model: yandexgpt/latest
+      notes: 'High-capacity 5th-gen model, up to 8 k tokens sync or 32 k async.'
+      status: available
+      kind: alias
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://aistudio.yandex.ru/ru/docs/ai-studio/concepts/generation/models'
+    qwen3-235b-a22b-fp8:
+      defaults:
+        model: qwen3-235b-a22b-fp8
+        max_tokens: 2048
+      limits:
+        max_tokens: 262144
+        estimated_max_chars: 1048576
+      api_type: chat_completions
+      name: qwen3-235b-a22b-fp8
+      notes: 'Provider text-generation model; account access may vary.'
+      endpoint: 'https://llm.api.cloud.yandex.net/v1/chat/completions'
+      usage:
+        tokens:
+          total: total_tokens
+          breakdown:
+            prompt: prompt_tokens
+            completion: completion_tokens
+      status: available
+      kind: model
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://aistudio.yandex.ru/ru/docs/ai-studio/concepts/generation/models'
+    qwen3.6-35b-a3b:
+      defaults:
+        model: qwen3.6-35b-a3b
+        max_tokens: 2048
+      limits:
+        max_tokens: 262144
+        estimated_max_chars: 1048576
+      api_type: chat_completions
+      name: qwen3.6-35b-a3b
+      notes: 'Provider text-generation model; account access may vary.'
+      endpoint: 'https://llm.api.cloud.yandex.net/v1/chat/completions'
+      usage:
+        tokens:
+          total: total_tokens
+          breakdown:
+            prompt: prompt_tokens
+            completion: completion_tokens
+      status: available
+      kind: model
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://aistudio.yandex.ru/ru/docs/ai-studio/concepts/generation/models'
+    yandexgpt-5-lite:
+      defaults:
+        model: yandexgpt-5-lite
+        max_tokens: 2048
+      limits:
+        max_tokens: 32768
+        estimated_max_chars: 131072
+      api_type: chat_completions
+      name: yandexgpt-5-lite
+      notes: 'Provider text-generation model; account access may vary.'
+      endpoint: 'https://llm.api.cloud.yandex.net/v1/chat/completions'
+      usage:
+        tokens:
+          total: total_tokens
+          breakdown:
+            prompt: prompt_tokens
+            completion: completion_tokens
+      status: deprecated
+      kind: model
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://aistudio.yandex.ru/ru/docs/ai-studio/concepts/generation/models'
+      shutdown_date: '2026-11-15'
+      replacement: 'yandex:deepseek-v4.1-flash'
+    yandexgpt-5-pro:
+      defaults:
+        model: yandexgpt-5-pro
+        max_tokens: 2048
+      limits:
+        max_tokens: 32768
+        estimated_max_chars: 131072
+      api_type: foundation
+      name: yandexgpt-5-pro
+      notes: 'Provider text-generation model; account access may vary.'
+      status: available
+      kind: model
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://aistudio.yandex.ru/ru/docs/ai-studio/concepts/generation/models'
+    yandexgpt-5.1:
+      defaults:
+        model: yandexgpt-5.1
+        max_tokens: 2048
+      limits:
+        max_tokens: 32768
+        estimated_max_chars: 131072
+      api_type: foundation
+      name: yandexgpt-5.1
+      notes: 'Provider text-generation model; account access may vary.'
+      status: available
+      kind: model
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://aistudio.yandex.ru/ru/docs/ai-studio/concepts/generation/models'
+    yandexgpt-latest:
+      defaults:
+        model: yandexgpt/latest
+        max_tokens: 2048
+      api_type: foundation
+      name: yandexgpt-latest
+      notes: 'Provider text-generation model; account access may vary.'
+      limits: {  }
+      status: available
+      kind: alias
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://aistudio.yandex.ru/ru/docs/ai-studio/concepts/generation/models'
+    yandexgpt-rc:
+      defaults:
+        model: yandexgpt/rc
+        max_tokens: 2048
+      api_type: foundation
+      name: yandexgpt-rc
+      notes: 'Provider text-generation model; account access may vary.'
+      limits: {  }
+      status: available
+      kind: preview
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://aistudio.yandex.ru/ru/docs/ai-studio/concepts/generation/models'
