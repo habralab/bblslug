@@ -48,6 +48,10 @@ The format is based on [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ### Fixed
 
+- HTML validation reads only the current parse's errors and restores the caller's
+  libxml error-handling mode. Previous XML errors no longer invalidate valid HTML.
+  The invalid-HTML diagnostic fixture now uses an unterminated attribute instead
+  of relying on platform-dependent handling of a trailing literal `<`.
 - Live PHPUnit datasets no longer contain API keys or Yandex folder IDs. Tests
   resolve credentials after setup and run only with exactly `RUN_LIVE_TESTS=1`.
   Skipped tests and failed diagnostic assertions cannot echo credential values
@@ -157,7 +161,7 @@ The format is based on [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ### Verification
 
-- PHP 8.2.34 and 8.5.11: 1159 unit tests, 6584 assertions on each; PHPCS and
+- PHP 8.2.34 and 8.5.11: 1162 unit tests, 6592 assertions on each; PHPCS and
   PHPStan at maximum level pass.
 - Paid acceptance on 2026-10-25, before the audit corrections: 48/48 small
   segment cases across Gemini 2.5 Flash,

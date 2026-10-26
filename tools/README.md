@@ -208,3 +208,11 @@ full document reconstruction. Negative finish-state handling is covered by
 controlled tests, since the recorded successful responses contained no such
 states. The 2026-10-25 live results above remain historical evidence, not a fresh
 post-audit live run or a semantic translation-quality guarantee.
+
+The first Ubuntu release CI run exposed a diagnostic-fixture portability issue:
+a trailing literal `<` was accepted as text by that libxml version. The fixture
+now uses an unterminated attribute to exercise the invalid-HTML diagnostic path.
+A separate regression confirmed and fixed stale libxml errors contaminating valid
+HTML checks and the error-handling mode being reset. The updated local suites
+passed **1162 unit tests, 6592 assertions** on both PHP versions; PSR-12 and
+PHPStan max remained clean. The earlier failed CI run is retained in GitHub.
