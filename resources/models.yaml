@@ -243,7 +243,7 @@ anthropic:
       name: claude-mythos-5.1
 deepl:
   endpoint: 'https://api-free.deepl.com/v2/translate'
-  format: text|html
+  format: text|html|json|linedJson
   defaults:
     target_lang: EN
     formality: prefer_more
@@ -267,7 +267,7 @@ deepl:
       requirements:
         auth:
           env: DEEPL_FREE_API_KEY
-      notes: 'Best for structured HTML or plain text, with a limited monthly quota (free tier).'
+      notes: 'Text/HTML and native JSON document translation, with a limited monthly quota (free tier).'
     pro:
       name: 'DeepL API Pro'
       endpoint: 'https://api.deepl.com/v2/translate'
@@ -303,6 +303,8 @@ google:
         thoughts: thoughtsTokenCount
   models:
     gemini-2.5-flash:
+      capabilities:
+        native_json: true
       name: 'Gemini 2.5 Flash'
       endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent'
       defaults:
@@ -316,6 +318,8 @@ google:
         max_output_tokens: 65536
       notes: 'High-performance Flash model with chain-of-thought support.'
     gemini-2.5-pro:
+      capabilities:
+        native_json: true
       name: 'Gemini 2.5 Pro'
       endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent'
       defaults:
@@ -353,6 +357,8 @@ google:
       name: gemma-4-31b-it
       notes: 'Provider text-generation model; account access may vary.'
     gemini-flash-latest:
+      capabilities:
+        native_json: true
       defaults:
         model: gemini-flash-latest
         thinkingBudget: null
@@ -364,6 +370,8 @@ google:
       name: gemini-flash-latest
       notes: 'Provider text-generation model; account access may vary.'
     gemini-flash-lite-latest:
+      capabilities:
+        native_json: true
       defaults:
         model: gemini-flash-lite-latest
         thinkingBudget: null
@@ -375,6 +383,8 @@ google:
       name: gemini-flash-lite-latest
       notes: 'Provider text-generation model; account access may vary.'
     gemini-pro-latest:
+      capabilities:
+        native_json: true
       defaults:
         model: gemini-pro-latest
         thinkingBudget: null
@@ -386,6 +396,8 @@ google:
       name: gemini-pro-latest
       notes: 'Provider text-generation model; account access may vary.'
     gemini-2.5-flash-lite:
+      capabilities:
+        native_json: true
       name: 'Gemini 2.5 Flash-Lite'
       endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent'
       defaults:
@@ -399,6 +411,8 @@ google:
         max_output_tokens: 65536
       notes: 'Ultra-fast, cost-optimized Flash-Lite variant.'
     gemini-3-flash-preview:
+      capabilities:
+        native_json: true
       defaults:
         model: gemini-3-flash-preview
         thinkingLevel: low
@@ -412,6 +426,8 @@ google:
       name: gemini-3-flash-preview
       notes: 'Provider text-generation model; account access may vary.'
     gemini-3.1-pro-preview:
+      capabilities:
+        native_json: true
       defaults:
         model: gemini-3.1-pro-preview
         thinkingLevel: low
@@ -425,6 +441,8 @@ google:
       name: gemini-3.1-pro-preview
       notes: 'Provider text-generation model; account access may vary.'
     gemini-3.1-pro-preview-customtools:
+      capabilities:
+        native_json: true
       defaults:
         model: gemini-3.1-pro-preview-customtools
         thinkingLevel: low
@@ -438,6 +456,8 @@ google:
       name: gemini-3.1-pro-preview-customtools
       notes: 'Provider text-generation model; account access may vary.'
     gemini-3.1-flash-lite-preview:
+      capabilities:
+        native_json: true
       defaults:
         model: gemini-3.1-flash-lite-preview
         thinkingLevel: low
@@ -451,6 +471,8 @@ google:
       name: gemini-3.1-flash-lite-preview
       notes: 'Provider text-generation model; account access may vary.'
     gemini-3.1-flash-lite:
+      capabilities:
+        native_json: true
       defaults:
         model: gemini-3.1-flash-lite
         thinkingLevel: low
@@ -464,6 +486,8 @@ google:
       name: gemini-3.1-flash-lite
       notes: 'Provider text-generation model; account access may vary.'
     gemini-3.5-flash-lite:
+      capabilities:
+        native_json: true
       defaults:
         model: gemini-3.5-flash-lite
         thinkingLevel: low
@@ -477,6 +501,8 @@ google:
       name: gemini-3.5-flash-lite
       notes: 'Provider text-generation model; account access may vary.'
     gemini-3.6-flash:
+      capabilities:
+        native_json: true
       defaults:
         model: gemini-3.6-flash
         thinkingLevel: low
@@ -490,6 +516,8 @@ google:
       name: gemini-3.6-flash
       notes: 'Provider text-generation model; account access may vary.'
     gemini-3.8-flash:
+      capabilities:
+        native_json: true
       defaults:
         model: gemini-3.8-flash
         thinkingLevel: low
@@ -503,6 +531,8 @@ google:
       name: gemini-3.8-flash
       notes: 'Provider text-generation model; account access may vary.'
     gemini-4-argon:
+      capabilities:
+        native_json: true
       defaults:
         model: gemini-4-argon
         thinkingLevel: low
@@ -1659,11 +1689,15 @@ yandex:
         completion: completionTokens
   models:
     gpt-lite:
+      capabilities:
+        native_json: true
       name: 'Yandex GPT Lite'
       defaults:
         model: yandexgpt-lite/latest
       notes: 'Low-latency model with up to 8 k tokens sync or 32 k async.'
     gpt-pro:
+      capabilities:
+        native_json: true
       name: 'Yandex GPT Pro'
       defaults:
         model: yandexgpt/latest

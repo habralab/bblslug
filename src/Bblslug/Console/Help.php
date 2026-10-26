@@ -11,7 +11,9 @@ class Help
 {
     public static function alert(string $label, string $message, string $color = "\033[0m", ?int $exitCode = null): void
     {
-        fwrite(STDERR, "{$color}{$label}:\033[0m {$message}\n");
+        if (defined('STDERR') && is_resource(STDERR)) {
+            @fwrite(STDERR, "{$color}{$label}:\033[0m {$message}\n");
+        }
         if ($exitCode !== null) {
             exit($exitCode);
         }
@@ -50,21 +52,35 @@ class Help
 
         echo "\nOptions:\n";
         echo "\t{$bold}--context=TEXT{$reset}       Add translation context prompt\n";
+        echo "\t{$bold}--checkpoint=FILE{$reset}    Resume segment batches from this optional checkpoint file\n";
         echo "\t{$bold}--dry-run{$reset}            Apply filters only; save SOURCE.prepared or write STDOUT\n";
         echo "\t{$bold}--filters=F1,F2,...{$reset}  Comma-separated filters to (e.g. url, html_pre, html_code)\n";
         echo "\t{$bold}--format=FORMAT{$reset}      Required: text, html, json, structured_json, or linedJson\n";
+        echo "\t{$bold}--html-transport=MODE{$reset} HTML transport: document (default) or segments\n";
+        echo "\t{$bold}--html-segment-batch-size=N{$reset} Segments per request "
+            . "(positive integer; segments transport only)\n";
+        echo "\t{$bold}--segment-batch-max-bytes=N{$reset} Maximum serialized segment packet size "
+            . "in bytes (positive integer; segments transport only)\n";
+        echo "\t{$bold}--html-json-pointer=POINTER{$reset} Translate HTML at a JSON Pointer "
+            . "(repeatable; segments only)\n";
         echo "\t{$bold}--help{$reset}               Show this help message\n";
         echo "\t{$bold}--list-models{$reset}        Show available translation models grouped by vendor\n";
         echo "\t{$bold}--list-prompts{$reset}       Show available prompt templates\n";
         echo "\t{$bold}--model=MODEL_ID{$reset}     Required model (see --list-models)\n";
-        echo "\t{$bold}--no-validate{$reset}        Disable HTML/JSON syntax and JSON structure checks\n";
+        echo "\t{$bold}--operation-timeout=N{$reset} Total translation operation deadline in seconds\n";
+        echo "\t{$bold}--no-validate{$reset}        Disable container syntax and structure checks\n";
         echo "\t{$bold}--prompt-key=KEY{$reset}     Specify prompt template key (prompts.yaml)\n";
         echo "\t{$bold}--response-schema=FILE{$reset} JSON Schema for OpenAI/Google native JSON output\n";
         echo "\t{$bold}--proxy=URI{$reset}          Optional proxy URI (see examples) or set BBLSLUG_PROXY\n";
         echo "\t{$bold}--source=FILE{$reset}        Input file to translate (omit to read from STDIN)\n";
         echo "\t{$bold}--source-lang=LANG{$reset}   Source language code (e.g. EN, DE) - default autodetect\n";
+        echo "\t{$bold}--text-transport=MODE{$reset} Text transport: document (default) or segments (text only)\n";
+        echo "\t{$bold}--text-segment-batch-size=N{$reset} Segments per request "
+            . "(positive integer; text segments transport only)\n";
         echo "\t{$bold}--target-lang=LANG{$reset}   Target language (e.g. EN, DE) - default EN\n";
         echo "\t{$bold}--translated=FILE{$reset}    Output file for translated content (omit to write to STDOUT)\n";
+        echo "\t{$bold}--validate-embedded-json{$reset} Check JSON objects/arrays encoded inside string values\n";
+        echo "\t{$bold}--validate-html-json-pointer=POINTER{$reset} Check HTML at JSON Pointer paths (repeatable)\n";
         echo "\t{$bold}--variables=K=V,...{$reset}  Comma-separated model-specific overrides (string values)\n";
         echo "\t{$bold}--verbose{$reset}            Show extra debug info after processing\n";
 
@@ -87,6 +103,8 @@ class Help
         echo "\n\tHTTP timeouts (positive integer seconds):\n";
         echo "\t  BBLSLUG_HTTP_CONNECT_TIMEOUT=10; BBLSLUG_HTTP_TIMEOUT=120 (defaults)\n";
         echo "\tHTTP requests are not automatically retried. CLI dry-run does not use HTTP.\n";
+        echo "\tThe operation timeout covers all packets, including DeepL upload, polling, and download;\n";
+        echo "\trequests are not retried.\n";
 
         echo "\nExamples:\n";
         echo "\tList available models:\n";
@@ -94,10 +112,36 @@ class Help
 
         echo "\n\tTranslate HTML from file to file\n";
         echo "\tvendor/bin/bblslug --model=deepl:pro --format=html \\\n";
-        echo "\t    --source=doc.html --translated=out.html --filters=url,html_code,html_pre\n";
+        echo "\t    --source=doc.html --translated=out.html --operation-timeout=120 \\\n";
+        echo "\t    --filters=url,html_code,html_pre\n";
+
+        echo "\n\tTranslate HTML using structured text segments\n";
+        echo "\tvendor/bin/bblslug --model=google:gemini-2.5-flash --format=html --html-transport=segments \\\n";
+        echo "\t    --source=doc.html --translated=out.html\n";
+
+        echo "\n\tTranslate selected HTML strings inside JSON\n";
+        echo "\tvendor/bin/bblslug --model=google:gemini-2.5-flash --format=json --html-transport=segments \\\n";
+        echo "\t    --html-json-pointer=/body --source=doc.json --translated=out.json\n";
 
         echo "\n\tTranslate plain text via STDIN → STDOUT\n";
         echo "\tcat in.txt | vendor/bin/bblslug --model=openai:gpt-4o --format=text > out.txt\n";
+
+        echo "\n\tTranslate plain text using structured text segments\n";
+        echo "\tvendor/bin/bblslug --model=openai:gpt-4o --format=text --text-transport=segments \\\n";
+        echo "\t    --source=in.txt --translated=out.txt\n";
+
+        echo "\n\tTranslate plain text segments in batches\n";
+        echo "\tvendor/bin/bblslug --model=openai:gpt-4o --format=text --text-transport=segments \\\n";
+        echo "\t    --text-segment-batch-size=20 --source=in.txt --translated=out.txt\n";
+
+        echo "\n\tBound segment request payloads by serialized JSON bytes\n";
+        echo "\tvendor/bin/bblslug --model=openai:gpt-4o --format=text --text-transport=segments \\\n";
+        echo "\t    --segment-batch-max-bytes=4096 --source=in.txt --translated=out.txt\n";
+
+        echo "\n\tResume a failed segment-batch translation\n";
+        echo "\tvendor/bin/bblslug --model=openai:gpt-4o --format=text --text-transport=segments \\\n";
+        echo "\t    --text-segment-batch-size=20 --checkpoint=translation.checkpoint \\\n";
+        echo "\t    --source=in.txt --translated=out.txt\n";
 
         echo "\n\tDry-run to inspect placeholders in a file\n";
         echo "\tvendor/bin/bblslug --model=deepl:free --format=text --filters=url,html_pre \\\n";

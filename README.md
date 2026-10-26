@@ -166,6 +166,22 @@ and exclusion evidence are recorded in [model-catalog.json](resources/model-cata
 - Can be invoked as a CLI tool or embedded in PHP code
 - **Validation** of container syntax for HTML or JSON; disable with `--no-validate`
 
+Filter names are `url` or `html_TAG`. Unknown names (for example `urll`) and
+malformed tag names cause an error before translation. `TAG` starts with an ASCII
+letter and cannot contain whitespace, quotes, angle brackets, forward slashes, or control
+characters; custom names such as `x-panel`, `svg:path`, and `x-элемент` are allowed.
+An empty API list (`filters: []`) or CLI `--filters=` applies no filters. Empty
+entries inside a nonempty CLI list, such as `url,,html_code`, are rejected.
+
+`variables` / `--variables` accepts model-specific options. The names `format`,
+`dryRun`, `promptKey`, `verbose`, and `context` are reserved: use the corresponding
+`translate()` arguments or CLI flags. `responseContext` is internal request state
+and cannot be supplied through variables. Reserved names cause an error even if
+the value is `null` or equals the explicit argument, including in dry-run mode.
+The diagnostic names the option without printing its value. Options such as
+`temperature`, `response_schema`, `json_transport`, and `document_timeout` remain
+available through variables.
+
 The GPT-6 entries were checked against [official OpenAI documentation](https://developers.openai.com/api/docs/guides/latest-model) on 2026-10-22.
 The GPT-6 defaults use Chat Completions with `reasoning_effort=low` and omit `temperature`.
 Responses-only models use the Responses API with its own request and usage fields.
@@ -192,10 +208,11 @@ the application does not substitute another model after a failure.
 
 Requires PHP 8.2 or newer with the cURL, DOM, and mbstring extensions.
 
-**Upgrading from `0.8.0`:** the updated release is **0.9.0**. Packagist keeps
+**Upgrading from `0.8.0`:** that release was withdrawn and superseded by `0.9.0`;
+the current release is **0.10.0**. Packagist keeps
 published version references immutable, so republishing the old tag cannot
 replace its stored code. Update the consumer's constraint, for example with
-`composer require habr/bblslug:0.9.0`, review the lock file, and commit both
+`composer require habr/bblslug:0.10.0`, review the lock file, and commit both
 `composer.json` and `composer.lock`. No VCS override is needed. See the
 [changelog](CHANGELOG.md) for compatibility changes and validation limits.
 
@@ -234,7 +251,31 @@ chmod +x vendor/bin/bblslug
 
   - If `--source` is omitted, Bblslug reads from **STDIN**.
   - If `--translated` is omitted, Bblslug writes to **STDOUT**.
+  - `--translated` accepts one nonempty path. Missing, empty and repeated values
+    fail before translation. For ordinary local paths, directories, missing parent
+    directories and obvious permission failures are checked before API calls.
+    The check does not create or truncate the output. Existing writable files can
+    be updated inside read-only parent directories. Stream outputs retain their
+    write-time checks, and dry-run continues to ignore a valid `--translated` path.
+    Disk space and permissions can still change after preflight; final write errors
+    remain checked separately.
+  - Ordinary local output files are staged in their destination directory, flushed
+    and replaced only after the complete write succeeds. The same writer protects
+    dry-run `.prepared` files. A failed staged write leaves the previous file intact
+    and does not install a partial new file. Existing symlinks to regular files are
+    retained while their targets are replaced. Basic permission bits are preserved;
+    new files use `0666 & ~umask`. Replacement creates a new inode and does not copy
+    extended metadata such as ACLs or extended attributes.
+  - Compatibility cases retain checked direct writes: stream URIs (including
+    `file://`), special files, hardlinks, dangling symlinks, existing writable files
+    inside read-only directories, and files whose ownership/group would change on
+    replacement. These paths do not have the staged-write protection and can still
+    receive a partial write on an I/O failure. Failed atomic replacement is reported
+    without retrying through a destructive direct write.
   - Progress, errors, and translation statistics go to **STDERR**.
+  - If STDERR is unavailable or its pipe is broken, diagnostic writes are skipped.
+    Translation output remains unchanged, and failures still return a nonzero exit
+    code. Verbose logs and terminal formatting never fall back to STDOUT.
   - Failed requests or output writes exit with a nonzero status.
 
 4. **Optional proxy**:
@@ -264,6 +305,38 @@ chmod +x vendor/bin/bblslug
   over environment values. Network failures throw `RuntimeException` with the cURL
   error code (28 for a timeout). Requests are not automatically retried.
 
+
+### Limit the whole translation operation
+
+Use `operationTimeoutSeconds: 60` in PHP or `--operation-timeout=60` in the CLI to
+set a shared time budget in positive integer seconds. The default is `null`,
+retaining the existing per-request and provider workflow timeouts.
+
+```bash
+vendor/bin/bblslug --model=google:gemini-2.5-flash --format=text \
+  --text-transport=segments --text-segment-batch-size=25 --operation-timeout=60 \
+  --source=input.txt --translated=output.txt
+```
+
+The monotonic budget starts at `translate()` entry and includes preparation,
+packet requests, parsing and reconstruction. Every HTTP exchange is capped to
+the remaining budget in milliseconds, preserving any shorter existing request
+or connection timeout. DeepL document uploads, polling waits, status requests
+and downloads share the same operation budget; it does not restart per packet
+or after upload. Polling sleeps are shortened to the time remaining.
+
+Expiry prevents further requests and rejects a late result. A failed batch still
+reports its position and the number of earlier completed packets. No partial
+translation is returned, and CLI destination files are written only after the
+whole translation succeeds. Already completed provider work may have been billed;
+a local timeout does not cancel remote work or automatically retry it.
+
+Synchronous local processing and user feedback callbacks are checked at operation
+boundaries; they cannot be forcibly interrupted mid-call, but their elapsed time
+counts and a result completed after expiry is rejected. CLI dry-run validates
+the option without making HTTP requests; it keeps the existing preparation-only
+path. `HttpClient::request()` also accepts an optional positive
+`timeoutMilliseconds` cap, which cannot extend the resolved request timeout.
 
 ### Show available models
 
@@ -308,6 +381,396 @@ vendor/bin/bblslug \
   --filters=url,html_code,html_pre
 ```
 
+### Detect missing fragments in plain text
+
+Use `--format=text --text-transport=segments` (PHP: `textTransport: 'segments'`)
+to translate each nonempty source line through the provider's JSON transport.
+Bblslug requires exactly one nonempty string for every fragment identifier and
+reassembles the text in source order. Missing, extra, duplicate or invalid values
+fail even with `--no-validate`. Returned fragments may not introduce CR or LF.
+Lines containing protected placeholders are split around those placeholders;
+their source bytes remain local.
+
+```bash
+vendor/bin/bblslug --model=google:gemini-2.5-flash --format=text \
+  --text-transport=segments --source=input.txt --translated=output.txt
+```
+
+Line separators (LF, CRLF and CR), blank lines, and leading/trailing Unicode
+whitespace stay unchanged. Text remains literal: HTML entities and markup are not
+decoded or escaped. Existing filters still apply and restore locally. Dry-run
+returns prepared plain text; whitespace-only or placeholder-only input needs no
+HTTP request. Segment mode requires valid UTF-8 and rejects `response_schema`.
+
+The default is still `textTransport: 'document'` / `--text-transport=document`.
+Document mode does not detect omitted paragraphs. Empty or whitespace-only
+provider translations for nonempty prepared input are rejected, including with
+`--no-validate`; dry-run and empty/whitespace-only input are exempt. This catches
+empty replies, not omissions inside a nonempty reply. Segment mode detects missing
+fragment identifiers, but cannot prove that every sentence within a returned
+fragment was translated, or that the translation is accurate. Translating lines
+separately may reduce fluency across line boundaries. Custom prompt groups need
+a JSON template. JSON payload overhead counts toward model limits. Requests stay unsplit unless
+`textSegmentBatchSize` / `--text-segment-batch-size` is set (below). Output budgets
+apply to each request. `--html-segment-batch-size` applies only to HTML segments.
+There is no automatic retry or fallback to document mode.
+
+A 2026-10-24 live check translated a 19,978-character text through Gemini 2.5
+Flash with original CR/LF separators preserved and an explicitly increased output
+budget. Yandex Lite omitted `s108` on the same input; segment mode rejected the
+response. A small Yandex Pro request also passed. These checks verify the segment
+protocol and reconstruction, not translation fidelity.
+
+### Limit plain text segment batches
+
+Set `textSegmentBatchSize: 25` in PHP or `--text-segment-batch-size=25` in the CLI
+with text segment transport to send at most 25 fragments per request:
+
+```bash
+vendor/bin/bblslug --model=google:gemini-2.5-flash --format=text \
+  --text-transport=segments --text-segment-batch-size=25 \
+  --source=input.txt --translated=output.txt
+```
+
+The default is `null` (one request). The limit must be a positive integer and
+requires `textTransport: 'segments'` / `--text-transport=segments`. Requests run
+sequentially, retain the original fragment identifiers, and reconstruct source
+line separators, whitespace and protected placeholders locally. All packet input
+lengths and driver request limits are checked before the first HTTP call.
+
+Each response is checked before sending the next packet, including mandatory
+fragment identifiers, nonempty string values, duplicate keys, introduced
+placeholders and CR/LF. A failed packet stops the operation, reports its position
+and the number of earlier completed packets, and returns no partial document.
+CLI output files are written only after the complete translation succeeds.
+There is no automatic retry. The optional checkpoint below can retain successful
+packets for a later run; earlier successful packets may already have been billed. Network timeouts and output budgets apply per request.
+
+With a batch size set, the result includes `batches` with ordered packet summaries
+and aggregated `consumed` usage. `rawResponseBody` is a JSON array of raw response
+strings in request order, as in HTML batching. Dry-run and inputs without
+translatable fragments make no HTTP requests; an input without fragments has an
+empty `batches` list and raw response array. Without the option, the existing
+single-response result shape is unchanged.
+
+The count limit does not bound characters or bytes. Without the optional byte
+limit below, a single oversized fragment still fails before HTTP. DeepL's default
+JSON Document transport performs its upload, polling and download workflow for
+each packet. Its explicit `json_transport=text_batch` alternative keeps its own
+request limits.
+
+A 2026-10-24 live check translated the 19,978-character text through Gemini 2.5
+Flash in five packets of 25, 25, 25, 25 and 9 fragments, preserving the source line
+separators. Yandex Pro also passed a small two-packet check. Output budgets were
+explicitly configured; these checks verify protocol and reconstruction, not
+translation fidelity.
+
+### Bound segment packets by serialized bytes
+
+Set `segmentBatchMaxBytes: 4000` in PHP or `--segment-batch-max-bytes=4000` in the
+CLI with text or HTML segment transport. The cap can operate alone or together
+with `textSegmentBatchSize` / `htmlSegmentBatchSize`; both limits then apply.
+
+```bash
+vendor/bin/bblslug --model=google:gemini-2.5-flash --format=text \
+  --text-transport=segments --segment-batch-max-bytes=4000 \
+  --source=input.txt --translated=output.txt
+```
+
+The positive integer cap measures the serialized fragment JSON in UTF-8 bytes,
+including keys, quotes, braces, commas and escaping. It does not measure the full
+provider request body, prompt tokens or output size. Existing model length and
+driver request-body guards still run on every packet before any HTTP request.
+Choose a cap that leaves room for provider-specific overhead and the output.
+
+An individual fragment that exceeds the cap is split at Unicode whitespace
+boundaries. Source separators between the resulting pieces stay local and are
+reinserted exactly. Original identifiers stay on the first piece; additional
+pieces get distinct identifiers and are joined before text/HTML reconstruction.
+This also works for explicitly selected HTML strings inside JSON; unselected JSON
+bytes remain unchanged. Missing pieces or invalid packet responses stop the
+operation without a partial result. Packet summaries count the pieces actually
+sent to the provider.
+
+Words and tokens are never cut in the middle. An unbreakable word, URL, or an
+input without suitable whitespace that cannot fit the cap causes an error before
+HTTP. Protect opaque values with filters where appropriate. Smaller fragments
+can reduce translation fluency and context; reconstruction checks cannot prove
+translation fidelity. Byte limits do not enable retries or persistence by
+themselves; use a checkpoint below to resume confirmed successful packets.
+CLI dry-run validates the byte plan while returning prepared source text.
+
+The default is `null`, preserving existing count-only and single-request behavior.
+Enabling the byte cap uses the same `batches`, usage aggregation and ordered raw
+response array as count-based batching. Empty documents make no HTTP requests.
+
+A 2026-10-24 Gemini 2.5 Flash check passed both plain text and HTML with a
+180-byte cap: each example used three packets, including pieces of a long source
+fragment. Text line separators and HTML structure were preserved. This verifies
+the transport and reconstruction on those examples, not translation fidelity.
+
+### Resume confirmed successful segment packets
+
+Pass `checkpointPath: '/private/work/translation.checkpoint.json'` in PHP or
+`--checkpoint=translation.checkpoint.json` in the CLI alongside a segment count
+or byte cap. This works for text, HTML and selected HTML strings in JSON.
+
+```bash
+vendor/bin/bblslug --model=google:gemini-2.5-flash --format=text \
+  --text-transport=segments --text-segment-batch-size=25 \
+  --checkpoint=translation.checkpoint.json \
+  --source=input.txt --translated=output.txt
+```
+
+After a failed run, repeat the same command. Missing state is created before the
+first HTTP request; existing state reuses its contiguous prefix of confirmed,
+validated packets and sends only the rest. A fully completed checkpoint rebuilds
+the translation without HTTP. Each new packet is persisted after its response
+passes the mandatory segment protocol checks. Invalid or missing fragments are
+never saved. The final output file is still written only after complete success.
+
+Compatibility is checked against source bytes, effective model configuration,
+translation settings, filters, actual loaded prompt templates, validation flags,
+packet boundaries and library source code. A mismatch or corrupt checkpoint
+fails before new HTTP requests and preserves the file. A library update also
+invalidates the checkpoint conservatively. An API key or proxy may change;
+HTTP environment settings and the operation timeout may also change. Each new
+invocation gets a fresh operation time budget.
+
+The local JSON file contains translated fragments, normalized usage and success
+statuses, plus identity/checksum metadata. It does not serialize authentication
+settings, input requests, raw provider responses or debug logs. It still contains
+translation content and should be handled like an output document. New state and
+lock files use mode `0600`. Writes use a temporary file in the same directory and
+atomic replacement. A nonblocking exclusive lock prevents two processes from
+using the same checkpoint concurrently. The empty `.lock` file remains after the
+run; the lock itself is released when the operation ends. Parent directories must
+already exist. State/lock symlinks are rejected. CLI state and lock paths must
+not alias source, prepared output or translated output paths. Dry-run and inputs
+without translatable fragments do not read or create state files.
+
+With a checkpoint enabled, `batches` includes `reused` for each packet and the
+result adds `reusedBatches` and `consumedThisRun`. Existing `consumed` describes the
+whole document, including historical saved usage; `consumedThisRun` includes only
+new successful requests in this invocation. The CLI displays current-run usage.
+A reused packet has its historical success status, empty debug fields, and an
+empty string in the ordered `rawResponseBody` array because raw responses are not
+stored. Without `checkpointPath`, result fields and behavior stay unchanged.
+
+Checkpoints are trusted local state, not a signed archive or a distributed job
+queue. They retain only confirmed responses: a timed-out request or a crash
+between receiving and persisting a response may have been billed without a saved
+record. Retrying such a packet may incur another charge. In-flight DeepL uploads
+are not resumed; only completed translated packets are retained. No automatic
+request retries are introduced.
+
+A 2026-10-24 Gemini 2.5 Flash check stopped the process after saving packet one
+of three. The next invocation reused that packet and sent only the remaining
+two. A third invocation reused all three with no HTTP requests and produced an
+identical result. Source CR/LF separators were preserved; known API/proxy
+credentials were absent from the saved state.
+
+### Keep HTML markup local during translation
+
+The optional `segments` transport sends text fragments as a JSON object with
+stable identifiers. Bblslug reconstructs the HTML from the original source slices;
+the provider does not rewrite its tags or non-language attributes.
+
+```bash
+vendor/bin/bblslug --model=google:gemini-2.5-flash --format=html \
+  --html-transport=segments --filters=url,html_code,html_pre \
+  --source=input.html --translated=out.html
+```
+
+```php
+$result = Bblslug::translate(
+    apiKey: $key,
+    format: 'html',
+    modelKey: 'google:gemini-2.5-flash',
+    text: $html,
+    filters: ['url', 'html_code', 'html_pre'],
+    htmlTransport: 'segments',
+);
+```
+
+Text nodes and `title`, `alt`, and `aria-label` attribute values are translated.
+`pre`, `code`, scripts, styles, legacy raw-text elements, SVG/MathML, comments,
+and declarations remain local. `plaintext` protects the remainder of the document.
+`title` and `textarea` contents are handled as text, including literal less-than
+signs. Placeholder markers remain at their source positions and are not sent.
+Original whitespace at fragment edges is retained. Entities are decoded for
+translation; changed values are escaped for their HTML context, including unquoted
+attributes. An unchanged value keeps its original entity spelling.
+CSS visibility and browser scripting state are not evaluated.
+
+The response must contain exactly the expected identifiers, without duplicates,
+and a nonempty string for every fragment. These transport checks remain active
+with `--no-validate`; they cannot restore an incomplete response safely. Output is
+still subject to the normal HTML checks unless validation is disabled. An input
+with no translatable fragments skips HTTP. CLI dry-run validates extraction but
+continues to return prepared HTML, not the internal JSON payload.
+
+The default remains `htmlTransport: 'document'` / `--html-transport=document`.
+`segments` supports HTML input and selected HTML strings in JSON (below). It uses
+the selected prompt group's JSON template and the provider's JSON transport. A custom HTML-only prompt group needs
+a JSON template for this mode. DeepL uses its JSON Document API by default;
+`json_transport=text_batch` remains an explicit alternative with its existing
+batch limits. Length checks apply to the serialized JSON payload; returned `prepared` text
+and length statistics still describe HTML. Requests remain unsplit unless explicit
+batching is enabled below. There is no automatic retry or fallback to document mode.
+
+Fragment translation can reduce fluency where grammar requires moving words
+across inline tags. Keeping every fragment does not prove translation fidelity.
+Extraction is conservative: incomplete markup and unsupported protected-block
+forms fail before HTTP. SVG/MathML blocks, including self-closing roots, stay
+local and are restored byte for byte.
+
+A 2026-10-23 check on a 26,087-character HTML document passed with Gemini 2.5
+Flash, GPT-5 Mini, Claude Haiku 4.5, and DeepL free/pro. The same document passed
+through Gemini CLI. Output budgets were explicitly increased for this large
+input. Grok 4.20 non-reasoning and Yandex Lite/Pro responses failed segment
+protocol checks and were rejected without retries. This single-document check
+is not a guarantee for all models or documents.
+
+### Translate selected HTML strings inside JSON
+
+Use `htmlTransport: 'segments'` with explicit `htmlJsonPointers` to translate
+only selected HTML string values. Supported formats are `json` and `linedJson`.
+
+```php
+$result = Bblslug::translate(
+    apiKey: $key,
+    format: 'json',
+    modelKey: 'google:gemini-2.5-flash',
+    text: $json,
+    filters: ['url', 'html_code'],
+    htmlTransport: 'segments',
+    htmlJsonPointers: ['/body', '/items/0/html'],
+);
+```
+
+```bash
+vendor/bin/bblslug --model=google:gemini-2.5-flash --format=json \
+  --html-transport=segments --html-json-pointer=/body \
+  --html-json-pointer=/items/0/html --filters=url,html_code \
+  --source=input.json --translated=out.json
+```
+
+Only HTML fragments from those strings are sent. All unselected values, keys,
+whitespace, property order, and numeric tokens remain byte-for-byte unchanged.
+Filters apply separately inside selected strings, leaving unselected fields alone.
+Each HTML string has its own scope, including raw-text/`plaintext` handling.
+Fragment identifiers are unique across the request. Reconstruction escapes each
+changed HTML string as JSON; an unchanged string retains its original JSON token.
+A changed selected token may normalize its JSON escape spelling, while its decoded
+markup stays local. `rawResponseBody` contains the provider's fragment response;
+`result` contains the assembled JSON document.
+
+Selectors use RFC 6901 JSON Pointer syntax: `~1` for `/`, `~0` for `~`, array
+indices such as `/items/0/html`, and an empty pointer for a root JSON string
+(`--html-json-pointer ''`). Repeated selectors are deduplicated. There are no
+wildcards, field-name guesses, or implicit traversal into JSON encoded inside
+another string. Invalid/missing/non-string selections, duplicate source object
+keys, and malformed source JSON fail before HTTP, including dry-run and
+`--no-validate`. Segment response integrity is also mandatory. When validation is
+enabled, selected HTML is checked before and after translation automatically.
+
+`htmlJsonPointers` / `--html-json-pointer` selects content to **translate**.
+`validateHtmlJsonPointers` / `--validate-html-json-pointer` only selects additional
+HTML strings to **check**. Both can be used together. JSON segment mode requires
+at least one translation selector; document mode rejects translation selectors.
+`structured_json` and `response_schema` are incompatible with segment mode because
+the provider sees a fragment object rather than the outer JSON schema.
+
+The earlier HTML transport limitations still apply. CLI JSON dry-run outputs
+filtered JSON with only the selected strings prepared; the PHP API exposes this in
+`prepared` while its dry-run `result` remains the source. Transport input limits apply to the
+serialized fragment payload, not to unselected metadata. This mode does not change
+the default JSON translation behavior, which translates all string values.
+
+A large JSON fixture produced the same 179-fragment request as its standalone
+HTML value. Replaying five recorded provider responses preserved its unselected
+bytes and HTML structure. Fresh Gemini 2.5 Flash API and CLI checks also passed,
+with `maxOutputTokens=32768`; protected URLs/code and unselected JSON bytes were
+unchanged. This verifies reconstruction for that fixture, not general translation
+fidelity or a new live check of every provider.
+
+### Limit HTML segment batches
+
+Set `htmlSegmentBatchSize: 25` in the PHP API or add
+`--html-segment-batch-size=25` in the CLI to send at most 25 fragments per request.
+The option requires `htmlTransport: 'segments'` / `--html-transport=segments` and
+works for HTML and selected HTML strings inside `json`/`linedJson`.
+
+```php
+$result = Bblslug::translate(
+    apiKey: $key,
+    format: 'json',
+    modelKey: 'xai:grok-4.20-0309-non-reasoning',
+    text: $json,
+    htmlTransport: 'segments',
+    htmlJsonPointers: ['/body'],
+    htmlSegmentBatchSize: 25,
+);
+```
+
+```bash
+vendor/bin/bblslug --model=xai:grok-4.20-0309-non-reasoning --format=html \
+  --html-transport=segments --html-segment-batch-size=25 \
+  --source=input.html --translated=out.html
+```
+
+The default is `null` (no batching). Packets run sequentially, preserving the
+original identifiers and source positions. Every response is checked against its
+own packet before continuing, even with validation disabled. Missing, duplicate,
+extra, empty, or non-string values abort the operation. A packet failure identifies
+its position and the number of earlier completed packets; no further packets are
+sent, no partial document is returned, and the CLI keeps existing files unchanged.
+There are no automatic retries or fallback requests. A successful earlier packet
+is a completed provider operation even when a later packet fails.
+
+Model input-length checks and request-body preparation run for **all** packets
+before the first HTTP call. Without the optional byte limit below, a single
+oversized fragment fails; it is never clipped. The count limit counts fragments,
+not characters or bytes. Smaller
+packets also reduce context across inline text nodes, so translation fidelity still
+requires review. Source HTML and unselected JSON remain local as before.
+
+Batching explicitly makes multiple translation requests. Existing output-token
+settings and timeouts apply **per packet**, not to the complete document. Prompts
+and context are repeated. DeepL's default JSON transport starts a separate document
+workflow per packet; its explicit `json_transport=text_batch` alternative retains
+its own endpoint limits. Authentication, proxy, language, and model options are
+reused for each request.
+
+With a batch size configured, the result adds `batches`: ordered summaries with
+`index` (1-based), `segments`, `httpStatus`, and normalized `consumed` usage.
+Top-level `consumed` sums the metrics actually reported across packets; absent
+metrics are not estimated. `httpStatus` describes the last packet.
+`rawResponseBody` becomes a JSON array of raw response-body **strings**, one per
+packet, rather than a fabricated provider response. Verbose diagnostics identify
+packets. API dry-run records planned packets with status 0 and sends no HTTP;
+CLI dry-run still returns prepared HTML/JSON. Inputs with no translatable text
+make no requests and return an empty `batches` list. Without the option, the
+existing single-response result shape remains unchanged.
+
+A 2026-10-23 large-document check used 179 fragments and a limit of 25. It did
+not produce a complete large-document translation:
+
+| Configuration | Observed result |
+| --- | --- |
+| Grok 4.20 non-reasoning | Six packets passed; packet 7/8 timed out after 240 seconds. |
+| Yandex Lite | Packet 1/8 returned invalid JSON with an opening Markdown fence. |
+| Yandex Pro | Packet 1 passed; packet 2/8 added paired Markdown fences around JSON. |
+
+No packets were retried. Offline inspection also found a JSON syntax error in
+Lite's response after removing its transport fence; Pro's enclosed 25 values
+passed strict checks in that offline inspection. Fence removal is **not** part of
+this batching feature. A separate small JSON CLI example passed on Grok: five
+fragments in three packets, with selected HTML, code, and unselected JSON preserved.
+These results establish the batching/error-handling behavior, not general provider
+reliability on large documents.
+
 ### Add translation context (prompt), source and target language
 
 ```bash
@@ -343,7 +806,8 @@ vendor/bin/bblslug \
 
 ### Choose a different prompt template
 
-Use `--list-prompts` to check supported formats. The `experimental` group supports JSON only.
+Use `--list-prompts` to check supported formats. The `experimental` and
+`experimental_xml` groups support JSON only.
 
 ```bash
 vendor/bin/bblslug \
@@ -353,6 +817,40 @@ vendor/bin/bblslug \
   --translated=out.json \
   --prompt-key=experimental
 ```
+
+The opt-in `experimental_xml` group preserves the XML-style JSON prompt prototype:
+
+```bash
+vendor/bin/bblslug --model=openai:gpt-5-mini --format=json \
+  --source=input.json --target-lang=DE --prompt-key=experimental_xml
+```
+
+PHP callers select `promptKey: 'experimental_xml'`. The template is sent verbatim
+as text with XML-like tags. The library substitutes its placeholders; it does not
+parse XML, expand entities, or run a [POML renderer](https://microsoft.github.io/poml/latest/language/basic/).
+Its marker instructions and JSON escape examples were clarified during review.
+`translator` remains the default. This experimental group provides no `text`,
+`html`, `linedJson`, or `structured_json` template; native JSON mode requests
+`structured_json` and therefore cannot use this group.
+
+A small 2026-10-23 comparison used the same English-to-German JSON sample with
+encoded JSON, protected code/URL, and non-string values. Six model/tier entries
+(OpenAI GPT-5 mini, Claude Haiku 4.5, Gemini 2.5 Flash, Grok 4.20, Yandex Lite/Pro)
+ran once through API and once through CLI for each prompt, with validation enabled:
+
+| Prompt | Passed / requests | Observed rejection |
+| --- | --- | --- |
+| Default `translator` | 12 / 12 | None in this run |
+| Original local XML prototype | 10 / 12 | Yandex Pro API and CLI added Markdown fences |
+| Reviewed `experimental_xml` | 12 / 12 | None in this run |
+
+The original prototype also contained contradictory bare-JSON/marker instructions.
+The comparison does not isolate which wording caused a model response. It is not
+a quality benchmark or reliability estimate and provides no evidence that XML
+markup improves on the default. Earlier intermittent Gemini marker failures remain
+relevant. DeepL was excluded because its translation API does not use these prompts.
+The unmodified local prototype is preserved in the local review backup; it is not
+published as another supported template.
 
 ### Dry-run placeholders only
 
@@ -447,6 +945,318 @@ or a document domain. Use the existing context or a custom prompt for applicatio
 rules. Custom prompt templates must provide the requested format; native mode
 requests the `structured_json` template.
 
+### Google native JSON transport
+
+Google JSON requests default to `json_transport=auto`. For registered Gemini models
+with a declared native JSON capability, `json` and `linedJson` with the standard
+`translator` group request `application/json` output without translation markers
+or a required JSON Schema. The registry declares this capability per model; the
+driver does not infer it from names or endpoints. The current Gemini entries have
+it enabled; Gemma and undeclared custom configurations retain markers.
+
+```bash
+printf '%s' '{"title":"Hello"}' | bblslug --model=google:gemini-2.5-flash \
+  --format=json --source-lang=EN --target-lang=DE
+```
+
+The driver uses the same automatic selection to build requests and parse responses.
+Text and default document-mode HTML retain markers. HTML segment mode below
+uses the JSON transport instead. Custom prompt groups retain their existing marker
+contract in auto mode; a custom `translator` group without `structured_json` also
+retains markers. To select a protocol explicitly, pass
+`variables: ['json_transport' => 'native']` or `['json_transport' => 'markers']`,
+or CLI `--variables=json_transport=markers`. A failed HTTP request or invalid
+response never triggers an automatic protocol retry.
+
+Explicit native mode requests the selected group's `structured_json` template;
+missing templates fail explicitly. `structured_json` format still requires
+`response_schema`, and supplying a schema selects native output even in auto mode.
+Explicit markers conflict with a schema. Syntax, source structure, exact non-string
+values, placeholders, and opt-in embedded JSON validation remain enabled by default.
+Native JSON syntax does not guarantee semantic correctness of translated strings.
+See the provider's [JSON output documentation](https://ai.google.dev/api/generate-content#v1beta.GenerationConfig).
+Google transport choices are separate from DeepL's transport choices.
+
+A 2026-10-23 auto-mode check sent JSON through API and CLI on Gemini 2.5 Flash,
+2.5 Pro, 2.5 Flash-Lite, 3.8 Flash, and 4 Argon. Nine of ten requests passed the
+nested JSON/code/URL/scalar checks; 4 Argon's CLI request timed out at the smoke
+runner's 45-second deadline. One separately recorded CLI check with the library's
+normal 120-second timeout passed in 3.49 seconds. This does not establish a cause
+for the transient timeout. Four additional 2.5 Flash text/HTML API/CLI requests
+passed with their existing marker protocol.
+
+### Live provider checks
+
+English-to-German smoke requests on 2026-10-23 used both the library and CLI,
+with validation enabled, HTML/JSON URL and code filters, and embedded JSON validation.
+Text cases ran on `61610e4`; HTML/JSON cases were repeated with the DeepL CLI timeout
+and prompt framing fixes described in the unreleased changelog.
+
+| Model | Text (API / CLI) | HTML (API / CLI) | JSON (API / CLI) |
+| --- | --- | --- | --- |
+| `openai:gpt-5-mini` | Passed / Passed | Passed / Passed | Passed / Passed |
+| `anthropic:claude-haiku-4.5-20251001` | Passed / Passed | Passed / Passed | Passed / Passed |
+| `google:gemini-2.5-flash` | Passed / Passed | Passed / Passed | Passed / Rejected: missing markers |
+| `xai:grok-4.20-0309-non-reasoning` | Passed / Passed | Passed / Passed | Passed / Passed |
+| `deepl:free` | Passed / Passed | Passed / Passed | Passed / Passed (native Document API) |
+| `deepl:pro` | Passed / Passed | Passed / Passed | Passed / Passed (native Document API) |
+| `yandex:gpt-lite` | Passed / Passed | Rejected markup / Rejected markup | Passed / Passed |
+| `yandex:gpt-pro` | Passed / Passed | Passed / Passed | Connection timeout / Passed |
+
+The table records the marker-based Google protocol. Those observations cover 48
+cases: 44 passed, three responses were rejected by output validation, and one
+connection timed out. The earlier Gemini API JSON case also missed markers, so its
+later success does not establish reliability. No invalid response was accepted
+and no automatic retry was added.
+
+A separate Google native JSON check passed all six requests: API and CLI, three
+runs each, on `gemini-2.5-flash`. The sample included encoded JSON, protected code,
+a Unicode-escaped URL, and exact non-string values. This is evidence for the tested
+native path, not a guarantee across all Gemini models. A separate Yandex Lite HTML
+request again added an opening Markdown fence inside the markers and was rejected.
+
+These are small scenarios using eight model/tier entries across six providers,
+not a full model-catalogue check or a translation-quality benchmark. Native DeepL
+JSON requests preserved the tested path and encoded JSON on both tiers; this does
+not guarantee semantic preservation of arbitrary strings. See
+[the repeatable smoke runner](tools/README.md) for commands and scope.
+
+Yandex Lite text/JSON also passed four API/CLI smoke requests after the completion
+status checks were added. That earlier run predates the source-aware HTML prefix
+handling described below.
+
+### Yandex completion status
+
+The driver checks completion metadata before extracting text, even when translation
+markers are present. Foundation API alternatives must have
+`ALTERNATIVE_STATUS_FINAL`; Chat Completions and legacy completion responses must
+have `finish_reason=stop`, when that field is supplied. Truncated, partial,
+content-filtered, tool-call, unknown, and malformed completion states are rejected.
+An explicit Chat Completions refusal is also rejected. Only the first alternative
+is considered; another alternative does not replace a rejected one.
+
+Older response shapes without completion metadata remain accepted for compatibility;
+the selected framing and enabled output validation still apply. CLI provider failures leave the
+source and an existing destination file unchanged. No automatic retry is performed.
+The documented Yandex API format controls target JSON; this change does not add an
+HTML output mode or strip Markdown wrappers from a model response.
+
+### Yandex native JSON transport
+
+Yandex supports JSON-object generation through
+[`jsonObject` in the Foundation API](https://aistudio.yandex.ru/ru/docs/ai-studio/text-generation/api-ref/TextGeneration/completion)
+and [`response_format: {type: json_object}` in Chat Completions](https://aistudio.yandex.ru/ru/docs/ai-studio/api/Chat-Completions/createChatCompletion).
+The driver uses these controls with the existing generic `structured_json` prompt,
+without translation markers. It does not strip JSON fences or repair escaping.
+
+`json_transport=auto` is the default. It selects native mode for `json`/`linedJson`
+only when the source root is an object, the model declares `native_json`, and the
+standard `translator` group has a `structured_json` template. Native capability is
+currently declared for `yandex:gpt-lite` and `yandex:gpt-pro`. HTML segment packets
+are objects, so they qualify automatically. Text, document-mode HTML, array/scalar
+JSON roots, other models, and custom prompt groups retain their marker protocol.
+
+```php
+$result = Bblslug::translate(
+    apiKey: $key,
+    format: 'json',
+    modelKey: 'yandex:gpt-pro',
+    text: $json,
+    variables: ['folder_id' => $folderId, 'json_transport' => 'native'],
+);
+```
+
+CLI overrides use `--variables=json_transport=native` or `json_transport=markers`.
+Explicit native mode requires `json`/`linedJson` and a valid object-root source;
+custom groups need a `structured_json` template. Explicit markers preserve the
+previous protocol. `structured_json` and `response_schema` remain unsupported by
+the Yandex integration; JSON-object mode does not enforce a caller-supplied schema.
+There is no fallback or retry when a native request is rejected.
+
+The response must be a JSON object even with container validation disabled.
+Truncation, content-filter, refusal, and completion-state checks happen first.
+Enabled schema/scalar checks and mandatory segment checks still reject changed,
+missing, duplicated, or empty values as appropriate. Request-local state fixes the
+selected framing at build time. `rawResponseBody` remains the raw provider response
+(or the ordered raw-response array when batching is enabled). Chat Completions
+usage is preserved from its top-level `usage` field.
+
+Live checks on 2026-10-23 showed the limits of this change:
+
+- Lite passed a short nested JSON probe with quotes, newlines, scalars, and a
+  protected URL. Pro returned valid JSON but changed that probe's structure;
+  the normal schema check rejected it.
+- Pro completed the 179-fragment HTML example in eight native packets of 25.
+  Its CLI JSON run also passed with automatic native selection, preserving code,
+  URLs, and all unselected JSON bytes.
+- Lite returned valid JSON but omitted two keys with packets of 25. With packets
+  of 10, nine packets passed before the provider's content filter rejected packet
+  10/18. Neither failure returned a partial document or triggered retries.
+
+Native JSON fixes the wire-format problem; it does not guarantee completeness,
+translation fidelity, or acceptance by the provider's content filter.
+
+### Yandex HTML response prefixes
+
+For HTML input whose prepared text contains no Markdown fence, the Yandex driver
+handles the opening-only artifact observed in Lite responses. It removes exactly
+one initial line containing three backticks and an optional `html` label. LF and
+CRLF, whitespace around the label, and `HTML` casing are supported. No other fence
+may remain in the response. The remaining HTML still passes placeholder, syntax,
+and structure validation; the original HTTP response remains in `rawResponseBody`.
+
+The source check considers backtick/tilde triples anywhere in prepared HTML,
+including HTML entity representations. Protected code blocks are placeholders at
+this stage and are restored unchanged afterward. If visible source fences are
+present, this compatibility handling is
+disabled and their content is not stripped. Added paired, trailing-only, nested,
+inline, tilde, or unfamiliar labelled fences fail explicitly for fence-free input,
+also when container validation is disabled. Text and JSON responses are unchanged.
+This is not a Markdown parser or general repair of model output.
+
+The facade forwards the request-local `responseContext` automatically. Low-level
+driver integrations must pass that context to `parseResponse()`; without it, the
+driver retains its previous parsing behavior and does not guess source formatting.
+No shared mutable request state or automatic HTTP retry is used.
+
+A 2026-10-23 live check passed all 12 requests: Lite/Pro, API/CLI, and text/HTML/JSON.
+Both Lite HTML replies actually contained the opening artifact; the returned HTML
+passed validation after it was removed. This is a small scenario, not a claim that
+all possible provider output is accepted or correct.
+
+### Secret masking in diagnostics
+
+The facade masks the API key in HTTP diagnostic logs and provider exceptions.
+Low-level `HttpClient::request()` callers supply raw secrets through
+`maskPatterns`. Masking covers raw text, URL/form encoding, and up to two layers
+of JSON string escaping, including hexadecimal escape case variations. Empty
+patterns are ignored; overlapping secrets are matched longest first.
+
+Request and response diagnostic copies are sanitized. Sent payloads, returned
+response bodies and headers keep their original data. Network exceptions retain
+the cURL error code and redact known secrets from the message.
+
+### Verbose filter and validation diagnostics
+
+With `--verbose`, the CLI prints captured URL and HTML-filter previews to stderr.
+Library callers receive these messages through `onFeedback` when `verbose: true`.
+Each filter shows at most 50 captures; each value is masked before being shortened
+to 200 characters plus an ellipsis. Values are JSON-quoted so line breaks and
+backslashes remain visible on one log line. Maps describe intermediate filter
+stages and may contain internal placeholder tokens. Translation output and exact
+protected source bytes are unchanged.
+
+JSON syntax errors and HTML syntax/structure errors include a preview of the
+restored invalid document only in verbose mode. This preview is masked before
+being limited to 2000 characters plus an ellipsis. Existing HTTP diagnostic logs
+have their own behavior; this limit applies to the restored-document preview.
+The new previews mask the supplied API key, proxy URI, and Yandex folder ID using
+the same encoded-secret representations as `SecretMasker`. Other source content
+can remain visible, so verbose output is diagnostic data.
+
+`FilterManager::getDebugMaps()` and `DebuggableFilterInterface::debugDump()` expose
+raw captures for diagnostic integrations; callers must mask them before logging.
+The optional interface leaves the existing `FilterInterface` contract unchanged.
+Callback exceptions remain isolated from translation.
+
+### DeepL JSON transport
+
+For `json` and `linedJson`, DeepL Free and Pro use the native
+[Document API](https://developers.deepl.com/api-reference/document/upload-and-translate-a-document):
+upload the prepared JSON as a multipart `.json` file, poll its status, then download
+the translated JSON. The result goes through the existing placeholder restoration
+and JSON syntax, structure, exact non-string value, and optional embedded JSON checks.
+
+The source file limit is 1 MB; the facade also enforces the model registry's
+existing character limit. `variables: ['document_timeout' => 120]` sets a
+positive integer timeout in seconds: the upload has this HTTP timeout, and polling
+plus downloading share a separate deadline of that duration. CLI variables may use
+a canonical positive integer string, for example `--variables=document_timeout=45`.
+Polling ignores the provider's estimated remaining time. An HTTP error, processing error, malformed
+status, or deadline expiry stops the operation. Uploads and downloads are not
+retried automatically. Document IDs and encryption keys are masked in debug logs
+and exceptions; `rawResponseBody` contains the downloaded document.
+
+The Document API has no `context` or `model_type` parameter. These options cause
+an explicit error in native JSON mode. To retain text-endpoint options or the
+previous local reconstruction behavior, select
+`variables: ['json_transport' => 'text_batch']` explicitly. No automatic fallback
+occurs after an unsuccessful document request. Text and default document-mode
+HTML retain their existing transport. HTML segment mode uses the JSON transport.
+
+In `text_batch` mode, decoded nonempty string values are sent as an
+[ordered text batch](https://developers.deepl.com/api-reference/translate/request-translation).
+Keys, container whitespace, and exact non-string tokens remain local; returned
+strings are JSON-encoded before insertion. Encoded JSON objects/arrays are processed
+recursively. This mode has a 128 KiB request-body limit and can change punctuation
+inside technical strings, as observed with ASCII quotes in a path.
+
+Both modes finish locally (`httpStatus` is `0`) when no translatable string values
+remain. Empty strings, whitespace-only values, and placeholder-only values are
+not translated.
+
+Low-level integrations must forward each request's `responseContext` to
+`parseResponse()`. For native JSON, they must also execute its optional `workflow`
+continuation after the upload, using authenticated HTTP with the supplied timeout
+and mask patterns, then parse the downloaded response. The optional `localResult`
+means no HTTP exchange is needed. `Bblslug::translate()` handles this automatically.
+The driver keeps no shared current-document state.
+
+### DeepL HTML placeholders
+
+For HTML requests, markers in normal text are temporarily wrapped in spans using
+[DeepL's `translate="no"` support](https://developers.deepl.com/docs/translate/translating-html).
+Only wrappers created for that request are removed before restoring the original
+fragments. User markup is not reserialized. Markers in attributes, comments, CDATA,
+and raw-text/RCDATA elements such as `script`, `style`, `title`, and `textarea`
+are left without these wrappers.
+
+A missing, duplicated, malformed, or modified transport wrapper causes an error.
+Post-validation still compares the restored HTML tree, so the wrappers do not
+bypass structure checks. The 128 KiB request-body limit is checked
+after wrapping so transport overhead cannot silently exceed the provider limit.
+
+### Filters inside JSON
+
+When a filter such as `html_code` or `html_pre` receives valid JSON, it inspects
+string values separately and recursively handles JSON containers/strings encoded
+inside them. Escaped closing tags (`<\/code>`), quoted attributes, and Unicode
+escapes are decoded for matching; protected fragments are restored from exact
+source byte slices. JSON keys, numeric spellings, whitespace, and unrelated escape
+sequences are not reserialized by the filter. Tag pairs in separate JSON values
+cannot form one protected block. This behavior applies across providers.
+
+The `url` filter also inspects decoded JSON string values recursively. It
+recognizes supported URL schemes even when their letters, colons, slashes, hosts,
+paths, or query strings use `\uXXXX` escapes. The original URL bytes are restored
+without normalizing their encoding. URL-shaped property names stay unchanged;
+separate JSON values cannot combine into one URL. Literal Unicode escape notation
+in ordinary text is not decoded by the filter.
+
+For ordinary HTML/text input, HTML filters use the same HTML token scan. Selected
+non-void blocks require explicit closing tags. An unclosed selected block or an
+incomplete selected opening tag stops processing before HTTP instead of sending
+its contents unprotected. This also applies inside decoded JSON string values;
+a closing tag in another value cannot complete the block. The error names the
+selected tag without dumping its source contents.
+
+This protection check also runs with `--no-validate`, `validate: false`, and
+`--dry-run`. CLI errors go to stderr without a stack trace or partial output;
+source, destination, and `.prepared` files are not written after filter failure.
+Even for HTML elements with optional end tags, this block filter requires explicit
+pairs; it does not infer DOM boundaries or repair source markup. A trailing slash
+on a non-void tag, such as `<code/>`, does not replace its required closing tag.
+
+Selected void elements such as `<br>`, `<img>`, and legacy `<param>` are protected
+as complete individual opening tags, including their attributes. They need no
+closing tag. Selected `<plaintext>` protects everything from its
+opening tag to EOF, including apparent closing tags, following the
+[HTML plaintext parsing rule](https://html.spec.whatwg.org/multipage/parsing.html#plaintext-state).
+For JSON, EOF here means the end of the decoded string value, not the surrounding
+container. Comments, CDATA, attributes, and other raw-text elements remain opaque
+to selected-tag matching. JSON-aware filtering still requires valid JSON; malformed
+JSON is not repaired.
+
 ### Disable validation
 
 For HTML and JSON formats, Bblslug performs basic syntax validation before and after translation.
@@ -455,10 +1265,101 @@ JSON validation also checks the returned structure against the input. Missing
 fields or list elements, including `null` values, cause a schema error. Omitted
 values are not automatically restored.
 Objects and arrays must retain their container types, including empty `{}` and `[]`.
+Object property order may change, including in nested objects; list positions remain
+significant. Non-string values are compared at their original property/index.
+The provider's output is returned without reordering its properties.
+Numbers, booleans, and `null` must retain their original JSON tokens; only string
+values may be translated. Number comparison uses the exact JSON spelling to avoid
+rounding large integers or precise decimals. Equivalent rewrites such as `1.0`
+to `1e0` also cause a `JSON scalar values changed` error. This check is disabled
+along with container validation by `--no-validate` or `validate: false`.
 
-Current limits: object key order is compared strictly. HTML validation checks parsing,
-not preservation of the original DOM tree. Placeholder loss or duplication is not
-yet checked, and JSON encoded inside string values is not validated separately.
+With placeholder filters enabled, translated output must preserve each prepared
+marker's occurrence count. Missing, duplicated, or unexpected markers cause a
+`Placeholder mismatch` error before restoration. Marker order may change. This
+integrity check remains enabled with `--no-validate` or `validate: false`.
+
+HTML validation also compares the parsed source and translated trees: tag order,
+nesting, attribute presence, comments, doctype, and non-translatable attribute
+values must match. Text and the values of `title`, `alt`, and `aria-label` may
+change. Attribute order and equivalent entity spellings are ignored. The result
+is returned unchanged; comparison does not reserialize the HTML. Newly added
+New Markdown fences are rejected even when libxml parses them as ordinary text.
+Existing fence delimiter runs must retain their type, length, count, and order;
+HTML entity equivalents compare as the same visible delimiters. Boundary fence
+labels must also remain unchanged, while surrounding whitespace may vary. These
+checks catch duplicated or changed existing fences as well as newly added ones.
+The Yandex driver's narrowly specified opening-only transport prefix is handled
+before the restored HTML reaches this validator.
+
+Current limits: HTML comparison uses libxml's parsed tree, including its HTML
+normalization, and does not verify translated text content. Use placeholder
+filters to protect code or other text that must remain unchanged.
+
+JSON encoded inside string values is checked only when explicitly enabled with
+`validateEmbeddedJson: true` in the PHP API or `--validate-embedded-json` in the CLI.
+This option supports `json`, `linedJson`, and `structured_json`. It detects source
+strings containing valid JSON objects or arrays, then recursively checks their
+translated syntax, structure, and exact non-string values using the same rules as
+the outer JSON. Object key order may change. Errors report `Embedded JSON mismatch`
+and the affected field or index. Output strings are not repaired or reserialized.
+Ordinary strings, malformed JSON-like source text, and encoded JSON scalars such
+as `123`, `true`, or `null` remain translatable. The option is off by default because
+JSON-looking text can be intentional prose or a code example. `validate: false`
+or `--no-validate` also disables these checks.
+
+With validation enabled, nonempty JSON string values may not become empty or
+Unicode-whitespace-only strings. A violation raises `JSON string content lost`
+with the property/index path. Already empty or whitespace-only source values are
+allowed; nonempty translations may be shorter. This check applies to `json`,
+`linedJson`, and `structured_json`, and is disabled by `--no-validate` or
+`validate: false`. It does not establish completeness inside a nonempty string.
+Encoded JSON strings receive the same check recursively only when
+`validateEmbeddedJson` / `--validate-embedded-json` is enabled. HTML-bearing
+strings remain ordinary strings unless their HTML is explicitly selected for
+validation or segment transport.
+
+HTML validation also rejects clearing previously nonempty `title`, `alt`, or
+`aria-label` values, and clearing all prose in the whole fragment or a text
+container such as a paragraph, heading, list item, or table cell. Inline text may
+move between `span`, `strong`, `em`, or link elements within that container;
+individual text nodes need not retain text. Already empty or whitespace-only
+source content may remain empty or gain text. Code/preformatted, script/style,
+legacy raw-text/fallback, SVG, and MathML contents are excluded from prose checks;
+retained code does not hide an emptied paragraph. The comparison does not render
+CSS, check translation fidelity, or prove completeness of a nonempty container.
+These checks apply to explicitly selected HTML-in-JSON too, and are disabled by
+`--no-validate` / `validate: false`. Unselected JSON strings are not parsed as HTML.
+
+HTML inside a JSON string is checked only at locations explicitly selected by
+`validateHtmlJsonPointers` in the PHP API:
+
+```php
+$result = Bblslug::translate(
+    apiKey: $key,
+    format: 'json',
+    modelKey: 'openai:gpt-5-mini',
+    text: $json,
+    validateHtmlJsonPointers: ['/body', '/items/0/html'],
+);
+```
+
+In the CLI, repeat `--validate-html-json-pointer=/body` for each selected location.
+These checks support `json`, `linedJson`, and `structured_json`. They validate
+source HTML before sending the request, then check translated HTML syntax and
+structure after placeholder restoration using the HTML rules above. Invalid,
+missing, or non-string source selections fail before HTTP, including dry-run.
+A changed result raises `HTML inside JSON mismatch`; the CLI leaves an existing
+output file unchanged and writes no partial translation to stdout.
+
+Paths use RFC 6901 JSON Pointer string syntax: `/items/0/html` selects an array
+item, `~1` represents `/` in a key, and `~0` represents `~`. The empty pointer
+selects a root JSON string (`--validate-html-json-pointer ''` in the CLI). Paths
+have no wildcards or URI fragment encoding and do not implicitly decode JSON
+stored inside another string. Field names are never inferred. Unselected strings
+remain ordinary translatable content. `validate: false` or `--no-validate` disables
+these checks. Validation does not repair HTML or establish translation completeness;
+use filters to protect code and other text that must remain unchanged.
 
 To skip validation, add:
 
@@ -474,6 +1375,20 @@ vendor/bin/bblslug \
 ### Statistics
 
 - **Usage metrics**
+
+  Counters accept nonnegative integers, decimal integer strings (including Yandex's
+  string counters), and finite whole-valued floats within PHP's integer range.
+  Missing or malformed values use the existing zero fallback. Negative, fractional,
+  nonfinite and out-of-range values are not truncated, rounded or saturated into
+  counts. Decimal fractions and exponent notation in strings are rejected rather
+  than passed through a floating-point conversion. This applies equally with or
+  without checkpointing.
+
+  When summing packets, a total or breakdown counter that exceeds `PHP_INT_MAX`
+  is omitted for the entire aggregation. Other representable counters remain.
+  Later packets do not restart an incomplete sum. No overflowed count is returned
+  as a float, saturated value or artificial zero; the CLI omits its line too.
+  This applies to both whole-document and current-run checkpoint statistics.
 
   After each translation (when not in dry-run), Bblslug prints to stderr a summary of consumed usage metrics, for example:
 
@@ -521,7 +1436,7 @@ if ($apiKey === false || $apiKey === '') {
 $verbose = true;
 $result = Bblslug::translate(
     apiKey:   $apiKey,
-    format:   'html',                          // 'text', 'html' or 'json'
+    format:   'html',                          // text, html, json, structured_json, linedJson
     modelKey: 'openai:gpt-6-luna',              // A key from Bblslug::listModels()
     text:     $text,                           // Source text to be translated
     // optional:
@@ -625,7 +1540,10 @@ Returns an array like:
       'formats' => ['json'],
       'notes'   => 'Compact experimental prompt based on `translator`',
   ],
-  // …
+  'experimental_xml' => [
+      'formats' => ['json'],
+      'notes'   => 'Opt-in XML-style JSON prompt; sent verbatim, without POML compilation',
+  ],
 ]
 ```
 
@@ -666,6 +1584,11 @@ Locally, with the corresponding environment variables configured:
 RUN_LIVE_TESTS=1 BBLSLUG_LIVE_MODEL=openai:gpt-6-luna \
   vendor/bin/phpunit --testsuite integration --testdox
 ```
+
+Only the exact value `RUN_LIVE_TESTS=1` enables PHPUnit live requests. Other values,
+including `false`, `off`, and `0`, keep them disabled. PHPUnit datasets contain
+model metadata only; credentials are resolved after the live gate.
+
 
 ### Input samples
 

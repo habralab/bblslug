@@ -8,6 +8,7 @@ use PHPUnit\Framework\TestCase;
 use Bblslug\Bblslug;
 use Bblslug\Models\ModelRegistry;
 use Bblslug\Models\Drivers\DeepLDriver;
+use Bblslug\Models\Drivers\YandexDriver;
 
 /**
  * Atomic dry-run tests for the main facade Bblslug::translate().
@@ -92,6 +93,78 @@ final class BblslugDryRunTest extends TestCase
 
         // Consumed usage is empty in dry-run
         $this->assertSame([], $out['consumed']);
+    }
+
+    /** @test */
+    public function dryRunYandexMasksFolderIdInVerboseRequestDiagnostics(): void
+    {
+        $modelKey = $this->findModelKeyForDriver(YandexDriver::class);
+        if ($modelKey === null) {
+            $this->markTestSkipped('No Yandex model found in registry.');
+        }
+
+        $folderId = 'fixture-folder-secret';
+        $out = Bblslug::translate(
+            apiKey: 'fixture-yandex-api-key',
+            format: 'text',
+            modelKey: $modelKey,
+            text: 'Hello',
+            dryRun: true,
+            verbose: true,
+            variables: ['folder_id' => $folderId]
+        );
+
+        self::assertStringNotContainsString($folderId, $out['debugRequest']);
+        self::assertStringContainsString('***', $out['debugRequest']);
+    }
+
+    public function testDryRunPreservesSourceMarkerTextAcrossFilterOrders(): void
+    {
+        $input = 'Keep @@1@@ and <code>@@0@@</code> beside https://example.org/@@2@@';
+        foreach ([['url'], ['html_code'], ['url', 'html_code'], ['html_code', 'url']] as $filters) {
+            $out = Bblslug::translate(
+                apiKey: 'fixture-key',
+                format: 'text',
+                modelKey: 'openai:gpt-5-mini',
+                text: $input,
+                dryRun: true,
+                filters: $filters
+            );
+            self::assertSame($input, $out['result']);
+            self::assertSame(0, $out['httpStatus']);
+        }
+    }
+
+    public function testJsonUrlFilterKeepsPreparedInputValidAcrossJsonFormats(): void
+    {
+        foreach (['json', 'structured_json', 'linedJson'] as $format) {
+            foreach ([JSON_UNESCAPED_SLASHES, 0] as $flags) {
+                $input = json_encode(
+                    ['content' => '<a href="https://example.org/docs?q=1">Read</a>'],
+                    $flags | JSON_THROW_ON_ERROR
+                );
+                $variables = $format === 'structured_json' ? ['response_schema' => [
+                    'type' => 'object',
+                    'properties' => ['content' => ['type' => 'string']],
+                    'required' => ['content'],
+                    'additionalProperties' => false,
+                ]] : [];
+                $out = Bblslug::translate(
+                    apiKey: 'fixture-key',
+                    format: $format,
+                    modelKey: 'openai:gpt-5-mini',
+                    text: $input,
+                    dryRun: true,
+                    filters: ['url'],
+                    variables: $variables
+                );
+
+                $prepared = json_decode($out['prepared'], true, 512, JSON_THROW_ON_ERROR);
+                self::assertSame('<a href="@@0@@">Read</a>', $prepared['content']);
+                self::assertSame($input, $out['result']);
+                self::assertSame(1, $out['filterStats'][0]['count']);
+            }
+        }
     }
 
     /** @test */

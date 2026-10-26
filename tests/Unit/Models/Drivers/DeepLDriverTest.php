@@ -12,7 +12,7 @@ use RuntimeException;
  * DeepL-specific tests:
  * - buildRequest formatting for "text", "html" and "json"
  * - parseResponse happy path and error path
- * - restoration of pseudo-tags used to protect JSON characters
+ * - request-local JSON batch reconstruction
  */
 final class DeepLDriverTest extends TestCase
 {
@@ -79,27 +79,107 @@ final class DeepLDriverTest extends TestCase
     }
 
     /** @test */
-    public function buildRequestJsonFormatProtectsJsonChars(): void
+    public function buildRequestJsonFormatSendsOnlyStringValues(): void
     {
         $driver = new DeepLDriver();
-        $config = [
+        $input = '{"title":"Hello","id":123,"enabled":true,"nested":{"label":"World"}}';
+        $req = $driver->buildRequest([
             'endpoint' => 'X',
-            'requirements' => ['headers' => []],
-            'defaults' => ['target_lang' => 'EN', 'format' => 'json'],
+            'requirements' => ['headers' => ['Content-Type: application/x-www-form-urlencoded', 'X-Test: retained']],
+        ], $input, ['format' => 'json', 'json_transport' => 'text_batch']);
+        $params = json_decode($req['body'], true, 512, JSON_THROW_ON_ERROR);
+        $this->assertSame(['Hello', 'World'], $params['text']);
+        $this->assertArrayNotHasKey('tag_handling', $params);
+        $this->assertContains('Content-Type: application/json', $req['headers']);
+        $this->assertNotContains('Content-Type: application/x-www-form-urlencoded', $req['headers']);
+        $this->assertContains('X-Test: retained', $req['headers']);
+        $raw = json_encode(['translations' => [['text' => 'Hallo'], ['text' => 'Welt']]], JSON_THROW_ON_ERROR);
+        $parsed = $driver->parseResponse([], $raw, ['format' => 'json', 'responseContext' => $req['responseContext']]);
+        $this->assertSame('{"title":"Hallo","id":123,"enabled":true,"nested":{"label":"Welt"}}', $parsed['text']);
+    }
+
+    public function testHtmlRequestContextRemovesOnlyItsTransportWrappers(): void
+    {
+        $driver = new DeepLDriver();
+        $request = $driver->buildRequest([], '<p>@@0@@</p>', ['format' => 'html']);
+        parse_str($request['body'], $payload);
+        $this->assertStringContainsString('translate="no"', $payload['text']);
+        $raw = json_encode(['translations' => [['text' => $payload['text']]]], JSON_THROW_ON_ERROR);
+        $parsed = $driver->parseResponse([], $raw, [
+            'format' => 'html', 'responseContext' => $request['responseContext'],
+        ]);
+        $this->assertSame('<p>@@0@@</p>', $parsed['text']);
+    }
+
+    public function testHtmlDriverReuseKeepsRequestContextsIndependent(): void
+    {
+        $driver = new DeepLDriver();
+        $requests = [
+            $driver->buildRequest([], '<p>@@0@@</p>', ['format' => 'html']),
+            $driver->buildRequest([], '<div>@@1@@</div>', ['format' => 'html']),
         ];
+        foreach ([1 => '<div>@@1@@</div>', 0 => '<p>@@0@@</p>'] as $index => $expected) {
+            parse_str($requests[$index]['body'], $payload);
+            $raw = json_encode(['translations' => [['text' => $payload['text']]]], JSON_THROW_ON_ERROR);
+            $out = $driver->parseResponse([], $raw, ['responseContext' => $requests[$index]['responseContext']]);
+            $this->assertSame($expected, $out['text']);
+        }
+    }
 
-        $input = '{"a":[1,2],"b":"x:y","c":"q,w"}';
-        $req = $driver->buildRequest($config, $input, ['format' => 'json']);
+    public function testHtmlWrappingRespectsProviderBodyLimit(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('128 KiB');
+        (new DeepLDriver())->buildRequest([], '<p>' . str_repeat('@@0@@ ', 2000) . '</p>', ['format' => 'html']);
+    }
 
-        parse_str($req['body'], $params);
-        $this->assertArrayHasKey('text', $params);
-        // Protected placeholders should be present; raw JSON braces/colons/commas should be absent
-        $this->assertStringNotContainsString('{', $params['text']);
-        $this->assertStringNotContainsString('}', $params['text']);
-        $this->assertStringNotContainsString(':', $params['text']);
-        $this->assertStringNotContainsString(',', $params['text']);
-        $this->assertStringContainsString('<jlc/>', $params['text']); // protected left curly
-        $this->assertSame('EN', $params['target_lang']);
+    public function testTextRequestAtTheSerializedBodyLimitIsAccepted(): void
+    {
+        $baseLength = strlen(http_build_query([
+            'text' => '', 'target_lang' => 'EN', 'formality' => 'prefer_more',
+        ]));
+        $text = str_repeat('a', 128 * 1024 - $baseLength);
+
+        $request = (new DeepLDriver())->buildRequest([], $text, ['format' => 'text']);
+
+        $this->assertSame(128 * 1024, strlen($request['body']));
+    }
+
+    public function testTextRequestBodyLimitIncludesContextAndMultibyteEncoding(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('128 KiB');
+
+        (new DeepLDriver())->buildRequest(
+            ['defaults' => ['context' => str_repeat('é', 30_000)]],
+            'Hello',
+            ['format' => 'text']
+        );
+    }
+
+    public function testMultibyteSourceWithinCharacterLimitCanExceedSerializedBodyLimit(): void
+    {
+        $source = str_repeat('Я', 24_000);
+        $config = (new \Bblslug\Models\ModelRegistry())->get('deepl:free');
+        self::assertNotNull($config);
+        $guard = \Bblslug\Validation\TextLengthValidator::fromModelConfig($config);
+        self::assertTrue($guard->validate($source)->isValid());
+        foreach (['text', 'html'] as $format) {
+            try {
+                (new DeepLDriver())->buildRequest($config, $source, ['format' => $format]);
+                self::fail('The serialized body must be checked in addition to the character limit');
+            } catch (\InvalidArgumentException $exception) {
+                self::assertStringContainsString('128 KiB', $exception->getMessage());
+            }
+        }
+    }
+
+    public function testUnchangedHtmlRequestStillRespectsProviderBodyLimit(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('128 KiB');
+
+        (new DeepLDriver())->buildRequest([], str_repeat('a', 131_100), ['format' => 'html']);
     }
 
     /** @test */
@@ -115,16 +195,74 @@ final class DeepLDriverTest extends TestCase
     }
 
     /** @test */
-    public function parseResponseRestoresJsonPseudoTags(): void
+    public function parseResponsePreservesLiteralFormerPseudoTagsInText(): void
     {
         $driver = new DeepLDriver();
-        // Simulate DeepL returning protected placeholders (from JSON mode)
-        $json = json_encode(['translations' => [[
-            'text' => '<jlc/>"a"<jcol/><jlb/>1<jcomma/>2<jrb/><jrc/>',
-        ]]], JSON_UNESCAPED_UNICODE);
+        $raw = json_encode(['translations' => [['text' => '<jlc/> literal <jqt/>']]], JSON_THROW_ON_ERROR);
+        $this->assertSame('<jlc/> literal <jqt/>', $driver->parseResponse([], $raw)['text']);
+    }
 
-        $out = $driver->parseResponse([], $json);
-        $this->assertSame('{"a":[1,2]}', $out['text']);
+    public function testIndependentRequestContextsCanBeParsedInReverseOrder(): void
+    {
+        $driver = new DeepLDriver();
+        $first = $driver->buildRequest([], '{"first":"One"}', ['format' => 'json', 'json_transport' => 'text_batch']);
+        $second = $driver->buildRequest(
+            [],
+            '{"second":"Two"}',
+            ['format' => 'linedJson', 'json_transport' => 'text_batch']
+        );
+        $raw = json_encode(['translations' => [['text' => 'Zwei']]], JSON_THROW_ON_ERROR);
+        $this->assertSame(
+            '{"second":"Zwei"}',
+            $driver->parseResponse([], $raw, ['responseContext' => $second['responseContext']])['text']
+        );
+        $raw = json_encode(['translations' => [['text' => 'Eins']]], JSON_THROW_ON_ERROR);
+        $this->assertSame(
+            '{"first":"Eins"}',
+            $driver->parseResponse([], $raw, ['responseContext' => $first['responseContext']])['text']
+        );
+    }
+
+    public function testJsonWithNoTranslatableValuesProvidesLocalResult(): void
+    {
+        $request = (new DeepLDriver())->buildRequest(
+            [],
+            '{"id":123,"empty":" "}',
+            ['format' => 'json', 'json_transport' => 'text_batch']
+        );
+        $this->assertSame('{"id":123,"empty":" "}', $request['localResult']);
+    }
+
+    public function testJsonResponseCannotBeParsedWithoutItsContext(): void
+    {
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('responseContext');
+        (new DeepLDriver())->parseResponse(
+            [],
+            '{"translations":[{"text":"Hallo"}]}',
+            ['format' => 'json', 'json_transport' => 'text_batch']
+        );
+    }
+
+    public function testMissingBatchTranslationsAreRejected(): void
+    {
+        $driver = new DeepLDriver();
+        $request = $driver->buildRequest([], '["One","Two"]', ['format' => 'json', 'json_transport' => 'text_batch']);
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('count mismatch');
+        $raw = '{"translations":[{"text":"Eins"}]}';
+        $driver->parseResponse([], $raw, ['responseContext' => $request['responseContext']]);
+    }
+
+    public function testOversizedJsonRequestIsRejectedBeforeHttp(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('128 KiB');
+        (new DeepLDriver())->buildRequest(
+            [],
+            json_encode(str_repeat('x', 131072)),
+            ['format' => 'json', 'json_transport' => 'text_batch']
+        );
     }
 
     /** @test */

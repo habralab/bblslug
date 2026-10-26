@@ -178,13 +178,9 @@ class XaiDriver implements ModelDriverInterface
         }
 
         $isResponses = \array_key_exists('output', $data);
-        if (
-            $isResponses && \is_string($data['status'] ?? null)
-            && $data['status'] !== 'completed'
-        ) {
-            throw new \RuntimeException(
-                "Grok Responses API did not complete the request: {$data['status']}"
-            );
+        if ($isResponses && \array_key_exists('status', $data) && $data['status'] !== 'completed') {
+            $status = \is_string($data['status']) ? $data['status'] : \get_debug_type($data['status']);
+            throw new \RuntimeException("Grok Responses API did not complete the request: {$status}");
         }
 
         // Extract the first choice safely
@@ -193,6 +189,8 @@ class XaiDriver implements ModelDriverInterface
         if (\is_array($choices) && isset($choices[0]) && \is_array($choices[0])) {
             $first = $choices[0];
         }
+
+        $this->assertCompletedChoice($first);
 
         // Normal completion path: content string at choices[0].message.content
         $content = null;
@@ -247,18 +245,6 @@ class XaiDriver implements ModelDriverInterface
             throw new \RuntimeException("Grok translation failed: {$responseBody}");
         }
 
-        // If truncated by tokens (if API mirrors OpenAI), check finish_reason
-        $finishReason = null;
-        if (\is_array($first) && \is_string($first['finish_reason'] ?? null)) {
-            $finishReason = $first['finish_reason'];
-        }
-        if ($finishReason === 'length') {
-            throw new \RuntimeException(
-                "Grok: translation was truncated (finish_reason=length) — "
-                . "increase max_tokens or split input."
-            );
-        }
-
         $pattern = '/' . preg_quote(self::START, '/') . '(.*?)' . preg_quote(self::END, '/') . '/s';
         if (!preg_match($pattern, $content, $matches)) {
             throw new \RuntimeException("Markers not found in Grok response");
@@ -280,5 +266,24 @@ class XaiDriver implements ModelDriverInterface
         }
 
         return ['text' => $text, 'usage' => $usage];
+    }
+
+    /** @param array<array-key,mixed>|null $choice */
+    private function assertCompletedChoice(?array $choice): void
+    {
+        if ($choice === null || !\array_key_exists('finish_reason', $choice)) {
+            return;
+        }
+        $finishReason = $choice['finish_reason'];
+        if ($finishReason === 'length') {
+            throw new \RuntimeException(
+                "Grok: translation was truncated (finish_reason=length) — "
+                . "increase max_tokens or split input."
+            );
+        }
+        if ($finishReason !== 'stop') {
+            $actual = \is_string($finishReason) ? $finishReason : \get_debug_type($finishReason);
+            throw new \RuntimeException("Grok: translation did not finish successfully (finish_reason={$actual})");
+        }
     }
 }

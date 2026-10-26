@@ -7,11 +7,13 @@ namespace Bblslug {
     class HttpClient
     {
         public static string $response = '';
+        public static int $calls = 0;
         public static string $requestBody = '';
 
         /** @return array{body:string,debugRequest:string,debugResponse:string,headers:array<string,array<int,string>>,status:int} */
         public static function request(...$arguments): array
         {
+            self::$calls++;
             self::$requestBody = (string) ($arguments['body'] ?? '');
             return [
                 'body' => self::$response,
@@ -40,24 +42,32 @@ namespace {
     try {
         $result = \Bblslug\Bblslug::translate(
             apiKey: 'fixture-key',
-            format: 'structured_json',
+            format: (string) ($scenario['format'] ?? 'structured_json'),
             modelKey: $model,
             text: (string) ($scenario['input'] ?? ''),
-            variables: ['response_schema' => $scenario['schema'] ?? [
+            validate: (bool) ($scenario['validate'] ?? true),
+            variables: $scenario['variables'] ?? ['response_schema' => $scenario['schema'] ?? [
                 'type' => 'object',
                 'properties' => ['message' => ['type' => 'string']],
                 'required' => ['message'],
                 'additionalProperties' => false,
-            ]]
+            ]],
+            validateEmbeddedJson: (bool) ($scenario['validateEmbeddedJson'] ?? false),
+            validateHtmlJsonPointers: $scenario['validateHtmlJsonPointers'] ?? []
         );
         echo json_encode([
             'type' => 'success',
+            'httpCalls' => \Bblslug\HttpClient::$calls,
             'result' => $result['result'],
             'request' => json_decode(\Bblslug\HttpClient::$requestBody, true, 512, JSON_THROW_ON_ERROR),
         ], JSON_THROW_ON_ERROR), "\n";
     } catch (\Throwable $exception) {
         echo json_encode(
-            ['type' => $exception::class, 'message' => $exception->getMessage()],
+            [
+                'type' => $exception::class,
+                'httpCalls' => \Bblslug\HttpClient::$calls,
+                'message' => $exception->getMessage(),
+            ],
             JSON_THROW_ON_ERROR
         ), "\n";
     }

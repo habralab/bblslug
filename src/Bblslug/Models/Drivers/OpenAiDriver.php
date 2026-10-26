@@ -71,13 +71,13 @@ class OpenAiDriver implements ModelDriverInterface
         $settings = array_replace($defaults, $options);
         $hasSchema = \array_key_exists('response_schema', $settings);
         $schema = $settings['response_schema'] ?? null;
-        $native = $hasSchema;
-        if ($native && (!\is_array($schema) || $schema === [] || \array_is_list($schema))) {
+        if ($hasSchema && (!\is_array($schema) || $schema === [] || \array_is_list($schema))) {
             throw new \InvalidArgumentException('response_schema must be a non-empty associative array');
         }
-        if ($format === 'structured_json' && !$native) {
+        if ($format === 'structured_json' && !$hasSchema) {
             throw new \InvalidArgumentException('format=structured_json requires response_schema');
         }
+        $native = $this->usesNativeJson($config, $options);
         if ($native && !\in_array($format, ['json', 'structured_json', 'linedJson'], true)) {
             throw new \InvalidArgumentException('response_schema requires format json, structured_json, or linedJson');
         }
@@ -217,13 +217,17 @@ class OpenAiDriver implements ModelDriverInterface
         }
         /** @var array<string,mixed> $data */
 
-        if (($data['status'] ?? null) === 'incomplete' || ($data['status'] ?? null) === 'failed') {
-            $status = (string)$data['status'];
+        $status = $data['status'] ?? null;
+        if ($status === 'incomplete' || $status === 'failed') {
             $reason = \is_array($data['incomplete_details'] ?? null)
                 ? ($data['incomplete_details']['reason'] ?? null)
                 : null;
             $detail = \is_string($reason) ? $reason : '';
             throw new \RuntimeException("OpenAI response is {$status}" . ($detail !== '' ? ": {$detail}" : ''));
+        }
+        if (\array_key_exists('status', $data) && $status !== 'completed') {
+            $actual = \is_string($status) ? $status : \get_debug_type($status);
+            throw new \RuntimeException("OpenAI response has unexpected status: {$actual}");
         }
         if (\is_array($data['error'] ?? null) && \is_string($data['error']['message'] ?? null)) {
             throw new \RuntimeException('OpenAI API error: ' . $data['error']['message']);
@@ -237,25 +241,15 @@ class OpenAiDriver implements ModelDriverInterface
             throw new \RuntimeException('OpenAI response refused: ' . $refusal);
         }
 
-        $contentRaw = $this->extractText($data);
-
         $first = null;
         $choices = $data['choices'] ?? null;
         if (\is_array($choices) && isset($choices[0]) && \is_array($choices[0])) {
             $first = $choices[0];
         }
 
-        // If OpenAI cut output by tokens, fail with a clear message before marker search
-        $finishReason = null;
-        if (\is_array($first) && \is_string($first['finish_reason'] ?? null)) {
-            $finishReason = $first['finish_reason'];
-        }
-        if ($finishReason === 'length') {
-            throw new \RuntimeException(
-                "OpenAI: translation was truncated (finish_reason=length) — "
-                . "increase max_tokens or split input."
-            );
-        }
+        $this->assertCompletedChoice($first);
+
+        $contentRaw = $this->extractText($data);
 
         // Validate response structure
         $content = $contentRaw;
@@ -277,8 +271,7 @@ class OpenAiDriver implements ModelDriverInterface
             $usage = $typed;
         }
 
-        $native = \array_key_exists('response_schema', $options)
-            || (($options['format'] ?? null) === 'structured_json');
+        $native = $this->usesNativeJson($config, $options);
         if ($native) {
             return ['text' => \trim($content), 'usage' => $usage];
         }
@@ -291,6 +284,41 @@ class OpenAiDriver implements ModelDriverInterface
         $text = trim($matches[1]);
 
         return ['text' => $text, 'usage' => $usage];
+    }
+
+    /**
+     * @param array<string,mixed> $config
+     * @param array<string,mixed> $options
+     */
+    private function usesNativeJson(array $config, array $options): bool
+    {
+        $defaults = \is_array($config['defaults'] ?? null) ? $config['defaults'] : [];
+        $settings = \array_replace($defaults, $options);
+        $format = \is_string($options['format'] ?? null)
+            ? $options['format']
+            : (\is_string($defaults['format'] ?? null) ? $defaults['format'] : 'text');
+
+        return \array_key_exists('response_schema', $settings)
+            || $format === 'structured_json';
+    }
+
+    /** @param array<array-key,mixed>|null $choice */
+    private function assertCompletedChoice(?array $choice): void
+    {
+        if ($choice === null || !\array_key_exists('finish_reason', $choice)) {
+            return;
+        }
+        $finishReason = $choice['finish_reason'];
+        if ($finishReason === 'length') {
+            throw new \RuntimeException(
+                "OpenAI: translation was truncated (finish_reason=length) — "
+                . "increase max_tokens or split input."
+            );
+        }
+        if ($finishReason !== 'stop') {
+            $actual = \is_string($finishReason) ? $finishReason : \get_debug_type($finishReason);
+            throw new \RuntimeException("OpenAI: translation did not finish successfully (finish_reason={$actual})");
+        }
     }
 
     /** @param array<string,mixed> $data */

@@ -165,4 +165,56 @@ final class OpenAiDriverTest extends TestCase
             ]],
         ], JSON_THROW_ON_ERROR));
     }
+
+    /** @dataProvider rejectedChatFinishReasonProvider */
+    public function testChatFinishReasonMustBeStopWhenPresent(mixed $finishReason): void
+    {
+        $this->expectException(\RuntimeException::class);
+        (new OpenAiDriver())->parseResponse([], json_encode([
+            'choices' => [[
+                'finish_reason' => $finishReason,
+                'message' => ['content' => "‹‹TRANSLATION››partial‹‹END››"],
+            ]],
+        ], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR));
+    }
+
+    /** @return array<string,array{mixed}> */
+    public static function rejectedChatFinishReasonProvider(): array
+    {
+        return [
+            'content filter' => ['content_filter'],
+            'tool calls' => ['tool_calls'],
+            'function call' => ['function_call'],
+            'unknown' => ['other'],
+            'null' => [null],
+            'array' => [[]],
+        ];
+    }
+
+    public function testLegacyChatMayOmitFinishReason(): void
+    {
+        $result = (new OpenAiDriver())->parseResponse([], json_encode([
+            'choices' => [['message' => ['content' => "‹‹TRANSLATION››ok‹‹END››"]]],
+        ], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR));
+        $this->assertSame('ok', $result['text']);
+    }
+
+    /** @dataProvider unexpectedResponsesStatusProvider */
+    public function testResponsesStatusMustBeCompletedWhenPresent(mixed $status): void
+    {
+        $this->expectException(\RuntimeException::class);
+        (new OpenAiDriver())->parseResponse([], json_encode([
+            'status' => $status,
+            'output' => [[
+                'type' => 'message',
+                'content' => [['type' => 'output_text', 'text' => "‹‹TRANSLATION››partial‹‹END››"]],
+            ]],
+        ], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR));
+    }
+
+    /** @return array<string,array{mixed}> */
+    public static function unexpectedResponsesStatusProvider(): array
+    {
+        return ['queued' => ['queued'], 'null' => [null], 'integer' => [1]];
+    }
 }

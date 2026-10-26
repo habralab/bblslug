@@ -24,7 +24,7 @@ class Schema
      * Recursively build a simplified schema tree from PHP data.
      * - Scalars map to their gettype()
      * - Indexed arrays become ordered lists of schemas
-     * - Associative arrays become key=>schema maps
+     * - Associative arrays become key=>schema maps sorted by key
      * - JSON objects (stdClass) retain an object tag and recursively captured properties
      *
      * @param mixed $data Input PHP value
@@ -37,6 +37,7 @@ class Schema
             foreach (get_object_vars($data) as $key => $value) {
                 $properties[$key] = self::capture($value);
             }
+            ksort($properties, SORT_STRING);
             return ['type' => 'object', 'properties' => $properties];
         }
         if (is_array($data)) {
@@ -44,6 +45,9 @@ class Schema
             $out = [];
             foreach ($data as $key => $value) {
                 $out[$isList ? $key : $key] = self::capture($value);
+            }
+            if (!$isList) {
+                ksort($out, SORT_STRING);
             }
             return $isList ? array_values($out) : $out;
         }

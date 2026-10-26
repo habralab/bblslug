@@ -28,6 +28,8 @@ class FilterManager
             } elseif (str_starts_with($name, 'html_')) {
                 $tag = substr($name, 5);
                 $this->filters[] = new HtmlTagFilter($tag);
+            } else {
+                throw new \InvalidArgumentException('Unknown filter: ' . $name);
             }
         }
     }
@@ -58,5 +60,17 @@ class FilterManager
             $stats[] = $filter->getStats();
         }
         return $stats;
+    }
+
+    /** @return array<int,array{filter:string,map:array<string,string>}> Raw captures for diagnostic tools. */
+    public function getDebugMaps(): array
+    {
+        $out = [];
+        foreach ($this->filters as $filter) {
+            if ($filter instanceof DebuggableFilterInterface) {
+                $out[] = ['filter' => $filter->getStats()['filter'], 'map' => $filter->debugDump()];
+            }
+        }
+        return $out;
     }
 }

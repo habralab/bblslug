@@ -67,5 +67,38 @@ if ($uri === '/mask') {
     return;
 }
 
+// Masking endpoint that emits every common representation of a secret and a
+// non-success status, allowing HttpClient tests to distinguish log masking
+// from the raw response data returned to callers.
+if ($uri === '/mask-encoded') {
+    $secret = (string) ($_GET['secret'] ?? 'SECRET');
+    $rawEncoded = rawurlencode($secret);
+    $formEncoded = urlencode($secret);
+    $lowercaseEncoded = preg_replace_callback(
+        '/%[0-9A-F]{2}/',
+        static fn (array $match): string => strtolower($match[0]),
+        $rawEncoded
+    ) ?? $rawEncoded;
+    $jsonEscaped = json_encode($secret, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+    $nestedJson = json_encode(
+        ['nested' => ['secret' => $secret, 'json' => $jsonEscaped]],
+        JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR
+    );
+
+    $send(
+        429,
+        [
+            'X-Mask-Raw'       => $secret,
+            'X-Mask-Raw-Url'   => $rawEncoded,
+            'X-Mask-Form'      => $formEncoded,
+            'X-Mask-Lowercase' => $lowercaseEncoded,
+            'X-Mask-Json'      => $jsonEscaped,
+            'Content-Type'     => 'text/plain; charset=utf-8',
+        ],
+        implode("\n", [$secret, $rawEncoded, $formEncoded, $lowercaseEncoded, $jsonEscaped, $nestedJson])
+    );
+    return;
+}
+
 // Default 404 for unknown paths.
 $send(404, ['Content-Type' => 'text/plain'], 'not found');

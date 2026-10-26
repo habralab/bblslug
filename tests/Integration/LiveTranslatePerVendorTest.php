@@ -24,19 +24,23 @@ final class LiveTranslatePerVendorTest extends TestCase
 {
     protected function setUp(): void
     {
-        if (!getenv('RUN_LIVE_TESTS')) {
+        if (getenv('RUN_LIVE_TESTS') !== '1') {
             $this->markTestSkipped('Set RUN_LIVE_TESTS=1 to run live integration tests');
         }
     }
 
     /**
-     * Build a list of (vendor, modelKey, apiKey, extraVariables) for which we have credentials.
+     * Build credential-free (vendor, modelKey) datasets for available vendors.
      * Uses the first model for each vendor (to avoid hardcoding names).
      *
-     * @return array<string,array{string,string,string,array<string,mixed>}>
+     * @return array<string,array{string,string}>
      */
     public function providerLiveVendors(): array
     {
+        // PHPUnit formats datasets before setUp(), including for skipped tests.
+        if (getenv('RUN_LIVE_TESTS') !== '1') {
+            return ['disabled' => ['', '']];
+        }
         $cases = [];
         $modelsByVendor = Bblslug::listModels();
         $registry = new ModelRegistry();
@@ -67,10 +71,6 @@ final class LiveTranslatePerVendorTest extends TestCase
                 continue;
             }
 
-            $vars = [];
-            if ($vendor === 'openai') {
-                $vars['max_completion_tokens'] = 4096;
-            }
             if ($vendor === 'yandex') {
                 $folderId = (string) self::getEnvironmentValue('YANDEX_FOLDER_ID');
                 if ($folderId === '') {
@@ -80,10 +80,9 @@ final class LiveTranslatePerVendorTest extends TestCase
                     // cannot test Yandex without folder id
                     continue;
                 }
-                $vars['folder_id'] = $folderId;
             }
 
-            $cases["{$vendor}::{$modelKey}"] = [$vendor, $modelKey, $apiKey, $vars];
+            $cases["{$vendor}::{$modelKey}"] = [$vendor, $modelKey];
         }
 
         if (empty($cases)) {
@@ -92,6 +91,25 @@ final class LiveTranslatePerVendorTest extends TestCase
         }
 
         return $cases;
+    }
+
+    /** @return array{string,array<string,mixed>} */
+    private static function liveCredentials(string $vendor, string $modelKey): array
+    {
+        $apiEnv = (new ModelRegistry())->getAuthEnv($modelKey);
+        $apiKey = $apiEnv !== null ? (string) self::getEnvironmentValue($apiEnv) : '';
+        if ($apiKey === '') {
+            throw new \RuntimeException('Missing API key for selected model ' . $modelKey);
+        }
+        $vars = $vendor === 'openai' ? ['max_completion_tokens' => 4096] : [];
+        if ($vendor === 'yandex') {
+            $folderId = (string) self::getEnvironmentValue('YANDEX_FOLDER_ID');
+            if ($folderId === '') {
+                throw new \RuntimeException('Missing YANDEX_FOLDER_ID for selected model');
+            }
+            $vars['folder_id'] = $folderId;
+        }
+        return [$apiKey, $vars];
     }
 
     /**
@@ -113,8 +131,9 @@ final class LiveTranslatePerVendorTest extends TestCase
      * @group live
      * @large
      */
-    public function translatesSmallTextSnippet(string $vendor, string $modelKey, string $apiKey, array $vars): void
+    public function translatesSmallTextSnippet(string $vendor, string $modelKey): void
     {
+        [$apiKey, $vars] = self::liveCredentials($vendor, $modelKey);
         $proxy = getenv('BBLSLUG_PROXY') ?: null;
 
         $all = \Bblslug\Bblslug::listPrompts();
@@ -152,8 +171,8 @@ final class LiveTranslatePerVendorTest extends TestCase
         $this->assertNotSame('', $res['rawResponseBody']);
 
         // API key must be masked in logs
-        $this->assertStringNotContainsString($apiKey, $res['debugRequest']);
-        $this->assertStringNotContainsString($apiKey, $res['debugResponse']);
+        $this->assertFalse(str_contains($res['debugRequest'], $apiKey), 'API key leaked in request diagnostics');
+        $this->assertFalse(str_contains($res['debugResponse'], $apiKey), 'API key leaked in response diagnostics');
     }
 
     /**
@@ -165,8 +184,9 @@ final class LiveTranslatePerVendorTest extends TestCase
      * @group live
      * @large
      */
-    public function translatesSmallHtmlSnippet(string $vendor, string $modelKey, string $apiKey, array $vars): void
+    public function translatesSmallHtmlSnippet(string $vendor, string $modelKey): void
     {
+        [$apiKey, $vars] = self::liveCredentials($vendor, $modelKey);
         $proxy = getenv('BBLSLUG_PROXY') ?: null;
 
         $html = '<div class="wrap"><p>Hi <strong>there</strong>!</p>'
@@ -208,8 +228,8 @@ final class LiveTranslatePerVendorTest extends TestCase
         $this->assertSame(1, (int) $xpath->evaluate('count(/div/a)'), 'Link moved in HTML tree');
         $this->assertSame(1, (int) $xpath->evaluate('count(/div/pre/code)'), 'Code moved in HTML tree');
 
-        $this->assertStringNotContainsString($apiKey, $res['debugRequest']);
-        $this->assertStringNotContainsString($apiKey, $res['debugResponse']);
+        $this->assertFalse(str_contains($res['debugRequest'], $apiKey), 'API key leaked in request diagnostics');
+        $this->assertFalse(str_contains($res['debugResponse'], $apiKey), 'API key leaked in response diagnostics');
     }
 
     /**
@@ -228,8 +248,9 @@ final class LiveTranslatePerVendorTest extends TestCase
      * @group live
      * @large
      */
-    public function translatesSmallJsonSnippet(string $vendor, string $modelKey, string $apiKey, array $vars): void
+    public function translatesSmallJsonSnippet(string $vendor, string $modelKey): void
     {
+        [$apiKey, $vars] = self::liveCredentials($vendor, $modelKey);
         $proxy = getenv('BBLSLUG_PROXY') ?: null;
 
         $json = json_encode([
@@ -249,7 +270,7 @@ final class LiveTranslatePerVendorTest extends TestCase
             format:     'json',
             modelKey:   $modelKey,
             text:       (string)$json,
-            context:    'Translate as a professional technical translator',
+            context:    $vendor === 'deepl' ? null : 'Translate as a professional technical translator',
             dryRun:     false,
             filters:    [],
             onFeedback: null,
@@ -258,7 +279,8 @@ final class LiveTranslatePerVendorTest extends TestCase
             targetLang: 'DE',
             validate:   true,   // JSON syntax + schema validation
             variables:  $vars,
-            verbose:    true
+            verbose:    true,
+            validateEmbeddedJson: true
         );
 
         $this->assertGreaterThanOrEqual(200, $res['httpStatus']);
@@ -281,7 +303,7 @@ final class LiveTranslatePerVendorTest extends TestCase
         $embedded = json_decode($decoded['embeddedJson'], true, 512, JSON_THROW_ON_ERROR);
         $this->assertSame('C:\\tmp\\"x"', $embedded['path']);
 
-        $this->assertStringNotContainsString($apiKey, $res['debugRequest']);
-        $this->assertStringNotContainsString($apiKey, $res['debugResponse']);
+        $this->assertFalse(str_contains($res['debugRequest'], $apiKey), 'API key leaked in request diagnostics');
+        $this->assertFalse(str_contains($res['debugResponse'], $apiKey), 'API key leaked in response diagnostics');
     }
 }

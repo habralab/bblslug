@@ -240,6 +240,169 @@ final class HttpClientTest extends TestCase
     }
 
     /** @test */
+    public function dryRunMasksAllSecretRepresentationsInRequestPreview(): void
+    {
+        $secret = 'quote" slash\\/ space café';
+        $representations = $this->secretRepresentations($secret);
+        $body = implode('&', [
+            'raw=' . $secret,
+            'rawurl=' . $representations['rawurl'],
+            'lower=' . $representations['lowercase'],
+            'form=' . $representations['form'],
+            'json=' . $representations['json'],
+        ]);
+
+        $resp = HttpClient::request(
+            method: 'POST',
+            url: $this->url('/echo?raw=' . $secret . '&encoded=' . $representations['rawurl']),
+            body: $body,
+            dryRun: true,
+            headers: [
+                'X-Raw: ' . $secret,
+                'X-Raw-Url: ' . $representations['rawurl'],
+                'X-Form: ' . $representations['form'],
+                'X-Json: ' . $representations['json'],
+            ],
+            maskPatterns: [$secret],
+            verbose: true
+        );
+
+        foreach ($representations as $representation) {
+            $this->assertStringNotContainsString($representation, $resp['debugRequest']);
+        }
+        $this->assertStringContainsString('***', $resp['debugRequest']);
+        $this->assertSame('[dry-run]', $resp['body']);
+    }
+
+    /** @test */
+    public function liveResponseMasksEncodedHeadersAndBodyButPreservesOriginalBytes(): void
+    {
+        $secret = 'quote" slash\\/ space café';
+        $representations = $this->secretRepresentations($secret);
+
+        $resp = HttpClient::request(
+            method: 'GET',
+            url: $this->url('/mask-encoded?secret=' . rawurlencode($secret)),
+            maskPatterns: [$secret],
+            verbose: true
+        );
+
+        $this->assertSame(429, $resp['status']);
+        $this->assertSame($secret, $resp['headers']['X-Mask-Raw'][0]);
+        $this->assertSame($representations['rawurl'], $resp['headers']['X-Mask-Raw-Url'][0]);
+        $this->assertSame($representations['form'], $resp['headers']['X-Mask-Form'][0]);
+        $this->assertSame($representations['lowercase'], $resp['headers']['X-Mask-Lowercase'][0]);
+        $this->assertSame($representations['json'], $resp['headers']['X-Mask-Json'][0]);
+        $nestedJson = json_encode(
+            ['nested' => ['secret' => $secret, 'json' => $representations['json']]],
+            JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR
+        );
+        $this->assertSame(
+            implode("\n", [
+                $secret,
+                $representations['rawurl'],
+                $representations['form'],
+                $representations['lowercase'],
+                $representations['json'],
+                $nestedJson,
+            ]),
+            $resp['body']
+        );
+
+        foreach ($representations as $representation) {
+            $this->assertStringContainsString($representation, $resp['body']);
+            $this->assertStringNotContainsString($representation, $resp['debugResponse']);
+        }
+        $this->assertStringContainsString('Response (429)', $resp['debugResponse']);
+        $this->assertStringContainsString('***', $resp['debugResponse']);
+    }
+
+    /** @test */
+    public function nestedUnicodeJsonEchoPreservesBodyAndMasksSecondEscaping(): void
+    {
+        $secret = 'quote" slash\\/ space café';
+        $body = json_encode(
+            ['nested' => ['secret' => $secret]],
+            JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR
+        );
+        // The fixture's outer echo JSON keeps slashes readable while still
+        // applying JSON's second escaping pass to quotes/backslashes.
+        $secondEscaping = json_encode($body, JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
+
+        $resp = HttpClient::request(
+            method: 'POST',
+            url: $this->url('/echo'),
+            body: $body,
+            headers: ['Content-Type: application/json'],
+            maskPatterns: [$secret],
+            verbose: true
+        );
+
+        $this->assertSame(200, $resp['status']);
+        $echo = json_decode($resp['body'], true, 512, JSON_THROW_ON_ERROR);
+        $this->assertSame($body, $echo['body']);
+        $this->assertStringContainsString($secondEscaping, $resp['body']);
+        $this->assertStringNotContainsString($secret, $resp['debugRequest']);
+        $this->assertStringNotContainsString($secondEscaping, $resp['debugResponse']);
+        $this->assertStringContainsString('***', $resp['debugResponse']);
+    }
+
+    /** @test */
+    public function emptyMaskPatternsDoNotInsertMaskText(): void
+    {
+        $resp = HttpClient::request(
+            method: 'POST',
+            url: $this->url('/echo'),
+            body: 'ordinary body',
+            headers: ['X-Ordinary: value'],
+            maskPatterns: ['', ''],
+            verbose: true
+        );
+
+        $this->assertSame(200, $resp['status']);
+        $this->assertStringNotContainsString('***', $resp['debugRequest']);
+        $this->assertStringNotContainsString('***', $resp['debugResponse']);
+        $this->assertStringContainsString('ordinary body', $resp['debugRequest']);
+    }
+
+    /** @test */
+    public function overlappingSecretsAreMaskedLongestFirstWithoutPartialLeak(): void
+    {
+        $short = 'shared-secret';
+        $long = $short . '-with-suffix';
+        $resp = HttpClient::request(
+            method: 'POST',
+            url: $this->url('/echo?value=' . rawurlencode($long)),
+            body: $long,
+            headers: ['X-Secret: ' . $long],
+            maskPatterns: [$short, $long],
+            verbose: true
+        );
+
+        $this->assertStringNotContainsString($short, $resp['debugRequest']);
+        $this->assertStringNotContainsString($long, $resp['debugRequest']);
+        $this->assertStringContainsString('***', $resp['debugRequest']);
+    }
+
+    /**
+     * @return array{rawurl:string,form:string,lowercase:string,json:string}
+     */
+    private function secretRepresentations(string $secret): array
+    {
+        $rawurl = rawurlencode($secret);
+        return [
+            'rawurl' => $rawurl,
+            'form' => urlencode($secret),
+            'lowercase' => preg_replace_callback(
+                '/%[0-9A-F]{2}/',
+                static fn (array $match): string => strtolower($match[0]),
+                $rawurl
+            ) ?? $rawurl,
+            'json' => json_encode($secret, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR),
+        ];
+    }
+
+    /** @test */
     public function postSendsBodyAndServerSeesRealMethod(): void
     {
         $payload = 'hello=world';
@@ -283,6 +446,25 @@ final class HttpClientTest extends TestCase
             proxy: null,
             verbose: false
         );
+    }
+
+    public function testNetworkExceptionMasksReflectedSecretAndKeepsCurlErrorCode(): void
+    {
+        $secret = 'synthetic-secret';
+        try {
+            HttpClient::request(
+                method: 'GET',
+                url: $secret . '://host/path',
+                maskPatterns: [$secret]
+            );
+            self::fail('Unsupported protocol must fail before any network request');
+        } catch (\RuntimeException $e) {
+            self::assertStringStartsWith('Network error:', $e->getMessage());
+            self::assertStringNotContainsString($secret, $e->getMessage());
+            self::assertStringContainsString('***', $e->getMessage());
+            self::assertSame(CURLE_UNSUPPORTED_PROTOCOL, $e->getCode());
+            self::assertNull($e->getPrevious());
+        }
     }
 
     /** @test */
@@ -394,6 +576,61 @@ final class HttpClientTest extends TestCase
         } catch (\RuntimeException $exception) {
             $this->assertStringStartsWith('Network error:', $exception->getMessage());
             $this->assertSame(CURLE_OPERATION_TIMEDOUT, $exception->getCode());
+        }
+    }
+
+    /** @test */
+    public function millisecondTimeoutCapsRequestAndDoesNotLeakUrlSecret(): void
+    {
+        $secret = 'timeout-secret';
+
+        try {
+            HttpClient::request(
+                method: 'GET',
+                url: $this->url('/slow?secret=' . $secret),
+                timeoutSeconds: 2,
+                connectTimeoutSeconds: 1,
+                timeoutMilliseconds: 100
+            );
+            $this->fail('The millisecond timeout should interrupt the delayed response.');
+        } catch (\RuntimeException $exception) {
+            $this->assertSame(CURLE_OPERATION_TIMEDOUT, $exception->getCode());
+            $this->assertStringNotContainsString($secret, $exception->getMessage());
+        }
+    }
+
+    /** @test */
+    public function millisecondTimeoutIsCappedByResolvedSecondTimeout(): void
+    {
+        putenv('BBLSLUG_HTTP_TIMEOUT=1');
+
+        try {
+            HttpClient::request(
+                method: 'GET',
+                url: $this->url('/slow'),
+                timeoutMilliseconds: 1200
+            );
+            $this->fail('The resolved one-second timeout should interrupt the delayed response.');
+        } catch (\RuntimeException $exception) {
+            $this->assertSame(CURLE_OPERATION_TIMEDOUT, $exception->getCode());
+        }
+    }
+
+    /** @test */
+    public function nonpositiveMillisecondTimeoutIsRejectedEvenForDryRun(): void
+    {
+        foreach ([0, -1] as $timeoutMilliseconds) {
+            try {
+                HttpClient::request(
+                    method: 'GET',
+                    url: $this->url('/echo'),
+                    dryRun: true,
+                    timeoutMilliseconds: $timeoutMilliseconds
+                );
+                $this->fail('A nonpositive millisecond timeout should be rejected.');
+            } catch (\InvalidArgumentException $exception) {
+                $this->assertStringContainsString('timeoutMilliseconds', $exception->getMessage());
+            }
         }
     }
 }

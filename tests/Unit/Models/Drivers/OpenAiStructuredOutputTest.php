@@ -53,6 +53,50 @@ final class OpenAiStructuredOutputTest extends TestCase
         $this->assertSame('{"translation":"Hola"}', $result['text']);
     }
 
+    public function testDefaultSchemaSelectsNativeParserWithoutPerRequestSchema(): void
+    {
+        $config = $this->config();
+        $config['defaults']['format'] = 'json';
+        $config['defaults']['response_schema'] = $this->schema();
+        $driver = new OpenAiDriver();
+
+        $body = json_decode($driver->buildRequest($config, '{}', [])['body'], true, 512, JSON_THROW_ON_ERROR);
+        $this->assertArrayHasKey('response_format', $body);
+        $parsed = $driver->parseResponse($config, json_encode([
+            'choices' => [['message' => ['content' => '{"translation":"Hola"}']]],
+        ], JSON_THROW_ON_ERROR));
+        $this->assertSame('{"translation":"Hola"}', $parsed['text']);
+    }
+
+    public function testExplicitFormatOverrideUsesMarkersWhenNoDefaultSchemaExists(): void
+    {
+        $config = $this->config();
+        $config['defaults']['format'] = 'json';
+        $driver = new OpenAiDriver();
+        $parsed = $driver->parseResponse($config, json_encode([
+            'choices' => [['message' => ['content' => "‹‹TRANSLATION››Hola‹‹END››"]]],
+        ], JSON_THROW_ON_ERROR), ['format' => 'text']);
+        $this->assertSame('Hola', $parsed['text']);
+    }
+
+    /** @dataProvider nativeFormatProvider */
+    public function testDefaultSchemaSelectsNativeParserForJsonFormats(string $format): void
+    {
+        $config = $this->config();
+        $config['defaults']['format'] = $format;
+        $config['defaults']['response_schema'] = $this->schema();
+        $parsed = (new OpenAiDriver())->parseResponse($config, json_encode([
+            'choices' => [['message' => ['content' => '{"translation":"Hola"}']]],
+        ], JSON_THROW_ON_ERROR));
+        $this->assertSame('{"translation":"Hola"}', $parsed['text']);
+    }
+
+    /** @return array<string,array{string}> */
+    public static function nativeFormatProvider(): array
+    {
+        return ['json' => ['json'], 'linedJson' => ['linedJson'], 'structured_json' => ['structured_json']];
+    }
+
     /** @dataProvider invalidBuildOptions */
     public function testInvalidNativeOptionsAreRejected(array $options, string $message): void
     {

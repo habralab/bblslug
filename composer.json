@@ -40,6 +40,8 @@
   "scripts": {
     "test:phplint": "vendor/bin/phpcs --standard=phpcs.xml",
     "test:phpunit": "vendor/bin/phpunit --testdox --colors=always --log-junit .phpunit.junit.xml",
-    "test:phpstan": "vendor/bin/phpstan analyse src --level=max --memory-limit=-1"
+    "test:phpstan": "vendor/bin/phpstan analyse src --level=max --memory-limit=-1",
+    "lint": "@test:phplint",
+    "phpunit": "@test:phpunit"
   }
 }

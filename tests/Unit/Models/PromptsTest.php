@@ -18,7 +18,6 @@ class PromptsTest extends TestCase
         // Reset internal cache
         $ref = new ReflectionClass(Prompts::class);
         $prop = $ref->getProperty('templates');
-        $prop->setAccessible(true);
         $prop->setValue(null, null);
 
         // Prepare a temporary YAML file for testing
@@ -37,7 +36,6 @@ class PromptsTest extends TestCase
         // Reset internal cache so other tests don't see our overridden prompts
         $ref = new ReflectionClass(Prompts::class);
         $prop = $ref->getProperty('templates');
-        $prop->setAccessible(true);
         $prop->setValue(null, null);
         parent::tearDown();
     }

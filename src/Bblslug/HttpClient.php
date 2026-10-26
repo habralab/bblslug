@@ -24,6 +24,7 @@ class HttpClient
      * @param int|null      $timeoutSeconds Total request timeout; overrides BBLSLUG_HTTP_TIMEOUT (default 120).
      * @param int|null      $connectTimeoutSeconds Connection timeout in seconds (default 10).
      *                                            Overrides BBLSLUG_HTTP_CONNECT_TIMEOUT.
+     * @param int|null      $timeoutMilliseconds Optional total request timeout cap in milliseconds.
      *
      * @return array{
      *     body: string,
@@ -46,26 +47,19 @@ class HttpClient
         ?string $proxy = null,
         bool $verbose = false,
         ?int $timeoutSeconds = null,
-        ?int $connectTimeoutSeconds = null
+        ?int $connectTimeoutSeconds = null,
+        ?int $timeoutMilliseconds = null
     ): array {
         $timeoutSeconds = self::resolveTimeout($timeoutSeconds, 'BBLSLUG_HTTP_TIMEOUT', 120);
         $connectTimeoutSeconds = self::resolveTimeout($connectTimeoutSeconds, 'BBLSLUG_HTTP_CONNECT_TIMEOUT', 10);
-
-        // Prepare masked copies for logging
-        $logUrl = $url;
-        $logHeaders = $headers;
-        $logBody    = $body;
-
-        if (!empty($maskPatterns)) {
-            foreach ($maskPatterns as $pat) {
-                $logUrl = str_replace([$pat, rawurlencode($pat), urlencode($pat)], '***', $logUrl);
-                foreach ($logHeaders as &$h) {
-                    $h = str_replace($pat, '***', $h);
-                }
-                unset($h);
-                $logBody = str_replace($pat, '***', $logBody);
-            }
+        if ($timeoutMilliseconds !== null && $timeoutMilliseconds <= 0) {
+            throw new \InvalidArgumentException('timeoutMilliseconds must be a positive integer in milliseconds.');
         }
+
+        $masker = new SecretMasker($maskPatterns);
+        $logUrl = $masker->redact($url);
+        $logHeaders = array_map($masker->redact(...), $headers);
+        $logBody = $masker->redact($body);
 
         // Build request debug log
         $debugRequest = '';
@@ -100,6 +94,15 @@ class HttpClient
         \curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         \curl_setopt($ch, CURLOPT_TIMEOUT, $timeoutSeconds);
         \curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, $connectTimeoutSeconds);
+        if ($timeoutMilliseconds !== null) {
+            $effectiveTimeoutMilliseconds = self::capMilliseconds($timeoutSeconds, $timeoutMilliseconds);
+            $effectiveConnectTimeoutMilliseconds = self::capMilliseconds(
+                $connectTimeoutSeconds,
+                $effectiveTimeoutMilliseconds
+            );
+            \curl_setopt($ch, CURLOPT_TIMEOUT_MS, $effectiveTimeoutMilliseconds);
+            \curl_setopt($ch, CURLOPT_CONNECTTIMEOUT_MS, $effectiveConnectTimeoutMilliseconds);
+        }
         if (!empty($headers)) {
             \curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
         }
@@ -139,12 +142,10 @@ class HttpClient
 
         $errorCode = \curl_errno($ch);
         if ($errorCode !== 0) {
-            $err = \curl_error($ch);
-            \curl_close($ch);
+            $err = $masker->redact(\curl_error($ch));
             throw new \RuntimeException("Network error: {$err}", $errorCode);
         }
         $status = (int)\curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        \curl_close($ch);
 
         // Build response debug log
         $debugResponse = '';
@@ -152,17 +153,12 @@ class HttpClient
             $debugResponse .= "\n\033[1mResponse ({$status})\033[0m\nHeaders:\n";
             foreach ($responseHeaders as $name => $vals) {
                 foreach ($vals as $v) {
-                    $val = $v;
-                    foreach ($maskPatterns as $pat) {
-                        $val = str_replace($pat, '***', $val);
-                    }
-                    $debugResponse .= "  {$name}: {$val}\n";
+                    $val = $masker->redact($v);
+                    $logName = $masker->redact($name);
+                    $debugResponse .= "  {$logName}: {$val}\n";
                 }
             }
-            $logRespBody = (string) $respBody;
-            foreach ($maskPatterns as $pat) {
-                $logRespBody = str_replace($pat, '***', $logRespBody);
-            }
+            $logRespBody = $masker->redact((string) $respBody);
             $debugResponse .= "\nBody:\n{$logRespBody}\n\n";
         }
 
@@ -196,5 +192,16 @@ class HttpClient
             throw new \InvalidArgumentException("{$environmentName} must be a positive integer in seconds.");
         }
         return $seconds;
+    }
+
+    private static function capMilliseconds(int $seconds, int $cap): int
+    {
+        // Avoid overflowing when converting a valid, very large second timeout.
+        $maxSeconds = intdiv(PHP_INT_MAX, 1000);
+        if ($seconds > $maxSeconds) {
+            return $cap;
+        }
+
+        return min($seconds * 1000, $cap);
     }
 }

@@ -8,6 +8,12 @@ use Bblslug\Bblslug;
 use Bblslug\Console\Help;
 use Bblslug\Filters\FilterManager;
 use Bblslug\Models\ModelRegistry;
+use Bblslug\Models\ModelVariables;
+use Bblslug\Translation\HtmlTextDocument;
+use Bblslug\Translation\JsonHtmlDocument;
+use Bblslug\Translation\SegmentPlan;
+use Bblslug\Translation\TextDocument;
+use Bblslug\Validation\JsonHtmlValidator;
 
 /**
  * CLI entrypoint for the Bblslug translation tool.
@@ -28,26 +34,37 @@ class Cli
     public static function run(): void
     {
         // Load CLI arguments
-        $options = getopt("", [
+        $longOptions = [
             "context:",      // extra context prompt
+            "checkpoint:",   // resumable segment-batch checkpoint file
             "dry-run",       // placeholders only
             "filters:",      // comma-separated filter list
             "format:",       // text, HTML or a JSON format
+            "html-transport:", // HTML transport: document or segments
+            "html-segment-batch-size:", // positive number of HTML segments per request
+            "segment-batch-max-bytes:", // positive serialized segment packet byte limit
+            "html-json-pointer:", // JSON Pointer to HTML strings selected for segment translation (repeatable)
             "help",          // show help and exit
             "list-models",   // show models and exit
             "list-prompts",  // show available prompt templates and exit
             "model:",        // model key
+            "operation-timeout:", // total translation operation deadline
             "no-validate",   // disable pre- and post-validation of container syntax
             "prompt-key:",   // prompt template key (from prompts.yaml)
             "response-schema:", // JSON Schema file for native JSON output
             "proxy:",        // optional proxy URI
             "source:",       // input file (default = STDIN)
             "source-lang:",  // override source language
+            "text-transport:", // text transport: document or segments
+            "text-segment-batch-size:", // positive number of text segments per request
             "target-lang:",  // override target language
             "translated:",   // output file (default = STDOUT)
+            "validate-embedded-json", // opt-in checks for encoded JSON containers
+            "validate-html-json-pointer:", // opt-in HTML checks at JSON Pointer paths (repeatable)
             "variables:",    // model-specific overrides
             "verbose",       // enable debug logs
-        ]);
+        ];
+        $options = getopt("", $longOptions);
 
         // Initialize registry
         $registry = new ModelRegistry();
@@ -72,17 +89,33 @@ class Cli
         $context    = isset($options['context']) && is_string($options['context'])
                         ? $options['context'] : null;
         $dryRun     = isset($options['dry-run']);
+        $checkpointPath = null;
         $format     = isset($options['format']) && is_string($options['format'])
                         ? $options['format'] : null;
+        $htmlTransportOption = $options['html-transport'] ?? null;
+        if ($htmlTransportOption !== null && !is_string($htmlTransportOption)) {
+            Help::error('--html-transport requires a single string value.');
+        }
+        $htmlTransport = $htmlTransportOption ?? 'document';
+        $textTransportOption = $options['text-transport'] ?? null;
+        if ($textTransportOption !== null && !is_string($textTransportOption)) {
+            Help::error('--text-transport requires a single string value.');
+        }
+        $textTransport = $textTransportOption ?? 'document';
+        $htmlSegmentBatchSize = null;
+        $textSegmentBatchSize = null;
+        $segmentBatchMaxBytes = null;
         $filters    = isset($options['filters']) && is_string($options['filters'])
+                        && trim($options['filters']) !== ''
                         ? array_map('trim', explode(',', $options['filters']))
                         : [];
         $modelKey   = isset($options['model']) && is_string($options['model'])
                         ? $options['model']
                         : null;
-        $outFile    = isset($options['translated']) && is_string($options['translated'])
-                        ? $options['translated']
-                        : null;
+        $outFile = $options['translated'] ?? null;
+        if ($outFile !== null && (!is_string($outFile) || $outFile === '')) {
+            Help::error('--translated requires a single non-empty path.');
+        }
         $promptKey  = isset($options['prompt-key']) && is_string($options['prompt-key'])
                         ? $options['prompt-key']
                         : 'translator';
@@ -97,6 +130,292 @@ class Cli
                         : null;
         $validate   = ! isset($options['no-validate']);
         $verbose    = isset($options['verbose']);
+
+        // getopt returns a scalar for one occurrence and an array for repeated
+        // occurrences. Preserve empty strings so that the empty JSON Pointer
+        // (the document root) can be requested with --validate-html-json-pointer ''.
+        $htmlJsonPointers = [];
+        $htmlJsonSelectionPointers = [];
+        $rawArgv = $_SERVER['argv'] ?? [];
+        $argv = is_array($rawArgv) ? array_values($rawArgv) : [];
+        $batchSizeOccurrences = 0;
+        $textBatchSizeOccurrences = 0;
+        $segmentBatchMaxBytesOccurrences = 0;
+        $operationTimeoutOccurrences = 0;
+        $checkpointOccurrences = 0;
+        $textTransportOccurrences = 0;
+        $translatedOccurrences = 0;
+        $requiredOptions = [];
+        foreach ($longOptions as $longOption) {
+            if (str_ends_with($longOption, ':')) {
+                $requiredOptions[substr($longOption, 0, -1)] = true;
+            }
+        }
+        $argumentCount = count($argv);
+        for ($index = 1; $index < $argumentCount; $index++) {
+            $argument = $argv[$index];
+            if ($argument === '--') {
+                break;
+            }
+            if (!is_string($argument)) {
+                continue;
+            }
+            if ($argument === '--translated' || str_starts_with($argument, '--translated=')) {
+                $translatedOccurrences++;
+                if ($argument === '--translated=') {
+                    Help::error('--translated requires a non-empty path.');
+                }
+                if ($argument === '--translated') {
+                    $next = $argv[$index + 1] ?? null;
+                    if (!is_string($next) || $next === '' || str_starts_with($next, '--')) {
+                        Help::error('--translated requires a path.');
+                    }
+                }
+            }
+            if (
+                $argument === '--html-segment-batch-size'
+                || str_starts_with($argument, '--html-segment-batch-size=')
+            ) {
+                $batchSizeOccurrences++;
+            }
+            if (
+                $argument === '--text-segment-batch-size'
+                || str_starts_with($argument, '--text-segment-batch-size=')
+            ) {
+                $textBatchSizeOccurrences++;
+            }
+            if (
+                $argument === '--segment-batch-max-bytes'
+                || str_starts_with($argument, '--segment-batch-max-bytes=')
+            ) {
+                $segmentBatchMaxBytesOccurrences++;
+            }
+            if (
+                $argument === '--operation-timeout'
+                || str_starts_with($argument, '--operation-timeout=')
+            ) {
+                $operationTimeoutOccurrences++;
+            }
+            if ($argument === '--checkpoint' || str_starts_with($argument, '--checkpoint=')) {
+                $checkpointOccurrences++;
+            }
+            if ($argument === '--text-transport=') {
+                Help::error('--text-transport requires document or segments.');
+            } elseif ($argument === '--text-transport') {
+                $textTransportOccurrences++;
+                $next = $argv[$index + 1] ?? null;
+                if (!is_string($next) || $next === '' || str_starts_with($next, '--')) {
+                    Help::error('--text-transport requires a value.');
+                }
+            } elseif (str_starts_with($argument, '--text-transport=')) {
+                $textTransportOccurrences++;
+            }
+            if ($argument === '--validate-html-json-pointer=') {
+                Help::error(
+                    'Empty --validate-html-json-pointer value must be passed as a separate empty argument.'
+                );
+            } elseif ($argument === '--validate-html-json-pointer') {
+                $next = $argv[$index + 1] ?? null;
+                if (!is_string($next) || ($next !== '' && str_starts_with($next, '--'))) {
+                    Help::error('--validate-html-json-pointer requires a value.');
+                }
+            } elseif ($argument === '--html-json-pointer=') {
+                Help::error(
+                    'Empty --html-json-pointer value must be passed as a separate empty argument.'
+                );
+            } elseif ($argument === '--html-json-pointer') {
+                $next = $argv[$index + 1] ?? null;
+                if (!is_string($next) || ($next !== '' && str_starts_with($next, '--'))) {
+                    Help::error('--html-json-pointer requires a value.');
+                }
+            } elseif ($argument === '--html-transport=') {
+                Help::error(
+                    '--html-transport requires document or segments.'
+                );
+            } elseif ($argument === '--html-transport') {
+                $next = $argv[$index + 1] ?? null;
+                if (!is_string($next) || ($next !== '' && str_starts_with($next, '--'))) {
+                    Help::error('--html-transport requires a value.');
+                }
+            } elseif ($argument === '--html-segment-batch-size=') {
+                Help::error('--html-segment-batch-size requires a positive integer value.');
+            } elseif ($argument === '--html-segment-batch-size') {
+                $next = $argv[$index + 1] ?? null;
+                if (!is_string($next) || ($next !== '' && str_starts_with($next, '--'))) {
+                    Help::error('--html-segment-batch-size requires a value.');
+                }
+            } elseif ($argument === '--text-segment-batch-size=') {
+                Help::error('--text-segment-batch-size requires a positive integer value.');
+            } elseif ($argument === '--text-segment-batch-size') {
+                $next = $argv[$index + 1] ?? null;
+                if (!is_string($next) || $next === '' || str_starts_with($next, '--')) {
+                    Help::error('--text-segment-batch-size requires a value.');
+                }
+            } elseif ($argument === '--segment-batch-max-bytes=') {
+                Help::error('--segment-batch-max-bytes requires a positive integer value.');
+            } elseif ($argument === '--segment-batch-max-bytes') {
+                $next = $argv[$index + 1] ?? null;
+                if (!is_string($next) || $next === '' || str_starts_with($next, '--')) {
+                    Help::error('--segment-batch-max-bytes requires a value.');
+                }
+            } elseif ($argument === '--operation-timeout=') {
+                Help::error('--operation-timeout requires a positive integer value.');
+            } elseif ($argument === '--operation-timeout') {
+                $next = $argv[$index + 1] ?? null;
+                if (!is_string($next) || $next === '' || str_starts_with($next, '--')) {
+                    Help::error('--operation-timeout requires a value.');
+                }
+            } elseif ($argument === '--checkpoint=') {
+                Help::error('--checkpoint requires a non-empty path.');
+            } elseif ($argument === '--checkpoint') {
+                $next = $argv[$index + 1] ?? null;
+                if (!is_string($next) || $next === '' || str_starts_with($next, '--')) {
+                    Help::error('--checkpoint requires a path.');
+                }
+            }
+            // Values of required options may themselves look like option names.
+            if (str_starts_with($argument, '--') && !str_contains($argument, '=')) {
+                if (isset($requiredOptions[substr($argument, 2)])) {
+                    $index++;
+                }
+            }
+        }
+
+        if ($translatedOccurrences > 1) {
+            Help::error('--translated may only be specified once.');
+        }
+
+        if ($batchSizeOccurrences > 1) {
+            Help::error('--html-segment-batch-size may only be specified once.');
+        }
+        if ($textTransportOccurrences > 1) {
+            Help::error('--text-transport may only be specified once.');
+        }
+        if ($textBatchSizeOccurrences > 1) {
+            Help::error('--text-segment-batch-size may only be specified once.');
+        }
+        if ($segmentBatchMaxBytesOccurrences > 1) {
+            Help::error('--segment-batch-max-bytes may only be specified once.');
+        }
+        if ($operationTimeoutOccurrences > 1) {
+            Help::error('--operation-timeout may only be specified once.');
+        }
+        if ($checkpointOccurrences > 1) {
+            Help::error('--checkpoint may only be specified once.');
+        }
+        if (isset($options['checkpoint'])) {
+            $rawCheckpointPath = $options['checkpoint'];
+            if (is_array($rawCheckpointPath)) {
+                Help::error('--checkpoint may only be specified once.');
+            }
+            if (
+                !is_string($rawCheckpointPath) || $rawCheckpointPath === ''
+                || str_contains($rawCheckpointPath, "\0")
+                || preg_match('/\A[A-Za-z][A-Za-z0-9+.-]*:/', $rawCheckpointPath) === 1
+            ) {
+                Help::error('--checkpoint requires a non-empty path.');
+            }
+            $checkpointPath = $rawCheckpointPath;
+        }
+
+        // This option is intentionally singleton. getopt() returns an array for
+        // repeated options, but silently accepting that would make the selected
+        // batch size depend on implementation details.
+        if (isset($options['html-segment-batch-size'])) {
+            $rawBatchSize = $options['html-segment-batch-size'];
+            if (is_array($rawBatchSize)) {
+                Help::error('--html-segment-batch-size may only be specified once.');
+            }
+            if (!is_string($rawBatchSize) || !preg_match('/\A[1-9][0-9]*\z/', $rawBatchSize)) {
+                Help::error('--html-segment-batch-size requires a positive integer value.');
+            }
+            $maxInt = (string) PHP_INT_MAX;
+            if (
+                strlen($rawBatchSize) > strlen($maxInt)
+                || (strlen($rawBatchSize) === strlen($maxInt) && strcmp($rawBatchSize, $maxInt) > 0)
+            ) {
+                Help::error('--html-segment-batch-size is too large.');
+            }
+            $htmlSegmentBatchSize = (int) $rawBatchSize;
+        }
+        if (isset($options['text-segment-batch-size'])) {
+            $rawTextBatchSize = $options['text-segment-batch-size'];
+            if (is_array($rawTextBatchSize)) {
+                Help::error('--text-segment-batch-size may only be specified once.');
+            }
+            if (!is_string($rawTextBatchSize) || !preg_match('/\A[1-9][0-9]*\z/', $rawTextBatchSize)) {
+                Help::error('--text-segment-batch-size requires a positive integer value.');
+            }
+            $maxInt = (string) PHP_INT_MAX;
+            if (
+                strlen($rawTextBatchSize) > strlen($maxInt)
+                || (strlen($rawTextBatchSize) === strlen($maxInt) && strcmp($rawTextBatchSize, $maxInt) > 0)
+            ) {
+                Help::error('--text-segment-batch-size is too large.');
+            }
+            $textSegmentBatchSize = (int) $rawTextBatchSize;
+        }
+        if (isset($options['segment-batch-max-bytes'])) {
+            $rawMaxBytes = $options['segment-batch-max-bytes'];
+            if (is_array($rawMaxBytes)) {
+                Help::error('--segment-batch-max-bytes may only be specified once.');
+            }
+            if (!is_string($rawMaxBytes) || !preg_match('/\A[1-9][0-9]*\z/', $rawMaxBytes)) {
+                Help::error('--segment-batch-max-bytes requires a positive integer value.');
+            }
+            $maxInt = (string) PHP_INT_MAX;
+            if (
+                strlen($rawMaxBytes) > strlen($maxInt)
+                || (strlen($rawMaxBytes) === strlen($maxInt) && strcmp($rawMaxBytes, $maxInt) > 0)
+            ) {
+                Help::error('--segment-batch-max-bytes is too large.');
+            }
+            $segmentBatchMaxBytes = (int) $rawMaxBytes;
+        }
+        $operationTimeoutSeconds = null;
+        if (isset($options['operation-timeout'])) {
+            $rawOperationTimeout = $options['operation-timeout'];
+            if (is_array($rawOperationTimeout)) {
+                Help::error('--operation-timeout may only be specified once.');
+            }
+            if (
+                !is_string($rawOperationTimeout)
+                || !preg_match('/\A[1-9][0-9]*\z/', $rawOperationTimeout)
+            ) {
+                Help::error('--operation-timeout requires a positive integer value.');
+            }
+            $maxInt = (string) PHP_INT_MAX;
+            if (
+                strlen($rawOperationTimeout) > strlen($maxInt)
+                || (
+                    strlen($rawOperationTimeout) === strlen($maxInt)
+                    && strcmp($rawOperationTimeout, $maxInt) > 0
+                )
+            ) {
+                Help::error('--operation-timeout is too large.');
+            }
+            $operationTimeoutSeconds = (int) $rawOperationTimeout;
+        }
+        if (isset($options['validate-html-json-pointer'])) {
+            $rawPointers = $options['validate-html-json-pointer'];
+            $rawPointers = is_array($rawPointers) ? $rawPointers : [$rawPointers];
+            foreach ($rawPointers as $pointer) {
+                if (!is_string($pointer)) {
+                    Help::error('--validate-html-json-pointer requires a string value.');
+                }
+                $htmlJsonPointers[] = $pointer;
+            }
+        }
+        if (isset($options['html-json-pointer'])) {
+            $rawPointers = $options['html-json-pointer'];
+            $rawPointers = is_array($rawPointers) ? $rawPointers : [$rawPointers];
+            foreach ($rawPointers as $pointer) {
+                if (!is_string($pointer)) {
+                    Help::error('--html-json-pointer requires a string value.');
+                }
+                $htmlJsonSelectionPointers[] = $pointer;
+            }
+        }
 
         if ($modelKey === null || $modelKey === '') {
             Help::error(
@@ -118,6 +437,90 @@ class Cli
             Help::error("Invalid format: '{$format}'. Allowed: text, html, json, structured_json, linedJson.");
         }
         /** @var 'text'|'html'|'json'|'structured_json'|'linedJson' $format */
+
+        if (!in_array($htmlTransport, ['document', 'segments'], true)) {
+            Help::error("Invalid HTML transport: '{$htmlTransport}'. Allowed: document, segments.");
+        }
+        if ($htmlTransport === 'segments') {
+            if ($format === 'html' && $htmlJsonSelectionPointers !== []) {
+                Help::error('--html-json-pointer requires a JSON format with --html-transport=segments.');
+            }
+            if ($format === 'structured_json') {
+                Help::error('--html-transport=segments is incompatible with structured_json.');
+            }
+            if (in_array($format, ['json', 'linedJson'], true) && $htmlJsonSelectionPointers === []) {
+                Help::error('--html-transport=segments with JSON requires at least one --html-json-pointer.');
+            }
+            if (!in_array($format, ['html', 'json', 'linedJson'], true)) {
+                Help::error('--html-transport=segments requires --format=html, json, or linedJson.');
+            }
+        } elseif ($htmlJsonSelectionPointers !== []) {
+            Help::error('--html-json-pointer requires --html-transport=segments.');
+        }
+        if ($htmlSegmentBatchSize !== null && $htmlTransport !== 'segments') {
+            Help::error('--html-segment-batch-size requires --html-transport=segments.');
+        }
+        if ($textSegmentBatchSize !== null && $textTransport !== 'segments') {
+            Help::error('--text-segment-batch-size requires --text-transport=segments.');
+        }
+        if (
+            $segmentBatchMaxBytes !== null
+            && $textTransport !== 'segments'
+            && $htmlTransport !== 'segments'
+        ) {
+            Help::error(
+                '--segment-batch-max-bytes requires --text-transport=segments or --html-transport=segments.'
+            );
+        }
+        if ($textSegmentBatchSize !== null && $htmlSegmentBatchSize !== null) {
+            Help::error('--text-segment-batch-size cannot be combined with --html-segment-batch-size.');
+        }
+        if ($checkpointPath !== null) {
+            if ($textTransport !== 'segments' && $htmlTransport !== 'segments') {
+                Help::error('--checkpoint requires --text-transport=segments or --html-transport=segments.');
+            }
+            if ($textSegmentBatchSize === null && $htmlSegmentBatchSize === null && $segmentBatchMaxBytes === null) {
+                Help::error(
+                    '--checkpoint requires --text-segment-batch-size, --html-segment-batch-size, '
+                    . 'or --segment-batch-max-bytes.'
+                );
+            }
+        }
+
+        if ($htmlJsonPointers !== [] && !in_array($format, ['json', 'structured_json', 'linedJson'], true)) {
+            Help::error('--validate-html-json-pointer requires a JSON format.');
+        }
+        if ($htmlTransport === 'segments' && isset($options['response-schema'])) {
+            Help::error('--response-schema is incompatible with --html-transport=segments.');
+        }
+
+        if (!in_array($textTransport, ['document', 'segments'], true)) {
+            Help::error("Invalid text transport: '{$textTransport}'. Allowed: document, segments.");
+        }
+        if ($textTransport === 'segments' && $format !== 'text') {
+            Help::error('--text-transport=segments requires --format=text.');
+        }
+        if ($textTransport === 'segments' && isset($options['response-schema'])) {
+            Help::error('--response-schema is incompatible with --text-transport=segments.');
+        }
+
+        if ($checkpointPath !== null) {
+            $protected = [];
+            if ($sourceFile !== null) {
+                $protected['--source'] = $sourceFile;
+                $protected['prepared output'] = $sourceFile . '.prepared';
+            }
+            if ($outFile !== null) {
+                $protected['--translated'] = $outFile;
+            }
+            foreach ([$checkpointPath, $checkpointPath . '.lock'] as $statePath) {
+                foreach ($protected as $label => $protectedPath) {
+                    if (self::pathsAlias($statePath, $protectedPath)) {
+                        Help::error('--checkpoint and its lock must not overwrite ' . $label . '.');
+                    }
+                }
+            }
+        }
 
 
         if (!$registry->has($modelKey)) {
@@ -160,6 +563,23 @@ class Cli
                     Help::error("Invalid --variables format: '{$pair}'");
                 }
             }
+        }
+
+        try {
+            ModelVariables::validate($cliVars);
+            $filterManager = new FilterManager($filters);
+        } catch (\InvalidArgumentException $exception) {
+            Help::error($exception->getMessage());
+        }
+        if ($htmlTransport === 'segments' && array_key_exists('response_schema', $cliVars)) {
+            Help::error('--response-schema is incompatible with --html-transport=segments.');
+        }
+        if ($textTransport === 'segments' && array_key_exists('response_schema', $cliVars)) {
+            Help::error('--response-schema is incompatible with --text-transport=segments.');
+        }
+
+        if (!$dryRun && $outFile !== null) {
+            self::validateTranslationOutput($outFile);
         }
 
         // Handle input
@@ -229,9 +649,46 @@ class Cli
 
         // Dry-run: prepare placeholders and exit
         if ($dryRun) {
-            $prepared = (new FilterManager($filters))->apply($text);
+            $validationPointers = array_values(array_unique(array_merge(
+                $htmlJsonPointers,
+                $htmlJsonSelectionPointers
+            )));
+            if ($validate && $validationPointers !== []) {
+                try {
+                    new JsonHtmlValidator($text, $validationPointers);
+                } catch (\Throwable $exception) {
+                    Help::error($exception->getMessage());
+                }
+            }
+            try {
+                $segmentDocument = null;
+                if ($htmlTransport === 'segments' && in_array($format, ['json', 'linedJson'], true)) {
+                    $jsonDocument = new JsonHtmlDocument($text, $htmlJsonSelectionPointers, $filters);
+                    $prepared = $jsonDocument->getPrepared();
+                    $segmentDocument = $jsonDocument;
+                } else {
+                    $prepared = $filterManager->apply($text);
+                    if ($htmlTransport === 'segments') {
+                        $segmentDocument = new HtmlTextDocument($prepared);
+                    }
+                    if ($textTransport === 'segments') {
+                        $segmentDocument = new TextDocument($prepared);
+                    }
+                }
+                if ($segmentBatchMaxBytes !== null && $segmentDocument !== null) {
+                    new SegmentPlan(
+                        $segmentDocument->getJson(),
+                        $textSegmentBatchSize ?? $htmlSegmentBatchSize,
+                        $segmentBatchMaxBytes
+                    );
+                }
+            } catch (\Throwable $exception) {
+                Help::error($exception->getMessage());
+            }
             if ($sourceFile !== null) {
-                if (@file_put_contents($sourceFile . '.prepared', $prepared) !== strlen($prepared)) {
+                try {
+                    OutputFileWriter::write($sourceFile . '.prepared', $prepared);
+                } catch (\RuntimeException $e) {
                     Help::error("Failed to write prepared file: {$sourceFile}.prepared");
                 }
                 Help::info("Dry-run: saved prepared file as {$sourceFile}.prepared");
@@ -322,8 +779,18 @@ class Cli
                 sourceLang: $sourceLang,
                 targetLang: $targetLang,
                 validate: $validate,
+                validateEmbeddedJson: isset($options['validate-embedded-json']),
                 variables: $variables,
                 verbose: $verbose,
+                validateHtmlJsonPointers: $htmlJsonPointers,
+                htmlJsonPointers: $htmlJsonSelectionPointers,
+                htmlTransport: $htmlTransport,
+                htmlSegmentBatchSize: $htmlSegmentBatchSize,
+                textTransport: $textTransport,
+                textSegmentBatchSize: $textSegmentBatchSize,
+                segmentBatchMaxBytes: $segmentBatchMaxBytes,
+                operationTimeoutSeconds: $operationTimeoutSeconds,
+                checkpointPath: $checkpointPath,
             );
         } catch (\Throwable $e) {
             Help::error($e->getMessage());
@@ -331,8 +798,8 @@ class Cli
 
         // at this point $dryRun already exited above, so only $verbose matters
         if (PHP_SAPI === 'cli' && ($verbose)) {
-            file_put_contents('php://stderr', $res['debugRequest'], FILE_APPEND);
-            file_put_contents('php://stderr', $res['debugResponse'], FILE_APPEND);
+            @file_put_contents('php://stderr', $res['debugRequest'], FILE_APPEND);
+            @file_put_contents('php://stderr', $res['debugResponse'], FILE_APPEND);
         }
 
         if ($res['httpStatus'] >= 400) {
@@ -343,7 +810,9 @@ class Cli
 
         // Write output (file or STDOUT)
         if ($outFile !== null) {
-            if (@file_put_contents($outFile, $res['result']) !== strlen($res['result'])) {
+            try {
+                OutputFileWriter::write($outFile, $res['result']);
+            } catch (\RuntimeException $e) {
                 Help::error("Failed to write translation file: {$outFile}");
             }
             Help::info("Translation complete: {$outFile}");
@@ -355,57 +824,60 @@ class Cli
         $bold = "\033[1m";
         $reset = "\033[0m";
         $lh    = $res['lengths'];
-        $stderr = fopen('php://stderr', 'w');
+        $stderr = @fopen('php://stderr', 'w');
         if ($stderr === false) {
-            // As a last resort, write to STDOUT (shouldn't normally happen)
-            echo $reset;
+            // An unavailable diagnostic stream must leave the translation output intact.
             return;
         }
         // Characters processed visualization
-        fwrite($stderr, "\n{$bold}Characters processed:{$reset}\n");
-        fwrite($stderr, "\t{$bold}Original:{$reset}    {$lh['original']}\n");
-        fwrite($stderr, "\t{$bold}Prepared:{$reset}    {$lh['prepared']}\n");
-        fwrite($stderr, "\t{$bold}Translated:{$reset}  {$lh['translated']}\n");
+        @fwrite($stderr, "\n{$bold}Characters processed:{$reset}\n");
+        @fwrite($stderr, "\t{$bold}Original:{$reset}    {$lh['original']}\n");
+        @fwrite($stderr, "\t{$bold}Prepared:{$reset}    {$lh['prepared']}\n");
+        @fwrite($stderr, "\t{$bold}Translated:{$reset}  {$lh['translated']}\n");
         // Filter statistics visualization
-        fwrite($stderr, "\n{$bold}Filter statistics:{$reset}\n");
+        @fwrite($stderr, "\n{$bold}Filter statistics:{$reset}\n");
         if (empty($res['filterStats'])) {
-            fwrite($stderr, "\t(no filters applied)\n");
+            @fwrite($stderr, "\t(no filters applied)\n");
         } else {
             foreach ($res['filterStats'] as $stat) {
-                fwrite($stderr, "\t{$bold}{$stat['filter']}:{$reset}\t{$stat['count']} placeholder(s)\n");
+                @fwrite($stderr, "\t{$bold}{$stat['filter']}:{$reset}\t{$stat['count']} placeholder(s)\n");
             }
         }
         // Usage visualization
         /** @var array<string, array{total?: int, breakdown?: array<string,int>}> $consumed */
-        $consumed = $res['consumed'];
+        $consumed = $checkpointPath !== null ? ($res['consumedThisRun'] ?? []) : $res['consumed'];
 
-        fwrite($stderr, "\n{$bold}Usage metrics:{$reset}\n");
+        if ($checkpointPath !== null) {
+            @fwrite($stderr, 'Checkpoint packets reused: ' . ($res['reusedBatches'] ?? 0) . "\n");
+        }
+        $usageTitle = $checkpointPath !== null ? 'Usage metrics (this run)' : 'Usage metrics';
+        @fwrite($stderr, "\n{$bold}{$usageTitle}:{$reset}\n");
         if (empty($consumed)) {
-            fwrite($stderr, "\t(not provided)\n");
+            @fwrite($stderr, "\t(not provided)\n");
         } else {
             foreach ($consumed as $category => $metrics) {
                 // Category header, e.g. "Tokens:"
-                fwrite($stderr, "\t" . ucfirst((string)$category) . ":\n");
-                // Total line
-                $total = isset($metrics['total']) ? (int)$metrics['total'] : 0;
-                fwrite($stderr, sprintf("\t\t%-12s %d\n", 'Total:', $total));
-                // Separator line of appropriate length
-                $sepLen = 12 + 1 + strlen((string)$total);
-                $sep    = str_repeat('-', $sepLen);
-                fwrite($stderr, "\t\t{$sep}\n");
+                @fwrite($stderr, "\t" . ucfirst((string)$category) . ":\n");
+                if (isset($metrics['total'])) {
+                    $total = (int) $metrics['total'];
+                    @fwrite($stderr, sprintf("\t\t%-12s %d\n", 'Total:', $total));
+                    $sepLen = 12 + 1 + strlen((string) $total);
+                    $sep = str_repeat('-', $sepLen);
+                    @fwrite($stderr, "\t\t{$sep}\n");
+                }
                 // Breakdown lines, e.g. Prompt, Completion
                 if (isset($metrics['breakdown'])) {
                     /** @var array<string,int> $bd */
                     $bd = $metrics['breakdown'];
                     foreach ($bd as $label => $cnt) {
-                        fwrite($stderr, sprintf("\t\t%-12s %d\n", ucfirst((string)$label) . ':', (int)$cnt));
+                        @fwrite($stderr, sprintf("\t\t%-12s %d\n", ucfirst((string)$label) . ':', (int)$cnt));
                     }
                 }
             }
         }
 
-        fwrite($stderr, $reset);
-        fclose($stderr);
+        @fwrite($stderr, $reset);
+        @fclose($stderr);
     }
 
     /**
@@ -421,5 +893,57 @@ class Cli
         }
 
         return getenv($name);
+    }
+
+    /** Reject obvious local write failures without opening or changing the output. */
+    private static function validateTranslationOutput(string $path): void
+    {
+        if (str_contains($path, "\0")) {
+            Help::error('Failed to write translation file: invalid path.');
+        }
+        // Other stream wrappers retain their existing write-time behavior.
+        if (preg_match('~\A([a-z][a-z0-9+.-]*)://~i', $path, $scheme) === 1 && strtolower($scheme[1]) !== 'file') {
+            return;
+        }
+        if (str_ends_with($path, '/') || (DIRECTORY_SEPARATOR === '\\' && str_ends_with($path, '\\'))) {
+            Help::error('Failed to write translation file: ' . $path);
+        }
+        clearstatcache(true, $path);
+        $exists = file_exists($path);
+        if (is_dir($path) || ($exists && !is_writable($path))) {
+            Help::error('Failed to write translation file: ' . $path);
+        }
+        // A dangling symlink may point to a creatable target in another directory.
+        if (!$exists && !is_link($path) && (!is_dir(dirname($path)) || !is_writable(dirname($path)))) {
+            Help::error('Failed to write translation file: ' . $path);
+        }
+    }
+
+    private static function pathsAlias(string $left, string $right): bool
+    {
+        if (self::canonicalPath($left) === self::canonicalPath($right)) {
+            return true;
+        }
+        $leftStat = @stat($left);
+        $rightStat = @stat($right);
+        return $leftStat !== false && $rightStat !== false
+            && $leftStat['dev'] === $rightStat['dev'] && $leftStat['ino'] === $rightStat['ino'];
+    }
+
+    /** Resolve an existing path, or resolve its parent and retain its basename. */
+    private static function canonicalPath(string $path): string
+    {
+        $resolved = realpath($path);
+        if ($resolved !== false) {
+            return $resolved;
+        }
+        $directory = dirname($path);
+        $parent = realpath($directory);
+        if ($parent === false) {
+            $parent = str_starts_with($directory, DIRECTORY_SEPARATOR)
+                ? $directory
+                : getcwd() . DIRECTORY_SEPARATOR . $directory;
+        }
+        return rtrim($parent, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . basename($path);
     }
 }

@@ -213,4 +213,51 @@ final class UsageExtractorTest extends TestCase
         $this->assertSame(0, $out['tokens']['breakdown']['x']);
         $this->assertSame(0, $out['tokens']['breakdown']['y']);
     }
+
+    /** @dataProvider countValues */
+    public function testOnlyRepresentableNonnegativeWholeCountsAreExtracted(mixed $value, int $expected): void
+    {
+        $config = ['usage' => ['tokens' => [
+            'total' => 'count', 'breakdown' => ['invalid' => 'count', 'valid' => 'other'],
+        ]]];
+        $out = UsageExtractor::extract($config, ['count' => $value, 'other' => 9]);
+        self::assertSame($expected, $out['tokens']['total']);
+        self::assertSame($expected, $out['tokens']['breakdown']['invalid']);
+        self::assertSame(9, $out['tokens']['breakdown']['valid']);
+    }
+
+    /** @return iterable<string,array{mixed,int}> */
+    public static function countValues(): iterable
+    {
+        yield 'negative integer' => [-9, 0];
+        yield 'negative string' => ['-9', 0];
+        yield 'negative float' => [-9.0, 0];
+        yield 'fraction' => [12.5, 0];
+        yield 'fraction string' => ['12.5', 0];
+        yield 'string overflow' => [(string) PHP_INT_MAX . '0', 0];
+        yield 'exponent overflow' => ['1e999', 0];
+        yield 'boolean' => [true, 0];
+        yield 'integer' => [12, 12];
+        yield 'integer string' => ['12', 12];
+        yield 'whole float' => [12.0, 12];
+        yield 'decimal string format' => ['12.0', 0];
+        yield 'exponent string format' => ['1.2e2', 0];
+        yield 'fraction lost by float rounding' => ['1.0000000000000001', 0];
+        yield 'multiple signs' => ['++12', 0];
+        yield 'null byte' => ["12\0", 0];
+        yield 'leading zeros' => ['00012', 12];
+        yield 'surrounding whitespace' => [' +12 ', 12];
+        yield 'maximum integer' => [PHP_INT_MAX, PHP_INT_MAX];
+        yield 'maximum integer string' => [(string) PHP_INT_MAX, PHP_INT_MAX];
+        yield 'zero' => [0, 0];
+        yield 'zero string' => ['000', 0];
+    }
+
+    public function testNonfiniteAndOutOfRangeFloatsAreNotConvertedToCounts(): void
+    {
+        foreach ([INF, NAN, (float) PHP_INT_MAX + 1.0] as $value) {
+            $out = UsageExtractor::extract(['usage' => ['tokens' => ['total' => 'n']]], ['n' => $value]);
+            self::assertSame(0, $out['tokens']['total']);
+        }
+    }
 }
