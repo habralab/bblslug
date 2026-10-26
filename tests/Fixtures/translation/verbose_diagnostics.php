@@ -28,7 +28,8 @@ namespace Bblslug {
                 substr(json_encode(json_encode($secret, JSON_THROW_ON_ERROR), JSON_THROW_ON_ERROR), 1, -1)]);
             $translated = match ($scenario) {
                 'json-invalid' => $secret . str_repeat('x', 3000),
-                'html-invalid' => $secret . $content . '<',
+                // A trailing '<' is accepted as literal text by some libxml versions.
+                'html-invalid' => $secret . $content . '<p title="',
                 'html-structure' => $secret . str_replace('<div>', '<span>', $content),
                 default => $content,
             };
