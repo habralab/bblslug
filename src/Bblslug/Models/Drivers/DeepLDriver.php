@@ -140,19 +140,22 @@ class DeepLDriver implements ModelDriverInterface
             ));
             $request['headers'][] = 'Content-Type: application/json';
             $request['body'] = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
-            if (strlen($request['body']) > 128 * 1024) {
-                throw new \InvalidArgumentException('DeepL JSON request exceeds the 128 KiB request limit');
-            }
             $request['responseContext'] = $jsonDocument;
             if ($jsonDocument->getTexts() === []) {
                 $request['localResult'] = $text;
             }
         }
         if ($htmlPlaceholders !== null && $htmlPlaceholders->getText() !== $text) {
-            if (strlen($request['body']) > 128 * 1024) {
+            $request['responseContext'] = $htmlPlaceholders;
+        }
+        if (strlen($request['body']) > 128 * 1024) {
+            if ($jsonDocument !== null) {
+                throw new \InvalidArgumentException('DeepL JSON request exceeds the 128 KiB request limit');
+            }
+            if ($htmlPlaceholders !== null) {
                 throw new \InvalidArgumentException('DeepL HTML request exceeds 128 KiB after placeholder protection');
             }
-            $request['responseContext'] = $htmlPlaceholders;
+            throw new \InvalidArgumentException('DeepL request exceeds the 128 KiB request limit');
         }
         return $request;
     }

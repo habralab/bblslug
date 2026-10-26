@@ -133,6 +133,55 @@ final class DeepLDriverTest extends TestCase
         (new DeepLDriver())->buildRequest([], '<p>' . str_repeat('@@0@@ ', 2000) . '</p>', ['format' => 'html']);
     }
 
+    public function testTextRequestAtTheSerializedBodyLimitIsAccepted(): void
+    {
+        $baseLength = strlen(http_build_query([
+            'text' => '', 'target_lang' => 'EN', 'formality' => 'prefer_more',
+        ]));
+        $text = str_repeat('a', 128 * 1024 - $baseLength);
+
+        $request = (new DeepLDriver())->buildRequest([], $text, ['format' => 'text']);
+
+        $this->assertSame(128 * 1024, strlen($request['body']));
+    }
+
+    public function testTextRequestBodyLimitIncludesContextAndMultibyteEncoding(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('128 KiB');
+
+        (new DeepLDriver())->buildRequest(
+            ['defaults' => ['context' => str_repeat('é', 30_000)]],
+            'Hello',
+            ['format' => 'text']
+        );
+    }
+
+    public function testMultibyteSourceWithinCharacterLimitCanExceedSerializedBodyLimit(): void
+    {
+        $source = str_repeat('Я', 24_000);
+        $config = (new \Bblslug\Models\ModelRegistry())->get('deepl:free');
+        self::assertNotNull($config);
+        $guard = \Bblslug\Validation\TextLengthValidator::fromModelConfig($config);
+        self::assertTrue($guard->validate($source)->isValid());
+        foreach (['text', 'html'] as $format) {
+            try {
+                (new DeepLDriver())->buildRequest($config, $source, ['format' => $format]);
+                self::fail('The serialized body must be checked in addition to the character limit');
+            } catch (\InvalidArgumentException $exception) {
+                self::assertStringContainsString('128 KiB', $exception->getMessage());
+            }
+        }
+    }
+
+    public function testUnchangedHtmlRequestStillRespectsProviderBodyLimit(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('128 KiB');
+
+        (new DeepLDriver())->buildRequest([], str_repeat('a', 131_100), ['format' => 'html']);
+    }
+
     /** @test */
     public function parseResponseOk(): void
     {
