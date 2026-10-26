@@ -46,6 +46,27 @@ The format is based on [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ### Fixed
 
+- Live PHPUnit datasets no longer contain API keys or Yandex folder IDs. Tests
+  resolve credentials after setup and run only with exactly `RUN_LIVE_TESTS=1`.
+  Skipped tests and failed diagnostic assertions cannot echo credential values
+  through dataset or assertion formatting; controlled regressions inspect JUnit
+  and console output without contacting providers.
+- OpenAI/xAI reject present non-success completion reasons even when markers or
+  native JSON are valid. Explicit Responses statuses must be `completed`;
+  missing legacy metadata remains supported. OpenAI uses the same merged
+  defaults/options protocol selection when building and parsing schema requests.
+- DeepL checks the serialized 128 KiB body limit for every text, HTML, and
+  `text_batch` request, including unchanged HTML and multibyte/context expansion.
+  Native document uploads retain their separate source-size limit.
+- Selected void HTML elements (`html_img`, `html_br`, `html_input`, and others)
+  are protected as complete individual opening tags, including in recursively
+  encoded JSON. They previously accepted the filter name but matched no block.
+- Numeric transport error codes survive document polling/download and batch
+  wrapping. Document-workflow deadline expiry uses timeout code 28; error messages
+  remain sanitized without retaining the original unmasked transport exception.
+- Restored `composer lint` and `composer phpunit` aliases alongside `test:*`
+  commands, and corrected the README example's supported-format list.
+
 - Nonempty prepared input can no longer produce a successful empty or
   whitespace-only provider translation, even with `--no-validate`. Empty source,
   dry-run, and local no-translation results retain their existing behavior.
@@ -134,14 +155,20 @@ The format is based on [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ### Verification
 
-- PHP 8.2.34 and 8.5.11: 1117 unit tests, 6421 assertions on each; PHPCS and
+- PHP 8.2.34 and 8.5.11: 1159 unit tests, 6584 assertions on each; PHPCS and
   PHPStan at maximum level pass.
-- Fresh paid acceptance: 48/48 small segment cases across Gemini 2.5 Flash,
+- Paid acceptance on 2026-10-25, before the audit corrections: 48/48 small
+  segment cases across Gemini 2.5 Flash,
   GPT-5 mini, Claude Haiku 4.5, Grok 4.20 non-reasoning, Yandex Lite/Pro, and
   DeepL Free/Pro, using API/CLI and text/HTML/selected HTML-in-JSON. Checkpoint
   reuse, protected fragments, and unselected JSON bytes were checked. This run
   used DeepL `text_batch`; earlier native JSON Document results remain recorded.
-- Default document-mode smoke: 12/12 cases on Gemini 2.5 Flash and Yandex Lite.
+- After the audit corrections, 112/112 recorded provider response packets from
+  those 48 cases pass the current driver decoders. DeepL replays use synthetic
+  value-count contexts and verify decoding only. Negative completion states,
+  credential-free PHPUnit/JUnit output, body limits, void filtering, and transport
+  codes have controlled regressions; no additional paid requests were made.
+- Default document-mode smoke on 2026-10-25: 12/12 cases on Gemini 2.5 Flash and Yandex Lite.
   Offline failure/resume acceptance passed for all three formats on both PHP
   versions. This is not exhaustive model-catalogue or translation-quality testing.
   See [the acceptance record](tools/README.md#follow-up-acceptance-for-release-preparation)

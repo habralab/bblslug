@@ -184,3 +184,27 @@ only unsaved packets and a full cache sent none. The unit suite passed on both
 versions: **1117 tests, 6421 assertions**, with PHPCS and PHPStan at maximum level
 also passing. These results prepare the next release; no additional models or
 large-document quality claims are implied.
+
+### Audit correction verification, 2026-10-26
+
+The release review found gaps outside the previous small success matrix: live
+PHPUnit datasets exposed credentials, OpenAI/xAI accepted non-success completion
+states with markers, OpenAI default-schema build/parse modes disagreed, DeepL
+body-size checks were conditional, selected void filters matched nothing, and
+workflow/batch errors lost transport codes. All six now have targeted regressions.
+The README format example and legacy Composer script aliases were also corrected.
+
+PHP 8.2.34 and 8.5.11 passed **1159 unit tests, 6584 assertions** each. PHPCS,
+PHPStan max, `composer validate --strict`, and the restored `lint`/`phpunit`
+aliases passed. PHPUnit isolation checks use fixture keys, inspect stdout/stderr
+and JUnit on both skipped and intentionally failed tests, and prevent real HTTP.
+The offline three-format failure/resume acceptance passed on both PHP versions.
+
+Updated drivers also accepted **112/112 recorded response packets** from the
+previous 48-case API/CLI matrix across all eight configurations. These were
+sanitized response-body replays, without network or new provider charges. The
+DeepL dummy contexts check response counts/decoding only; they do not replay
+full document reconstruction. Negative finish-state handling is covered by
+controlled tests, since the recorded successful responses contained no such
+states. The 2026-10-25 live results above remain historical evidence, not a fresh
+post-audit live run or a semantic translation-quality guarantee.

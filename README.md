@@ -1246,8 +1246,9 @@ Even for HTML elements with optional end tags, this block filter requires explic
 pairs; it does not infer DOM boundaries or repair source markup. A trailing slash
 on a non-void tag, such as `<code/>`, does not replace its required closing tag.
 
-Valid unpaired void elements such as `<br>`, `<img>`, and legacy `<param>` retain
-their existing behavior. Selected `<plaintext>` protects everything from its
+Selected void elements such as `<br>`, `<img>`, and legacy `<param>` are protected
+as complete individual opening tags, including their attributes. They need no
+closing tag. Selected `<plaintext>` protects everything from its
 opening tag to EOF, including apparent closing tags, following the
 [HTML plaintext parsing rule](https://html.spec.whatwg.org/multipage/parsing.html#plaintext-state).
 For JSON, EOF here means the end of the decoded string value, not the surrounding
@@ -1434,7 +1435,7 @@ if ($apiKey === false || $apiKey === '') {
 $verbose = true;
 $result = Bblslug::translate(
     apiKey:   $apiKey,
-    format:   'html',                          // 'text', 'html' or 'json'
+    format:   'html',                          // text, html, json, structured_json, linedJson
     modelKey: 'openai:gpt-6-luna',              // A key from Bblslug::listModels()
     text:     $text,                           // Source text to be translated
     // optional:
@@ -1582,6 +1583,11 @@ Locally, with the corresponding environment variables configured:
 RUN_LIVE_TESTS=1 BBLSLUG_LIVE_MODEL=openai:gpt-6-luna \
   vendor/bin/phpunit --testsuite integration --testdox
 ```
+
+Only the exact value `RUN_LIVE_TESTS=1` enables PHPUnit live requests. Other values,
+including `false`, `off`, and `0`, keep them disabled. PHPUnit datasets contain
+model metadata only; credentials are resolved after the live gate.
+
 
 ### Input samples
 
