@@ -223,3 +223,7 @@ metadata and unproved decoded-key types. Records are now assembled with all
 required fields, string IDs are checked at the decoding boundary, and a redundant
 CLI guard was removed. The same official PHPStan 2.3.2 passes at maximum level
 locally, without a baseline or relaxed checks.
+
+The final ID-boundary helper was checked with both PHPStan 2.1.22 and 2.3.2 at
+maximum level; 107 targeted segment/checkpoint cases also passed. No analyzer
+version was pinned down and no checks were disabled.

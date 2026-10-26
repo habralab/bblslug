@@ -48,10 +48,7 @@ REGEX;
             if (preg_match('/\G\s*:/', $translatedJson, $unused, 0, $offset + strlen($token)) !== 1) {
                 continue;
             }
-            $key = json_decode($token, true, 512, JSON_THROW_ON_ERROR);
-            if (!is_string($key)) {
-                throw new \RuntimeException($label . ' segment ids must be strings');
-            }
+            $key = self::requireStringId(json_decode($token, true, 512, JSON_THROW_ON_ERROR), $label);
             if (isset($seen[$key])) {
                 throw new \RuntimeException('Duplicate ' . $label . ' segment ids');
             }
@@ -59,9 +56,7 @@ REGEX;
         }
         $strings = [];
         foreach ($values as $key => $value) {
-            if (!is_string($key)) {
-                throw new \RuntimeException($label . ' segment ids must be strings');
-            }
+            $key = self::requireStringId($key, $label);
             if (!is_string($value) || preg_match('/\A\s*\z/u', $value) === 1) {
                 throw new \RuntimeException($label . ' segments require nonempty translated strings');
             }
@@ -74,5 +69,12 @@ REGEX;
             $strings[$key] = $value;
         }
         return $strings;
+    }
+    private static function requireStringId(mixed $key, string $label): string
+    {
+        if (!is_string($key)) {
+            throw new \RuntimeException($label . ' segment ids must be strings');
+        }
+        return $key;
     }
 }
