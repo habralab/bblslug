@@ -32,7 +32,7 @@ namespace Bblslug {
             return [
                 'body' => self::$response['body'],
                 'debugRequest' => self::$response['verbose'] ? '[request debug]' : '',
-                'debugResponse' => self::$response['verbose'] ? '[response debug]' : '',
+                'debugResponse' => self::$response['verbose'] ? '[response debug]' . self::$response['body'] : '',
                 'headers' => [],
                 'status' => self::$response['status'],
             ];

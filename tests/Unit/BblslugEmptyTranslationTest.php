@@ -50,9 +50,41 @@ final class BblslugEmptyTranslationTest extends TestCase
         self::assertSame('0', $zero['result']);
     }
 
-    /** @return array{type:string,message:string,requestCount:int,result?:string} */
-    private function runFixture(string $model, string $input, string $text): array
+    /** @dataProvider verboseModes */
+    public function testCompletedEmptyGrokResponseRetainsOnlyOptedInMaskedDiagnostics(bool $verbose): void
     {
+        $apiKey = 'fixture +/key=value';
+        $result = $this->runFixture('xai:grok-4.7', 'Hello world', '', $verbose, $apiKey);
+
+        self::assertSame(\RuntimeException::class, $result['type']);
+        self::assertSame(1, $result['requestCount']);
+        self::assertStringContainsString('empty translation for nonempty input', $result['message']);
+        self::assertStringNotContainsString($apiKey, $result['message']);
+        self::assertStringNotContainsString(rawurlencode($apiKey), $result['message']);
+        if ($verbose) {
+            self::assertStringContainsString('[request debug]', $result['message']);
+            self::assertStringContainsString('[response debug]', $result['message']);
+            self::assertStringContainsString('output_text', $result['message']);
+            self::assertStringContainsString('completed', $result['message']);
+        } else {
+            self::assertSame('Provider returned an empty translation for nonempty input', $result['message']);
+        }
+    }
+
+    /** @return array<string,array{bool}> */
+    public static function verboseModes(): array
+    {
+        return ['quiet' => [false], 'verbose' => [true]];
+    }
+
+    /** @return array{type:string,message:string,requestCount:int,result?:string} */
+    private function runFixture(
+        string $model,
+        string $input,
+        string $text,
+        bool $verbose = false,
+        string $apiKey = 'fixture-key'
+    ): array {
         $marked = "‹‹TRANSLATION››\n" . $text . "\n‹‹END››";
         $body = match (strstr($model, ':', true)) {
             'google' => ['candidates' => [['finishReason' => 'STOP',
@@ -61,6 +93,20 @@ final class BblslugEmptyTranslationTest extends TestCase
             'deepl' => ['translations' => [['text' => $text]]],
             default => ['choices' => [['finish_reason' => 'stop', 'message' => ['content' => $marked]]]],
         };
+        if ($model === 'xai:grok-4.7') {
+            // Minimized completed response captured from the provider: output contains only empty markers.
+            $body = [
+                'model' => 'grok-4.7',
+                'status' => 'completed',
+                'output' => [[
+                    'type' => 'message',
+                    'status' => 'completed',
+                    'role' => 'assistant',
+                    'content' => [['type' => 'output_text', 'text' => $marked]],
+                ]],
+                'fixture_echo' => $apiKey . ' ' . rawurlencode($apiKey),
+            ];
+        }
         $process = proc_open([
             PHP_BINARY,
             dirname(__DIR__) . '/Fixtures/translation/provider_error.php',
@@ -68,7 +114,8 @@ final class BblslugEmptyTranslationTest extends TestCase
             '--status=200',
             '--body=' . base64_encode(json_encode($body, JSON_THROW_ON_ERROR)),
             '--input=' . base64_encode($input),
-            '--api-key=fixture-key',
+            '--api-key=' . $apiKey,
+            '--verbose=' . ($verbose ? '1' : '0'),
             '--folder-id=fixture-folder',
         ], [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes, dirname(__DIR__, 2), []);
         self::assertIsResource($process);

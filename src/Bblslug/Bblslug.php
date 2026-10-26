@@ -892,7 +892,11 @@ class Bblslug
                 preg_match('/\A\s*\z/u', $requestText) !== 1
                 && preg_match('/\A\s*\z/u', $translated) === 1
             ) {
-                throw new \RuntimeException('Provider returned an empty translation for nonempty input');
+                $message = 'Provider returned an empty translation for nonempty input';
+                if ($verbose) {
+                    $message .= "\n\n" . $debugRequest . $debugResponse;
+                }
+                throw new \RuntimeException($errorMasker->redact($message));
             }
             $feedback("Provider response parsed", 'info');
         }

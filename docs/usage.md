@@ -255,6 +255,9 @@ Use `--translated=translated.txt` instead of shell redirection to use the CLI ou
 
 ## Secret masking in diagnostics
 
+With verbose mode enabled, empty-translation errors retain masked HTTP request and
+response diagnostics, as parsing errors do. Quiet empty-translation errors omit those diagnostics.
+
 The facade masks the API key in HTTP diagnostic logs and provider exceptions.
 Low-level `HttpClient::request()` callers supply raw secrets through
 `maskPatterns`. Masking covers raw text, URL/form encoding, and up to two layers

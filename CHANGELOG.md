@@ -15,6 +15,9 @@ This file follows the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) f
 
 - Nineteen retired OpenAI identifiers and the shut-down Gemini 3.1 Flash-Lite preview. Removed keys fail locally; no replacement is silently selected. See [upgrading](docs/upgrading.md#unreleased-model-catalogue).
 
+### Fixed
+
+- Empty provider translations retain masked HTTP request/response diagnostics when verbose mode is enabled. Quiet errors remain concise; empty output for nonempty input still fails without retries.
 
 ## [0.10.0] – 2026-10-26
 

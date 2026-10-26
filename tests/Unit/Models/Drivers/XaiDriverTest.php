@@ -165,4 +165,28 @@ final class XaiDriverTest extends TestCase
         ], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR));
         $this->assertSame('ok', $result['text']);
     }
+    /** @dataProvider capturedCompletedResponses */
+    public function testCapturedCompletedResponsePreservesTranslationContent(string $content, string $expected): void
+    {
+        $parsed = (new XaiDriver())->parseResponse([], json_encode([
+            'model' => 'grok-4.7',
+            'status' => 'completed',
+            'output' => [
+                ['type' => 'reasoning', 'summary' => [['type' => 'summary_text', 'text' => 'Not translation output']]],
+                ['type' => 'message', 'status' => 'completed', 'role' => 'assistant',
+                    'content' => [['type' => 'output_text', 'text' => $content]]],
+            ],
+        ], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR));
+
+        self::assertSame($expected, $parsed['text']);
+    }
+
+    /** @return array<string,array{string,string}> */
+    public static function capturedCompletedResponses(): array
+    {
+        return [
+            'translated payload' => ["‹‹TRANSLATION››\nHallo Welt\n\n‹‹END››", 'Hallo Welt'],
+            'empty payload despite completed status' => ["‹‹TRANSLATION››\n\n‹‹END››", ''],
+        ];
+    }
 }
