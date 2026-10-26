@@ -20,8 +20,6 @@ class HtmlValidator implements ValidatorInterface
      */
     public function validate(string $content): ValidationResult
     {
-        // Enable internal error handling
-        libxml_use_internal_errors(true);
         $dom = new DOMDocument();
 
         // Wrap fragments in a div to ensure valid context
@@ -30,16 +28,19 @@ class HtmlValidator implements ValidatorInterface
             ? $content
             : '<div>' . $content . '</div>';
 
-        // Parse HTML
-        $dom->loadHTML(
-            $html,
-            LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD
-        );
-
-        // Gather parse errors
-        $errors = libxml_get_errors();
+        // Inspect only this parse and preserve the caller's error-handling mode.
+        $previous = libxml_use_internal_errors(true);
         libxml_clear_errors();
-        libxml_use_internal_errors(false);
+        try {
+            $dom->loadHTML(
+                $html,
+                LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD
+            );
+            $errors = libxml_get_errors();
+        } finally {
+            libxml_clear_errors();
+            libxml_use_internal_errors($previous);
+        }
 
         if (empty($errors)) {
             return ValidationResult::success();
