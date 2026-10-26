@@ -113,8 +113,8 @@ $smokeCheck = static function (string $format, string $input, string $output, st
 };
 
 $models = explode(',', getenv('BBLSLUG_SMOKE_MODELS') ?: implode(',', [
-'openai:gpt-5-mini', 'anthropic:claude-haiku-4.5-20251001', 'google:gemini-2.5-flash',
-'xai:grok-4.20-0309-non-reasoning', 'deepl:free', 'deepl:pro', 'yandex:gpt-lite', 'yandex:gpt-pro',
+'openai:gpt-6-luna', 'anthropic:claude-haiku-5.5', 'google:gemini-flash-latest',
+'xai:grok-4.7', 'deepl:free', 'deepl:pro', 'yandex:gpt-lite', 'yandex:gpt-pro',
 ]));
 $directory = getenv('BBLSLUG_SMOKE_REPORT_DIR') ?: sys_get_temp_dir() . '/bblslug-live-smoke';
 if (!is_dir($directory) && !mkdir($directory, 0700, true)) {

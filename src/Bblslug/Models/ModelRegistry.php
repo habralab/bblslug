@@ -20,7 +20,7 @@ use Symfony\Component\Yaml\Yaml;
 /**
  * Registry of available translation models.
  *
- * Loads model definitions from a PHP file and provides
+ * Loads model definitions from a YAML file and provides
  * convenient accessors for endpoints, formats, auth info, etc.
  */
 class ModelRegistry
@@ -31,7 +31,7 @@ class ModelRegistry
     /**
      * Load the models registry from the given path (or default).
      *
-     * @param string|null $path Path to a PHP file returning the models array.
+     * @param string|null $path Path to a YAML model registry.
      */
     public function __construct(?string $path = null)
     {
@@ -111,6 +111,20 @@ class ModelRegistry
     public function list(): array
     {
         return array_keys($this->models);
+    }
+
+    /**
+     * Whether a model belongs in the default human-facing catalogue.
+     *
+     * Extended entries remain addressable through their registered keys.
+     *
+     * @param array<string,mixed> $config Model configuration.
+     */
+    public static function isDefaultListing(array $config): bool
+    {
+        return ($config['status'] ?? 'available') === 'available'
+            && ($config['access'] ?? 'standard') === 'standard'
+            && !\in_array($config['kind'] ?? 'model', ['snapshot', 'preview'], true);
     }
 
     /**

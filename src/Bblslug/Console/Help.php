@@ -64,7 +64,7 @@ class Help
         echo "\t{$bold}--html-json-pointer=POINTER{$reset} Translate HTML at a JSON Pointer "
             . "(repeatable; segments only)\n";
         echo "\t{$bold}--help{$reset}               Show this help message\n";
-        echo "\t{$bold}--list-models{$reset}        Show available translation models grouped by vendor\n";
+        echo "\t{$bold}--list-models{$reset}        Models for new integrations; =all includes snapshots and legacy\n";
         echo "\t{$bold}--list-prompts{$reset}       Show available prompt templates\n";
         echo "\t{$bold}--model=MODEL_ID{$reset}     Required model (see --list-models)\n";
         echo "\t{$bold}--operation-timeout=N{$reset} Total translation operation deadline in seconds\n";
@@ -107,62 +107,65 @@ class Help
         echo "\trequests are not retried.\n";
 
         echo "\nExamples:\n";
+        echo "\tFile examples use samples/quickstart in a checkout (invoke bin/bblslug there).\n";
+        echo "\tComposer installations bundle them under vendor/habr/bblslug/samples/quickstart.\n";
         echo "\tList available models:\n";
         echo "\tvendor/bin/bblslug --list-models\n";
 
         echo "\n\tTranslate HTML from file to file\n";
         echo "\tvendor/bin/bblslug --model=deepl:pro --format=html \\\n";
-        echo "\t    --source=doc.html --translated=out.html --operation-timeout=120 \\\n";
+        echo "\t    --source=samples/quickstart/input.html --translated=out.html --operation-timeout=120 \\\n";
         echo "\t    --filters=url,html_code,html_pre\n";
 
         echo "\n\tTranslate HTML using structured text segments\n";
-        echo "\tvendor/bin/bblslug --model=google:gemini-2.5-flash --format=html --html-transport=segments \\\n";
-        echo "\t    --source=doc.html --translated=out.html\n";
+        echo "\tvendor/bin/bblslug --model=google:gemini-flash-latest --format=html --html-transport=segments \\\n";
+        echo "\t    --source=samples/quickstart/input.html --translated=out.html\n";
 
         echo "\n\tTranslate selected HTML strings inside JSON\n";
-        echo "\tvendor/bin/bblslug --model=google:gemini-2.5-flash --format=json --html-transport=segments \\\n";
-        echo "\t    --html-json-pointer=/body --source=doc.json --translated=out.json\n";
+        echo "\tvendor/bin/bblslug --model=google:gemini-flash-latest --format=json --html-transport=segments \\\n";
+        echo "\t    --html-json-pointer=/body --source=samples/quickstart/input.json --translated=out.json\n";
 
         echo "\n\tTranslate plain text via STDIN → STDOUT\n";
-        echo "\tcat in.txt | vendor/bin/bblslug --model=openai:gpt-4o --format=text > out.txt\n";
+        echo "\tcat samples/quickstart/input.txt | vendor/bin/bblslug --model=openai:gpt-6-luna "
+            . "--format=text > out.txt\n";
 
         echo "\n\tTranslate plain text using structured text segments\n";
-        echo "\tvendor/bin/bblslug --model=openai:gpt-4o --format=text --text-transport=segments \\\n";
-        echo "\t    --source=in.txt --translated=out.txt\n";
+        echo "\tvendor/bin/bblslug --model=openai:gpt-6-luna --format=text --text-transport=segments \\\n";
+        echo "\t    --source=samples/quickstart/input.txt --translated=out.txt\n";
 
         echo "\n\tTranslate plain text segments in batches\n";
-        echo "\tvendor/bin/bblslug --model=openai:gpt-4o --format=text --text-transport=segments \\\n";
-        echo "\t    --text-segment-batch-size=20 --source=in.txt --translated=out.txt\n";
+        echo "\tvendor/bin/bblslug --model=openai:gpt-6-luna --format=text --text-transport=segments \\\n";
+        echo "\t    --text-segment-batch-size=20 --source=samples/quickstart/input.txt --translated=out.txt\n";
 
         echo "\n\tBound segment request payloads by serialized JSON bytes\n";
-        echo "\tvendor/bin/bblslug --model=openai:gpt-4o --format=text --text-transport=segments \\\n";
-        echo "\t    --segment-batch-max-bytes=4096 --source=in.txt --translated=out.txt\n";
+        echo "\tvendor/bin/bblslug --model=openai:gpt-6-luna --format=text --text-transport=segments \\\n";
+        echo "\t    --segment-batch-max-bytes=4096 --source=samples/quickstart/input.txt --translated=out.txt\n";
 
         echo "\n\tResume a failed segment-batch translation\n";
-        echo "\tvendor/bin/bblslug --model=openai:gpt-4o --format=text --text-transport=segments \\\n";
+        echo "\tvendor/bin/bblslug --model=openai:gpt-6-luna --format=text --text-transport=segments \\\n";
         echo "\t    --text-segment-batch-size=20 --checkpoint=translation.checkpoint \\\n";
-        echo "\t    --source=in.txt --translated=out.txt\n";
+        echo "\t    --source=samples/quickstart/input.txt --translated=out.txt\n";
 
         echo "\n\tDry-run to inspect placeholders in a file\n";
         echo "\tvendor/bin/bblslug --model=deepl:free --format=text --filters=url,html_pre \\\n";
-        echo "\t    --source=in.txt --dry-run\n";
+        echo "\t    --source=samples/quickstart/input.txt --dry-run\n";
 
         echo "\n\tVerbose mode (shows request preview)\n";
         echo "\tvendor/bin/bblslug --model=deepl:pro --format=html --verbose \\\n";
-        echo "\t    --source=doc.html --translated=out.html\n";
+        echo "\t    --source=samples/quickstart/input.html --translated=out.html\n";
 
         echo "\n\tUse filters\n";
         echo "\tvendor/bin/bblslug --model=deepl:pro --format=html \\\n";
-        echo "\t    --source=doc.html --translated=out.html --filters=url,html_code,html_pre\n";
+        echo "\t    --source=samples/quickstart/input.html --translated=out.html --filters=url,html_code,html_pre\n";
 
         echo "\n\tUsing model-specific variables (comma-separated):\n";
         echo "\tvendor/bin/bblslug --model=yandex:gpt-lite --format=text \\\n";
         echo "\t    --variables=folder_id=... \\\n";
-        echo "\t    --source=in.txt --translated=out.txt\n";
+        echo "\t    --source=samples/quickstart/input.txt --translated=out.txt\n";
 
         echo "\n\tUse HTTP proxy\n";
-        echo "\tvendor/bin/bblslug --model=openai:gpt-4o --format=text \\\n";
-        echo "\t    --source=in.txt --translated=out.txt \\\n";
+        echo "\tvendor/bin/bblslug --model=openai:gpt-6-luna --format=text \\\n";
+        echo "\t    --source=samples/quickstart/input.txt --translated=out.txt \\\n";
         echo "\t    --proxy=\"http://localhost:3128\"\n";
 
         echo $reset;
@@ -176,7 +179,7 @@ class Help
      *
      * @return void
      */
-    public static function printModelList(): void
+    public static function printModelList(bool $includeAll = false): void
     {
         /** @var array<string, array<string, array<string, mixed>>> $modelsByVendor */
         $modelsByVendor = Bblslug::listModels();
@@ -184,22 +187,40 @@ class Help
         $bold = "\033[1m";
         $reset = "\033[0m";
 
-        echo $reset, "Available models:\n\n";
+        echo $reset, $includeAll ? "All registered models:\n\n" : "Models for new integrations:\n\n";
 
         foreach ($modelsByVendor as $vendor => $models) {
             echo "\t{$bold}{$vendor}{$reset}:\n";
+            $width = max(32, ...array_map('strlen', array_keys($models))) + 2;
             foreach ($models as $key => $conf) {
+                if (!$includeAll && !ModelRegistry::isDefaultListing($conf)) {
+                    continue;
+                }
                 $label = "{$bold}{$key}{$reset}";
-                $pad   = str_pad($label, 32 + strlen($bold . $reset));
+                $pad   = str_pad($label, $width + strlen($bold . $reset));
                 $notes = '';
-                if (isset($conf['notes']) && is_string($conf['notes'])) {
+                if ($includeAll && isset($conf['notes']) && is_string($conf['notes'])) {
                     $notes = $conf['notes'];
                 }
-                echo "\t\t- {$pad}{$notes}\n";
+                $labels = [];
+                foreach ($includeAll ? ['kind', 'status', 'access'] : ['kind'] as $field) {
+                    if (isset($conf[$field]) && is_string($conf[$field])) {
+                        $labels[] = $conf[$field];
+                    }
+                }
+                if (isset($conf['shutdown_date']) && is_string($conf['shutdown_date'])) {
+                    $labels[] = 'shutdown ' . $conf['shutdown_date'];
+                }
+                $metadata = $labels === [] ? '' : '[' . implode('; ', $labels) . '] ';
+                $details = trim($metadata . $notes);
+                echo "\t\t- {$pad}{$details}\n";
             }
             echo "\n";
         }
 
+        if (!$includeAll) {
+            echo "Use --list-models=all for snapshots, previews, restricted and deprecated models.\n";
+        }
         echo $reset;
     }
 

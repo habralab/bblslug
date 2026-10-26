@@ -1,6 +1,5 @@
-# Provider text-generation catalogue checked 2026-10-22.
-# Includes served legacy/preview/snapshot models; excludes retired compatibility redirects.
-# Provenance and exclusions: resources/model-catalog.json.
+# Lifecycle and presentation checked 2026-10-26; historical live observations are separate.
+# Served snapshots remain selectable; see docs/models.md and resources/model-catalog.json.
 anthropic:
   endpoint: 'https://api.anthropic.com/v1/messages'
   format: text
@@ -42,6 +41,11 @@ anthropic:
         estimated_max_chars: 4000000
       notes: 'Current efficient Claude model for high-volume translation.'
       name: claude-haiku-5.5
+      status: available
+      kind: model
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://platform.claude.com/docs/en/about-claude/model-deprecations'
     claude-sonnet-5.5:
       defaults:
         model: claude-sonnet-5-5
@@ -55,6 +59,11 @@ anthropic:
         estimated_max_chars: 4000000
       notes: 'Current balanced Claude model for translation.'
       name: claude-sonnet-5.5
+      status: available
+      kind: model
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://platform.claude.com/docs/en/about-claude/model-deprecations'
     claude-opus-5.5:
       defaults:
         model: claude-opus-5-5
@@ -68,6 +77,11 @@ anthropic:
         estimated_max_chars: 4000000
       notes: 'Current capable Claude model for demanding translation.'
       name: claude-opus-5.5
+      status: available
+      kind: model
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://platform.claude.com/docs/en/about-claude/model-deprecations'
     claude-fable-5.1:
       defaults:
         model: claude-fable-5-1
@@ -81,6 +95,11 @@ anthropic:
         estimated_max_chars: 4000000
       name: claude-fable-5.1
       notes: 'Provider text-generation model; account access may vary.'
+      status: available
+      kind: model
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://platform.claude.com/docs/en/about-claude/model-deprecations'
     claude-opus-5:
       defaults:
         model: claude-opus-5
@@ -94,6 +113,11 @@ anthropic:
         estimated_max_chars: 4000000
       name: claude-opus-5
       notes: 'Provider text-generation model; account access may vary.'
+      status: available
+      kind: model
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://platform.claude.com/docs/en/about-claude/model-deprecations'
     claude-sonnet-5:
       defaults:
         model: claude-sonnet-5
@@ -107,6 +131,11 @@ anthropic:
         estimated_max_chars: 4000000
       name: claude-sonnet-5
       notes: 'Provider text-generation model; account access may vary.'
+      status: available
+      kind: model
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://platform.claude.com/docs/en/about-claude/model-deprecations'
     claude-fable-5:
       defaults:
         model: claude-fable-5
@@ -120,6 +149,11 @@ anthropic:
         estimated_max_chars: 4000000
       name: claude-fable-5
       notes: 'Provider text-generation model; account access may vary.'
+      status: available
+      kind: model
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://platform.claude.com/docs/en/about-claude/model-deprecations'
     claude-opus-4.8:
       defaults:
         model: claude-opus-4-8
@@ -133,6 +167,11 @@ anthropic:
         estimated_max_chars: 4000000
       name: claude-opus-4.8
       notes: 'Provider text-generation model; account access may vary.'
+      status: available
+      kind: model
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://platform.claude.com/docs/en/about-claude/model-deprecations'
     claude-opus-4.7:
       defaults:
         model: claude-opus-4-7
@@ -146,6 +185,11 @@ anthropic:
         estimated_max_chars: 4000000
       name: claude-opus-4.7
       notes: 'Provider text-generation model; account access may vary.'
+      status: available
+      kind: model
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://platform.claude.com/docs/en/about-claude/model-deprecations'
     claude-sonnet-4.6:
       defaults:
         model: claude-sonnet-4-6
@@ -159,6 +203,11 @@ anthropic:
         estimated_max_chars: 4000000
       name: claude-sonnet-4.6
       notes: 'Provider text-generation model; account access may vary.'
+      status: available
+      kind: model
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://platform.claude.com/docs/en/about-claude/model-deprecations'
     claude-opus-4.6:
       defaults:
         model: claude-opus-4-6
@@ -172,6 +221,11 @@ anthropic:
         estimated_max_chars: 4000000
       name: claude-opus-4.6
       notes: 'Provider text-generation model; account access may vary.'
+      status: available
+      kind: model
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://platform.claude.com/docs/en/about-claude/model-deprecations'
     claude-opus-4.5-20251101:
       defaults:
         model: claude-opus-4-5-20251101
@@ -183,6 +237,11 @@ anthropic:
         estimated_max_chars: 800000
       name: claude-opus-4.5-20251101
       notes: 'Provider text-generation model; account access may vary.'
+      status: available
+      kind: snapshot
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://platform.claude.com/docs/en/about-claude/model-deprecations'
     claude-haiku-4.5-20251001:
       defaults:
         model: claude-haiku-4-5-20251001
@@ -194,6 +253,11 @@ anthropic:
         estimated_max_chars: 800000
       name: claude-haiku-4.5-20251001
       notes: 'Provider text-generation model; account access may vary.'
+      status: available
+      kind: snapshot
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://platform.claude.com/docs/en/about-claude/model-deprecations'
     claude-sonnet-4.5-20250929:
       defaults:
         model: claude-sonnet-4-5-20250929
@@ -205,6 +269,13 @@ anthropic:
         estimated_max_chars: 800000
       name: claude-sonnet-4.5-20250929
       notes: 'Provider text-generation model; account access may vary.'
+      status: deprecated
+      kind: snapshot
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://platform.claude.com/docs/en/about-claude/model-deprecations'
+      shutdown_date: '2026-11-30'
+      replacement: 'anthropic:claude-sonnet-5.5'
     claude-mythos-5:
       defaults:
         model: claude-mythos-5
@@ -217,6 +288,11 @@ anthropic:
         estimated_max_chars: 4000000
       notes: 'Restricted Project Glasswing model; direct API access requires approval.'
       name: claude-mythos-5
+      status: available
+      kind: model
+      access: restricted
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://platform.claude.com/docs/en/about-claude/model-deprecations'
     claude-mythos-preview:
       defaults:
         model: claude-mythos-preview
@@ -229,6 +305,11 @@ anthropic:
         estimated_max_chars: 4000000
       notes: 'Deprecated research preview; still documented as a served migration source, invite-only.'
       name: claude-mythos-preview
+      status: deprecated
+      kind: preview
+      access: restricted
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://platform.claude.com/docs/en/about-claude/model-deprecations'
     claude-mythos-5.1:
       defaults:
         model: claude-mythos-5-1
@@ -241,6 +322,11 @@ anthropic:
         estimated_max_chars: 4000000
       notes: 'Restricted-access model; availability depends on provider approval.'
       name: claude-mythos-5.1
+      status: available
+      kind: model
+      access: restricted
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://platform.claude.com/docs/en/about-claude/model-deprecations'
 deepl:
   endpoint: 'https://api-free.deepl.com/v2/translate'
   format: text|html|json|linedJson
@@ -268,6 +354,11 @@ deepl:
         auth:
           env: DEEPL_FREE_API_KEY
       notes: 'Text/HTML and native JSON document translation, with a limited monthly quota (free tier).'
+      status: available
+      kind: tier
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.deepl.com/api-reference/translate/request-translation'
     pro:
       name: 'DeepL API Pro'
       endpoint: 'https://api.deepl.com/v2/translate'
@@ -275,6 +366,11 @@ deepl:
         auth:
           env: DEEPL_PRO_API_KEY
       notes: 'Reliable structured translation for production use, requires paid subscription.'
+      status: available
+      kind: tier
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.deepl.com/api-reference/translate/request-translation'
 google:
   format: text
   defaults:
@@ -316,7 +412,12 @@ google:
         token_estimator: gpt
         estimated_max_chars: 4194304
         max_output_tokens: 65536
-      notes: 'High-performance Flash model with chain-of-thought support.'
+      notes: "Legacy model; access is restricted to previous users."
+      status: available
+      kind: model
+      access: existing_customers
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://ai.google.dev/gemini-api/docs/deprecations'
     gemini-2.5-pro:
       capabilities:
         native_json: true
@@ -331,7 +432,12 @@ google:
         token_estimator: gpt
         estimated_max_chars: 4194304
         max_output_tokens: 65536
-      notes: 'Top-tier Pro model for longest contexts and highest accuracy.'
+      notes: "Legacy model; access is restricted to previous users."
+      status: available
+      kind: model
+      access: existing_customers
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://ai.google.dev/gemini-api/docs/deprecations'
     gemma-4-26b-a4b-it:
       defaults:
         model: gemma-4-26b-a4b-it
@@ -344,6 +450,11 @@ google:
       endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemma-4-26b-a4b-it:generateContent'
       name: gemma-4-26b-a4b-it
       notes: 'Provider text-generation model; account access may vary.'
+      status: available
+      kind: model
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://ai.google.dev/gemini-api/docs/deprecations'
     gemma-4-31b-it:
       defaults:
         model: gemma-4-31b-it
@@ -356,6 +467,11 @@ google:
       endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemma-4-31b-it:generateContent'
       name: gemma-4-31b-it
       notes: 'Provider text-generation model; account access may vary.'
+      status: available
+      kind: model
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://ai.google.dev/gemini-api/docs/deprecations'
     gemini-flash-latest:
       capabilities:
         native_json: true
@@ -369,6 +485,11 @@ google:
       endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent'
       name: gemini-flash-latest
       notes: 'Provider text-generation model; account access may vary.'
+      status: available
+      kind: alias
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://ai.google.dev/gemini-api/docs/deprecations'
     gemini-flash-lite-latest:
       capabilities:
         native_json: true
@@ -382,6 +503,11 @@ google:
       endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-lite-latest:generateContent'
       name: gemini-flash-lite-latest
       notes: 'Provider text-generation model; account access may vary.'
+      status: available
+      kind: alias
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://ai.google.dev/gemini-api/docs/deprecations'
     gemini-pro-latest:
       capabilities:
         native_json: true
@@ -395,6 +521,11 @@ google:
       endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-latest:generateContent'
       name: gemini-pro-latest
       notes: 'Provider text-generation model; account access may vary.'
+      status: available
+      kind: alias
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://ai.google.dev/gemini-api/docs/deprecations'
     gemini-2.5-flash-lite:
       capabilities:
         native_json: true
@@ -409,7 +540,12 @@ google:
         token_estimator: gpt
         estimated_max_chars: 4194304
         max_output_tokens: 65536
-      notes: 'Ultra-fast, cost-optimized Flash-Lite variant.'
+      notes: "Legacy model; access is restricted to previous users."
+      status: available
+      kind: model
+      access: existing_customers
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://ai.google.dev/gemini-api/docs/deprecations'
     gemini-3-flash-preview:
       capabilities:
         native_json: true
@@ -425,6 +561,11 @@ google:
       endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent'
       name: gemini-3-flash-preview
       notes: 'Provider text-generation model; account access may vary.'
+      status: available
+      kind: preview
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://ai.google.dev/gemini-api/docs/deprecations'
     gemini-3.1-pro-preview:
       capabilities:
         native_json: true
@@ -440,6 +581,11 @@ google:
       endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-pro-preview:generateContent'
       name: gemini-3.1-pro-preview
       notes: 'Provider text-generation model; account access may vary.'
+      status: available
+      kind: preview
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://ai.google.dev/gemini-api/docs/deprecations'
     gemini-3.1-pro-preview-customtools:
       capabilities:
         native_json: true
@@ -455,21 +601,11 @@ google:
       endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-pro-preview-customtools:generateContent'
       name: gemini-3.1-pro-preview-customtools
       notes: 'Provider text-generation model; account access may vary.'
-    gemini-3.1-flash-lite-preview:
-      capabilities:
-        native_json: true
-      defaults:
-        model: gemini-3.1-flash-lite-preview
-        thinkingLevel: low
-        includeThoughts: false
-        temperature: 1.0
-      limits:
-        max_tokens: 1048576
-        max_output_tokens: 65536
-        estimated_max_chars: 4194304
-      endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent'
-      name: gemini-3.1-flash-lite-preview
-      notes: 'Provider text-generation model; account access may vary.'
+      status: available
+      kind: preview
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://ai.google.dev/gemini-api/docs/deprecations'
     gemini-3.1-flash-lite:
       capabilities:
         native_json: true
@@ -484,7 +620,14 @@ google:
         estimated_max_chars: 4194304
       endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent'
       name: gemini-3.1-flash-lite
-      notes: 'Provider text-generation model; account access may vary.'
+      notes: "Provider lists an earliest possible shutdown date; exact retirement may change."
+      status: deprecated
+      kind: model
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://ai.google.dev/gemini-api/docs/deprecations'
+      shutdown_date: '2027-05-07'
+      replacement: 'google:gemini-3.5-flash-lite'
     gemini-3.5-flash-lite:
       capabilities:
         native_json: true
@@ -500,6 +643,11 @@ google:
       endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent'
       name: gemini-3.5-flash-lite
       notes: 'Provider text-generation model; account access may vary.'
+      status: available
+      kind: model
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://ai.google.dev/gemini-api/docs/deprecations'
     gemini-3.6-flash:
       capabilities:
         native_json: true
@@ -515,6 +663,11 @@ google:
       endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent'
       name: gemini-3.6-flash
       notes: 'Provider text-generation model; account access may vary.'
+      status: available
+      kind: model
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://ai.google.dev/gemini-api/docs/deprecations'
     gemini-3.8-flash:
       capabilities:
         native_json: true
@@ -530,6 +683,11 @@ google:
       endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent'
       name: gemini-3.8-flash
       notes: 'Provider text-generation model; account access may vary.'
+      status: available
+      kind: model
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://ai.google.dev/gemini-api/docs/deprecations'
     gemini-4-argon:
       capabilities:
         native_json: true
@@ -545,6 +703,11 @@ google:
       endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-4-argon:generateContent'
       name: gemini-4-argon
       notes: 'Provider text-generation model; account access may vary.'
+      status: available
+      kind: model
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://ai.google.dev/gemini-api/docs/deprecations'
 openai:
   endpoint: 'https://api.openai.com/v1/chat/completions'
   defaults:
@@ -568,19 +731,6 @@ openai:
         completion: completion_tokens
         reasoning: completion_tokens_details.reasoning_tokens
   models:
-    gpt-4-turbo-2024-04-09:
-      api_type: chat_completions
-      endpoint: 'https://api.openai.com/v1/chat/completions'
-      defaults:
-        model: gpt-4-turbo-2024-04-09
-        max_completion_tokens: 2048
-        temperature: 0.0
-      limits: {  }
-      status: scheduled_shutdown
-      source: 'GET /v1/models + official API model reference (2026-10-22)'
-      shutdown_date: '2026-10-23'
-      name: gpt-4-turbo-2024-04-09
-      notes: 'Provider text-generation model; account access may vary. Scheduled shutdown 2026-10-23.'
     gpt-5.6-luna:
       api_type: chat_completions
       endpoint: 'https://api.openai.com/v1/chat/completions'
@@ -590,10 +740,14 @@ openai:
         reasoning_effort: low
         temperature: null
       limits: {  }
-      status: available
       source: 'GET /v1/models + official API model reference (2026-10-22)'
       name: gpt-5.6-luna
       notes: 'Provider text-generation model; account access may vary.'
+      status: available
+      kind: alias
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
     gpt-5-search-api:
       api_type: chat_completions
       endpoint: 'https://api.openai.com/v1/chat/completions'
@@ -603,10 +757,14 @@ openai:
         reasoning_effort: null
         temperature: null
       limits: {  }
-      status: available
       source: 'GET /v1/models + official API model reference (2026-10-22)'
       name: gpt-5-search-api
       notes: 'Provider text-generation model; account access may vary.'
+      status: available
+      kind: alias
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
     gpt-5.5-2026-04-23:
       api_type: chat_completions
       endpoint: 'https://api.openai.com/v1/chat/completions'
@@ -616,10 +774,14 @@ openai:
         reasoning_effort: low
         temperature: null
       limits: {  }
-      status: available
       source: 'GET /v1/models + official API model reference (2026-10-22)'
       name: gpt-5.5-2026-04-23
       notes: 'Provider text-generation model; account access may vary.'
+      status: available
+      kind: snapshot
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
     gpt-5.4-2026-03-05:
       api_type: chat_completions
       endpoint: 'https://api.openai.com/v1/chat/completions'
@@ -629,23 +791,14 @@ openai:
         reasoning_effort: low
         temperature: null
       limits: {  }
-      status: available
       source: 'GET /v1/models + official API model reference (2026-10-22)'
       name: gpt-5.4-2026-03-05
       notes: 'Provider text-generation model; account access may vary.'
-    gpt-3.5-turbo-0125:
-      api_type: chat_completions
-      endpoint: 'https://api.openai.com/v1/chat/completions'
-      defaults:
-        model: gpt-3.5-turbo-0125
-        max_completion_tokens: 2048
-        temperature: 0.0
-      limits: {  }
-      status: scheduled_shutdown
-      source: 'GET /v1/models + official API model reference (2026-10-22)'
-      shutdown_date: '2026-10-23'
-      name: gpt-3.5-turbo-0125
-      notes: 'Provider text-generation model; account access may vary. Scheduled shutdown 2026-10-23.'
+      status: available
+      kind: snapshot
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
     gpt-5-nano:
       name: 'OpenAI GPT-5 Nano'
       defaults:
@@ -660,8 +813,12 @@ openai:
       notes: 'Ultra-fast GPT-5 variant optimized for small-scale and real-time translation tasks.'
       api_type: chat_completions
       endpoint: 'https://api.openai.com/v1/chat/completions'
-      status: available
       source: 'GET /v1/models + official API model reference (2026-10-22)'
+      status: available
+      kind: alias
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
     gpt-5.4-mini:
       api_type: chat_completions
       endpoint: 'https://api.openai.com/v1/chat/completions'
@@ -671,31 +828,14 @@ openai:
         reasoning_effort: low
         temperature: null
       limits: {  }
-      status: available
       source: 'GET /v1/models + official API model reference (2026-10-22)'
       name: gpt-5.4-mini
       notes: 'Provider text-generation model; account access may vary.'
-    o1-pro:
-      api_type: responses
-      endpoint: 'https://api.openai.com/v1/responses'
-      defaults:
-        model: o1-pro
-        max_completion_tokens: 2048
-        reasoning_effort: high
-        temperature: null
-      limits: {  }
-      status: scheduled_shutdown
-      source: 'GET /v1/models + official API model reference (2026-10-22)'
-      shutdown_date: '2026-10-23'
-      name: o1-pro
-      notes: 'Provider text-generation model; account access may vary. Scheduled shutdown 2026-10-23.'
-      usage:
-        tokens:
-          total: total_tokens
-          breakdown:
-            prompt: input_tokens
-            completion: output_tokens
-            reasoning: output_tokens_details.reasoning_tokens
+      status: available
+      kind: alias
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
     gpt-5-mini:
       name: 'OpenAI GPT-5 Mini'
       defaults:
@@ -710,8 +850,12 @@ openai:
       notes: 'Compact, cost-efficient GPT-5 variant suitable for high-volume or latency-sensitive translation tasks.'
       api_type: chat_completions
       endpoint: 'https://api.openai.com/v1/chat/completions'
-      status: available
       source: 'GET /v1/models + official API model reference (2026-10-22)'
+      status: available
+      kind: alias
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
     gpt-5-mini-2025-08-07:
       api_type: chat_completions
       endpoint: 'https://api.openai.com/v1/chat/completions'
@@ -721,25 +865,15 @@ openai:
         reasoning_effort: low
         temperature: null
       limits: {  }
-      status: scheduled_shutdown
       source: 'GET /v1/models + official API model reference (2026-10-22)'
-      shutdown_date: '2026-12-11'
       name: gpt-5-mini-2025-08-07
-      notes: 'Provider text-generation model; account access may vary. Scheduled shutdown 2026-12-11.'
-    o4-mini-2025-04-16:
-      api_type: chat_completions
-      endpoint: 'https://api.openai.com/v1/chat/completions'
-      defaults:
-        model: o4-mini-2025-04-16
-        max_completion_tokens: 2048
-        reasoning_effort: low
-        temperature: null
-      limits: {  }
-      status: scheduled_shutdown
-      source: 'GET /v1/models + official API model reference (2026-10-22)'
-      shutdown_date: '2026-10-23'
-      name: o4-mini-2025-04-16
-      notes: 'Provider text-generation model; account access may vary. Scheduled shutdown 2026-10-23.'
+      notes: "Provider text-generation model; account access may vary."
+      status: deprecated
+      kind: snapshot
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
+      shutdown_date: '2026-12-11'
     gpt-5.2-pro:
       api_type: responses
       endpoint: 'https://api.openai.com/v1/responses'
@@ -749,7 +883,6 @@ openai:
         reasoning_effort: high
         temperature: null
       limits: {  }
-      status: available
       source: 'GET /v1/models + official API model reference (2026-10-22)'
       name: gpt-5.2-pro
       notes: 'Provider text-generation model; account access may vary.'
@@ -760,6 +893,11 @@ openai:
             prompt: input_tokens
             completion: output_tokens
             reasoning: output_tokens_details.reasoning_tokens
+      status: available
+      kind: alias
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
     gpt-5-pro-2025-10-06:
       api_type: responses
       endpoint: 'https://api.openai.com/v1/responses'
@@ -769,11 +907,8 @@ openai:
         reasoning_effort: high
         temperature: null
       limits: {  }
-      status: scheduled_shutdown
       source: 'GET /v1/models + official API model reference (2026-10-22)'
-      shutdown_date: '2026-12-11'
       name: gpt-5-pro-2025-10-06
-      notes: 'Provider text-generation model; account access may vary. Scheduled shutdown 2026-12-11.'
       usage:
         tokens:
           total: total_tokens
@@ -781,6 +916,13 @@ openai:
             prompt: input_tokens
             completion: output_tokens
             reasoning: output_tokens_details.reasoning_tokens
+      notes: "Provider text-generation model; account access may vary."
+      status: deprecated
+      kind: snapshot
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
+      shutdown_date: '2026-12-11'
     gpt-5.6-sol:
       api_type: chat_completions
       endpoint: 'https://api.openai.com/v1/chat/completions'
@@ -790,10 +932,14 @@ openai:
         reasoning_effort: low
         temperature: null
       limits: {  }
-      status: available
       source: 'GET /v1/models + official API model reference (2026-10-22)'
       name: gpt-5.6-sol
       notes: 'Provider text-generation model; account access may vary.'
+      status: available
+      kind: alias
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
     gpt-5.5-pro:
       api_type: responses
       endpoint: 'https://api.openai.com/v1/responses'
@@ -803,7 +949,6 @@ openai:
         reasoning_effort: high
         temperature: null
       limits: {  }
-      status: available
       source: 'GET /v1/models + official API model reference (2026-10-22)'
       name: gpt-5.5-pro
       notes: 'Provider text-generation model; account access may vary.'
@@ -814,6 +959,11 @@ openai:
             prompt: input_tokens
             completion: output_tokens
             reasoning: output_tokens_details.reasoning_tokens
+      status: available
+      kind: alias
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
     gpt-5-2025-08-07:
       api_type: chat_completions
       endpoint: 'https://api.openai.com/v1/chat/completions'
@@ -823,11 +973,15 @@ openai:
         reasoning_effort: low
         temperature: null
       limits: {  }
-      status: scheduled_shutdown
       source: 'GET /v1/models + official API model reference (2026-10-22)'
-      shutdown_date: '2026-12-11'
       name: gpt-5-2025-08-07
-      notes: 'Provider text-generation model; account access may vary. Scheduled shutdown 2026-12-11.'
+      notes: "Provider text-generation model; account access may vary."
+      status: deprecated
+      kind: snapshot
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
+      shutdown_date: '2026-12-11'
     gpt-5.2-pro-2025-12-11:
       api_type: responses
       endpoint: 'https://api.openai.com/v1/responses'
@@ -837,7 +991,6 @@ openai:
         reasoning_effort: high
         temperature: null
       limits: {  }
-      status: available
       source: 'GET /v1/models + official API model reference (2026-10-22)'
       name: gpt-5.2-pro-2025-12-11
       notes: 'Provider text-generation model; account access may vary.'
@@ -848,6 +1001,11 @@ openai:
             prompt: input_tokens
             completion: output_tokens
             reasoning: output_tokens_details.reasoning_tokens
+      status: available
+      kind: snapshot
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
     gpt-5.5-pro-2026-04-23:
       api_type: responses
       endpoint: 'https://api.openai.com/v1/responses'
@@ -857,7 +1015,6 @@ openai:
         reasoning_effort: high
         temperature: null
       limits: {  }
-      status: available
       source: 'GET /v1/models + official API model reference (2026-10-22)'
       name: gpt-5.5-pro-2026-04-23
       notes: 'Provider text-generation model; account access may vary.'
@@ -868,6 +1025,11 @@ openai:
             prompt: input_tokens
             completion: output_tokens
             reasoning: output_tokens_details.reasoning_tokens
+      status: available
+      kind: snapshot
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
     gpt-5.4-pro:
       api_type: responses
       endpoint: 'https://api.openai.com/v1/responses'
@@ -877,7 +1039,6 @@ openai:
         reasoning_effort: high
         temperature: null
       limits: {  }
-      status: available
       source: 'GET /v1/models + official API model reference (2026-10-22)'
       name: gpt-5.4-pro
       notes: 'Provider text-generation model; account access may vary.'
@@ -888,6 +1049,11 @@ openai:
             prompt: input_tokens
             completion: output_tokens
             reasoning: output_tokens_details.reasoning_tokens
+      status: available
+      kind: alias
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
     gpt-4o-2024-11-20:
       api_type: chat_completions
       endpoint: 'https://api.openai.com/v1/chat/completions'
@@ -896,11 +1062,15 @@ openai:
         max_completion_tokens: 2048
         temperature: 0.0
       limits: {  }
-      status: scheduled_shutdown
       source: 'GET /v1/models + official API model reference (2026-10-22)'
-      shutdown_date: '2027-01-14'
       name: gpt-4o-2024-11-20
-      notes: 'Provider text-generation model; account access may vary. Scheduled shutdown 2027-01-14.'
+      notes: "Provider text-generation model; account access may vary."
+      status: deprecated
+      kind: snapshot
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
+      shutdown_date: '2027-01-14'
     gpt-5.1:
       api_type: chat_completions
       endpoint: 'https://api.openai.com/v1/chat/completions'
@@ -910,11 +1080,15 @@ openai:
         reasoning_effort: low
         temperature: null
       limits: {  }
-      status: scheduled_shutdown
       source: 'GET /v1/models + official API model reference (2026-10-22)'
-      shutdown_date: '2027-04-01'
       name: gpt-5.1
-      notes: 'Provider text-generation model; account access may vary. Scheduled shutdown 2027-04-01.'
+      notes: "Provider text-generation model; account access may vary."
+      status: deprecated
+      kind: alias
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
+      shutdown_date: '2027-04-01'
     gpt-5-pro:
       api_type: responses
       endpoint: 'https://api.openai.com/v1/responses'
@@ -924,7 +1098,6 @@ openai:
         reasoning_effort: high
         temperature: null
       limits: {  }
-      status: available
       source: 'GET /v1/models + official API model reference (2026-10-22)'
       name: gpt-5-pro
       notes: 'Provider text-generation model; account access may vary.'
@@ -935,6 +1108,11 @@ openai:
             prompt: input_tokens
             completion: output_tokens
             reasoning: output_tokens_details.reasoning_tokens
+      status: available
+      kind: alias
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
     gpt-5.4-mini-2026-03-17:
       api_type: chat_completions
       endpoint: 'https://api.openai.com/v1/chat/completions'
@@ -944,10 +1122,14 @@ openai:
         reasoning_effort: low
         temperature: null
       limits: {  }
-      status: available
       source: 'GET /v1/models + official API model reference (2026-10-22)'
       name: gpt-5.4-mini-2026-03-17
       notes: 'Provider text-generation model; account access may vary.'
+      status: available
+      kind: snapshot
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
     gpt-5.4:
       api_type: chat_completions
       endpoint: 'https://api.openai.com/v1/chat/completions'
@@ -957,35 +1139,14 @@ openai:
         reasoning_effort: low
         temperature: null
       limits: {  }
-      status: available
       source: 'GET /v1/models + official API model reference (2026-10-22)'
       name: gpt-5.4
       notes: 'Provider text-generation model; account access may vary.'
-    gpt-4.1-nano:
-      api_type: chat_completions
-      endpoint: 'https://api.openai.com/v1/chat/completions'
-      defaults:
-        model: gpt-4.1-nano
-        max_completion_tokens: 2048
-        temperature: 0.0
-      limits: {  }
-      status: scheduled_shutdown
-      source: 'GET /v1/models + official API model reference (2026-10-22)'
-      shutdown_date: '2026-10-23'
-      name: gpt-4.1-nano
-      notes: 'Provider text-generation model; account access may vary. Scheduled shutdown 2026-10-23.'
-    gpt-3.5-turbo-16k:
-      api_type: chat_completions
-      endpoint: 'https://api.openai.com/v1/chat/completions'
-      defaults:
-        model: gpt-3.5-turbo-16k
-        max_completion_tokens: 2048
-        temperature: 0.0
-      limits: {  }
       status: available
-      source: 'GET /v1/models + official API model reference (2026-10-22)'
-      name: gpt-3.5-turbo-16k
-      notes: 'Provider text-generation model; account access may vary.'
+      kind: alias
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
     gpt-4.1:
       api_type: chat_completions
       endpoint: 'https://api.openai.com/v1/chat/completions'
@@ -994,11 +1155,15 @@ openai:
         max_completion_tokens: 2048
         temperature: 0.0
       limits: {  }
-      status: scheduled_shutdown
       source: 'GET /v1/models + official API model reference (2026-10-22)'
-      shutdown_date: '2027-01-14'
       name: gpt-4.1
-      notes: 'Provider text-generation model; account access may vary. Scheduled shutdown 2027-01-14.'
+      notes: "Provider text-generation model; account access may vary."
+      status: deprecated
+      kind: alias
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
+      shutdown_date: '2027-01-14'
     gpt-5.5:
       api_type: chat_completions
       endpoint: 'https://api.openai.com/v1/chat/completions'
@@ -1008,10 +1173,14 @@ openai:
         reasoning_effort: low
         temperature: null
       limits: {  }
-      status: available
       source: 'GET /v1/models + official API model reference (2026-10-22)'
       name: gpt-5.5
       notes: 'Provider text-generation model; account access may vary.'
+      status: available
+      kind: alias
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
     o3-pro-2025-06-10:
       api_type: responses
       endpoint: 'https://api.openai.com/v1/responses'
@@ -1021,11 +1190,8 @@ openai:
         reasoning_effort: high
         temperature: null
       limits: {  }
-      status: scheduled_shutdown
       source: 'GET /v1/models + official API model reference (2026-10-22)'
-      shutdown_date: '2026-12-11'
       name: o3-pro-2025-06-10
-      notes: 'Provider text-generation model; account access may vary. Scheduled shutdown 2026-12-11.'
       usage:
         tokens:
           total: total_tokens
@@ -1033,6 +1199,13 @@ openai:
             prompt: input_tokens
             completion: output_tokens
             reasoning: output_tokens_details.reasoning_tokens
+      notes: "Provider text-generation model; account access may vary."
+      status: deprecated
+      kind: snapshot
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
+      shutdown_date: '2026-12-11'
     chat-latest:
       api_type: chat_completions
       endpoint: 'https://api.openai.com/v1/chat/completions'
@@ -1041,10 +1214,14 @@ openai:
         max_completion_tokens: 2048
         temperature: null
       limits: {  }
-      status: available
       source: 'GET /v1/models + official API model reference (2026-10-22)'
       name: chat-latest
       notes: 'Provider text-generation model; account access may vary.'
+      status: available
+      kind: alias
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
     gpt-5.4-pro-2026-03-05:
       api_type: responses
       endpoint: 'https://api.openai.com/v1/responses'
@@ -1054,7 +1231,6 @@ openai:
         reasoning_effort: high
         temperature: null
       limits: {  }
-      status: available
       source: 'GET /v1/models + official API model reference (2026-10-22)'
       name: gpt-5.4-pro-2026-03-05
       notes: 'Provider text-generation model; account access may vary.'
@@ -1065,6 +1241,11 @@ openai:
             prompt: input_tokens
             completion: output_tokens
             reasoning: output_tokens_details.reasoning_tokens
+      status: available
+      kind: snapshot
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
     o3-2025-04-16:
       api_type: chat_completions
       endpoint: 'https://api.openai.com/v1/chat/completions'
@@ -1074,11 +1255,15 @@ openai:
         reasoning_effort: low
         temperature: null
       limits: {  }
-      status: scheduled_shutdown
       source: 'GET /v1/models + official API model reference (2026-10-22)'
-      shutdown_date: '2026-12-11'
       name: o3-2025-04-16
-      notes: 'Provider text-generation model; account access may vary. Scheduled shutdown 2026-12-11.'
+      notes: "Provider text-generation model; account access may vary."
+      status: deprecated
+      kind: snapshot
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
+      shutdown_date: '2026-12-11'
     gpt-5.2-2025-12-11:
       api_type: chat_completions
       endpoint: 'https://api.openai.com/v1/chat/completions'
@@ -1088,36 +1273,14 @@ openai:
         reasoning_effort: low
         temperature: null
       limits: {  }
-      status: available
       source: 'GET /v1/models + official API model reference (2026-10-22)'
       name: gpt-5.2-2025-12-11
       notes: 'Provider text-generation model; account access may vary.'
-    gpt-3.5-turbo:
-      api_type: chat_completions
-      endpoint: 'https://api.openai.com/v1/chat/completions'
-      defaults:
-        model: gpt-3.5-turbo
-        max_completion_tokens: 2048
-        temperature: 0.0
-      limits: {  }
-      status: scheduled_shutdown
-      source: 'GET /v1/models + official API model reference (2026-10-22)'
-      shutdown_date: '2026-10-23'
-      name: gpt-3.5-turbo
-      notes: 'Provider text-generation model; account access may vary. Scheduled shutdown 2026-10-23.'
-    gpt-4o-2024-05-13:
-      api_type: chat_completions
-      endpoint: 'https://api.openai.com/v1/chat/completions'
-      defaults:
-        model: gpt-4o-2024-05-13
-        max_completion_tokens: 2048
-        temperature: 0.0
-      limits: {  }
-      status: scheduled_shutdown
-      source: 'GET /v1/models + official API model reference (2026-10-22)'
-      shutdown_date: '2026-10-23'
-      name: gpt-4o-2024-05-13
-      notes: 'Provider text-generation model; account access may vary. Scheduled shutdown 2026-10-23.'
+      status: available
+      kind: snapshot
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
     gpt-5.6-terra:
       api_type: chat_completions
       endpoint: 'https://api.openai.com/v1/chat/completions'
@@ -1127,24 +1290,14 @@ openai:
         reasoning_effort: low
         temperature: null
       limits: {  }
-      status: available
       source: 'GET /v1/models + official API model reference (2026-10-22)'
       name: gpt-5.6-terra
       notes: 'Provider text-generation model; account access may vary.'
-    o3-mini:
-      api_type: chat_completions
-      endpoint: 'https://api.openai.com/v1/chat/completions'
-      defaults:
-        model: o3-mini
-        max_completion_tokens: 2048
-        reasoning_effort: low
-        temperature: null
-      limits: {  }
-      status: scheduled_shutdown
-      source: 'GET /v1/models + official API model reference (2026-10-22)'
-      shutdown_date: '2026-10-23'
-      name: o3-mini
-      notes: 'Provider text-generation model; account access may vary. Scheduled shutdown 2026-10-23.'
+      status: available
+      kind: alias
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
     gpt-5.4-nano:
       api_type: chat_completions
       endpoint: 'https://api.openai.com/v1/chat/completions'
@@ -1154,47 +1307,15 @@ openai:
         reasoning_effort: low
         temperature: null
       limits: {  }
-      status: scheduled_shutdown
       source: 'GET /v1/models + official API model reference (2026-10-22)'
-      shutdown_date: '2027-04-01'
       name: gpt-5.4-nano
-      notes: 'Provider text-generation model; account access may vary. Scheduled shutdown 2027-04-01.'
-    o1-pro-2025-03-19:
-      api_type: responses
-      endpoint: 'https://api.openai.com/v1/responses'
-      defaults:
-        model: o1-pro-2025-03-19
-        max_completion_tokens: 2048
-        reasoning_effort: high
-        temperature: null
-      limits: {  }
-      status: scheduled_shutdown
-      source: 'GET /v1/models + official API model reference (2026-10-22)'
-      shutdown_date: '2026-10-23'
-      name: o1-pro-2025-03-19
-      notes: 'Provider text-generation model; account access may vary. Scheduled shutdown 2026-10-23.'
-      usage:
-        tokens:
-          total: total_tokens
-          breakdown:
-            prompt: input_tokens
-            completion: output_tokens
-            reasoning: output_tokens_details.reasoning_tokens
-    gpt-4-turbo:
-      name: 'OpenAI GPT-4 Turbo'
-      defaults:
-        model: gpt-4-turbo
-        max_completion_tokens: 2048
-        temperature: 0.0
-      limits:
-        max_tokens: 128000
-        estimated_max_chars: 512000
-      notes: 'Fast & cost-effective GPT-4 quality. Scheduled shutdown 2026-10-23.'
-      api_type: chat_completions
-      endpoint: 'https://api.openai.com/v1/chat/completions'
-      status: scheduled_shutdown
-      source: 'GET /v1/models + official API model reference (2026-10-22)'
-      shutdown_date: '2026-10-23'
+      notes: "Provider text-generation model; account access may vary."
+      status: deprecated
+      kind: alias
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
+      shutdown_date: '2027-04-01'
     o3-pro:
       api_type: responses
       endpoint: 'https://api.openai.com/v1/responses'
@@ -1204,7 +1325,6 @@ openai:
         reasoning_effort: high
         temperature: null
       limits: {  }
-      status: available
       source: 'GET /v1/models + official API model reference (2026-10-22)'
       name: o3-pro
       notes: 'Provider text-generation model; account access may vary.'
@@ -1215,6 +1335,11 @@ openai:
             prompt: input_tokens
             completion: output_tokens
             reasoning: output_tokens_details.reasoning_tokens
+      status: available
+      kind: alias
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
     gpt-4o-2024-08-06:
       api_type: chat_completions
       endpoint: 'https://api.openai.com/v1/chat/completions'
@@ -1223,11 +1348,15 @@ openai:
         max_completion_tokens: 2048
         temperature: 0.0
       limits: {  }
-      status: scheduled_shutdown
       source: 'GET /v1/models + official API model reference (2026-10-22)'
-      shutdown_date: '2027-01-14'
       name: gpt-4o-2024-08-06
-      notes: 'Provider text-generation model; account access may vary. Scheduled shutdown 2027-01-14.'
+      notes: "Provider text-generation model; account access may vary."
+      status: deprecated
+      kind: snapshot
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
+      shutdown_date: '2027-01-14'
     o3:
       api_type: chat_completions
       endpoint: 'https://api.openai.com/v1/chat/completions'
@@ -1237,10 +1366,14 @@ openai:
         reasoning_effort: low
         temperature: null
       limits: {  }
-      status: available
       source: 'GET /v1/models + official API model reference (2026-10-22)'
       name: o3
       notes: 'Provider text-generation model; account access may vary.'
+      status: available
+      kind: alias
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
     gpt-4.1-mini-2025-04-14:
       api_type: chat_completions
       endpoint: 'https://api.openai.com/v1/chat/completions'
@@ -1249,25 +1382,15 @@ openai:
         max_completion_tokens: 2048
         temperature: 0.0
       limits: {  }
-      status: scheduled_shutdown
       source: 'GET /v1/models + official API model reference (2026-10-22)'
-      shutdown_date: '2027-01-14'
       name: gpt-4.1-mini-2025-04-14
-      notes: 'Provider text-generation model; account access may vary. Scheduled shutdown 2027-01-14.'
-    o3-mini-2025-01-31:
-      api_type: chat_completions
-      endpoint: 'https://api.openai.com/v1/chat/completions'
-      defaults:
-        model: o3-mini-2025-01-31
-        max_completion_tokens: 2048
-        reasoning_effort: low
-        temperature: null
-      limits: {  }
-      status: scheduled_shutdown
-      source: 'GET /v1/models + official API model reference (2026-10-22)'
-      shutdown_date: '2026-10-23'
-      name: o3-mini-2025-01-31
-      notes: 'Provider text-generation model; account access may vary. Scheduled shutdown 2026-10-23.'
+      notes: "Provider text-generation model; account access may vary."
+      status: deprecated
+      kind: snapshot
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
+      shutdown_date: '2027-01-14'
     gpt-5.1-2025-11-13:
       api_type: chat_completions
       endpoint: 'https://api.openai.com/v1/chat/completions'
@@ -1277,23 +1400,14 @@ openai:
         reasoning_effort: low
         temperature: null
       limits: {  }
-      status: available
       source: 'GET /v1/models + official API model reference (2026-10-22)'
       name: gpt-5.1-2025-11-13
       notes: 'Provider text-generation model; account access may vary.'
-    gpt-4-0613:
-      api_type: chat_completions
-      endpoint: 'https://api.openai.com/v1/chat/completions'
-      defaults:
-        model: gpt-4-0613
-        max_completion_tokens: 2048
-        temperature: 0.0
-      limits: {  }
-      status: scheduled_shutdown
-      source: 'GET /v1/models + official API model reference (2026-10-22)'
-      shutdown_date: '2026-10-23'
-      name: gpt-4-0613
-      notes: 'Provider text-generation model; account access may vary. Scheduled shutdown 2026-10-23.'
+      status: available
+      kind: snapshot
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
     gpt-4o:
       name: 'OpenAI GPT-4o'
       defaults:
@@ -1304,11 +1418,15 @@ openai:
         max_tokens: 128000
         max_output_tokens: 16384
         estimated_max_chars: 512000
-      notes: 'Highly accurate with flexible prompts, ideal for AI-assisted adaptive translation. Scheduled shutdown 2027-01-14.'
       api_type: chat_completions
       endpoint: 'https://api.openai.com/v1/chat/completions'
-      status: scheduled_shutdown
       source: 'GET /v1/models + official API model reference (2026-10-22)'
+      notes: "Highly accurate with flexible prompts, ideal for AI-assisted adaptive translation."
+      status: deprecated
+      kind: alias
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
       shutdown_date: '2027-01-14'
     gpt-4.1-mini:
       api_type: chat_completions
@@ -1318,11 +1436,15 @@ openai:
         max_completion_tokens: 2048
         temperature: 0.0
       limits: {  }
-      status: scheduled_shutdown
       source: 'GET /v1/models + official API model reference (2026-10-22)'
-      shutdown_date: '2027-01-14'
       name: gpt-4.1-mini
-      notes: 'Provider text-generation model; account access may vary. Scheduled shutdown 2027-01-14.'
+      notes: "Provider text-generation model; account access may vary."
+      status: deprecated
+      kind: alias
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
+      shutdown_date: '2027-01-14'
     gpt-4o-mini:
       name: 'OpenAI GPT-4o Mini'
       defaults:
@@ -1333,11 +1455,15 @@ openai:
         max_tokens: 128000
         max_output_tokens: 16384
         estimated_max_chars: 512000
-      notes: 'Lightweight GPT-4o: lower latency/cost. Scheduled shutdown 2027-01-14.'
       api_type: chat_completions
       endpoint: 'https://api.openai.com/v1/chat/completions'
-      status: scheduled_shutdown
       source: 'GET /v1/models + official API model reference (2026-10-22)'
+      notes: "Lightweight GPT-4o: lower latency/cost."
+      status: deprecated
+      kind: alias
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
       shutdown_date: '2027-01-14'
     gpt-6-sol:
       api_type: chat_completions
@@ -1348,10 +1474,14 @@ openai:
         reasoning_effort: low
         temperature: null
       limits: {  }
-      status: available
       source: 'GET /v1/models + official API model reference (2026-10-22)'
       name: gpt-6-sol
       notes: 'Provider text-generation model; account access may vary.'
+      status: available
+      kind: alias
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
     gpt-5.2:
       api_type: chat_completions
       endpoint: 'https://api.openai.com/v1/chat/completions'
@@ -1361,24 +1491,14 @@ openai:
         reasoning_effort: low
         temperature: null
       limits: {  }
-      status: available
       source: 'GET /v1/models + official API model reference (2026-10-22)'
       name: gpt-5.2
       notes: 'Provider text-generation model; account access may vary.'
-    o1:
-      api_type: chat_completions
-      endpoint: 'https://api.openai.com/v1/chat/completions'
-      defaults:
-        model: o1
-        max_completion_tokens: 2048
-        reasoning_effort: low
-        temperature: null
-      limits: {  }
-      status: scheduled_shutdown
-      source: 'GET /v1/models + official API model reference (2026-10-22)'
-      shutdown_date: '2026-10-23'
-      name: o1
-      notes: 'Provider text-generation model; account access may vary. Scheduled shutdown 2026-10-23.'
+      status: available
+      kind: alias
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
     gpt-5.4-nano-2026-03-17:
       api_type: chat_completions
       endpoint: 'https://api.openai.com/v1/chat/completions'
@@ -1388,10 +1508,14 @@ openai:
         reasoning_effort: low
         temperature: null
       limits: {  }
-      status: available
       source: 'GET /v1/models + official API model reference (2026-10-22)'
       name: gpt-5.4-nano-2026-03-17
       notes: 'Provider text-generation model; account access may vary.'
+      status: available
+      kind: snapshot
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
     gpt-6.1-sol:
       name: 'OpenAI GPT-6.1 Sol'
       defaults:
@@ -1406,22 +1530,12 @@ openai:
       notes: 'Current general-purpose model for more demanding translation; low reasoning effort.'
       api_type: chat_completions
       endpoint: 'https://api.openai.com/v1/chat/completions'
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
       status: available
-      source: 'GET /v1/models + official API model reference (2026-10-22)'
-    o1-2024-12-17:
-      api_type: chat_completions
-      endpoint: 'https://api.openai.com/v1/chat/completions'
-      defaults:
-        model: o1-2024-12-17
-        max_completion_tokens: 2048
-        reasoning_effort: low
-        temperature: null
-      limits: {  }
-      status: scheduled_shutdown
-      source: 'GET /v1/models + official API model reference (2026-10-22)'
-      shutdown_date: '2026-10-23'
-      name: o1-2024-12-17
-      notes: 'Provider text-generation model; account access may vary. Scheduled shutdown 2026-10-23.'
+      kind: alias
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
     gpt-5.3-codex:
       api_type: responses
       endpoint: 'https://api.openai.com/v1/responses'
@@ -1430,11 +1544,8 @@ openai:
         max_completion_tokens: 2048
         temperature: null
       limits: {  }
-      status: scheduled_shutdown
       source: 'GET /v1/models + official API model reference (2026-10-22)'
-      shutdown_date: '2027-04-01'
       name: gpt-5.3-codex
-      notes: 'Provider text-generation model; account access may vary. Scheduled shutdown 2027-04-01.'
       usage:
         tokens:
           total: total_tokens
@@ -1442,6 +1553,13 @@ openai:
             prompt: input_tokens
             completion: output_tokens
             reasoning: output_tokens_details.reasoning_tokens
+      notes: "Provider text-generation model; account access may vary."
+      status: deprecated
+      kind: alias
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
+      shutdown_date: '2027-04-01'
     gpt-5-search-api-2025-10-14:
       api_type: chat_completions
       endpoint: 'https://api.openai.com/v1/chat/completions'
@@ -1451,10 +1569,14 @@ openai:
         reasoning_effort: null
         temperature: null
       limits: {  }
-      status: available
       source: 'GET /v1/models + official API model reference (2026-10-22)'
       name: gpt-5-search-api-2025-10-14
       notes: 'Provider text-generation model; account access may vary.'
+      status: available
+      kind: snapshot
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
     gpt-5:
       name: 'OpenAI GPT-5'
       defaults:
@@ -1469,21 +1591,12 @@ openai:
       notes: 'Flagship model with enhanced reasoning, multimodal capabilities, and extended context support.'
       api_type: chat_completions
       endpoint: 'https://api.openai.com/v1/chat/completions'
+      source: 'GET /v1/models + official API model reference (2026-10-22)'
       status: available
-      source: 'GET /v1/models + official API model reference (2026-10-22)'
-    gpt-4.1-nano-2025-04-14:
-      api_type: chat_completions
-      endpoint: 'https://api.openai.com/v1/chat/completions'
-      defaults:
-        model: gpt-4.1-nano-2025-04-14
-        max_completion_tokens: 2048
-        temperature: 0.0
-      limits: {  }
-      status: scheduled_shutdown
-      source: 'GET /v1/models + official API model reference (2026-10-22)'
-      shutdown_date: '2026-10-23'
-      name: gpt-4.1-nano-2025-04-14
-      notes: 'Provider text-generation model; account access may vary. Scheduled shutdown 2026-10-23.'
+      kind: alias
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
     gpt-4.1-2025-04-14:
       api_type: chat_completions
       endpoint: 'https://api.openai.com/v1/chat/completions'
@@ -1492,11 +1605,15 @@ openai:
         max_completion_tokens: 2048
         temperature: 0.0
       limits: {  }
-      status: scheduled_shutdown
       source: 'GET /v1/models + official API model reference (2026-10-22)'
-      shutdown_date: '2027-01-14'
       name: gpt-4.1-2025-04-14
-      notes: 'Provider text-generation model; account access may vary. Scheduled shutdown 2027-01-14.'
+      notes: "Provider text-generation model; account access may vary."
+      status: deprecated
+      kind: snapshot
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
+      shutdown_date: '2027-01-14'
     gpt-4o-mini-2024-07-18:
       api_type: chat_completions
       endpoint: 'https://api.openai.com/v1/chat/completions'
@@ -1505,26 +1622,15 @@ openai:
         max_completion_tokens: 2048
         temperature: 0.0
       limits: {  }
-      status: scheduled_shutdown
       source: 'GET /v1/models + official API model reference (2026-10-22)'
-      shutdown_date: '2027-01-14'
       name: gpt-4o-mini-2024-07-18
-      notes: 'Provider text-generation model; account access may vary. Scheduled shutdown 2027-01-14.'
-    gpt-4:
-      name: 'OpenAI GPT-4'
-      defaults:
-        model: gpt-4
-        max_completion_tokens: 2048
-        temperature: 0.0
-      limits:
-        max_tokens: 8192
-        estimated_max_chars: 32768
-      notes: 'Classic GPT-4 model: highest reliability. Scheduled shutdown 2026-10-23.'
-      api_type: chat_completions
-      endpoint: 'https://api.openai.com/v1/chat/completions'
-      status: scheduled_shutdown
-      source: 'GET /v1/models + official API model reference (2026-10-22)'
-      shutdown_date: '2026-10-23'
+      notes: "Provider text-generation model; account access may vary."
+      status: deprecated
+      kind: snapshot
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
+      shutdown_date: '2027-01-14'
     gpt-5-nano-2025-08-07:
       api_type: chat_completions
       endpoint: 'https://api.openai.com/v1/chat/completions'
@@ -1534,25 +1640,15 @@ openai:
         reasoning_effort: low
         temperature: null
       limits: {  }
-      status: scheduled_shutdown
       source: 'GET /v1/models + official API model reference (2026-10-22)'
-      shutdown_date: '2026-12-11'
       name: gpt-5-nano-2025-08-07
-      notes: 'Provider text-generation model; account access may vary. Scheduled shutdown 2026-12-11.'
-    o4-mini:
-      api_type: chat_completions
-      endpoint: 'https://api.openai.com/v1/chat/completions'
-      defaults:
-        model: o4-mini
-        max_completion_tokens: 2048
-        reasoning_effort: low
-        temperature: null
-      limits: {  }
-      status: scheduled_shutdown
-      source: 'GET /v1/models + official API model reference (2026-10-22)'
-      shutdown_date: '2026-10-23'
-      name: o4-mini
-      notes: 'Provider text-generation model; account access may vary. Scheduled shutdown 2026-10-23.'
+      notes: "Provider text-generation model; account access may vary."
+      status: deprecated
+      kind: snapshot
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
+      shutdown_date: '2026-12-11'
     gpt-6-astra:
       name: 'OpenAI GPT-6 Astra'
       defaults:
@@ -1567,8 +1663,12 @@ openai:
       notes: 'Current most capable model, with higher cost; low reasoning effort.'
       api_type: chat_completions
       endpoint: 'https://api.openai.com/v1/chat/completions'
-      status: available
       source: 'GET /v1/models + official API model reference (2026-10-22)'
+      status: available
+      kind: alias
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
     gpt-6-luna:
       name: 'OpenAI GPT-6 Luna'
       defaults:
@@ -1583,8 +1683,12 @@ openai:
       notes: 'Current efficient model for focused, high-volume translation; low reasoning effort.'
       api_type: chat_completions
       endpoint: 'https://api.openai.com/v1/chat/completions'
-      status: available
       source: 'GET /v1/models + official API model reference (2026-10-22)'
+      status: available
+      kind: alias
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
     gpt-5.6-cyber:
       api_type: responses
       endpoint: 'https://api.openai.com/v1/responses'
@@ -1592,7 +1696,6 @@ openai:
         model: gpt-5.6-cyber
         temperature: null
         max_completion_tokens: 2048
-      status: restricted
       notes: 'Restricted-access text model; separate provider approval required.'
       source: 'https://developers.openai.com/api/docs/pricing'
       name: gpt-5.6-cyber
@@ -1604,6 +1707,11 @@ openai:
             completion: output_tokens
             reasoning: output_tokens_details.reasoning_tokens
       limits: {  }
+      status: available
+      kind: alias
+      access: restricted
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
     gpt-rosalind-research:
       api_type: responses
       endpoint: 'https://api.openai.com/v1/responses'
@@ -1612,7 +1720,6 @@ openai:
         temperature: null
         max_completion_tokens: 2048
         reasoning_effort: null
-      status: restricted
       notes: 'Restricted-access text model; separate provider approval required.'
       source: 'https://developers.openai.com/api/docs/pricing'
       name: gpt-rosalind-research
@@ -1624,6 +1731,11 @@ openai:
             completion: output_tokens
             reasoning: output_tokens_details.reasoning_tokens
       limits: {  }
+      status: available
+      kind: alias
+      access: restricted
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
     gpt-rosalind-discovery:
       api_type: responses
       endpoint: 'https://api.openai.com/v1/responses'
@@ -1631,7 +1743,6 @@ openai:
         model: gpt-rosalind-discovery
         temperature: null
         max_completion_tokens: 2048
-      status: restricted
       notes: 'Restricted-access text model; separate provider approval required.'
       source: 'https://developers.openai.com/api/docs/pricing'
       name: gpt-rosalind-discovery
@@ -1643,22 +1754,11 @@ openai:
             completion: output_tokens
             reasoning: output_tokens_details.reasoning_tokens
       limits: {  }
-    gpt-4-1106-preview:
-      api_type: chat_completions
-      endpoint: 'https://api.openai.com/v1/chat/completions'
-      defaults:
-        model: gpt-4-1106-preview
-        temperature: 0.0
-        max_completion_tokens: 2048
-      limits:
-        max_tokens: 128000
-        max_output_tokens: 4096
-        estimated_max_chars: 512000
-      status: scheduled_shutdown
-      shutdown_date: '2026-10-23'
-      notes: 'Legacy GPT-4 preview. Scheduled shutdown 2026-10-23.'
-      source: 'https://developers.openai.com/api/docs/deprecations'
-      name: gpt-4-1106-preview
+      status: available
+      kind: alias
+      access: restricted
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://developers.openai.com/api/docs/deprecations'
 yandex:
   endpoint: 'https://llm.api.cloud.yandex.net/foundationModels/v1/completion'
   format: text
@@ -1695,6 +1795,11 @@ yandex:
       defaults:
         model: yandexgpt-lite/latest
       notes: 'Low-latency model with up to 8 k tokens sync or 32 k async.'
+      status: available
+      kind: alias
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://aistudio.yandex.ru/ru/docs/ai-studio/concepts/generation/models'
     gpt-pro:
       capabilities:
         native_json: true
@@ -1702,6 +1807,11 @@ yandex:
       defaults:
         model: yandexgpt/latest
       notes: 'High-capacity 5th-gen model, up to 8 k tokens sync or 32 k async.'
+      status: available
+      kind: alias
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://aistudio.yandex.ru/ru/docs/ai-studio/concepts/generation/models'
     gpt-32k:
       name: 'Yandex GPT Pro 32K'
       defaults:
@@ -1711,6 +1821,11 @@ yandex:
         max_tokens: 32000
         estimated_max_chars: 128000
       notes: 'Extended-context model: up to 32 k tokens (sync only).'
+      status: available
+      kind: alias
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://aistudio.yandex.ru/ru/docs/ai-studio/concepts/generation/models'
     aliceai-llm:
       defaults:
         model: aliceai-llm
@@ -1721,6 +1836,11 @@ yandex:
       api_type: foundation
       name: aliceai-llm
       notes: 'Provider text-generation model; account access may vary.'
+      status: available
+      kind: model
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://aistudio.yandex.ru/ru/docs/ai-studio/concepts/generation/models'
     aliceai-llm-flash:
       defaults:
         model: aliceai-llm-flash
@@ -1738,6 +1858,11 @@ yandex:
           breakdown:
             prompt: prompt_tokens
             completion: completion_tokens
+      status: available
+      kind: model
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://aistudio.yandex.ru/ru/docs/ai-studio/concepts/generation/models'
     yandexgpt-5.1:
       defaults:
         model: yandexgpt-5.1
@@ -1748,6 +1873,11 @@ yandex:
       api_type: foundation
       name: yandexgpt-5.1
       notes: 'Provider text-generation model; account access may vary.'
+      status: available
+      kind: model
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://aistudio.yandex.ru/ru/docs/ai-studio/concepts/generation/models'
     yandexgpt-5-pro:
       defaults:
         model: yandexgpt-5-pro
@@ -1758,6 +1888,11 @@ yandex:
       api_type: foundation
       name: yandexgpt-5-pro
       notes: 'Provider text-generation model; account access may vary.'
+      status: available
+      kind: model
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://aistudio.yandex.ru/ru/docs/ai-studio/concepts/generation/models'
     yandexgpt-5-lite:
       defaults:
         model: yandexgpt-5-lite
@@ -1775,6 +1910,13 @@ yandex:
           breakdown:
             prompt: prompt_tokens
             completion: completion_tokens
+      status: deprecated
+      kind: model
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://aistudio.yandex.ru/ru/docs/ai-studio/concepts/generation/models'
+      shutdown_date: '2026-11-15'
+      replacement: 'yandex:deepseek-v4.1-flash'
     deepseek-v4-flash:
       defaults:
         model: deepseek-v4-flash
@@ -1792,6 +1934,13 @@ yandex:
           breakdown:
             prompt: prompt_tokens
             completion: completion_tokens
+      status: deprecated
+      kind: model
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://aistudio.yandex.ru/ru/docs/ai-studio/concepts/generation/models'
+      shutdown_date: '2026-11-15'
+      replacement: 'yandex:deepseek-v4.1-flash'
     deepseek-v4.1-flash:
       defaults:
         model: deepseek-v4.1-flash
@@ -1809,6 +1958,11 @@ yandex:
           breakdown:
             prompt: prompt_tokens
             completion: completion_tokens
+      status: available
+      kind: model
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://aistudio.yandex.ru/ru/docs/ai-studio/concepts/generation/models'
     qwen3-235b-a22b-fp8:
       defaults:
         model: qwen3-235b-a22b-fp8
@@ -1826,6 +1980,11 @@ yandex:
           breakdown:
             prompt: prompt_tokens
             completion: completion_tokens
+      status: available
+      kind: model
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://aistudio.yandex.ru/ru/docs/ai-studio/concepts/generation/models'
     gpt-oss-120b:
       defaults:
         model: gpt-oss-120b
@@ -1843,6 +2002,12 @@ yandex:
           breakdown:
             prompt: prompt_tokens
             completion: completion_tokens
+      status: deprecated
+      kind: model
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://aistudio.yandex.ru/ru/docs/ai-studio/concepts/generation/models'
+      shutdown_date: '2026-10-30'
     gpt-oss-20b:
       defaults:
         model: gpt-oss-20b
@@ -1860,6 +2025,12 @@ yandex:
           breakdown:
             prompt: prompt_tokens
             completion: completion_tokens
+      status: deprecated
+      kind: model
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://aistudio.yandex.ru/ru/docs/ai-studio/concepts/generation/models'
+      shutdown_date: '2026-10-30'
     qwen3.6-35b-a3b:
       defaults:
         model: qwen3.6-35b-a3b
@@ -1877,6 +2048,11 @@ yandex:
           breakdown:
             prompt: prompt_tokens
             completion: completion_tokens
+      status: available
+      kind: model
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://aistudio.yandex.ru/ru/docs/ai-studio/concepts/generation/models'
     yandexgpt-latest:
       defaults:
         model: yandexgpt/latest
@@ -1885,6 +2061,11 @@ yandex:
       name: yandexgpt-latest
       notes: 'Provider text-generation model; account access may vary.'
       limits: {  }
+      status: available
+      kind: alias
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://aistudio.yandex.ru/ru/docs/ai-studio/concepts/generation/models'
     yandexgpt-rc:
       defaults:
         model: yandexgpt/rc
@@ -1893,6 +2074,11 @@ yandex:
       name: yandexgpt-rc
       notes: 'Provider text-generation model; account access may vary.'
       limits: {  }
+      status: available
+      kind: preview
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://aistudio.yandex.ru/ru/docs/ai-studio/concepts/generation/models'
 xai:
   endpoint: 'https://api.x.ai/v1/chat/completions'
   format: text
@@ -1930,6 +2116,11 @@ xai:
       api_type: chat_completions
       name: grok-4.20-0309-reasoning
       notes: 'Provider text-generation model; account access may vary.'
+      status: available
+      kind: snapshot
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://docs.x.ai/developers/models'
     grok-4.20-0309-non-reasoning:
       defaults:
         model: grok-4.20-0309-non-reasoning
@@ -1941,6 +2132,11 @@ xai:
       api_type: chat_completions
       name: grok-4.20-0309-non-reasoning
       notes: 'Provider text-generation model; account access may vary.'
+      status: available
+      kind: snapshot
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://docs.x.ai/developers/models'
     grok-4.20-multi-agent-0309:
       defaults:
         model: grok-4.20-multi-agent-0309
@@ -1959,6 +2155,11 @@ xai:
           breakdown:
             prompt: input_tokens
             completion: output_tokens
+      status: available
+      kind: snapshot
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://docs.x.ai/developers/models'
     grok-4.3:
       defaults:
         model: grok-4.3
@@ -1970,6 +2171,11 @@ xai:
       api_type: chat_completions
       name: grok-4.3
       notes: 'Provider text-generation model; account access may vary.'
+      status: available
+      kind: model
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://docs.x.ai/developers/models'
     grok-4.5:
       defaults:
         model: grok-4.5
@@ -1981,6 +2187,11 @@ xai:
       api_type: chat_completions
       name: grok-4.5
       notes: 'Provider text-generation model; account access may vary.'
+      status: available
+      kind: model
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://docs.x.ai/developers/models'
     grok-4.6:
       defaults:
         model: grok-4.6
@@ -1992,17 +2203,29 @@ xai:
       api_type: chat_completions
       name: grok-4.6
       notes: 'Provider text-generation model; account access may vary.'
+      status: available
+      kind: model
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://docs.x.ai/developers/models'
     grok-4.7:
       defaults:
         model: grok-4.7
         temperature: null
+        reasoning_effort: low
         max_completion_tokens: 2048
       limits:
         max_tokens: 500000
         estimated_max_chars: 2000000
-      api_type: chat_completions
+      api_type: responses
+      endpoint: 'https://api.x.ai/v1/responses'
       name: grok-4.7
       notes: 'Provider text-generation model; account access may vary.'
+      status: available
+      kind: model
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://docs.x.ai/developers/models'
     grok-build-0.1:
       defaults:
         model: grok-build-0.1
@@ -2014,3 +2237,8 @@ xai:
       api_type: chat_completions
       name: grok-build-0.1
       notes: 'Provider text-generation model; account access may vary.'
+      status: available
+      kind: model
+      access: standard
+      checked_at: '2026-10-26'
+      lifecycle_source: 'https://docs.x.ai/developers/models'

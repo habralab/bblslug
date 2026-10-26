@@ -45,7 +45,7 @@ class Cli
             "segment-batch-max-bytes:", // positive serialized segment packet byte limit
             "html-json-pointer:", // JSON Pointer to HTML strings selected for segment translation (repeatable)
             "help",          // show help and exit
-            "list-models",   // show models and exit
+            "list-models::", // optional all view, then exit
             "list-prompts",  // show available prompt templates and exit
             "model:",        // model key
             "operation-timeout:", // total translation operation deadline
@@ -76,7 +76,10 @@ class Cli
 
         // List models screen
         if (isset($options['list-models'])) {
-            Help::printModelList();
+            if (!\in_array($options['list-models'], [false, 'all'], true)) {
+                Help::error('Use --list-models or --list-models=all');
+            }
+            Help::printModelList($options['list-models'] === 'all');
             exit(0);
         }
         // List prompts screen

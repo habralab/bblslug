@@ -1,6 +1,6 @@
 {
-  "checked_at": "2026-10-22",
-  "scope": "Provider-hosted text generation, including available legacy, preview and pinned snapshots; retired compatibility redirects excluded. Account availability is separate from registration.",
+  "checked_at": "2026-10-26",
+  "scope": "Registered text-generation IDs with lifecycle review; historical plain-text observations have their own date. Served snapshots remain selectable; retired IDs and compatibility redirects are excluded. Account access is separate.",
   "vendors": {
     "anthropic": {
       "sources": [
@@ -10,23 +10,23 @@
         "https://docs.anthropic.com/en/docs/about-claude/models/migrating-to-claude-4"
       ],
       "models": {
-        "claude-haiku-5.5": "claude-haiku-5-5",
-        "claude-sonnet-5.5": "claude-sonnet-5-5",
-        "claude-opus-5.5": "claude-opus-5-5",
-        "claude-fable-5.1": "claude-fable-5-1",
-        "claude-opus-5": "claude-opus-5",
-        "claude-sonnet-5": "claude-sonnet-5",
         "claude-fable-5": "claude-fable-5",
-        "claude-opus-4.8": "claude-opus-4-8",
-        "claude-opus-4.7": "claude-opus-4-7",
-        "claude-sonnet-4.6": "claude-sonnet-4-6",
-        "claude-opus-4.6": "claude-opus-4-6",
-        "claude-opus-4.5-20251101": "claude-opus-4-5-20251101",
+        "claude-fable-5.1": "claude-fable-5-1",
         "claude-haiku-4.5-20251001": "claude-haiku-4-5-20251001",
-        "claude-sonnet-4.5-20250929": "claude-sonnet-4-5-20250929",
+        "claude-haiku-5.5": "claude-haiku-5-5",
         "claude-mythos-5": "claude-mythos-5",
+        "claude-mythos-5.1": "claude-mythos-5-1",
         "claude-mythos-preview": "claude-mythos-preview",
-        "claude-mythos-5.1": "claude-mythos-5-1"
+        "claude-opus-4.5-20251101": "claude-opus-4-5-20251101",
+        "claude-opus-4.6": "claude-opus-4-6",
+        "claude-opus-4.7": "claude-opus-4-7",
+        "claude-opus-4.8": "claude-opus-4-8",
+        "claude-opus-5": "claude-opus-5",
+        "claude-opus-5.5": "claude-opus-5-5",
+        "claude-sonnet-4.5-20250929": "claude-sonnet-4-5-20250929",
+        "claude-sonnet-4.6": "claude-sonnet-4-6",
+        "claude-sonnet-5": "claude-sonnet-5",
+        "claude-sonnet-5.5": "claude-sonnet-5-5"
       },
       "exclusions": [
         {
@@ -123,7 +123,9 @@
         }
       },
       "observed_api_catalog_count": 14,
-      "observed_but_excluded": []
+      "observed_but_excluded": [],
+      "lifecycle_checked_at": "2026-10-26",
+      "lifecycle_source": "https://platform.claude.com/docs/en/about-claude/model-deprecations"
     },
     "google": {
       "sources": [
@@ -135,22 +137,21 @@
       ],
       "models": {
         "gemini-2.5-flash": "gemini-2.5-flash",
-        "gemini-2.5-pro": "gemini-2.5-pro",
-        "gemma-4-26b-a4b-it": "gemma-4-26b-a4b-it",
-        "gemma-4-31b-it": "gemma-4-31b-it",
-        "gemini-flash-latest": "gemini-flash-latest",
-        "gemini-flash-lite-latest": "gemini-flash-lite-latest",
-        "gemini-pro-latest": "gemini-pro-latest",
         "gemini-2.5-flash-lite": "gemini-2.5-flash-lite",
+        "gemini-2.5-pro": "gemini-2.5-pro",
         "gemini-3-flash-preview": "gemini-3-flash-preview",
+        "gemini-3.1-flash-lite": "gemini-3.1-flash-lite",
         "gemini-3.1-pro-preview": "gemini-3.1-pro-preview",
         "gemini-3.1-pro-preview-customtools": "gemini-3.1-pro-preview-customtools",
-        "gemini-3.1-flash-lite-preview": "gemini-3.1-flash-lite-preview",
-        "gemini-3.1-flash-lite": "gemini-3.1-flash-lite",
         "gemini-3.5-flash-lite": "gemini-3.5-flash-lite",
         "gemini-3.6-flash": "gemini-3.6-flash",
         "gemini-3.8-flash": "gemini-3.8-flash",
-        "gemini-4-argon": "gemini-4-argon"
+        "gemini-4-argon": "gemini-4-argon",
+        "gemini-flash-latest": "gemini-flash-latest",
+        "gemini-flash-lite-latest": "gemini-flash-lite-latest",
+        "gemini-pro-latest": "gemini-pro-latest",
+        "gemma-4-26b-a4b-it": "gemma-4-26b-a4b-it",
+        "gemma-4-31b-it": "gemma-4-31b-it"
       },
       "exclusions": [
         {
@@ -366,6 +367,12 @@
         {
           "id": "gemini-2.5-computer-use-preview-10-2025",
           "reason": "retired 2026-07-28",
+          "source": "https://ai.google.dev/gemini-api/docs/deprecations"
+        },
+        {
+          "id": "gemini-3.1-flash-lite-preview",
+          "reason": "Retired; published shutdown date has passed.",
+          "shutdown_date": "2026-05-25",
           "source": "https://ai.google.dev/gemini-api/docs/deprecations"
         }
       ],
@@ -614,7 +621,9 @@
           "id": "lyria-realtime-exp",
           "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
         }
-      ]
+      ],
+      "lifecycle_checked_at": "2026-10-26",
+      "lifecycle_source": "https://ai.google.dev/gemini-api/docs/deprecations"
     },
     "openai": {
       "sources": [
@@ -642,78 +651,59 @@
         "https://developers.openai.com/api/docs/pricing"
       ],
       "models": {
-        "gpt-4-turbo-2024-04-09": "gpt-4-turbo-2024-04-09",
-        "gpt-5.6-luna": "gpt-5.6-luna",
-        "gpt-5-search-api": "gpt-5-search-api",
-        "gpt-5.5-2026-04-23": "gpt-5.5-2026-04-23",
-        "gpt-5.4-2026-03-05": "gpt-5.4-2026-03-05",
-        "gpt-3.5-turbo-0125": "gpt-3.5-turbo-0125",
-        "gpt-5-nano": "gpt-5-nano",
-        "gpt-5.4-mini": "gpt-5.4-mini",
-        "o1-pro": "o1-pro",
+        "chat-latest": "chat-latest",
+        "gpt-4.1": "gpt-4.1",
+        "gpt-4.1-2025-04-14": "gpt-4.1-2025-04-14",
+        "gpt-4.1-mini": "gpt-4.1-mini",
+        "gpt-4.1-mini-2025-04-14": "gpt-4.1-mini-2025-04-14",
+        "gpt-4o": "gpt-4o",
+        "gpt-4o-2024-08-06": "gpt-4o-2024-08-06",
+        "gpt-4o-2024-11-20": "gpt-4o-2024-11-20",
+        "gpt-4o-mini": "gpt-4o-mini",
+        "gpt-4o-mini-2024-07-18": "gpt-4o-mini-2024-07-18",
+        "gpt-5": "gpt-5",
+        "gpt-5-2025-08-07": "gpt-5-2025-08-07",
         "gpt-5-mini": "gpt-5-mini",
         "gpt-5-mini-2025-08-07": "gpt-5-mini-2025-08-07",
-        "o4-mini-2025-04-16": "o4-mini-2025-04-16",
-        "gpt-5.2-pro": "gpt-5.2-pro",
-        "gpt-5-pro-2025-10-06": "gpt-5-pro-2025-10-06",
-        "gpt-5.6-sol": "gpt-5.6-sol",
-        "gpt-5.5-pro": "gpt-5.5-pro",
-        "gpt-5-2025-08-07": "gpt-5-2025-08-07",
-        "gpt-5.2-pro-2025-12-11": "gpt-5.2-pro-2025-12-11",
-        "gpt-5.5-pro-2026-04-23": "gpt-5.5-pro-2026-04-23",
-        "gpt-5.4-pro": "gpt-5.4-pro",
-        "gpt-4o-2024-11-20": "gpt-4o-2024-11-20",
-        "gpt-5.1": "gpt-5.1",
-        "gpt-5-pro": "gpt-5-pro",
-        "gpt-5.4-mini-2026-03-17": "gpt-5.4-mini-2026-03-17",
-        "gpt-5.4": "gpt-5.4",
-        "gpt-4.1-nano": "gpt-4.1-nano",
-        "gpt-3.5-turbo-16k": "gpt-3.5-turbo-16k",
-        "gpt-4.1": "gpt-4.1",
-        "gpt-5.5": "gpt-5.5",
-        "o3-pro-2025-06-10": "o3-pro-2025-06-10",
-        "chat-latest": "chat-latest",
-        "gpt-5.4-pro-2026-03-05": "gpt-5.4-pro-2026-03-05",
-        "o3-2025-04-16": "o3-2025-04-16",
-        "gpt-5.2-2025-12-11": "gpt-5.2-2025-12-11",
-        "gpt-3.5-turbo": "gpt-3.5-turbo",
-        "gpt-4o-2024-05-13": "gpt-4o-2024-05-13",
-        "gpt-5.6-terra": "gpt-5.6-terra",
-        "o3-mini": "o3-mini",
-        "gpt-5.4-nano": "gpt-5.4-nano",
-        "o1-pro-2025-03-19": "o1-pro-2025-03-19",
-        "gpt-4-turbo": "gpt-4-turbo",
-        "o3-pro": "o3-pro",
-        "gpt-4o-2024-08-06": "gpt-4o-2024-08-06",
-        "o3": "o3",
-        "gpt-4.1-mini-2025-04-14": "gpt-4.1-mini-2025-04-14",
-        "o3-mini-2025-01-31": "o3-mini-2025-01-31",
-        "gpt-5.1-2025-11-13": "gpt-5.1-2025-11-13",
-        "gpt-4-0613": "gpt-4-0613",
-        "gpt-4o": "gpt-4o",
-        "gpt-4.1-mini": "gpt-4.1-mini",
-        "gpt-4o-mini": "gpt-4o-mini",
-        "gpt-6-sol": "gpt-6-sol",
-        "gpt-5.2": "gpt-5.2",
-        "o1": "o1",
-        "gpt-5.4-nano-2026-03-17": "gpt-5.4-nano-2026-03-17",
-        "gpt-6.1-sol": "gpt-6.1-sol",
-        "o1-2024-12-17": "o1-2024-12-17",
-        "gpt-5.3-codex": "gpt-5.3-codex",
-        "gpt-5-search-api-2025-10-14": "gpt-5-search-api-2025-10-14",
-        "gpt-5": "gpt-5",
-        "gpt-4.1-nano-2025-04-14": "gpt-4.1-nano-2025-04-14",
-        "gpt-4.1-2025-04-14": "gpt-4.1-2025-04-14",
-        "gpt-4o-mini-2024-07-18": "gpt-4o-mini-2024-07-18",
-        "gpt-4": "gpt-4",
+        "gpt-5-nano": "gpt-5-nano",
         "gpt-5-nano-2025-08-07": "gpt-5-nano-2025-08-07",
-        "o4-mini": "o4-mini",
+        "gpt-5-pro": "gpt-5-pro",
+        "gpt-5-pro-2025-10-06": "gpt-5-pro-2025-10-06",
+        "gpt-5-search-api": "gpt-5-search-api",
+        "gpt-5-search-api-2025-10-14": "gpt-5-search-api-2025-10-14",
+        "gpt-5.1": "gpt-5.1",
+        "gpt-5.1-2025-11-13": "gpt-5.1-2025-11-13",
+        "gpt-5.2": "gpt-5.2",
+        "gpt-5.2-2025-12-11": "gpt-5.2-2025-12-11",
+        "gpt-5.2-pro": "gpt-5.2-pro",
+        "gpt-5.2-pro-2025-12-11": "gpt-5.2-pro-2025-12-11",
+        "gpt-5.3-codex": "gpt-5.3-codex",
+        "gpt-5.4": "gpt-5.4",
+        "gpt-5.4-2026-03-05": "gpt-5.4-2026-03-05",
+        "gpt-5.4-mini": "gpt-5.4-mini",
+        "gpt-5.4-mini-2026-03-17": "gpt-5.4-mini-2026-03-17",
+        "gpt-5.4-nano": "gpt-5.4-nano",
+        "gpt-5.4-nano-2026-03-17": "gpt-5.4-nano-2026-03-17",
+        "gpt-5.4-pro": "gpt-5.4-pro",
+        "gpt-5.4-pro-2026-03-05": "gpt-5.4-pro-2026-03-05",
+        "gpt-5.5": "gpt-5.5",
+        "gpt-5.5-2026-04-23": "gpt-5.5-2026-04-23",
+        "gpt-5.5-pro": "gpt-5.5-pro",
+        "gpt-5.5-pro-2026-04-23": "gpt-5.5-pro-2026-04-23",
+        "gpt-5.6-cyber": "gpt-5.6-cyber",
+        "gpt-5.6-luna": "gpt-5.6-luna",
+        "gpt-5.6-sol": "gpt-5.6-sol",
+        "gpt-5.6-terra": "gpt-5.6-terra",
         "gpt-6-astra": "gpt-6-astra",
         "gpt-6-luna": "gpt-6-luna",
-        "gpt-5.6-cyber": "gpt-5.6-cyber",
-        "gpt-rosalind-research": "gpt-rosalind-research",
+        "gpt-6-sol": "gpt-6-sol",
+        "gpt-6.1-sol": "gpt-6.1-sol",
         "gpt-rosalind-discovery": "gpt-rosalind-discovery",
-        "gpt-4-1106-preview": "gpt-4-1106-preview"
+        "gpt-rosalind-research": "gpt-rosalind-research",
+        "o3": "o3",
+        "o3-2025-04-16": "o3-2025-04-16",
+        "o3-pro": "o3-pro",
+        "o3-pro-2025-06-10": "o3-pro-2025-06-10"
       },
       "exclusions": {
         "non_text_generation": [
@@ -797,9 +787,125 @@
         ],
         "compatibility_redirects": [],
         "notes": [
-          "All account-visible text IDs with shutdown after 2026-10-22 or no shutdown are retained, including dated snapshots and legacy IDs.",
-          "Normal GPT-4 and GPT-3.5 text models use Chat Completions. Legacy instruct/base IDs use Completions. Pro and Codex families use Responses metadata where the official family reference requires it.",
+          "The 2026-10-22 inventory included then-served legacy IDs and snapshots. The current registered set excludes the subsequently reviewed retirements below.",
+          "API types are recorded per retained model. Historical text_smoke observations can refer to IDs that are no longer registered.",
           "Reasoning models omit temperature; Pro models use high reasoning effort. Search preview models omit temperature. Empty limits mean the account inventory did not establish a safe translation limit."
+        ],
+        "retired_after_last_review": [
+          {
+            "id": "gpt-4-turbo-2024-04-09",
+            "reason": "Retired; published shutdown date has passed.",
+            "shutdown_date": "2026-10-23",
+            "source": "https://developers.openai.com/api/docs/deprecations"
+          },
+          {
+            "id": "gpt-3.5-turbo-0125",
+            "reason": "Retired; published shutdown date has passed.",
+            "shutdown_date": "2026-10-23",
+            "source": "https://developers.openai.com/api/docs/deprecations"
+          },
+          {
+            "id": "o1-pro",
+            "reason": "Retired; published shutdown date has passed.",
+            "shutdown_date": "2026-10-23",
+            "source": "https://developers.openai.com/api/docs/deprecations"
+          },
+          {
+            "id": "o4-mini-2025-04-16",
+            "reason": "Retired; published shutdown date has passed.",
+            "shutdown_date": "2026-10-23",
+            "source": "https://developers.openai.com/api/docs/deprecations"
+          },
+          {
+            "id": "gpt-4.1-nano",
+            "reason": "Retired; published shutdown date has passed.",
+            "shutdown_date": "2026-10-23",
+            "source": "https://developers.openai.com/api/docs/deprecations"
+          },
+          {
+            "id": "gpt-3.5-turbo",
+            "reason": "Retired; published shutdown date has passed.",
+            "shutdown_date": "2026-10-23",
+            "source": "https://developers.openai.com/api/docs/deprecations"
+          },
+          {
+            "id": "gpt-4o-2024-05-13",
+            "reason": "Retired; published shutdown date has passed.",
+            "shutdown_date": "2026-10-23",
+            "source": "https://developers.openai.com/api/docs/deprecations"
+          },
+          {
+            "id": "o3-mini",
+            "reason": "Retired; published shutdown date has passed.",
+            "shutdown_date": "2026-10-23",
+            "source": "https://developers.openai.com/api/docs/deprecations"
+          },
+          {
+            "id": "o1-pro-2025-03-19",
+            "reason": "Retired; published shutdown date has passed.",
+            "shutdown_date": "2026-10-23",
+            "source": "https://developers.openai.com/api/docs/deprecations"
+          },
+          {
+            "id": "gpt-4-turbo",
+            "reason": "Retired; published shutdown date has passed.",
+            "shutdown_date": "2026-10-23",
+            "source": "https://developers.openai.com/api/docs/deprecations"
+          },
+          {
+            "id": "o3-mini-2025-01-31",
+            "reason": "Retired; published shutdown date has passed.",
+            "shutdown_date": "2026-10-23",
+            "source": "https://developers.openai.com/api/docs/deprecations"
+          },
+          {
+            "id": "gpt-4-0613",
+            "reason": "Retired; published shutdown date has passed.",
+            "shutdown_date": "2026-10-23",
+            "source": "https://developers.openai.com/api/docs/deprecations"
+          },
+          {
+            "id": "o1",
+            "reason": "Retired; published shutdown date has passed.",
+            "shutdown_date": "2026-10-23",
+            "source": "https://developers.openai.com/api/docs/deprecations"
+          },
+          {
+            "id": "o1-2024-12-17",
+            "reason": "Retired; published shutdown date has passed.",
+            "shutdown_date": "2026-10-23",
+            "source": "https://developers.openai.com/api/docs/deprecations"
+          },
+          {
+            "id": "gpt-4.1-nano-2025-04-14",
+            "reason": "Retired; published shutdown date has passed.",
+            "shutdown_date": "2026-10-23",
+            "source": "https://developers.openai.com/api/docs/deprecations"
+          },
+          {
+            "id": "gpt-4",
+            "reason": "Retired; published shutdown date has passed.",
+            "shutdown_date": "2026-10-23",
+            "source": "https://developers.openai.com/api/docs/deprecations"
+          },
+          {
+            "id": "o4-mini",
+            "reason": "Retired; published shutdown date has passed.",
+            "shutdown_date": "2026-10-23",
+            "source": "https://developers.openai.com/api/docs/deprecations"
+          },
+          {
+            "id": "gpt-4-1106-preview",
+            "reason": "Retired; published shutdown date has passed.",
+            "shutdown_date": "2026-10-23",
+            "source": "https://developers.openai.com/api/docs/deprecations"
+          },
+          {
+            "id": "gpt-3.5-turbo-16k",
+            "reason": "Retired; Chat Completions API reference lists shutdown on 2024-09-13.",
+            "shutdown_date": "2024-09-13",
+            "source": "https://developers.openai.com/api/reference/resources/chat/subresources/completions/methods/create"
+          }
         ]
       },
       "live_confirmed_exclusions": [
@@ -1395,7 +1501,9 @@
           "id": "gpt-image-2.5-flare",
           "reason": "not a plain text-generation endpoint (audio/image/embedding or specialized agent workflow)"
         }
-      ]
+      ],
+      "lifecycle_checked_at": "2026-10-26",
+      "lifecycle_source": "https://developers.openai.com/api/docs/deprecations"
     },
     "xai": {
       "sources": [
@@ -1404,13 +1512,13 @@
         "https://docs.x.ai/developers/migration/may-15-retirement"
       ],
       "models": {
-        "grok-4.20-0309-reasoning": "grok-4.20-0309-reasoning",
-        "grok-4.20-0309-non-reasoning": "grok-4.20-0309-non-reasoning",
-        "grok-4.20-multi-agent-0309": "grok-4.20-multi-agent-0309",
         "grok-4.3": "grok-4.3",
         "grok-4.5": "grok-4.5",
         "grok-4.6": "grok-4.6",
         "grok-4.7": "grok-4.7",
+        "grok-4.20-0309-non-reasoning": "grok-4.20-0309-non-reasoning",
+        "grok-4.20-0309-reasoning": "grok-4.20-0309-reasoning",
+        "grok-4.20-multi-agent-0309": "grok-4.20-multi-agent-0309",
         "grok-build-0.1": "grok-build-0.1"
       },
       "exclusions": [
@@ -1488,7 +1596,9 @@
         }
       },
       "observed_api_catalog_count": 8,
-      "observed_but_excluded": []
+      "observed_but_excluded": [],
+      "lifecycle_checked_at": "2026-10-26",
+      "lifecycle_source": "https://docs.x.ai/developers/models"
     },
     "yandex": {
       "sources": [
@@ -1496,20 +1606,20 @@
         "https://aistudio.yandex.ru/ru/docs/ai-studio/release-notes/"
       ],
       "models": {
-        "gpt-lite": "yandexgpt-lite/latest",
-        "gpt-pro": "yandexgpt/latest",
-        "gpt-32k": "yandexgpt-32k/latest",
         "aliceai-llm": "aliceai-llm",
         "aliceai-llm-flash": "aliceai-llm-flash",
-        "yandexgpt-5.1": "yandexgpt-5.1",
-        "yandexgpt-5-pro": "yandexgpt-5-pro",
-        "yandexgpt-5-lite": "yandexgpt-5-lite",
         "deepseek-v4-flash": "deepseek-v4-flash",
         "deepseek-v4.1-flash": "deepseek-v4.1-flash",
-        "qwen3-235b-a22b-fp8": "qwen3-235b-a22b-fp8",
-        "gpt-oss-120b": "gpt-oss-120b",
+        "gpt-32k": "yandexgpt-32k/latest",
+        "gpt-lite": "yandexgpt-lite/latest",
         "gpt-oss-20b": "gpt-oss-20b",
+        "gpt-oss-120b": "gpt-oss-120b",
+        "gpt-pro": "yandexgpt/latest",
+        "qwen3-235b-a22b-fp8": "qwen3-235b-a22b-fp8",
         "qwen3.6-35b-a3b": "qwen3.6-35b-a3b",
+        "yandexgpt-5-lite": "yandexgpt-5-lite",
+        "yandexgpt-5-pro": "yandexgpt-5-pro",
+        "yandexgpt-5.1": "yandexgpt-5.1",
         "yandexgpt-latest": "yandexgpt/latest",
         "yandexgpt-rc": "yandexgpt/rc"
       },
@@ -1600,7 +1710,9 @@
           "status": "translated",
           "served_model": "yagpt-5.1-2025-08"
         }
-      }
+      },
+      "lifecycle_checked_at": "2026-10-26",
+      "lifecycle_source": "https://aistudio.yandex.ru/ru/docs/ai-studio/concepts/generation/models"
     },
     "deepl": {
       "sources": [
@@ -1624,7 +1736,9 @@
           "status": "translated",
           "served_model": null
         }
-      }
+      },
+      "lifecycle_checked_at": "2026-10-26",
+      "lifecycle_source": "https://developers.deepl.com/api-reference/translate/request-translation"
     }
   },
   "verification": {
@@ -1642,5 +1756,6 @@
       "yandex:qwen3-235b-a22b-fp8"
     ],
     "notes": "Unverified restricted or slow models remain registered when official documentation confirms their existence. No fallback substitution or automatic retry is used."
-  }
+  },
+  "text_smoke_checked_at": "2026-10-22"
 }

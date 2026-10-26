@@ -65,6 +65,10 @@ final class ModelCatalogTest extends TestCase
     {
         $registry = new ModelRegistry();
         $retiredKeys = [
+            'google:gemini-3.1-flash-lite-preview',
+            'openai:gpt-4',
+            'openai:gpt-4-turbo',
+            'openai:gpt-3.5-turbo-0125',
             'google:gemini-3.5-flash',
             'google:gemini-3.7-flash',
             'xai:grok-3',
@@ -77,7 +81,7 @@ final class ModelCatalogTest extends TestCase
             self::assertFalse($registry->has($retiredKey), $retiredKey);
         }
 
-        foreach (['openai:gpt-4', 'openai:gpt-4o', 'yandex:gpt-32k'] as $legacyKey) {
+        foreach (['openai:gpt-5-mini', 'openai:gpt-4o', 'yandex:gpt-32k'] as $legacyKey) {
             self::assertTrue($registry->has($legacyKey), $legacyKey);
         }
     }
@@ -123,7 +127,7 @@ final class ModelCatalogTest extends TestCase
     public function testReasoningDefaultsDoNotInheritUnsupportedTemperature(): void
     {
         $registry = new ModelRegistry();
-        foreach (['gpt-5.6-sol', 'gpt-5.2-pro', 'o1', 'o3-pro', 'gpt-5.3-codex'] as $model) {
+        foreach (['gpt-5.6-sol', 'gpt-5.2-pro', 'gpt-6-luna', 'o3-pro', 'gpt-5.3-codex'] as $model) {
             $key = 'openai:' . $model;
             $config = $registry->get($key);
             self::assertIsArray($config);
@@ -157,5 +161,49 @@ final class ModelCatalogTest extends TestCase
         ]);
         self::assertSame(10, $usage['tokens']['breakdown']['prompt']);
         self::assertSame(5, $usage['tokens']['breakdown']['completion']);
+    }
+
+    public function testEveryModelHasSeparateLifecycleAndAccessMetadata(): void
+    {
+        $registry = new ModelRegistry();
+        foreach ($registry->getAll() as $key => $config) {
+            self::assertContains($config['status'] ?? null, ['available', 'deprecated'], $key);
+            self::assertContains($config['kind'] ?? null, ['alias', 'model', 'snapshot', 'preview', 'tier'], $key);
+            self::assertContains($config['access'] ?? null, ['standard', 'restricted', 'existing_customers'], $key);
+            self::assertMatchesRegularExpression('/^\\d{4}-\\d{2}-\\d{2}$/', $config['checked_at'] ?? '', $key);
+            self::assertStringStartsWith('https://', $config['lifecycle_source'] ?? '', $key);
+            if (isset($config['shutdown_date'])) {
+                self::assertSame('deprecated', $config['status'], $key);
+                self::assertGreaterThan($config['checked_at'], $config['shutdown_date'], $key);
+            }
+            if (isset($config['replacement'])) {
+                self::assertTrue($registry->has($config['replacement']), $key);
+            }
+        }
+    }
+
+    public function testPhpModelListIsSortedAndStillContainsSnapshots(): void
+    {
+        $groups = \Bblslug\Bblslug::listModels();
+        self::assertSame(['anthropic', 'deepl', 'google', 'openai', 'xai', 'yandex'], array_keys($groups));
+        self::assertArrayHasKey('openai:gpt-5.5-2026-04-23', $groups['openai']);
+        foreach ($groups as $models) {
+            $keys = array_keys($models);
+            $sorted = $keys;
+            natsort($sorted);
+            self::assertSame(array_values($sorted), $keys);
+        }
+    }
+    public function testCurrentGrokUsesResponsesWithExplicitReasoningSettings(): void
+    {
+        $registry = new ModelRegistry();
+        $config = $registry->get('xai:grok-4.7');
+        self::assertIsArray($config);
+        $request = $registry->getDriver('xai:grok-4.7')->buildRequest($config, 'Hello', ['format' => 'text']);
+        $body = json_decode($request['body'], true, 512, JSON_THROW_ON_ERROR);
+        self::assertSame('https://api.x.ai/v1/responses', $request['url']);
+        self::assertSame('low', $body['reasoning']['effort']);
+        self::assertArrayHasKey('max_output_tokens', $body);
+        self::assertArrayNotHasKey('max_tokens', $body);
     }
 }

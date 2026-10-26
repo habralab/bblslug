@@ -58,6 +58,12 @@ class Bblslug
             $grouped[$vendor][$modelKey] = $config;
         }
 
+        ksort($grouped);
+        foreach ($grouped as &$models) {
+            ksort($models, SORT_NATURAL);
+        }
+        unset($models);
+
         return $grouped;
     }
 

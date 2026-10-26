@@ -27,8 +27,8 @@ class ModelRegistryTest extends TestCase
         'google:gemini-2.5-flash',
         'google:gemini-2.5-flash-lite',
         'google:gemini-2.5-pro',
-        'openai:gpt-4',
-        'openai:gpt-4-turbo',
+        'openai:gpt-6.1-sol',
+        'openai:gpt-6-luna',
         'openai:gpt-4o',
         'openai:gpt-4o-mini',
         'yandex:gpt-lite',
@@ -125,8 +125,8 @@ class ModelRegistryTest extends TestCase
             'google:gemini-2.5-flash'      => 'GOOGLE_API_KEY',
             'google:gemini-2.5-flash-lite' => 'GOOGLE_API_KEY',
             'google:gemini-2.5-pro'        => 'GOOGLE_API_KEY',
-            'openai:gpt-4'                 => 'OPENAI_API_KEY',
-            'openai:gpt-4-turbo'           => 'OPENAI_API_KEY',
+            'openai:gpt-6.1-sol'                 => 'OPENAI_API_KEY',
+            'openai:gpt-6-luna'           => 'OPENAI_API_KEY',
             'openai:gpt-4o'                => 'OPENAI_API_KEY',
             'openai:gpt-4o-mini'           => 'OPENAI_API_KEY',
             'yandex:gpt-lite'              => 'YANDEX_API_KEY',
@@ -165,7 +165,7 @@ class ModelRegistryTest extends TestCase
     public function itNotReturnsExpectedVariablesForModelsWithoutIt(): void
     {
         $this->assertEmpty(
-            $this->registry->getVariables('openai:gpt-4'),
+            $this->registry->getVariables('openai:gpt-6.1-sol'),
             "Models vithout declared variables must return an empty array of variables"
         );
     }
@@ -182,8 +182,8 @@ class ModelRegistryTest extends TestCase
             'google:gemini-2.5-flash'      => 'makersuite.google.com/app/apikey',
             'google:gemini-2.5-flash-lite' => 'makersuite.google.com/app/apikey',
             'google:gemini-2.5-pro'        => 'makersuite.google.com/app/apikey',
-            'openai:gpt-4'                 => 'platform.openai.com/account/api-keys',
-            'openai:gpt-4-turbo'           => 'platform.openai.com/account/api-keys',
+            'openai:gpt-6.1-sol'                 => 'platform.openai.com/account/api-keys',
+            'openai:gpt-6-luna'           => 'platform.openai.com/account/api-keys',
             'openai:gpt-4o'                => 'platform.openai.com/account/api-keys',
             'openai:gpt-4o-mini'           => 'platform.openai.com/account/api-keys',
             'yandex:gpt-lite'              => 'yandex.cloud/en/docs/foundation-models/api-ref/authentication',
@@ -245,8 +245,8 @@ class ModelRegistryTest extends TestCase
             'google:gemini-2.5-flash'      => GoogleDriver::class,
             'google:gemini-2.5-flash-lite' => GoogleDriver::class,
             'google:gemini-2.5-pro'        => GoogleDriver::class,
-            'openai:gpt-4'                 => OpenAiDriver::class,
-            'openai:gpt-4-turbo'           => OpenAiDriver::class,
+            'openai:gpt-6.1-sol'                 => OpenAiDriver::class,
+            'openai:gpt-6-luna'           => OpenAiDriver::class,
             'openai:gpt-4o'                => OpenAiDriver::class,
             'openai:gpt-4o-mini'           => OpenAiDriver::class,
             'yandex:gpt-lite'              => YandexDriver::class,
