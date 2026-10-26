@@ -487,13 +487,14 @@ class Bblslug
                         }
                     }
                     $batchUsages[] = $usage;
-                    $batchSummaries[] = [
+                    $batchSummary = [
                         'index' => $index + 1, 'segments' => count($expected),
                         'httpStatus' => $provider['httpStatus'], 'consumed' => $usage,
                     ];
                     if ($checkpointPath !== null) {
-                        $batchSummaries[array_key_last($batchSummaries)]['reused'] = $reused;
+                        $batchSummary['reused'] = $reused;
                     }
+                    $batchSummaries[] = $batchSummary;
                     $say($onFeedback, 'Completed ' . $batchLabel, 'info');
                 }
             } catch (\RuntimeException $exception) {

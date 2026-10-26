@@ -49,6 +49,9 @@ REGEX;
                 continue;
             }
             $key = json_decode($token, true, 512, JSON_THROW_ON_ERROR);
+            if (!is_string($key)) {
+                throw new \RuntimeException($label . ' segment ids must be strings');
+            }
             if (isset($seen[$key])) {
                 throw new \RuntimeException('Duplicate ' . $label . ' segment ids');
             }
@@ -56,6 +59,9 @@ REGEX;
         }
         $strings = [];
         foreach ($values as $key => $value) {
+            if (!is_string($key)) {
+                throw new \RuntimeException($label . ' segment ids must be strings');
+            }
             if (!is_string($value) || preg_match('/\A\s*\z/u', $value) === 1) {
                 throw new \RuntimeException($label . ' segments require nonempty translated strings');
             }

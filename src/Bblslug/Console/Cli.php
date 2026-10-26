@@ -490,9 +490,6 @@ class Cli
         if ($htmlJsonPointers !== [] && !in_array($format, ['json', 'structured_json', 'linedJson'], true)) {
             Help::error('--validate-html-json-pointer requires a JSON format.');
         }
-        if ($htmlJsonSelectionPointers !== [] && !in_array($format, ['json', 'linedJson'], true)) {
-            Help::error('--html-json-pointer requires json or linedJson format.');
-        }
         if ($htmlTransport === 'segments' && isset($options['response-schema'])) {
             Help::error('--response-schema is incompatible with --html-transport=segments.');
         }

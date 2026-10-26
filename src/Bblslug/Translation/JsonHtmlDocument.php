@@ -94,7 +94,10 @@ REGEX;
         }
         foreach ($this->parts as $part) {
             foreach ($part['filter']->getStats() as $index => $stat) {
-                $stats[$index]['count'] += $stat['count'];
+                $stats[$index] = [
+                    'filter' => $stat['filter'],
+                    'count' => ($stats[$index]['count'] ?? 0) + $stat['count'],
+                ];
             }
         }
         return $stats;
