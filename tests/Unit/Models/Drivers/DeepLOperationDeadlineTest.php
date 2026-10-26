@@ -42,6 +42,7 @@ final class DeepLOperationDeadlineTest extends TestCase
             self::fail('An unfinished document must time out');
         } catch (\RuntimeException $e) {
             self::assertStringContainsString('operation timeout', $e->getMessage());
+            self::assertSame(28, $e->getCode());
             self::assertSame(1, $calls);
             self::assertLessThan(1.6, microtime(true) - $began);
             self::assertFalse($workflow->isComplete());

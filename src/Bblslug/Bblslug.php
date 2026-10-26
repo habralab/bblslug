@@ -503,7 +503,7 @@ class Bblslug
                 throw new \RuntimeException($diagnosticMasker->redact(
                     $batchLabel . ' failed; ' . $index . ' earlier batch(es) completed: '
                     . $exception->getMessage() . $protocolDebug
-                ), 0, $exception);
+                ), $exception->getCode(), $exception);
             }
             $providers[] = $provider;
             $logLabel = $batching && ($verbose || $dryRun) ? '[' . $batchLabel . "]\n" : '';
@@ -835,7 +835,10 @@ class Bblslug
                         );
                     } catch (\RuntimeException $e) {
                         $deadline?->check();
-                        throw new \RuntimeException((new SecretMasker($maskPatterns))->redact($e->getMessage()));
+                        throw new \RuntimeException(
+                            (new SecretMasker($maskPatterns))->redact($e->getMessage()),
+                            $e->getCode()
+                        );
                     }
                 }
             );

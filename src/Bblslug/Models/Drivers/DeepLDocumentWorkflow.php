@@ -107,7 +107,12 @@ class DeepLDocumentWorkflow implements HttpWorkflowInterface
                 /** @var HttpResponse $poll */
                 $poll = $request($pollRequest);
             } catch (\Throwable $e) {
-                throw $this->failure('Document status request failed: ' . $this->safeMessage($e), $logs, $credentials);
+                throw $this->failure(
+                    'Document status request failed: ' . $this->safeMessage($e),
+                    $logs,
+                    $credentials,
+                    $e->getCode()
+                );
             }
             $this->appendLogs($logs, $poll, $credentials);
             if ($poll['status'] < 200 || $poll['status'] >= 300) {
@@ -161,7 +166,12 @@ class DeepLDocumentWorkflow implements HttpWorkflowInterface
             /** @var HttpResponse $result */
             $result = $request($resultRequest);
         } catch (\Throwable $e) {
-            throw $this->failure('Document download request failed: ' . $this->safeMessage($e), $logs, $credentials);
+            throw $this->failure(
+                'Document download request failed: ' . $this->safeMessage($e),
+                $logs,
+                $credentials,
+                $e->getCode()
+            );
         }
         $this->appendLogs($logs, $result, $credentials);
         if ($result['status'] < 200 || $result['status'] >= 300) {
@@ -248,7 +258,7 @@ class DeepLDocumentWorkflow implements HttpWorkflowInterface
         $this->operationDeadline?->check();
         $remaining = $deadline - $this->clock();
         if ($remaining <= 0) {
-            throw $this->failure('Document workflow timed out', $logs, $credentials);
+            throw $this->failure('Document workflow timed out', $logs, $credentials, 28);
         }
         return max(1, (int)ceil($remaining));
     }
@@ -257,7 +267,7 @@ class DeepLDocumentWorkflow implements HttpWorkflowInterface
      * @param array<int,array{request:string,response:string}> $logs
      * @param array<int,string> $credentials
      */
-    private function failure(string $message, array $logs, array $credentials): \RuntimeException
+    private function failure(string $message, array $logs, array $credentials, int $code = 0): \RuntimeException
     {
         $log = '';
         foreach ($logs as $entry) {
@@ -267,7 +277,7 @@ class DeepLDocumentWorkflow implements HttpWorkflowInterface
         if ($log !== '') {
             $message .= "\n\n" . $log;
         }
-        return new \RuntimeException($message);
+        return new \RuntimeException($message, $code);
     }
 
     private function safeMessage(\Throwable $e): string

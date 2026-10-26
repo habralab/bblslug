@@ -202,6 +202,7 @@ final class DeepLDocumentWorkflowTest extends TestCase
                 self::fail('expected timeout');
             } catch (\RuntimeException $e) {
                 self::assertStringContainsString('timed out', $e->getMessage());
+                self::assertSame(28, $e->getCode());
                 self::assertSame(1, $calls);
             }
         }

@@ -157,6 +157,38 @@ final class BblslugDeepLDocumentTest extends TestCase
         }
     }
 
+    public function testTransportCodesSurviveUploadPollingDownloadAndBatchWrapping(): void
+    {
+        foreach ([1 => 28, 2 => 28, 3 => 7] as $call => $code) {
+            $message = 'Network timeout';
+            if ($call > 1) {
+                $message .= ' fixture-api-secret fixture-document-key-secret';
+            }
+            $result = $this->runFixture([
+                'source' => '{"label":"Hello"}',
+                'failure' => ['call' => $call, 'throwCode' => $code, 'body' => $message],
+            ]);
+            self::assertSame(\RuntimeException::class, $result['type']);
+            self::assertSame($code, $result['code']);
+            self::assertCount($call, $result['calls']);
+            self::assertNull($result['previous']);
+            self::assertStringNotContainsString('fixture-api-secret', $result['message']);
+            self::assertStringNotContainsString('fixture-document-key-secret', $result['message']);
+        }
+        $batch = $this->runFixture([
+            'source' => '<p>Hello</p><p>World</p>', 'format' => 'html',
+            'htmlTransport' => 'segments', 'htmlSegmentBatchSize' => 1,
+            'failure' => ['call' => 2, 'throwCode' => 28,
+                'body' => 'Network timeout fixture-api-secret fixture-document-key-secret'],
+        ]);
+        self::assertSame(28, $batch['code']);
+        self::assertCount(2, $batch['calls']);
+        self::assertStringContainsString('batch 1/2 failed', $batch['message']);
+        foreach (['fixture-api-secret', 'fixture-document-key-secret'] as $secret) {
+            self::assertStringNotContainsString($secret, $batch['message'] . $batch['previous']);
+        }
+    }
+
     /** @param array<string,mixed> $scenario @return array<string,mixed> */
     private function runFixture(array $scenario): array
     {

@@ -22,6 +22,13 @@ namespace Bblslug {
             $n = count(self::$calls);
             usleep((int) (self::$scenario['delayMilliseconds'][$n] ?? 0) * 1000);
             $failure = self::$scenario['failure'] ?? null;
+            if (is_array($failure) && ($failure['call'] ?? 0) === $n && isset($failure['throwCode'])) {
+                $masker = new \Bblslug\SecretMasker($arguments['maskPatterns'] ?? []);
+                throw new \RuntimeException(
+                    $masker->redact((string) ($failure['body'] ?? 'Network timeout')),
+                    (int) $failure['throwCode']
+                );
+            }
             $status = is_array($failure) && (($failure['call'] ?? 0) === $n) ? (int)($failure['status'] ?? 500) : 200;
             $url = (string)($arguments['url'] ?? '');
             $body = (string)($arguments['body'] ?? '');
@@ -96,8 +103,14 @@ namespace {
             proxy: $scenario['proxy'] ?? null,
             dryRun: (bool)($scenario['dryRun'] ?? false),
             verbose: (bool)($scenario['verbose'] ?? true),
-            validateEmbeddedJson: true,
-            operationTimeoutSeconds: $scenario['operationTimeoutSeconds'] ?? null
+            validateEmbeddedJson: in_array(
+                $scenario['format'] ?? 'json',
+                ['json', 'linedJson', 'structured_json'],
+                true
+            ),
+            operationTimeoutSeconds: $scenario['operationTimeoutSeconds'] ?? null,
+            htmlTransport: $scenario['htmlTransport'] ?? 'document',
+            htmlSegmentBatchSize: $scenario['htmlSegmentBatchSize'] ?? null
         );
         echo json_encode([
             'type' => 'success',
@@ -110,7 +123,8 @@ namespace {
         ], JSON_THROW_ON_ERROR);
     } catch (\Throwable $e) {
         echo json_encode(
-            ['type' => $e::class, 'message' => $e->getMessage(), 'calls' => \Bblslug\HttpClient::$calls],
+            ['type' => $e::class, 'message' => $e->getMessage(), 'code' => $e->getCode(),
+                'previous' => $e->getPrevious()?->getMessage(), 'calls' => \Bblslug\HttpClient::$calls],
             JSON_THROW_ON_ERROR
         );
     }
