@@ -96,4 +96,44 @@ final class HtmlTagFilterTest extends TestCase
             ini_set('pcre.backtrack_limit', (string) $limit);
         }
     }
+
+    public function testVoidElementsAreProtectedIndividuallyWithAttributes(): void
+    {
+        $source = 'before <img alt="<b>" src=x/> middle <br data-note="a > b"> after <input disabled>';
+        $filter = new HtmlTagFilter('img');
+
+        $prepared = $filter->apply($source, new PlaceholderCounter());
+
+        self::assertSame('before @@0@@ middle <br data-note="a > b"> after <input disabled>', $prepared);
+        self::assertSame($source, $filter->restore($prepared));
+        self::assertSame(1, $filter->getStats()['count']);
+    }
+
+    public function testVoidElementsRemainSeparateInJsonAndOpaqueContexts(): void
+    {
+        $source = json_encode([
+            'body' => '<img src="one"><img src="two"><script><img src="hidden"></script>',
+        ], JSON_THROW_ON_ERROR);
+        $filter = new HtmlTagFilter('img');
+
+        $prepared = $filter->apply($source, new PlaceholderCounter());
+        $decoded = json_decode($prepared, true, 512, JSON_THROW_ON_ERROR);
+
+        self::assertSame('@@0@@@@1@@<script><img src="hidden"></script>', $decoded['body']);
+        self::assertSame($source, $filter->restore($prepared));
+        self::assertSame(2, $filter->getStats()['count']);
+    }
+    public function testVoidElementsAreProtectedInsideRecursivelyEncodedJson(): void
+    {
+        $html = 'A<img alt="keep quoted text" src=x/>B<img alt="two">C';
+        $inner = json_encode(['body' => $html], JSON_THROW_ON_ERROR);
+        $source = '{"payload":' . json_encode($inner, JSON_THROW_ON_ERROR) . ',"number":900719925474099312345}';
+        $filter = new HtmlTagFilter('img');
+        $prepared = $filter->apply($source, new PlaceholderCounter());
+        $outer = json_decode($prepared, true, 512, JSON_THROW_ON_ERROR);
+        $decoded = json_decode($outer['payload'], true, 512, JSON_THROW_ON_ERROR);
+        self::assertSame('A@@0@@B@@1@@C', $decoded['body']);
+        self::assertSame($source, $filter->restore($prepared));
+        self::assertSame(2, $filter->getStats()['count']);
+    }
 }

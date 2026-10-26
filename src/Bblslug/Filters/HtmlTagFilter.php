@@ -146,6 +146,10 @@ REGEX;
                 continue;
             }
             if (($token[2][0] ?? '') === '') {
+                if (in_array(strtolower($this->tag), self::VOID_TAGS, true)) {
+                    $blocks[] = [$offset, strlen($markup)];
+                    continue;
+                }
                 if ($depth === 0) {
                     $start = $offset;
                 }

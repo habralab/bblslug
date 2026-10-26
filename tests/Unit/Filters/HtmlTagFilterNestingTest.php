@@ -200,15 +200,16 @@ final class HtmlTagFilterNestingTest extends TestCase
         return ['code' => ['code'], 'div' => ['div']];
     }
 
-    public function testVoidChosenTagWithoutPairedBlockKeepsExistingBehavior(): void
+    public function testVoidChosenTagWithoutPairedBlockIsProtectedIndividually(): void
     {
         $source = 'before <br>visible after <br/>tail';
         $filter = new HtmlTagFilter('br');
 
         $prepared = $filter->apply($source, new PlaceholderCounter());
 
-        self::assertSame($source, $prepared);
-        self::assertSame(0, $filter->getStats()['count']);
+        self::assertSame('before @@0@@visible after @@1@@tail', $prepared);
+        self::assertSame($source, $filter->restore($prepared));
+        self::assertSame(2, $filter->getStats()['count']);
     }
 
     public function testMalformedUnclosedRawTextOutsideChosenBlockDoesNotParseFakeSelectedTags(): void

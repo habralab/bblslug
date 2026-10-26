@@ -62,8 +62,8 @@ final class HtmlTagFilterUnclosedTest extends TestCase
         $source = "before <{$tag}>after";
         $filter = new HtmlTagFilter($tag);
 
-        self::assertSame($source, $filter->apply($source, new PlaceholderCounter()));
-        self::assertSame(0, $filter->getStats()['count']);
+        self::assertSame("before @@0@@after", $filter->apply($source, new PlaceholderCounter()));
+        self::assertSame(1, $filter->getStats()['count']);
     }
 
     /** @return array<string,array{string}> */
