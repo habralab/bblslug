@@ -46,6 +46,14 @@ namespace Bblslug {
                     $status = 200;
                     $body = '{}';
                     break;
+                case 'openai-filtered':
+                case 'xai-tool-call':
+                    $status = 200;
+                    $body = json_encode(['choices' => [[
+                        'finish_reason' => $case === 'openai-filtered' ? 'content_filter' : 'tool_calls',
+                        'message' => ['content' => '‹‹TRANSLATION››partial‹‹END››'],
+                    ]]], JSON_THROW_ON_ERROR);
+                    break;
                 case 'cleared-html':
                     $status = 200;
                     $body = json_encode(['choices' => [[

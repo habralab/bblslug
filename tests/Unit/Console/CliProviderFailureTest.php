@@ -33,6 +33,9 @@ final class CliProviderFailureTest extends TestCase
             'authentication' => ['http401', 'openai:gpt-5-mini', 'HTTP 401 error'],
             'rate limit' => ['http429', 'openai:gpt-5-mini', 'HTTP 429 error'],
             'anthropic credit' => ['anthropic-credit', 'anthropic:claude-haiku-5.5', 'Credit balance too low'],
+            'OpenAI filtered with markers' => ['openai-filtered', 'openai:gpt-5-mini', 'did not finish successfully'],
+            'xAI tool-call with markers' => ['xai-tool-call', 'xai:grok-4.20-0309-non-reasoning',
+                'did not finish successfully'],
             'cleared HTML' => ['cleared-html', 'openai:gpt-5-mini', 'became empty'],
             'malformed response' => ['malformed', 'openai:gpt-5-mini', 'OpenAI translation failed'],
             'timeout' => ['timeout', 'openai:gpt-5-mini', 'timed out'],
@@ -137,6 +140,7 @@ final class CliProviderFailureTest extends TestCase
             'BBLSLUG_TEST_CASE' => $case,
             'BBLSLUG_OPENAI_API_KEY' => $key,
             'BBLSLUG_ANTHROPIC_API_KEY' => $key,
+            'BBLSLUG_XAI_API_KEY' => $key,
             'BBLSLUG_YANDEX_API_KEY' => $key,
             'BBLSLUG_YANDEX_FOLDER_ID' => 'fixture-folder',
         ];
