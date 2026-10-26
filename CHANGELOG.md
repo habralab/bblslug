@@ -10,6 +10,7 @@ This file follows the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) f
 - Grok 4.7 uses the Responses API with explicit low reasoning effort.
 - Provider lifecycle metadata and example models are updated. Generated catalogue documentation is checked against the registry.
 - Documentation examples use authored quickstart inputs; upgrade notes and developer tool instructions are separated from release history.
+- Documented separate input, output-token and timeout budgets for large translations, including OpenAI reasoning controls and Grok Responses output-limit semantics.
 
 ### Removed
 

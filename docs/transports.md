@@ -163,7 +163,6 @@ filtered JSON with only the selected strings prepared; the PHP API exposes this 
 serialized fragment payload, not to unselected metadata. This mode does not change
 the default JSON translation behavior, which treats string values as translatable content.
 
-
 ## Limit plain text segment batches
 
 Set `textSegmentBatchSize: 25` in PHP or `--text-segment-batch-size=25` in the CLI
@@ -278,6 +277,9 @@ including keys, quotes, braces, commas and escaping. It does not measure the ful
 provider request body, prompt tokens or output size. Existing model length and
 driver request-body guards still run on every packet before any HTTP request.
 Choose a cap that leaves room for provider-specific overhead and the output.
+A byte cap does not set the output-token budget. Configure that separately through
+[provider options](providers.md#model-defaults); reasoning models may also spend tokens
+or time before producing visible text. A truncated response remains a failure.
 
 An individual fragment that exceeds the cap is split at Unicode whitespace
 boundaries. Source separators between the resulting pieces stay local and are
@@ -327,6 +329,9 @@ fails before new HTTP requests and preserves the file. A library update also
 invalidates the checkpoint conservatively. An API key or proxy may change;
 HTTP environment settings and the operation timeout may also change. Each new
 invocation gets a fresh operation time budget.
+This allows resuming after a timeout with a longer timeout while retaining successful
+packets. Changing output-token settings or packet limits changes checkpoint identity;
+use a new checkpoint for that configuration instead of editing saved state.
 
 The local JSON file contains translated fragments, normalized usage and success
 statuses, plus identity/checksum metadata. It does not serialize authentication

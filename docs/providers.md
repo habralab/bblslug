@@ -23,6 +23,13 @@ The GPT-6 defaults use Chat Completions with `reasoning_effort=low` and omit `te
 Responses-only models use the Responses API with its own request and usage fields.
 Older OpenAI model identifiers remain available for existing integrations; registry presence does not guarantee access for your API account.
 
+OpenAI's `max_completion_tokens` covers both reasoning and visible output. A request can
+reach that limit before returning a complete translation. GPT-6 Luna also supports
+`--variables=reasoning_effort=none,max_completion_tokens=8192` (PHP:
+`variables: ['reasoning_effort' => 'none', 'max_completion_tokens' => 8192]`) for callers
+who choose to disable reasoning. This is an explicit per-request option, not a setting
+supported by every model or provider. See [GPT-6 Luna settings](https://developers.openai.com/api/docs/models/gpt-6-luna).
+
 The Claude 5.5 entries use the [Anthropic Messages API](https://platform.claude.com/docs/en/api/messages/create)
 with `effort=low`, no `temperature`, and an initial output budget of 4096 tokens.
 Use `--variables=maxTokens=8192` to override the output budget. Use `--variables=effort=low,maxTokens=8192` for models supporting effort; older
@@ -120,10 +127,14 @@ Google transport choices are separate from DeepL's transport choices.
 The `xai:grok-4.7` registry entry uses the Responses API with explicit
 `reasoning_effort=low`. Its output budget can be overridden with
 `variables: ['max_completion_tokens' => 8192]`; the driver maps that option to
-`max_output_tokens` on this endpoint. Reasoning consumes part of the output budget.
+`max_output_tokens` on this endpoint. For Grok's Responses API, this caps the visible
+answer; reasoning and function-call tokens do not count toward that cap. Reasoning
+can still increase latency. For large packets, set an appropriate `BBLSLUG_HTTP_TIMEOUT`
+alongside the shared operation deadline, or reduce the packet byte cap.
 `none` is not accepted by this model. Other Grok entries retain their configured
 protocol and settings; the library does not retry a rejected response on another endpoint.
-See [xAI reasoning settings](https://docs.x.ai/developers/model-capabilities/text/reasoning).
+See [xAI reasoning settings](https://docs.x.ai/developers/model-capabilities/text/reasoning) and
+[output limits and timeouts](https://docs.x.ai/developers/model-capabilities/text/best-practices#streaming-and-timeouts).
 
 ## Yandex completion status
 
