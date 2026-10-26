@@ -1,0 +1,10 @@
+{
+  "message": "Hello, world!",
+  "body": "<p>Read the <a href=\"https://example.invalid/guide\">guide</a>.</p>",
+  "items": [
+    {
+      "html": "<p>Keep <code>status=ready</code> unchanged.</p>"
+    }
+  ],
+  "count": 2
+}

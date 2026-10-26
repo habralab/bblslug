@@ -1,0 +1,5 @@
+Welcome to the translation demo.
+Read the guide at https://example.invalid/guide.
+Keep this command unchanged: <code>printf "hello"</code>.
+<pre>status=ready
+count=2</pre>
