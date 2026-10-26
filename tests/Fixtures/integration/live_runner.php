@@ -8,6 +8,23 @@ namespace Bblslug {
     {
         public static function request(...$arguments): array
         {
+            if (getenv('BBLSLUG_TEST_LEAK_DIAGNOSTICS') === '1') {
+                $request = json_decode($arguments['body'], true, 512, JSON_THROW_ON_ERROR);
+                $input = $request['messages'][1]['content'];
+                preg_match('/‹‹TRANSLATION››(.*?)‹‹END››/s', $input, $matches);
+                $translated = str_replace(
+                    ['Hello', 'world', 'Hi', 'there'],
+                    ['Hallo', 'Welt', 'Hallo', 'dort'],
+                    $matches[1]
+                );
+                return [
+                    'status' => 200, 'headers' => [],
+                    'body' => json_encode(['choices' => [['finish_reason' => 'stop', 'message' => [
+                        'content' => "‹‹TRANSLATION››" . $translated . "‹‹END››",
+                    ]]]], JSON_THROW_ON_ERROR),
+                    'debugRequest' => (string) getenv('BBLSLUG_OPENAI_API_KEY'), 'debugResponse' => '',
+                ];
+            }
             fwrite(STDERR, "Unexpected live HTTP request\n");
             exit(71);
         }

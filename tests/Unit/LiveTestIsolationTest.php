@@ -52,6 +52,26 @@ final class LiveTestIsolationTest extends TestCase
         }
     }
 
+    public function testFailedLiveDiagnosticAssertionsDoNotPrintTheirSecretNeedle(): void
+    {
+        $report = tempnam(sys_get_temp_dir(), 'bblslug-live-junit-');
+        self::assertNotFalse($report);
+        try {
+            [$code, $stdout, $stderr] = $this->runProcess('1', [
+                '--configuration=' . dirname(__DIR__, 2) . '/phpunit.xml',
+                '--testsuite=integration', '--verbose', '--colors=never', '--log-junit=' . $report,
+            ], true);
+            self::assertSame(1, $code, $stderr);
+            self::assertStringContainsString('Failures: 3', $stdout);
+            self::assertStringContainsString('API key leaked in request diagnostics', $stdout);
+            foreach ($this->secrets() as $secret) {
+                self::assertStringNotContainsString($secret, $stdout . $stderr . file_get_contents($report));
+            }
+        } finally {
+            unlink($report);
+        }
+    }
+
     /** @return list<string> */
     private function secrets(): array
     {
@@ -59,7 +79,7 @@ final class LiveTestIsolationTest extends TestCase
     }
 
     /** @param list<string> $args @return array{int,string,string} */
-    private function runProcess(string $flag, array $args): array
+    private function runProcess(string $flag, array $args, bool $leakDiagnostics = false): array
     {
         [$openai, $yandex, $folder] = $this->secrets();
         $process = proc_open([
@@ -69,6 +89,8 @@ final class LiveTestIsolationTest extends TestCase
             'BBLSLUG_OPENAI_API_KEY' => $openai,
             'BBLSLUG_YANDEX_API_KEY' => $yandex,
             'BBLSLUG_YANDEX_FOLDER_ID' => $folder,
+            'BBLSLUG_LIVE_MODEL' => $leakDiagnostics ? 'openai:gpt-5-mini' : '',
+            'BBLSLUG_TEST_LEAK_DIAGNOSTICS' => $leakDiagnostics ? '1' : '0',
         ]);
         self::assertIsResource($process);
         fclose($pipes[0]);
