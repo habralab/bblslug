@@ -4,9 +4,38 @@ declare(strict_types=1);
 
 namespace Bblslug\Console;
 
-/** Stage ordinary local outputs before replacing their directory entry. */
+/** Validate output targets and stage ordinary local files for replacement. */
 final class OutputFileWriter
 {
+    /**
+     * Reject obvious target failures without opening or changing the path.
+     * This advisory check does not replace the checks made during write().
+     *
+     * @throws \RuntimeException If the target is already known to be unusable.
+     */
+    public static function validateTarget(string $path): void
+    {
+        if ($path === '' || str_contains($path, "\0")) {
+            throw new \RuntimeException('Invalid output path');
+        }
+        // Other stream wrappers retain their existing write-time behavior.
+        if (preg_match('~\A([a-z][a-z0-9+.-]*)://~i', $path, $scheme) === 1 && strtolower($scheme[1]) !== 'file') {
+            return;
+        }
+        if (str_ends_with($path, '/') || (DIRECTORY_SEPARATOR === '\\' && str_ends_with($path, '\\'))) {
+            throw new \RuntimeException('Output path ends in a directory separator');
+        }
+        clearstatcache(true, $path);
+        $exists = file_exists($path);
+        if (is_dir($path) || ($exists && !is_writable($path))) {
+            throw new \RuntimeException('Output file is not writable');
+        }
+        // A dangling symlink may point to a creatable target in another directory.
+        if (!$exists && !is_link($path) && (!is_dir(dirname($path)) || !is_writable(dirname($path)))) {
+            throw new \RuntimeException('Output directory is not writable');
+        }
+    }
+
     public static function write(string $path, string $contents): void
     {
         if ($path === '' || str_contains($path, "\0")) {

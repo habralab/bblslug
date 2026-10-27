@@ -527,7 +527,12 @@ class Cli
         }
 
         if (!$dryRun && $outFile !== null) {
-            self::validateTranslationOutput($outFile);
+            try {
+                OutputFileWriter::validateTarget($outFile);
+            } catch (\RuntimeException) {
+                $target = str_contains($outFile, "\0") ? 'invalid path.' : $outFile;
+                Help::error('Failed to write translation file: ' . $target);
+            }
         }
 
         // Handle input
@@ -866,30 +871,6 @@ class Cli
         }
 
         return getenv($name);
-    }
-
-    /** Reject obvious local write failures without opening or changing the output. */
-    private static function validateTranslationOutput(string $path): void
-    {
-        if (str_contains($path, "\0")) {
-            Help::error('Failed to write translation file: invalid path.');
-        }
-        // Other stream wrappers retain their existing write-time behavior.
-        if (preg_match('~\A([a-z][a-z0-9+.-]*)://~i', $path, $scheme) === 1 && strtolower($scheme[1]) !== 'file') {
-            return;
-        }
-        if (str_ends_with($path, '/') || (DIRECTORY_SEPARATOR === '\\' && str_ends_with($path, '\\'))) {
-            Help::error('Failed to write translation file: ' . $path);
-        }
-        clearstatcache(true, $path);
-        $exists = file_exists($path);
-        if (is_dir($path) || ($exists && !is_writable($path))) {
-            Help::error('Failed to write translation file: ' . $path);
-        }
-        // A dangling symlink may point to a creatable target in another directory.
-        if (!$exists && !is_link($path) && (!is_dir(dirname($path)) || !is_writable(dirname($path)))) {
-            Help::error('Failed to write translation file: ' . $path);
-        }
     }
 
     private static function pathsAlias(string $left, string $right): bool
