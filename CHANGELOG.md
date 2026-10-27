@@ -4,6 +4,10 @@ This file follows the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) f
 
 ## [Unreleased]
 
+### Changed
+
+- Simplify segment document preparation and checkpoint result accounting while preserving PHP/CLI interfaces and provider protocols. See [upgrade guidance](docs/upgrading.md#unreleased).
+
 ## [0.11.1] – 2026-10-27
 
 ### Changed

@@ -2,6 +2,16 @@
 
 Read the changes between your installed version and the version you are adopting. Released compatibility notes below describe the behavior introduced by each release.
 
+## Unreleased
+
+Existing PHP calls and CLI commands keep their arguments and behavior. Internal segment preparation
+and checkpoint accounting are reorganized.
+
+Use a new checkpoint file when adopting this source version, including when upgrading from 0.11.1.
+The existing checkpoint policy fingerprints library code and rejects records from another source tree
+before HTTP. Complete pending translations with their original library version, or start a new translation
+and budget for its requests. Do not modify saved identities to bypass this check.
+
 ## Upgrading to 0.11.1
 
 Existing translation calls and CLI commands keep their arguments. This release reorganizes internal
