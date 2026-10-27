@@ -56,39 +56,52 @@ final class SegmentBatchState
     }
 
     /**
-     * Accept only protocol-valid results; persist a fresh packet before reporting completion.
+     * Persist a fresh protocol-valid packet before reporting completion.
      *
      * @param array{text:string,usage:array<string,mixed>|null,httpStatus:int} $provider
-     * @param array{text:string,httpStatus:int,
-     *     consumed:array<string,array{total?:int,breakdown?:array<string,int>}>}|null $saved
      */
-    public function accept(int $index, string $payload, array $provider, ?array $saved): void
+    public function acceptFresh(int $index, string $payload, array $provider): void
+    {
+        $segments = $this->addTranslations($payload, $provider['text']);
+        $usage = UsageExtractor::extract($this->model, $provider['usage']);
+        $this->freshUsages[] = $usage;
+        $this->checkpoint?->append($index, [
+            'text' => $provider['text'], 'httpStatus' => $provider['httpStatus'], 'consumed' => $usage,
+        ]);
+        $this->recordSummary($index, $segments, $provider['httpStatus'], $usage, false);
+    }
+
+    /**
+     * Reuse the text, status and accounted usage from the same saved packet.
+     *
+     * @param array{text:string,httpStatus:int,
+     *     consumed:array<string,array{total?:int,breakdown?:array<string,int>}>} $saved
+     */
+    public function acceptRetained(int $index, string $payload, array $saved): void
+    {
+        $segments = $this->addTranslations($payload, $saved['text']);
+        ++$this->reusedBatches;
+        $this->recordSummary($index, $segments, $saved['httpStatus'], $saved['consumed'], true);
+    }
+
+    private function addTranslations(string $payload, string $text): int
     {
         $packet = json_decode($payload, false, 512, JSON_THROW_ON_ERROR);
         if (!$packet instanceof \stdClass) {
             throw new \LogicException($this->label . ' segment packet must be an object');
         }
         $expected = array_keys(get_object_vars($packet));
-        $this->translations += SegmentTranslations::decode(
-            $provider['text'],
-            $expected,
-            $this->label,
-            $this->allowLineBreaks
-        );
-        $usage = $saved !== null
-            ? $saved['consumed'] : UsageExtractor::extract($this->model, $provider['usage']);
-        if ($saved === null) {
-            $this->freshUsages[] = $usage;
-            $this->checkpoint?->append($index, [
-                'text' => $provider['text'], 'httpStatus' => $provider['httpStatus'], 'consumed' => $usage,
-            ]);
-        } else {
-            ++$this->reusedBatches;
-        }
+        $this->translations += SegmentTranslations::decode($text, $expected, $this->label, $this->allowLineBreaks);
+        return count($expected);
+    }
+
+    /** @param array<string,array{total?:int,breakdown?:array<string,int>}> $usage */
+    private function recordSummary(int $index, int $segments, int $httpStatus, array $usage, bool $reused): void
+    {
         $this->usages[] = $usage;
         $this->summaries[] = [
-            'index' => $index + 1, 'segments' => count($expected),
-            'httpStatus' => $provider['httpStatus'], 'consumed' => $usage, 'reused' => $saved !== null,
+            'index' => $index + 1, 'segments' => $segments,
+            'httpStatus' => $httpStatus, 'consumed' => $usage, 'reused' => $reused,
         ];
     }
 

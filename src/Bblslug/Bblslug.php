@@ -421,7 +421,11 @@ class Bblslug
                 }
                 if ($batchState !== null) {
                     $protocolDebug = $verbose ? "\n\n" . $provider['debugRequest'] . $provider['debugResponse'] : '';
-                    $batchState->accept($index, $payload, $provider, $saved);
+                    if ($saved !== null) {
+                        $batchState->acceptRetained($index, $payload, $saved);
+                    } else {
+                        $batchState->acceptFresh($index, $payload, $provider);
+                    }
                     $say($onFeedback, 'Completed ' . $batchLabel, 'info');
                 }
             } catch (\RuntimeException $exception) {
