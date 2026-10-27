@@ -3,5 +3,6 @@
   <description>PSR-12 coding standard for Bblslug</description>
   <file>src/</file>
   <file>tests/</file>
+  <file>tools/</file>
   <rule ref="PSR12"/>
 </ruleset>
