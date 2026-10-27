@@ -6,6 +6,7 @@ namespace Bblslug\Models\Drivers;
 
 use Bblslug\Models\ModelDriverInterface;
 use Bblslug\Models\Prompts;
+use Bblslug\Models\TranslationMarkers;
 
 /**
  * OpenAI GPT translation driver.
@@ -14,9 +15,6 @@ use Bblslug\Models\Prompts;
  */
 class OpenAiDriver implements ModelDriverInterface
 {
-    private const START = '‹‹TRANSLATION››';
-    private const END   = '‹‹END››';
-
     /**
      * {@inheritdoc}
      *
@@ -101,8 +99,8 @@ class OpenAiDriver implements ModelDriverInterface
             [
                 'source'  => $sourceLang,
                 'target'  => $targetLang,
-                'start'   => self::START,
-                'end'     => self::END,
+                'start'   => TranslationMarkers::START,
+                'end'     => TranslationMarkers::END,
                 'context' => $context !== '' ? "Context: {$context}" : '',
             ]
         );
@@ -110,7 +108,7 @@ class OpenAiDriver implements ModelDriverInterface
         // Compose chat messages
         $messages = [
             ['role' => 'system', 'content' => $systemPrompt],
-            ['role' => 'user',   'content' => $native ? $text : self::START . "\n{$text}\n" . self::END],
+            ['role' => 'user',   'content' => $native ? $text : TranslationMarkers::wrap($text)],
         ];
 
         $apiType = \is_string($config['api_type'] ?? null)
@@ -132,7 +130,7 @@ class OpenAiDriver implements ModelDriverInterface
             ],
             'completions' => [
                 'model' => $model,
-                'prompt' => $systemPrompt . "\n\n" . self::START . "\n{$text}\n" . self::END,
+                'prompt' => $systemPrompt . "\n\n" . TranslationMarkers::wrap($text),
             ],
             default => [
                 'model' => $model,
@@ -199,7 +197,7 @@ class OpenAiDriver implements ModelDriverInterface
      * {@inheritdoc}
      *
      * Parses the JSON, extracts the assistant’s reply between markers
-     * defined by self::START and self::END.
+     * defined by TranslationMarkers::START and TranslationMarkers::END.
      *
      * @param array<string,mixed> $config       Model configuration (unused).
      * @param string              $responseBody Raw HTTP response body.
@@ -277,11 +275,10 @@ class OpenAiDriver implements ModelDriverInterface
         }
 
         // Extract between markers
-        $pattern = '/' . preg_quote(self::START, '/') . '(.*?)' . preg_quote(self::END, '/') . '/s';
-        if (!preg_match($pattern, $content, $matches)) {
+        $text = TranslationMarkers::extract($content);
+        if ($text === null) {
             throw new \RuntimeException("Markers not found in OpenAI response");
         }
-        $text = trim($matches[1]);
 
         return ['text' => $text, 'usage' => $usage];
     }

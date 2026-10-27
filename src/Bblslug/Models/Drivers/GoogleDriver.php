@@ -6,6 +6,7 @@ namespace Bblslug\Models\Drivers;
 
 use Bblslug\Models\ModelDriverInterface;
 use Bblslug\Models\Prompts;
+use Bblslug\Models\TranslationMarkers;
 
 /**
  * Google Gemini translation driver using Generative Language API.
@@ -14,9 +15,6 @@ use Bblslug\Models\Prompts;
  */
 class GoogleDriver implements ModelDriverInterface
 {
-    private const START = '‹‹TRANSLATION››';
-    private const END   = '‹‹END››';
-
     /**
      * {@inheritdoc}
      *
@@ -111,14 +109,14 @@ class GoogleDriver implements ModelDriverInterface
             [
                 'source'  => $sourceLang,
                 'target'  => $targetLang,
-                'start'   => self::START,
-                'end'     => self::END,
+                'start'   => TranslationMarkers::START,
+                'end'     => TranslationMarkers::END,
                 'context' => $context !== '' ? "Context: {$context}" : '',
             ]
         );
 
         // Wrap user text in markers
-        $contentText = $nativeStructured ? $text : self::START . "\n" . $text . "\n" . self::END;
+        $contentText = $nativeStructured ? $text : TranslationMarkers::wrap($text);
 
         // Build JSON payload
         /** @var array<string,mixed> $generationConfig */
@@ -178,7 +176,7 @@ class GoogleDriver implements ModelDriverInterface
      * {@inheritdoc}
      *
      * Parses the JSON, extracts the assistant’s reply between markers
-     * defined by self::START and self::END.
+     * defined by TranslationMarkers::START and TranslationMarkers::END.
      *
      * @param array<string,mixed> $config       Model configuration (unused).
      * @param string              $responseBody Raw HTTP response body.
@@ -265,17 +263,10 @@ class GoogleDriver implements ModelDriverInterface
         }
 
         // Extract between markers
-        $pattern = '/'
-            . \preg_quote(self::START, '/')
-            . '(.*?)'
-            . \preg_quote(self::END, '/')
-            . '/s';
-
-        if (!\preg_match($pattern, $accumulated, $matches)) {
+        $text = TranslationMarkers::extract($accumulated);
+        if ($text === null) {
             throw new \RuntimeException("Markers not found in Gemini response");
         }
-
-        $text = \trim($matches[1]);
 
         return [
             'text'  => $text,

@@ -6,6 +6,7 @@ namespace Bblslug\Models\Drivers;
 
 use Bblslug\Models\ModelDriverInterface;
 use Bblslug\Models\Prompts;
+use Bblslug\Models\TranslationMarkers;
 
 /**
  * Anthropic Claude translation driver.
@@ -15,9 +16,6 @@ use Bblslug\Models\Prompts;
 
 class AnthropicDriver implements ModelDriverInterface
 {
-    private const START = '‹‹TRANSLATION››';
-    private const END   = '‹‹END››';
-
     /**
      * {@inheritdoc}
      *
@@ -94,15 +92,15 @@ class AnthropicDriver implements ModelDriverInterface
             [
                 'source'  => $source,
                 'target'  => $target,
-                'start'   => self::START,
-                'end'     => self::END,
+                'start'   => TranslationMarkers::START,
+                'end'     => TranslationMarkers::END,
                 'context' => $context !== '' ? "Context: {$context}" : '',
             ]
         );
 
         // Compose chat messages
         $messages = [
-            ['role' => 'user',   'content' => self::START . "\n" . $text . "\n" . self::END],
+            ['role' => 'user',   'content' => TranslationMarkers::wrap($text)],
         ];
 
         // Prepare payload
@@ -147,7 +145,7 @@ class AnthropicDriver implements ModelDriverInterface
      * {@inheritdoc}
      *
      * Parses the JSON, extracts the assistant’s reply between markers
-     * defined by self::START and self::END.
+     * defined by TranslationMarkers::START and TranslationMarkers::END.
      *
      * @param array<string,mixed> $config       Model configuration (unused).
      * @param string              $responseBody Raw HTTP response body.
@@ -198,13 +196,10 @@ class AnthropicDriver implements ModelDriverInterface
         }
 
         // Extract between markers
-        $pattern = '/' . preg_quote(self::START, '/') . '(.*?)' . preg_quote(self::END, '/') . '/s';
-
-        if (!preg_match($pattern, $content, $matches)) {
+        $text = TranslationMarkers::extract($content);
+        if ($text === null) {
             throw new \RuntimeException("Markers not found in Anthropic response");
         }
-
-        $text = trim($matches[1]);
 
         // Raw usage statistics from Anthropic
         $usage = null;

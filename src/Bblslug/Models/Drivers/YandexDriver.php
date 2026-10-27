@@ -6,6 +6,7 @@ namespace Bblslug\Models\Drivers;
 
 use Bblslug\Models\ModelDriverInterface;
 use Bblslug\Models\Prompts;
+use Bblslug\Models\TranslationMarkers;
 
 /**
  * Yandex Foundation Models translation driver.
@@ -14,9 +15,6 @@ use Bblslug\Models\Prompts;
  */
 class YandexDriver implements ModelDriverInterface
 {
-    private const START = '‹‹TRANSLATION››';
-    private const END   = '‹‹END››';
-
     /**
      * {@inheritdoc}
      *
@@ -112,8 +110,8 @@ class YandexDriver implements ModelDriverInterface
             [
                 'source'  => $sourceLang,
                 'target'  => $targetLang,
-                'start'   => self::START,
-                'end'     => self::END,
+                'start'   => TranslationMarkers::START,
+                'end'     => TranslationMarkers::END,
                 'context' => $context !== '' ? "Context: {$context}" : '',
             ]
         );
@@ -121,7 +119,7 @@ class YandexDriver implements ModelDriverInterface
         // Compose chat messages
         $messages = [
             ['role' => 'system', 'text' => $systemPrompt],
-            ['role' => 'user',   'text' => $nativeJson ? $text : self::START . "\n{$text}\n" . self::END],
+            ['role' => 'user',   'text' => $nativeJson ? $text : TranslationMarkers::wrap($text)],
         ];
 
         $apiType = \is_string($config['api_type'] ?? null)
@@ -208,7 +206,7 @@ class YandexDriver implements ModelDriverInterface
      * {@inheritdoc}
      *
      * Parses the JSON, extracts the assistant’s reply between markers
-     * defined by self::START and self::END.
+     * defined by TranslationMarkers::START and TranslationMarkers::END.
      *
      * @param array<string,mixed> $config       Model configuration (unused).
      * @param string              $responseBody Raw HTTP response body.
@@ -328,15 +326,10 @@ class YandexDriver implements ModelDriverInterface
                 throw new \RuntimeException('Yandex native JSON response requires an object root');
             }
         } else {
-            $pattern = '/'
-                . \preg_quote(self::START, '/')
-                . '(.*?)'
-                . \preg_quote(self::END, '/')
-                . '/s';
-            if (!preg_match($pattern, $content, $matches)) {
+            $text = TranslationMarkers::extract($content);
+            if ($text === null) {
                 throw new \RuntimeException("Markers not found in Yandex response");
             }
-            $text = trim($matches[1]);
             if (\is_array($context) && ($context['html_fence_free'] ?? false) === true) {
                 $text = self::removeAddedHtmlFence($text);
             }

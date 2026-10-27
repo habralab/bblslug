@@ -6,6 +6,7 @@ namespace Bblslug\Models\Drivers;
 
 use Bblslug\Models\ModelDriverInterface;
 use Bblslug\Models\Prompts;
+use Bblslug\Models\TranslationMarkers;
 
 /**
  * xAI Grok translation driver.
@@ -14,9 +15,6 @@ use Bblslug\Models\Prompts;
  */
 class XaiDriver implements ModelDriverInterface
 {
-    private const START = '‹‹TRANSLATION››';
-    private const END   = '‹‹END››';
-
     /**
      * {@inheritdoc}
      *
@@ -106,8 +104,8 @@ class XaiDriver implements ModelDriverInterface
             [
                 'source'  => $sourceLang,
                 'target'  => $targetLang,
-                'start'   => self::START,
-                'end'     => self::END,
+                'start'   => TranslationMarkers::START,
+                'end'     => TranslationMarkers::END,
                 'context' => $context !== '' ? "Context: {$context}" : '',
             ]
         );
@@ -115,7 +113,7 @@ class XaiDriver implements ModelDriverInterface
         // Compose chat messages
         $messages = [
             ['role' => 'system', 'content' => $systemPrompt],
-            ['role' => 'user',   'content' => $hasSchema ? $text : self::START . "\n{$text}\n" . self::END],
+            ['role' => 'user',   'content' => $hasSchema ? $text : TranslationMarkers::wrap($text)],
         ];
 
         $payload = [
@@ -185,7 +183,7 @@ class XaiDriver implements ModelDriverInterface
      * {@inheritdoc}
      *
      * Parses the JSON, extracts the assistant’s reply between markers
-     * defined by self::START and self::END.
+     * defined by TranslationMarkers::START and TranslationMarkers::END.
      *
      * @param array<string,mixed> $config       Model configuration (unused).
      * @param string              $responseBody Raw HTTP response body.
@@ -294,11 +292,10 @@ class XaiDriver implements ModelDriverInterface
                 throw new \RuntimeException('Grok native JSON response is not valid JSON', 0, $exception);
             }
         } else {
-            $pattern = '/' . preg_quote(self::START, '/') . '(.*?)' . preg_quote(self::END, '/') . '/s';
-            if (!preg_match($pattern, $content, $matches)) {
+            $text = TranslationMarkers::extract($content);
+            if ($text === null) {
                 throw new \RuntimeException('Markers not found in Grok response');
             }
-            $text = trim($matches[1]);
         }
         // Usage statistics normalized to array<string,mixed>|null
         $usage = null;
