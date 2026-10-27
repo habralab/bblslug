@@ -21,6 +21,7 @@ use Bblslug\Translation\SegmentBatchState;
 use Bblslug\Translation\SegmentPlan;
 use Bblslug\Translation\SegmentTranslations;
 use Bblslug\Translation\TextDocument;
+use Bblslug\Translation\TransportValidation;
 use Bblslug\Validation\PlaceholderValidator;
 use Bblslug\Validation\TextLengthValidator;
 
@@ -173,41 +174,15 @@ class Bblslug
         if ($segmentAbbreviations !== [] && $segmentBatchMaxBytes === null) {
             throw new \InvalidArgumentException('segmentAbbreviations requires segmentBatchMaxBytes');
         }
-        if ($textSegmentBatchSize !== null && ($textSegmentBatchSize < 1 || $textTransport !== 'segments')) {
-            throw new \InvalidArgumentException(
-                'textSegmentBatchSize requires text segments transport and a positive integer'
-            );
-        }
-        if (!\in_array($textTransport, ['document', 'segments'], true)) {
-            throw new \InvalidArgumentException('textTransport must be document or segments');
-        }
-        if ($textTransport === 'segments' && $format !== 'text') {
-            throw new \InvalidArgumentException('textTransport segments requires format text');
-        }
-        if ($textTransport === 'segments' && \array_key_exists('response_schema', $variables)) {
-            throw new \InvalidArgumentException('response_schema cannot describe a text segment transport payload');
-        }
-        if ($htmlSegmentBatchSize !== null && ($htmlSegmentBatchSize < 1 || $htmlTransport !== 'segments')) {
-            throw new \InvalidArgumentException(
-                'htmlSegmentBatchSize requires segments transport and a positive integer'
-            );
-        }
-        if (!\in_array($htmlTransport, ['document', 'segments'], true)) {
-            throw new \InvalidArgumentException('htmlTransport must be document or segments');
-        }
-        $jsonHtmlSegments = $htmlTransport === 'segments' && \in_array($format, ['json', 'linedJson'], true);
-        if ($htmlTransport === 'segments' && !\in_array($format, ['html', 'json', 'linedJson'], true)) {
-            throw new \InvalidArgumentException('htmlTransport segments requires format html, json, or linedJson');
-        }
-        if ($htmlJsonPointers !== [] && !$jsonHtmlSegments) {
-            throw new \InvalidArgumentException('htmlJsonPointers requires JSON format and htmlTransport segments');
-        }
-        if ($jsonHtmlSegments && $htmlJsonPointers === []) {
-            throw new \InvalidArgumentException('JSON HTML segments require explicit htmlJsonPointers');
-        }
-        if ($htmlTransport === 'segments' && \array_key_exists('response_schema', $variables)) {
-            throw new \InvalidArgumentException('response_schema cannot describe an HTML segment transport payload');
-        }
+        $hasResponseSchema = \array_key_exists('response_schema', $variables);
+        TransportValidation::validateText($format, $textTransport, $textSegmentBatchSize, $hasResponseSchema);
+        $jsonHtmlSegments = TransportValidation::validateHtml(
+            $format,
+            $htmlTransport,
+            $htmlSegmentBatchSize,
+            $htmlJsonPointers,
+            $hasResponseSchema
+        );
         ModelVariables::validate($variables);
         $diagnosticMasker = new SecretMasker([
             $apiKey,
