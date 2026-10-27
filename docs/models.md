@@ -32,7 +32,8 @@ Anthropic “not sooner than” guarantees are not shutdown dates.
 
 ## Models for new integrations
 
-This view omits pinned snapshots, previews, deprecated entries and access-restricted entries.
+This view omits pinned snapshots, previews, deprecated entries, and models with
+`restricted` or `existing_customers` access.
 It is a discovery aid, not a claim that every listed model was live-tested for every format.
 
 | Model key | Kind |

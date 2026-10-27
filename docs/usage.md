@@ -282,7 +282,7 @@ JSON syntax errors and HTML syntax/structure errors include a preview of the
 restored invalid document only in verbose mode. This preview is masked before
 being limited to 2000 characters plus an ellipsis. Existing HTTP diagnostic logs
 have their own behavior; this limit applies to the restored-document preview.
-The new previews mask the supplied API key, proxy URI, and Yandex folder ID using
+These previews mask the supplied API key, proxy URI, and Yandex folder ID using
 the same encoded-secret representations as `SecretMasker`. Other source content
 can remain visible, so verbose output is diagnostic data.
 
@@ -309,7 +309,7 @@ Callback exceptions remain isolated from translation.
   as a float, saturated value or artificial zero; the CLI omits its line too.
   This applies to both whole-document and current-run checkpoint statistics.
 
-  After each translation (when not in dry-run), Bblslug prints to stderr a summary of consumed usage metrics, for example:
+  After each successful CLI translation (except dry-run), the CLI prints consumed usage metrics to STDERR, for example:
 
   ```
   Usage metrics:

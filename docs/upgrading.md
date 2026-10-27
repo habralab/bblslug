@@ -2,10 +2,34 @@
 
 Read the changes between your installed version and the version you are adopting. Released compatibility notes below describe the behavior introduced by each release.
 
+## Unreleased translation settings
+
+The PHP API adds `segmentAbbreviations` as the last optional argument; existing positional arguments
+keep their order. The CLI equivalent is repeatable `--segment-abbreviation=TOKEN`. Hints are opt-in
+and require `segmentBatchMaxBytes` / `--segment-batch-max-bytes`.
+
+With a byte cap, oversized segment values now split at sentence-ending whitespace where punctuation
+permits, falling back to word boundaries to respect the cap. Dotted initials, leading list markers,
+lowercase continuations and explicit abbreviation hints keep context where the cap permits.
+This changes fragment identifiers and packet boundaries; values that already fit keep their granularity.
+See [segment planning](transports.md#bound-segment-packets-by-serialized-bytes).
+
+The standard `translator` segment transports now request required-key native schemas for the declared
+Yandex Lite/Pro and Grok 4.7 models. Every current packet requires all its identifiers and nonempty string
+values. Explicit `json_transport=markers` and custom prompts retain their configured protocol.
+Caller-provided `response_schema` is also supported for Yandex and xAI JSON document requests;
+it cannot describe segment transport payloads. See [native structured JSON](providers.md#native-structured-json).
+
+Use a new checkpoint file after updating the library. Checkpoint identity includes library source code,
+so checkpoints from 0.10.0 are rejected before HTTP even when their input and options are unchanged.
+Do not edit saved identities to bypass this check. Complete pending translations with the original
+library version before upgrading, or start a new translation and budget for its requests.
+
 ## Unreleased model catalogue
 
 The default CLI model listing now focuses on undated standard-access models without announced deprecation. Use
-`--list-models=all` to inspect every registered snapshot, preview or restricted model. `Bblslug::listModels()`
+`--list-models=all` to inspect every registered model, including snapshots, previews, deprecated entries
+and models with `restricted` or `existing_customers` access. `Bblslug::listModels()`
 still returns every registered key; its order is now deterministic by provider and natural model name.
 
 The following retired keys are removed; selecting one fails locally instead of sending a doomed request:

@@ -109,7 +109,7 @@ that content; handle them as private translation data.
 - [Provider options](docs/providers.md): native JSON, model settings and provider-specific protocols.
 - [Model catalogue](docs/models.md): registered keys and links to catalogue evidence.
 - [Changelog](CHANGELOG.md): releases and compatibility changes.
-- [Development checks](tools/README.md): live smoke tools, verification scope and recorded results.
+- [Development checks](tools/README.md): offline and live verification tools and their scope.
 - [Input samples](samples/README.md): authored quickstart files and historical corpora.
 
 ## License

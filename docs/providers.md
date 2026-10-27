@@ -88,7 +88,7 @@ it does not independently implement every JSON Schema constraint.
 
 `linedJson` selects an alternative JSON translation prompt with the same container
 validation as `json`. It processes one JSON document, not JSON Lines, and does not
-silently repair malformed output. Neither new mode assumes particular field names
+silently repair malformed output. Neither mode assumes particular field names
 or a document domain. Use the existing context or a custom prompt for application
 rules. Custom prompt templates must provide the requested format; native mode
 requests the `structured_json` template.

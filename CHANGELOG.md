@@ -6,28 +6,27 @@ This file follows the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) f
 
 ### Added
 
-- Opt-in segment acceptance checks for API-to-CLI checkpoint recovery, cached reads, usage accounting and fixture integrity, with an offline CI mode.
-- Caller-supplied abbreviation hints for text/HTML segment planning in PHP and CLI, including checkpoint identity checks.
-- Native JSON Schema output for Yandex and xAI; declared models require every identifier in each text/HTML segment packet, including HTML selected inside JSON.
+- Caller-supplied abbreviation hints for text/HTML segment planning in PHP and CLI.
+- Native JSON Schema output for Yandex and xAI JSON requests.
+- Offline documentation, catalogue and segment-recovery checks, plus an opt-in live segment acceptance suite.
 
 ### Changed
 
-- Model discovery is sorted by provider and model name. `--list-models` shows models for new integrations; `--list-models=all` includes served snapshots, previews, restricted and deprecated entries. The PHP model list still returns all registered keys.
+- Standard segment translations use required-key native schemas on declared Yandex Lite/Pro and Grok 4.7 models, including HTML selected inside JSON. Explicit marker requests and custom prompts retain their protocols. See [upgrade guidance](docs/upgrading.md#unreleased-translation-settings).
+- Model discovery is sorted by provider and natural model name. `--list-models` focuses on standard-access models for new integrations; `--list-models=all` and the PHP list include every registered key. Provider lifecycle metadata is updated.
 - Grok 4.7 uses the Responses API with explicit low reasoning effort.
-- Provider lifecycle metadata and example models are updated. Generated catalogue documentation is checked against the registry.
-- Documentation examples use authored quickstart inputs; upgrade notes and developer tool instructions are separated from release history.
-- Documented separate input, output-token and timeout budgets for large translations, including OpenAI reasoning controls and Grok Responses output-limit semantics.
+- Documentation is split into usage, transport, provider and upgrade guides, with runnable quickstart inputs and output-budget guidance.
 
 ### Removed
 
-- Nineteen retired OpenAI identifiers and the shut-down Gemini 3.1 Flash-Lite preview. Removed keys fail locally; no replacement is silently selected. See [upgrading](docs/upgrading.md#unreleased-model-catalogue).
+- Nineteen retired OpenAI identifiers and the shut-down Gemini 3.1 Flash-Lite preview. Removed keys fail locally; no replacement is silently selected. See [removed model keys](docs/upgrading.md#unreleased-model-catalogue).
 
 ### Fixed
 
-- OpenAI and xAI truncation errors name the public `max_completion_tokens` option. Smoke reports classify OpenAI Responses output-limit failures as budget exhaustion.
-- Oversized segment values use sentence-sized pieces where punctuation permits, keeping dotted initials, leading list markers and lowercase continuations together when the byte cap permits. Pieces retain separate identifiers and source separators.
+- Oversized segment values use sentence-sized pieces where punctuation permits, keeping dotted initials, leading list markers and lowercase continuations together when the byte cap permits. Source separators are preserved.
 - Explicit xAI Chat Completions refusals are rejected before extracting translated content.
-- Empty provider translations retain masked HTTP request/response diagnostics when verbose mode is enabled. Quiet errors remain concise; empty output for nonempty input still fails without retries.
+- Empty provider translations retain masked HTTP diagnostics in verbose mode; quiet errors remain concise.
+- OpenAI and xAI truncation errors name the public `max_completion_tokens` option. Smoke reports classify OpenAI Responses output-limit failures as budget exhaustion.
 
 ## [0.10.0] – 2026-10-26
 

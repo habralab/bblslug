@@ -221,7 +221,8 @@ class Help
         }
 
         if (!$includeAll) {
-            echo "Use --list-models=all for snapshots, previews, restricted and deprecated models.\n";
+            echo "Use --list-models=all for snapshots, previews, deprecated models, "
+                . "and models with restricted or existing-customer access.\n";
         }
         echo $reset;
     }
