@@ -4,13 +4,17 @@ declare(strict_types=1);
 
 namespace Bblslug\Filters;
 
-/** @internal */
+/**
+ * @internal Decoded JSON string with lazily resolved source byte offsets.
+ * The cursor retains one raw run or escape, including a complete surrogate pair.
+ */
 final class JsonStringView
 {
     private string $text;
-    /** @var list<array{decodedStart:int,length:int,sourceStart:int,sourceEnd:int,raw:bool}> */
-    private array $segments = [];
-    public function __construct(string $token)
+    /** @var \Generator<int,array{int,int,int,bool}>|null */
+    private ?\Generator $ranges = null;
+
+    public function __construct(private readonly string $token)
     {
         $length = strlen($token);
         if ($length < 2 || $token[0] !== '"' || $token[$length - 1] !== '"') {
@@ -29,12 +33,14 @@ final class JsonStringView
             throw new \InvalidArgumentException('JSON token is not a string');
         }
         $this->text = $decoded;
-        $this->buildSegments($token);
     }
+
     public function getText(): string
     {
         return $this->text;
     }
+
+    /** Ordered lookups scan each raw run or escape once; backward lookups restart. */
     public function sourceOffset(int $decodedByteOffset): int
     {
         $decodedLength = strlen($this->text);
@@ -42,55 +48,53 @@ final class JsonStringView
             throw new \InvalidArgumentException('Decoded byte offset is outside the string');
         }
         if ($decodedByteOffset === $decodedLength) {
-            return count($this->segments) === 0 ? 1 : $this->segments[count($this->segments) - 1]['sourceEnd'];
+            return strlen($this->token) - 1;
         }
-        $low = 0;
-        $high = count($this->segments) - 1;
-        while ($low <= $high) {
-            $middle = intdiv($low + $high, 2);
-            $segment = $this->segments[$middle];
-            if ($decodedByteOffset < $segment['decodedStart']) {
-                $high = $middle - 1;
+        if ($decodedByteOffset === 0) {
+            return 1;
+        }
+        $this->ranges ??= self::sourceRanges($this->token);
+        if (!$this->ranges->valid() || $decodedByteOffset < $this->ranges->current()[1]) {
+            $this->ranges = self::sourceRanges($this->token);
+        }
+        while ($this->ranges->valid()) {
+            [$rawStart, $decodedStart, $decodedEnd, $identity] = $this->ranges->current();
+            if ($decodedByteOffset >= $decodedEnd) {
+                $this->ranges->next();
                 continue;
             }
-            if ($decodedByteOffset >= $segment['decodedStart'] + $segment['length']) {
-                $low = $middle + 1;
-                continue;
-            }
-            if ($segment['raw']) {
-                return $segment['sourceStart'] + $decodedByteOffset - $segment['decodedStart'];
-            }
-            return $segment['sourceStart'];
+            // Unlike HTML entities, every byte inside a decoded JSON escape maps to its start.
+            return $identity ? $rawStart + $decodedByteOffset - $decodedStart : $rawStart;
         }
         throw new \LogicException('Decoded offset map is incomplete');
     }
-    private function buildSegments(string $token): void
+
+    /**
+     * Static to avoid a view -> generator -> view reference cycle.
+     *
+     * @return \Generator<int,array{int,int,int,bool}> Source start, decoded interval and identity flag.
+     */
+    private static function sourceRanges(string $token): \Generator
     {
         $contentEnd = strlen($token) - 1;
         $position = 1;
         $decodedPosition = 0;
         while ($position < $contentEnd) {
-            if ($token[$position] !== '\\') {
-                $start = $position;
-                do {
-                    $position++;
-                } while ($position < $contentEnd && $token[$position] !== '\\');
-                $runLength = $position - $start;
-                $this->segments[] = [
-                    'decodedStart' => $decodedPosition,
-                    'length' => $runLength,
-                    'sourceStart' => $start,
-                    'sourceEnd' => $position,
-                    'raw' => true,
-                ];
-                $decodedPosition += $runLength;
-                continue;
+            $escape = strpos($token, '\\', $position);
+            $rawEnd = $escape === false ? $contentEnd : $escape;
+            if ($rawEnd > $position) {
+                $length = $rawEnd - $position;
+                yield [$position, $decodedPosition, $decodedPosition + $length, true];
+                $decodedPosition += $length;
+                $position = $rawEnd;
             }
-            $start = $position;
-            $end = $this->escapeEnd($token, $position, $contentEnd);
+            if ($position === $contentEnd) {
+                return;
+            }
+            $end = self::escapeEnd($token, $position, $contentEnd);
             try {
                 $escapeValue = json_decode(
-                    '"' . substr($token, $start, $end - $start) . '"',
+                    '"' . substr($token, $position, $end - $position) . '"',
                     true,
                     512,
                     JSON_THROW_ON_ERROR
@@ -101,19 +105,14 @@ final class JsonStringView
             if (!is_string($escapeValue)) {
                 throw new \LogicException('JSON escape sequence did not decode to a string');
             }
-            $decodedLength = strlen($escapeValue);
-            $this->segments[] = [
-                'decodedStart' => $decodedPosition,
-                'length' => $decodedLength,
-                'sourceStart' => $start,
-                'sourceEnd' => $end,
-                'raw' => false,
-            ];
-            $decodedPosition += $decodedLength;
+            $length = strlen($escapeValue);
+            yield [$position, $decodedPosition, $decodedPosition + $length, false];
+            $decodedPosition += $length;
             $position = $end;
         }
     }
-    private function escapeEnd(string $token, int $position, int $contentEnd): int
+
+    private static function escapeEnd(string $token, int $position, int $contentEnd): int
     {
         $escapeCode = $position + 1;
         if ($escapeCode >= $contentEnd) {

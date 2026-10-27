@@ -31,6 +31,51 @@ final class JsonStringViewTest extends TestCase
         self::assertSame(1, $empty->sourceOffset(0));
     }
 
+    public function testMixedOffsetsInDifferentLookupOrders(): void
+    {
+        $view = new JsonStringView('"é\\u00E9\\\\u0041\\uD83D\\uDE00z"');
+        self::assertSame('éé\\u0041😀z', $view->getText());
+        $offsets = [1, 2, 3, 3, 9, 11, 12, 13, 14, 15, 16, 16, 16, 16, 28, 29];
+        $ascending = range(0, count($offsets) - 1);
+        $random = [10, 3, 15, 1, 12, 5, 0, 14, 7, 2, 13, 6, 9, 4, 11, 8];
+        foreach ([$ascending, array_reverse($ascending), $random] as $order) {
+            foreach ($order as $offset) {
+                self::assertSame($offsets[$offset], $view->sourceOffset($offset));
+            }
+        }
+    }
+
+    public function testOutOfRangeOffsetsHaveStableExceptionMessage(): void
+    {
+        foreach ([new JsonStringView('""'), new JsonStringView('"x"')] as $view) {
+            foreach ([-1, strlen($view->getText()) + 1] as $offset) {
+                try {
+                    $view->sourceOffset($offset);
+                    self::fail('Expected an exception for an out-of-range offset');
+                } catch (\InvalidArgumentException $exception) {
+                    self::assertSame('Decoded byte offset is outside the string', $exception->getMessage());
+                }
+            }
+        }
+    }
+
+    public function testOffsetLookupDoesNotRetainView(): void
+    {
+        $wasEnabled = gc_enabled();
+        gc_disable();
+        try {
+            $view = new JsonStringView('"a\\u00E9b"');
+            $view->sourceOffset(1);
+            $reference = \WeakReference::create($view);
+            unset($view);
+            self::assertNull($reference->get());
+        } finally {
+            if ($wasEnabled) {
+                gc_enable();
+            }
+        }
+    }
+
     public function testSupportsEverySimpleEscape(): void
     {
         $token = '"\\"\\\\\\/\\b\\f\\n\\r\\t"';
