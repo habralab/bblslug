@@ -298,9 +298,12 @@ An individual fragment that exceeds the cap is split into sentence-sized pieces
 where sentence-ending punctuation (`.`, `!`, `?`, `。`, `！`, `？`, with optional closing
 quotes, `)` or `]`) is followed by whitespace. Longer sentences fall back to Unicode
 whitespace boundaries. Values that already fit the cap retain their original
-granularity. Sentence boundaries use punctuation rather than linguistic analysis;
-abbreviations can also mark a boundary. Source separators between the resulting
-pieces stay local and are reinserted exactly. Original identifiers stay on the first piece; additional
+granularity. Dotted letter initials stay with the following text, leading list
+numbers stay with their items, and a period before a lowercase continuation does
+not force a new piece. Sentence boundaries use punctuation rather than linguistic
+analysis: lexical abbreviations such as `Dr.` or `ул.` can still mark a boundary.
+Source separators between the resulting pieces stay local and are reinserted
+exactly. Original identifiers stay on the first piece; additional
 pieces get distinct identifiers and are joined before text/HTML reconstruction.
 This also works for explicitly selected HTML strings inside JSON; unselected JSON
 bytes remain unchanged. Missing pieces or invalid packet responses stop the

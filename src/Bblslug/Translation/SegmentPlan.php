@@ -92,10 +92,11 @@ final class SegmentPlan
                     + $this->encodedBytes($word) - 2;
                 // Keep sentence-sized units in oversized values: a provider must
                 // return each unit rather than condensing repeated prose in one string.
-                $sentenceEnd = $oversized && preg_match(
-                    '/[.!?。！？]["\x{27}»”’)\]]*\z/u',
-                    (string) $matches[0][$i - 1][0]
-                ) === 1;
+                $sentenceEnd = $oversized && $this->isSentenceEnd(
+                    (string) $matches[0][$i - 1][0],
+                    $word,
+                    $current
+                );
                 if (!$sentenceEnd && 2 + $this->entryBytesEncoded($currentId, $candidateBytes) <= $maxBytes) {
                     $current .= $separator . $word;
                     $currentBytes = $candidateBytes;
@@ -165,6 +166,26 @@ final class SegmentPlan
             $restored[$original] .= $suffix;
         }
         return $this->encode($restored);
+    }
+
+    private function isSentenceEnd(string $previous, string $next, string $current): bool
+    {
+        if (preg_match('/([.!?。！？])["\x{27}»”’)\]]*\z/u', $previous, $ending) !== 1) {
+            return false;
+        }
+        if ($ending[1] !== '.') {
+            return true;
+        }
+        // Dotted initials stay with their context; a hard byte cap can still split them.
+        if (preg_match('/\A["\x{27}«“‘(\[]*(?:\p{L}\.)+\z/u', $previous) === 1) {
+            return false;
+        }
+        // A leading list number belongs to its item, not to an independent value.
+        if (preg_match('/\A\s*\p{Nd}+\.\z/u', $current) === 1) {
+            return false;
+        }
+        // Lowercase continuation covers abbreviations and nonterminal ellipses.
+        return preg_match('/\A["\x{27}«“‘(\[]*\p{Ll}/u', $next) !== 1;
     }
 
     /** @param array<string,bool> $used */

@@ -22,7 +22,7 @@ This file follows the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) f
 
 ### Fixed
 
-- Oversized segment values use sentence-sized pieces where punctuation permits, preserving separate identifiers for repeated sentences instead of cutting only at the byte limit.
+- Oversized segment values use sentence-sized pieces where punctuation permits, keeping dotted initials, leading list markers and lowercase continuations together when the byte cap permits. Pieces retain separate identifiers and source separators.
 - Explicit xAI Chat Completions refusals are rejected before extracting translated content.
 - Empty provider translations retain masked HTTP request/response diagnostics when verbose mode is enabled. Quiet errors remain concise; empty output for nonempty input still fails without retries.
 

@@ -101,6 +101,66 @@ final class SegmentPlanTest extends TestCase
         );
     }
 
+    /** @dataProvider proseBoundaries */
+    public function testOrdinaryProseKeepsContextUnlessTheCapRequiresSplitting(array $units): void
+    {
+        $value = implode(" \t", array_fill(0, 4, implode(' ', $units)));
+        $source = json_encode(['s0' => $value], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+        $cap = 0;
+        foreach ($units as $unit) {
+            $encoded = json_encode(['s0' => $unit], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+            $cap = max($cap, strlen($encoded) + 16);
+        }
+        self::assertGreaterThan($cap, strlen($source));
+        $plan = new SegmentPlan($source, 3, $cap);
+        $all = [];
+        foreach ($plan->getPayloads() as $payload) {
+            self::assertLessThanOrEqual($cap, strlen($payload));
+            $packet = json_decode($payload, true, 512, JSON_THROW_ON_ERROR);
+            self::assertLessThanOrEqual(3, count($packet));
+            $all += $packet;
+        }
+        $actual = array_map('trim', array_values($all));
+        self::assertSame(array_merge($units, $units, $units, $units), $actual);
+        self::assertSame(
+            $source,
+            $plan->restore(json_encode((object) $all, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR))
+        );
+    }
+
+    public static function proseBoundaries(): array
+    {
+        return [
+            'initials' => [['J. R. Tolkien wrote the note.', 'Then he left.']],
+            'Russian initials and abbreviations' => [[
+                'И. И. Иванов проверил отчёт, т. е. сверил данные и т. д. Затем подписал его.',
+            ]],
+            'numbered list' => [['1. Read the guide.', '2. Save the result.']],
+            'Unicode decimal list' => [['١. Read the guide.', '٢. Save the result.']],
+            'lettered list' => [['A. Read the guide.', 'B. Save the result.']],
+            'dotted abbreviation' => [['We left at 5 p.m. yesterday.', 'Then it rained.']],
+            'lowercase continuation' => [['Use approx. five pages.', 'Then stop.']],
+            'ellipsis' => [['Wait... then continue.', 'We agreed.']],
+            'quoted continuation' => [['“Go.” she said.', 'Then she left.']],
+            'quoted end' => [['She said, “Go now!”', 'Then she closed the door.']],
+            'decimals and versions' => [['The value is 3.14 and the build is v1.2.3.', 'Next, use 2.0.']],
+            'semicolon and colon' => [['Pack the books; label the box: fragile items go on top.', 'Done.']],
+            'year at sentence end' => [['It happened in 2026.', 'Then it stopped.']],
+        ];
+    }
+
+    public function testInitialContextDoesNotOverrideTheHardByteLimit(): void
+    {
+        $plan = new SegmentPlan('{"s0":"A. Smith"}', null, 14);
+        $all = [];
+        foreach ($plan->getPayloads() as $payload) {
+            self::assertLessThanOrEqual(14, strlen($payload));
+            $all += json_decode($payload, true, 512, JSON_THROW_ON_ERROR);
+        }
+        self::assertSame(['A.', 'Smith'], array_values($all));
+        self::assertSame('{"s0":"A. Smith"}', $plan->restore(json_encode($all, JSON_THROW_ON_ERROR)));
+    }
+
     public function testGeneratedIdsCrossDigitBoundary(): void
     {
         $words = implode(' ', array_fill(0, 12, 'x'));
