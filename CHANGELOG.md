@@ -4,6 +4,8 @@ This file follows the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) f
 
 ## [Unreleased]
 
+## [0.11.0] – 2026-10-27
+
 ### Added
 
 - Caller-supplied abbreviation hints for text/HTML segment planning in PHP and CLI.
@@ -12,14 +14,14 @@ This file follows the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) f
 
 ### Changed
 
-- Standard segment translations use required-key native schemas on declared Yandex Lite/Pro and Grok 4.7 models, including HTML selected inside JSON. Explicit marker requests and custom prompts retain their protocols. See [upgrade guidance](docs/upgrading.md#unreleased-translation-settings).
+- Standard segment translations use required-key native schemas on declared Yandex Lite/Pro and Grok 4.7 models, including HTML selected inside JSON. Explicit marker requests and custom prompts retain their protocols. See [upgrade guidance](docs/upgrading.md#upgrading-to-0110).
 - Model discovery is sorted by provider and natural model name. `--list-models` focuses on standard-access models for new integrations; `--list-models=all` and the PHP list include every registered key. Provider lifecycle metadata is updated.
 - Grok 4.7 uses the Responses API with explicit low reasoning effort.
 - Documentation is split into usage, transport, provider and upgrade guides, with runnable quickstart inputs and output-budget guidance.
 
 ### Removed
 
-- Nineteen retired OpenAI identifiers and the shut-down Gemini 3.1 Flash-Lite preview. Removed keys fail locally; no replacement is silently selected. See [removed model keys](docs/upgrading.md#unreleased-model-catalogue).
+- Nineteen retired OpenAI identifiers and the shut-down Gemini 3.1 Flash-Lite preview. Removed keys fail locally; no replacement is silently selected. See [removed model keys](docs/upgrading.md#model-catalogue).
 
 ### Fixed
 

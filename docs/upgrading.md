@@ -2,7 +2,9 @@
 
 Read the changes between your installed version and the version you are adopting. Released compatibility notes below describe the behavior introduced by each release.
 
-## Unreleased translation settings
+## Upgrading to 0.11.0
+
+### Translation settings
 
 The PHP API adds `segmentAbbreviations` as the last optional argument; existing positional arguments
 keep their order. The CLI equivalent is repeatable `--segment-abbreviation=TOKEN`. Hints are opt-in
@@ -25,7 +27,7 @@ so checkpoints from 0.10.0 are rejected before HTTP even when their input and op
 Do not edit saved identities to bypass this check. Complete pending translations with the original
 library version before upgrading, or start a new translation and budget for its requests.
 
-## Unreleased model catalogue
+### Model catalogue
 
 The default CLI model listing now focuses on undated standard-access models without announced deprecation. Use
 `--list-models=all` to inspect every registered model, including snapshots, previews, deprecated entries
@@ -76,7 +78,7 @@ Checkpoints contain translated content and usage; keep them private. A request i
 Consumers pinned to `0.8.0` must move to `0.9.0` or a later release; Packagist's immutable published reference for the withdrawn tag cannot be replaced. Update the version constraint and lock file, for example:
 
 ```bash
-composer require habr/bblslug:^0.10
+composer require habr/bblslug:^0.11
 ```
 
 `structured_json` now requires a caller-supplied response schema and is implemented for OpenAI and Gemini. `linedJson` validates JSON output and does not repair malformed or incomplete results. Translation input remains a string.
