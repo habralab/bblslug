@@ -34,40 +34,12 @@ REGEX;
     {
         $protection = $this->protection ??= new FragmentProtection();
         $shielded = $protection->shieldLiterals($text, $counter);
-        return $protection->capture($shielded, $this->findBlocks($shielded), $counter);
-    }
-
-    /** @return array<int,array{int,int}> Protected fragments as source byte offsets/lengths. */
-    private function findBlocks(string $text): array
-    {
-        try {
-            json_decode($text, false, 512, JSON_THROW_ON_ERROR);
-        } catch (\JsonException) {
-            return $this->findHtmlBlocks($text);
-        }
-        // Inspect JSON string values without rewriting keys, scalar tokens or whitespace.
-        $pattern = <<<'REGEX'
-~"(?:[^"\\]++|\\.)*+"~s
-REGEX;
-        $position = 0;
-        $blocks = [];
-        while (($matched = preg_match($pattern, $text, $token, PREG_OFFSET_CAPTURE, $position)) === 1) {
-            [$source, $offset] = $token[0];
-            $position = $offset + strlen($source);
-            if (preg_match('/\G\s*:/', $text, $unused, 0, $position) === 1) {
-                continue;
-            }
-            $view = new JsonStringView($source);
-            foreach ($this->findBlocks($view->getText()) as [$start, $length]) {
-                $rawStart = $view->sourceOffset($start);
-                $rawEnd = $view->sourceOffset($start + $length);
-                $blocks[] = [$offset + $rawStart, $rawEnd - $rawStart];
-            }
-        }
-        if ($matched === false) {
-            throw new \RuntimeException('Could not inspect JSON strings for HTML fragments');
-        }
-        return $blocks;
+        $ranges = JsonStringRanges::find(
+            $shielded,
+            $this->findHtmlBlocks(...),
+            'Could not inspect JSON strings for HTML fragments'
+        );
+        return $protection->capture($shielded, $ranges, $counter);
     }
 
     /** @return array<int,array{int,int}> Protected HTML blocks as byte offsets/lengths. */
