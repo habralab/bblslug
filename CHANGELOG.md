@@ -4,6 +4,10 @@ This file follows the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) f
 
 ## [Unreleased]
 
+### Fixed
+
+- Avoid per-character HTML boundary maps that could exhaust memory when preparing long text spans for segment translation.
+
 ## [0.11.2] – 2026-10-27
 
 ### Changed

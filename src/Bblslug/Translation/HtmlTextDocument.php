@@ -132,22 +132,22 @@ REGEX;
 
     private function addChunks(int $start, string $raw, string $context): void
     {
-        [$decoded, $boundaries] = self::view($raw);
+        $view = new HtmlTextView($raw);
+        $decoded = $view->getText();
         preg_match_all('/@@[0-9]+@@/', $decoded, $markers, PREG_OFFSET_CAPTURE);
         $cursor = 0;
         foreach ($markers[0] as [$marker, $offset]) {
-            $this->addSpan($start, $raw, $decoded, $boundaries, $cursor, $offset, $context);
+            $this->addSpan($start, $raw, $decoded, $view, $cursor, $offset, $context);
             $cursor = $offset + strlen($marker);
         }
-        $this->addSpan($start, $raw, $decoded, $boundaries, $cursor, strlen($decoded), $context);
+        $this->addSpan($start, $raw, $decoded, $view, $cursor, strlen($decoded), $context);
     }
 
-    /** @param array<int,int> $boundaries */
     private function addSpan(
         int $start,
         string $raw,
         string $decoded,
-        array $boundaries,
+        HtmlTextView $view,
         int $from,
         int $to,
         string $context
@@ -164,11 +164,11 @@ REGEX;
         if ($from >= $to) {
             return;
         }
-        if (!isset($boundaries[$from], $boundaries[$to])) {
+        $rawStart = $view->sourceOffset($from);
+        $rawEnd = $view->sourceOffset($to);
+        if ($rawStart === null || $rawEnd === null) {
             throw new \InvalidArgumentException('Unsupported HTML entity boundary in segment transport');
         }
-        $rawStart = $boundaries[$from];
-        $rawEnd = $boundaries[$to];
         $this->spans[] = [
             'start' => $start + $rawStart,
             'end' => $start + $rawEnd,
@@ -176,22 +176,6 @@ REGEX;
             'raw' => substr($raw, $rawStart, $rawEnd - $rawStart),
             'context' => $context,
         ];
-    }
-
-    /** @return array{string,array<int,int>} Decoded text and corresponding raw byte boundaries. */
-    private static function view(string $raw): array
-    {
-        $pattern = '/&(?:#[xX][0-9a-fA-F]+|#[0-9]+|[a-zA-Z][a-zA-Z0-9]+);|./us';
-        if (preg_match_all($pattern, $raw, $tokens, PREG_OFFSET_CAPTURE) === false) {
-            throw new \InvalidArgumentException('HTML segment transport requires UTF-8 text');
-        }
-        $decoded = '';
-        $boundaries = [0 => 0];
-        foreach ($tokens[0] as [$token, $offset]) {
-            $decoded .= html_entity_decode($token, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-            $boundaries[strlen($decoded)] = $offset + strlen($token);
-        }
-        return [$decoded, $boundaries];
     }
 
     private static function encode(string $value, string $context): string
