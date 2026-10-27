@@ -17,14 +17,22 @@ interface ModelDriverInterface
      *     - format  (string) 'text' or 'html'
      *     - verbose (bool)   Include debug information in the output
      *
+     * Request fields:
+     * - body: URL-encoded form or JSON payload
+     * - headers: HTTP headers to send
+     * - url: Full endpoint URL
+     * - responseContext: Request-local state forwarded only to parseResponse
+     * - workflow: Optional HTTP continuation
+     * - localResult: Prepared result requiring no HTTP request
+     *
      * @return array{
-     *     body:    string,     // URL-encoded form or JSON payload
-     *     headers: string[],   // HTTP headers to send
-     *     url:     string,     // Full endpoint URL
-     *     responseContext?: mixed, // Request-local state forwarded only to parseResponse
-     *     workflow?: \Bblslug\HttpWorkflowInterface, // Optional HTTP continuation
+     *     body:    string,
+     *     headers: string[],
+     *     url:     string,
+     *     responseContext?: mixed,
+     *     workflow?: \Bblslug\HttpWorkflowInterface,
      *     timeoutSeconds?: int,
-     *     localResult?: string // Prepared result requiring no HTTP request
+     *     localResult?: string
      * }
      */
     public function buildRequest(array $config, string $text, array $options): array;

@@ -28,10 +28,15 @@ class DeepLDriver implements ModelDriverInterface
      *     - document_timeout (int|string) Upload timeout and polling/download deadline, in seconds.
      *     - verbose   (bool)   Include debug logs
      *
+     * Request fields:
+     * - url: Full endpoint URL
+     * - headers: HTTP headers to send
+     * - body: URL-encoded form, multipart upload or JSON batch
+     *
      * @return array{
-     *     url:     string,   // Full endpoint URL
-     *     headers: string[], // HTTP headers to send
-     *     body:    string,   // URL-encoded form, multipart upload or JSON batch
+     *     url:     string,
+     *     headers: string[],
+     *     body:    string,
      *     responseContext?: DeepLJsonDocument|DeepLHtmlPlaceholders|DeepLDocumentWorkflow,
      *     workflow?: DeepLDocumentWorkflow,
      *     timeoutSeconds?: int,
