@@ -54,6 +54,53 @@ final class SegmentPlanTest extends TestCase
         self::assertSame($source, $plan->restore(json_encode($all, JSON_THROW_ON_ERROR)));
     }
 
+    public function testOversizedRepetitionsRemainSeparateSentenceUnits(): void
+    {
+        $sentence = 'Keep every repeated sentence.';
+        $value = implode(" \t", array_fill(0, 29, $sentence));
+        $source = json_encode(['s0' => $value, 's1' => 'Untouched. Still here!'], JSON_THROW_ON_ERROR);
+        $plan = new SegmentPlan($source, 3, 120);
+        $all = [];
+        foreach ($plan->getPayloads() as $payload) {
+            self::assertLessThanOrEqual(120, strlen($payload));
+            $packet = json_decode($payload, true, 512, JSON_THROW_ON_ERROR);
+            self::assertLessThanOrEqual(3, count($packet));
+            $all += $packet;
+        }
+        self::assertSame('Untouched. Still here!', $all['s1']);
+        unset($all['s1']);
+        self::assertCount(29, $all);
+        self::assertSame(array_fill(0, 29, $sentence), array_values($all));
+        $all['s1'] = 'Untouched. Still here!';
+        self::assertSame($source, $plan->restore(json_encode((object) $all, JSON_THROW_ON_ERROR)));
+    }
+
+    public function testFittingSentenceValuesRetainTheirOriginalGranularity(): void
+    {
+        $source = '{"s0":"Dr. Smith uses v1.2.3. Then continues!"}';
+        $plan = new SegmentPlan($source, null, 120);
+        self::assertSame([$source], $plan->getPayloads());
+    }
+
+    public function testQuotedAndUnicodeSentenceBoundariesPreserveWhitespaceExactly(): void
+    {
+        $part = "«Привет!»\r\n\"Next?\"\tGo。  Last！\u{00A0}End.";
+        $value = " \t" . implode(' ', array_fill(0, 5, $part)) . '  ';
+        $source = json_encode(['s0' => $value], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+        $plan = new SegmentPlan($source, null, 100);
+        $all = [];
+        foreach ($plan->getPayloads() as $payload) {
+            self::assertLessThanOrEqual(100, strlen($payload));
+            $all += json_decode($payload, true, 512, JSON_THROW_ON_ERROR);
+        }
+        self::assertCount(25, $all);
+        self::assertSame(" \t«Привет!»", $all['s0']);
+        self::assertSame(
+            $source,
+            $plan->restore(json_encode((object) $all, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR))
+        );
+    }
+
     public function testGeneratedIdsCrossDigitBoundary(): void
     {
         $words = implode(' ', array_fill(0, 12, 'x'));

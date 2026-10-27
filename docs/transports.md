@@ -294,14 +294,21 @@ A byte cap does not set the output-token budget. Configure that separately throu
 [provider options](providers.md#model-defaults); reasoning models may also spend tokens
 or time before producing visible text. A truncated response remains a failure.
 
-An individual fragment that exceeds the cap is split at Unicode whitespace
-boundaries. Source separators between the resulting pieces stay local and are
-reinserted exactly. Original identifiers stay on the first piece; additional
+An individual fragment that exceeds the cap is split into sentence-sized pieces
+where sentence-ending punctuation (`.`, `!`, `?`, `。`, `！`, `？`, with optional closing
+quotes, `)` or `]`) is followed by whitespace. Longer sentences fall back to Unicode
+whitespace boundaries. Values that already fit the cap retain their original
+granularity. Sentence boundaries use punctuation rather than linguistic analysis;
+abbreviations can also mark a boundary. Source separators between the resulting
+pieces stay local and are reinserted exactly. Original identifiers stay on the first piece; additional
 pieces get distinct identifiers and are joined before text/HTML reconstruction.
 This also works for explicitly selected HTML strings inside JSON; unselected JSON
 bytes remain unchanged. Missing pieces or invalid packet responses stop the
 operation without a partial result. Packet summaries count the pieces actually
-sent to the provider.
+sent to the provider. Every piece has its own required identifier; this reduces the
+opportunity to silently shorten repeated sentences within a long value. A smaller
+byte limit alone does not prove content completeness, and sentence-sized pieces
+can increase the number of requests under a fragment-count limit.
 
 Words and tokens are never cut in the middle. An unbreakable word, URL, or an
 input without suitable whitespace that cannot fit the cap causes an error before

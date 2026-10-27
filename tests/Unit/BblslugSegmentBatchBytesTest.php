@@ -22,6 +22,26 @@ final class BblslugSegmentBatchBytesTest extends TestCase
         self::assertCount($r['networkCalls'], $r['result']['batches']);
     }
 
+    public function testOversizedRepeatedProseGetsIndependentlyRequiredSentenceUnits(): void
+    {
+        $sentence = 'The maintenance team checks the backup.';
+        $input = implode(" \t", array_fill(0, 29, $sentence));
+        $r = $this->runFixture([
+            'model' => 'yandex:gpt-pro', 'variables' => ['folder_id' => 'fixture-folder'],
+            'input' => $input, 'segmentBatchMaxBytes' => 180, 'identity' => true,
+        ]);
+        self::assertSame('success', $r['type'], $r['message'] ?? '');
+        self::assertSame($input, $r['result']['result']);
+        $units = 0;
+        foreach ($r['packets'] as $packet) {
+            foreach ($packet as $value) {
+                self::assertSame($sentence, $value);
+                ++$units;
+            }
+        }
+        self::assertSame(29, $units);
+    }
+
     public function testCountCapCombinesWithBytesAcrossNativeProviders(): void
     {
         foreach (['openai:gpt-5-mini', 'google:gemini-2.5-flash', 'yandex:gpt-pro'] as $model) {

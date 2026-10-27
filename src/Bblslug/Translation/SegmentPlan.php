@@ -71,6 +71,7 @@ final class SegmentPlan
         $nextId = $maxExisting === PHP_INT_MAX ? PHP_INT_MAX : $maxExisting + 1;
 
         foreach ($values as $original => $value) {
+            $oversized = 2 + $this->entryBytes($original, $value) > $maxBytes;
             $matches = [];
             preg_match_all('/\S+/u', $value, $matches, PREG_OFFSET_CAPTURE);
             if ($matches[0] === []) {
@@ -89,7 +90,13 @@ final class SegmentPlan
                 $separator = substr($value, $lastEnd, $offset - $lastEnd);
                 $candidateBytes = $currentBytes + $this->encodedBytes($separator) - 2
                     + $this->encodedBytes($word) - 2;
-                if (2 + $this->entryBytesEncoded($currentId, $candidateBytes) <= $maxBytes) {
+                // Keep sentence-sized units in oversized values: a provider must
+                // return each unit rather than condensing repeated prose in one string.
+                $sentenceEnd = $oversized && preg_match(
+                    '/[.!?。！？]["\x{27}»”’)\]]*\z/u',
+                    (string) $matches[0][$i - 1][0]
+                ) === 1;
+                if (!$sentenceEnd && 2 + $this->entryBytesEncoded($currentId, $candidateBytes) <= $maxBytes) {
                     $current .= $separator . $word;
                     $currentBytes = $candidateBytes;
                 } else {
