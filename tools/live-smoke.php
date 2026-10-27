@@ -9,6 +9,21 @@ use Bblslug\SecretMasker;
 
 require dirname(__DIR__) . '/vendor/autoload.php';
 
+require_once __DIR__ . '/smoke/Failure.php';
+$suite = getenv('BBLSLUG_SMOKE_SUITE') ?: 'small';
+if ($suite === 'segments') {
+    require_once __DIR__ . '/smoke/Fixtures.php';
+    require_once __DIR__ . '/smoke/Process.php';
+    require_once __DIR__ . '/smoke/Segments.php';
+    exit(\Bblslug\Tools\Smoke\Segments::run());
+}
+if (getenv('BBLSLUG_SMOKE_OFFLINE') === '1') {
+    throw new InvalidArgumentException('Offline mode requires BBLSLUG_SMOKE_SUITE=segments');
+}
+if ($suite !== 'small') {
+    throw new InvalidArgumentException('Unsupported smoke suite');
+}
+
 /** Live, paid smoke requests. Credentials stay in the environment; reports are sanitized. */
 $smokeEnv = static function (string $name): string {
     return (string) (getenv('BBLSLUG_' . $name) ?: getenv($name) ?: '');
@@ -120,8 +135,12 @@ $directory = getenv('BBLSLUG_SMOKE_REPORT_DIR') ?: sys_get_temp_dir() . '/bblslu
 if (!is_dir($directory) && !mkdir($directory, 0700, true)) {
     throw new RuntimeException('Cannot create smoke report directory');
 }
-putenv('BBLSLUG_HTTP_TIMEOUT=45');
-putenv('BBLSLUG_HTTP_CONNECT_TIMEOUT=10');
+if (!getenv('BBLSLUG_HTTP_TIMEOUT')) {
+    putenv('BBLSLUG_HTTP_TIMEOUT=45');
+}
+if (!getenv('BBLSLUG_HTTP_CONNECT_TIMEOUT')) {
+    putenv('BBLSLUG_HTTP_CONNECT_TIMEOUT=10');
+}
 $registry = new ModelRegistry();
 $secrets = [];
 foreach (
@@ -237,8 +256,7 @@ foreach ($models as $model) {
                     $row['reason'] = substr($reason, 0, 300);
                     file_put_contents($directory . '/' . str_replace(':', '-', $model) . '-' . $entry . '-'
                     . $format . '-error.txt', $message);
-                    $accountError = '/HTTP (?:401|402|403|404|456)|credit balance|quota exceeded|billing/i';
-                    if (preg_match($accountError, $message)) {
+                    if (\Bblslug\Tools\Smoke\Failure::category($message) === 'account_or_model') {
                         $blocked = $row['reason'];
                     }
                 }

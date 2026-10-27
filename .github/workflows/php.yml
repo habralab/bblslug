@@ -45,6 +45,9 @@ jobs:
       - name: Run PHPUnit tests
         run: make test-phpunit
 
+      - name: Check offline segment acceptance (no provider credentials or HTTP)
+        run: BBLSLUG_SMOKE_SUITE=segments BBLSLUG_SMOKE_OFFLINE=1 php tools/live-smoke.php
+
       - name: Run PHPStan tests
         run: make test-phpstan
 

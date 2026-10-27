@@ -11,3 +11,6 @@
 .DS_Store
 *.prepared
 *.log
+
+# Temporary local work plan
+/WORK_PLAN.local.md
