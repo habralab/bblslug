@@ -106,9 +106,6 @@ class Cli
             Help::error('--text-transport requires a single string value.');
         }
         $textTransport = $textTransportOption ?? 'document';
-        $htmlSegmentBatchSize = null;
-        $textSegmentBatchSize = null;
-        $segmentBatchMaxBytes = null;
         $segmentAbbreviations = [];
         $filters    = isset($options['filters']) && is_string($options['filters'])
                         && trim($options['filters']) !== ''
@@ -330,84 +327,10 @@ class Cli
             $checkpointPath = $rawCheckpointPath;
         }
 
-        // This option is intentionally singleton. getopt() returns an array for
-        // repeated options, but silently accepting that would make the selected
-        // batch size depend on implementation details.
-        if (isset($options['html-segment-batch-size'])) {
-            $rawBatchSize = $options['html-segment-batch-size'];
-            if (is_array($rawBatchSize)) {
-                Help::error('--html-segment-batch-size may only be specified once.');
-            }
-            if (!is_string($rawBatchSize) || !preg_match('/\A[1-9][0-9]*\z/', $rawBatchSize)) {
-                Help::error('--html-segment-batch-size requires a positive integer value.');
-            }
-            $maxInt = (string) PHP_INT_MAX;
-            if (
-                strlen($rawBatchSize) > strlen($maxInt)
-                || (strlen($rawBatchSize) === strlen($maxInt) && strcmp($rawBatchSize, $maxInt) > 0)
-            ) {
-                Help::error('--html-segment-batch-size is too large.');
-            }
-            $htmlSegmentBatchSize = (int) $rawBatchSize;
-        }
-        if (isset($options['text-segment-batch-size'])) {
-            $rawTextBatchSize = $options['text-segment-batch-size'];
-            if (is_array($rawTextBatchSize)) {
-                Help::error('--text-segment-batch-size may only be specified once.');
-            }
-            if (!is_string($rawTextBatchSize) || !preg_match('/\A[1-9][0-9]*\z/', $rawTextBatchSize)) {
-                Help::error('--text-segment-batch-size requires a positive integer value.');
-            }
-            $maxInt = (string) PHP_INT_MAX;
-            if (
-                strlen($rawTextBatchSize) > strlen($maxInt)
-                || (strlen($rawTextBatchSize) === strlen($maxInt) && strcmp($rawTextBatchSize, $maxInt) > 0)
-            ) {
-                Help::error('--text-segment-batch-size is too large.');
-            }
-            $textSegmentBatchSize = (int) $rawTextBatchSize;
-        }
-        if (isset($options['segment-batch-max-bytes'])) {
-            $rawMaxBytes = $options['segment-batch-max-bytes'];
-            if (is_array($rawMaxBytes)) {
-                Help::error('--segment-batch-max-bytes may only be specified once.');
-            }
-            if (!is_string($rawMaxBytes) || !preg_match('/\A[1-9][0-9]*\z/', $rawMaxBytes)) {
-                Help::error('--segment-batch-max-bytes requires a positive integer value.');
-            }
-            $maxInt = (string) PHP_INT_MAX;
-            if (
-                strlen($rawMaxBytes) > strlen($maxInt)
-                || (strlen($rawMaxBytes) === strlen($maxInt) && strcmp($rawMaxBytes, $maxInt) > 0)
-            ) {
-                Help::error('--segment-batch-max-bytes is too large.');
-            }
-            $segmentBatchMaxBytes = (int) $rawMaxBytes;
-        }
-        $operationTimeoutSeconds = null;
-        if (isset($options['operation-timeout'])) {
-            $rawOperationTimeout = $options['operation-timeout'];
-            if (is_array($rawOperationTimeout)) {
-                Help::error('--operation-timeout may only be specified once.');
-            }
-            if (
-                !is_string($rawOperationTimeout)
-                || !preg_match('/\A[1-9][0-9]*\z/', $rawOperationTimeout)
-            ) {
-                Help::error('--operation-timeout requires a positive integer value.');
-            }
-            $maxInt = (string) PHP_INT_MAX;
-            if (
-                strlen($rawOperationTimeout) > strlen($maxInt)
-                || (
-                    strlen($rawOperationTimeout) === strlen($maxInt)
-                    && strcmp($rawOperationTimeout, $maxInt) > 0
-                )
-            ) {
-                Help::error('--operation-timeout is too large.');
-            }
-            $operationTimeoutSeconds = (int) $rawOperationTimeout;
-        }
+        $htmlSegmentBatchSize = self::positiveIntegerOption($options, 'html-segment-batch-size');
+        $textSegmentBatchSize = self::positiveIntegerOption($options, 'text-segment-batch-size');
+        $segmentBatchMaxBytes = self::positiveIntegerOption($options, 'segment-batch-max-bytes');
+        $operationTimeoutSeconds = self::positiveIntegerOption($options, 'operation-timeout');
         if (isset($options['validate-html-json-pointer'])) {
             $rawPointers = $options['validate-html-json-pointer'];
             $rawPointers = is_array($rawPointers) ? $rawPointers : [$rawPointers];
@@ -905,6 +828,29 @@ class Cli
 
         @fwrite($stderr, $reset);
         @fclose($stderr);
+    }
+
+    /** @param array<string,mixed> $options Parsed getopt values; omitted options stay null. */
+    private static function positiveIntegerOption(array $options, string $name): ?int
+    {
+        if (!isset($options[$name])) {
+            return null;
+        }
+        $raw = $options[$name];
+        if (is_array($raw)) {
+            Help::error("--{$name} may only be specified once.");
+        }
+        if (!is_string($raw) || !preg_match('/\A[1-9][0-9]*\z/', $raw)) {
+            Help::error("--{$name} requires a positive integer value.");
+        }
+        $maxInt = (string) PHP_INT_MAX;
+        if (
+            strlen($raw) > strlen($maxInt)
+            || (strlen($raw) === strlen($maxInt) && strcmp($raw, $maxInt) > 0)
+        ) {
+            Help::error("--{$name} is too large.");
+        }
+        return (int) $raw;
     }
 
     /**
