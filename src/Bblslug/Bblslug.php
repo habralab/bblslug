@@ -85,7 +85,7 @@ class Bblslug
      * @param ?callable(string,string=):void $onFeedback Optional feedback callback that
      *        receives (message, level).
      * @param string                $promptKey  Prompt template key
-     * @param string|null           $proxy      Optional proxy URL (from env or CLI).
+     * @param string|null           $proxy      Optional proxy URL.
      * @param string|null           $sourceLang Optional source language code.
      * @param string|null           $targetLang Optional target language code.
      * @param bool                  $validate   If true: perform container syntax validation.
@@ -127,7 +127,7 @@ class Bblslug
         string $format,
         string $modelKey,
         string $text,
-        // Optional arguments (alphabetical)
+        // Optional translation controls
         ?string $context = null,
         bool $dryRun = false,
         array $filters = [],
@@ -217,8 +217,6 @@ class Bblslug
 
         // Prepare validation diagnostics
         $valLogPre  = '';
-        /** @var array<string,mixed>|null $rawUsage */
-        $rawUsage = null;
 
         // Feedback helper.
         $say = static function (?callable $cb, string $msg, string $level = 'info'): void {
@@ -271,7 +269,7 @@ class Bblslug
             }
         }
 
-        // Override defaults from CLI args if present
+        // Override model defaults with explicit translation arguments
         if (!isset($model['defaults']) || !\is_array($model['defaults'])) {
             $model['defaults'] = [];
         }
@@ -351,7 +349,7 @@ class Bblslug
         }
         $say($onFeedback, "Length check passed", 'info');
 
-        // Prepare options for driver, merging in any CLI-provided variables
+        // Merge driver options with caller-provided variables
         $options = array_merge(
             [
                 'format' => $segmentDocument !== null ? 'json' : $format,

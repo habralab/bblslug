@@ -45,7 +45,6 @@ final class ProviderExecutor
     ): array {
         $dryRun = (bool) ($options['dryRun'] ?? false);
         $verbose = (bool) ($options['verbose'] ?? false);
-        $rawUsage = null;
         $endpoint = is_string($this->model['endpoint'] ?? null) ? $this->model['endpoint'] : '';
         // Build request
         ($this->feedback)("Building request for endpoint: {$endpoint}", 'info');

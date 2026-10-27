@@ -11,6 +11,7 @@ final class OutputFileWriter
      * Reject obvious target failures without opening or changing the path.
      * This advisory check does not replace the checks made during write().
      *
+     * @internal Advisory CLI preflight; writing enforces its own target checks.
      * @throws \RuntimeException If the target is already known to be unusable.
      */
     public static function validateTarget(string $path): void
