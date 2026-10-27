@@ -2,7 +2,7 @@
 
 Read the changes between your installed version and the version you are adopting. Released compatibility notes below describe the behavior introduced by each release.
 
-## Unreleased
+## Upgrading to 0.11.2
 
 Existing PHP calls and CLI commands keep their arguments and behavior. Internal segment preparation
 and checkpoint accounting are reorganized.

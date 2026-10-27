@@ -4,9 +4,16 @@ This file follows the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) f
 
 ## [Unreleased]
 
+## [0.11.2] – 2026-10-27
+
 ### Changed
 
-- Simplify segment document preparation and checkpoint result accounting while preserving PHP/CLI interfaces and provider protocols. See [upgrade guidance](docs/upgrading.md#unreleased).
+- Simplify segment document preparation and checkpoint result accounting while preserving PHP/CLI interfaces and provider protocols. See [upgrade guidance](docs/upgrading.md#upgrading-to-0112).
+- Test PHP 8.2–8.5 and lowest admissible dependencies on PHP 8.2 in CI; update workflow runtimes and Packagist notifications.
+
+### Fixed
+
+- Keep request PHPDoc types parseable by the declared minimum PHPStan 2.1.
 
 ## [0.11.1] – 2026-10-27
 
