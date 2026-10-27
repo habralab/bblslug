@@ -48,7 +48,8 @@ the application does not substitute another model after a failure.
 
 Use `format: 'structured_json'` with an explicit JSON Schema in
 `variables['response_schema']`. This mode is implemented for OpenAI Chat
-Completions/Responses and Google Gemini; the selected model must support native
+Completions/Responses, Google Gemini, Yandex Foundation/Chat Completions, and
+xAI Chat Completions/Responses; the selected model must support native
 structured output. Unsupported providers and legacy OpenAI Completions are
 rejected locally. Provider schema restrictions and access rules still apply.
 
@@ -77,8 +78,8 @@ bin/bblslug --model=openai:gpt-6-luna --format=structured_json \
 
 Input and output are JSON **strings**, not PHP arrays. Native mode sends the
 schema without rewriting it and reads the JSON response without translation
-markers. OpenAI uses strict schema mode by default; PHP callers may override
-`strict` with a boolean and `response_schema_name` with a name of 1–64 letters,
+markers. OpenAI, xAI and Yandex Chat Completions use strict schema mode by default;
+PHP callers may override `strict` with a boolean and `response_schema_name` with a name of 1–64 letters,
 digits, underscores, or dashes. A schema supplied with `format: 'json'` also enables
 native mode. The library still validates returned JSON syntax and source structure;
 it does not independently implement every JSON Schema constraint.
@@ -133,6 +134,11 @@ can still increase latency. For large packets, set an appropriate `BBLSLUG_HTTP_
 alongside the shared operation deadline, or reduce the packet byte cap.
 `none` is not accepted by this model. Other Grok entries retain their configured
 protocol and settings; the library does not retry a rejected response on another endpoint.
+For JSON formats, `response_schema` selects native JSON Schema output with the
+existing `structured_json` template and no markers. Responses uses `text.format`;
+Chat Completions uses `response_format`. Without a schema, document-mode requests
+retain their marker contract. See [xAI structured outputs](https://docs.x.ai/developers/model-capabilities/text/structured-outputs).
+
 See [xAI reasoning settings](https://docs.x.ai/developers/model-capabilities/text/reasoning) and
 [output limits and timeouts](https://docs.x.ai/developers/model-capabilities/text/best-practices#streaming-and-timeouts).
 
@@ -180,9 +186,12 @@ $result = Bblslug::translate(
 CLI overrides use `--variables=json_transport=native` or `json_transport=markers`.
 Explicit native mode requires `json`/`linedJson` and a valid object-root source;
 custom groups need a `structured_json` template. Explicit markers preserve the
-previous protocol. `structured_json` and `response_schema` remain unsupported by
-the Yandex integration; JSON-object mode does not enforce a caller-supplied schema.
+previous protocol. `structured_json` requires `response_schema`. Supplying a schema
+with `json` or `linedJson` also selects native output: Foundation uses `jsonSchema.schema`,
+and Chat Completions uses `response_format.type=json_schema`. Yandex native requests
+require an object-root source. Explicit markers conflict with a response schema.
 There is no fallback or retry when a native request is rejected.
+See [Yandex schema output](https://aistudio.yandex.ru/en/docs/ai-studio/operations/generation/completions-structured).
 
 The response must be a JSON object even with container validation disabled.
 Truncation, content-filter, refusal, and completion-state checks happen first.

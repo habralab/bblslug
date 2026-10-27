@@ -68,7 +68,7 @@ final class BblslugStructuredOutputTest extends TestCase
 
     public function testNativeFormatsPassOptionsThroughTheFacadeAndValidateReturnedJson(): void
     {
-        foreach (['openai:gpt-5-mini', 'google:gemini-2.5-flash'] as $model) {
+        foreach (['openai:gpt-5-mini', 'google:gemini-2.5-flash', 'xai:grok-4.7', 'yandex:gpt-lite'] as $model) {
             $result = $this->runFixture([
                 'model' => $model,
                 'input' => '{"message":"Hello"}',
@@ -78,6 +78,10 @@ final class BblslugStructuredOutputTest extends TestCase
             self::assertSame('{"message":"Привет"}', $result['result']);
             if (str_starts_with($model, 'openai:')) {
                 self::assertSame('json_schema', $result['request']['response_format']['type']);
+            } elseif (str_starts_with($model, 'xai:')) {
+                self::assertSame('json_schema', $result['request']['text']['format']['type']);
+            } elseif (str_starts_with($model, 'yandex:')) {
+                self::assertArrayHasKey('schema', $result['request']['jsonSchema']);
             } else {
                 self::assertSame('application/json', $result['request']['generationConfig']['responseMimeType']);
             }
@@ -201,7 +205,7 @@ final class BblslugStructuredOutputTest extends TestCase
     {
         $result = $this->runFixture(['model' => 'deepl:free', 'input' => '{}', 'translated' => '{}']);
         self::assertSame(\InvalidArgumentException::class, $result['type']);
-        self::assertStringContainsString('only by OpenAI and Google', $result['message']);
+        self::assertStringContainsString('only by OpenAI, Google, Yandex and xAI', $result['message']);
     }
 
     public function testOldPositionalOptionalArgumentsKeepTheirMeaning(): void

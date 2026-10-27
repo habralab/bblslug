@@ -167,20 +167,13 @@ final class YandexNativeJsonTest extends TestCase
         self::assertStringStartsWith("‹‹TRANSLATION››\n", $request['decoded']['messages'][1]['text']);
     }
 
-    public function testStructuredJsonAndResponseSchemaRemainRejected(): void
+    public function testStructuredJsonRequiresAnExplicitSchema(): void
     {
-        $optionsList = [
-            ['format' => 'structured_json'],
-            ['format' => 'json', 'response_schema' => ['type' => 'object']],
-        ];
-        foreach ($optionsList as $options) {
-            try {
-                (new YandexDriver())->buildRequest(self::FOUNDATION, '{}', $options + ['folder_id' => 'b1folder']);
-                self::fail('Expected unsupported structured JSON option to be rejected');
-            } catch (InvalidArgumentException) {
-                self::assertTrue(true);
-            }
-        }
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('requires response_schema');
+        (new YandexDriver())->buildRequest(self::FOUNDATION, '{}', [
+            'format' => 'structured_json', 'folder_id' => 'b1folder',
+        ]);
     }
 
     public function testMarkerHtmlContextRemainsRequestLocalAndUnchanged(): void

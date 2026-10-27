@@ -27,7 +27,10 @@ class YandexDriver implements ModelDriverInterface
      *     - dryRun      (bool)        Skip API call (ignored here).
      *     - format      (string)      Indicates which prompt format to use.
      *     - folder_id   (string)      Yandex folder ID (required).
-     *     - json_transport (string) 'auto' (default), 'markers', or native JSON-object output.
+     *     - json_transport (string) 'auto' (default), 'markers', or native JSON output.
+     *     - response_schema (array) Native structured output JSON schema.
+     *     - response_schema_name (string) Chat schema name (default: anonymous).
+     *     - strict (bool) Chat schema strictness (default: true).
      *     - maxTokens   (int)         Maximum tokens to generate.
      *     - promptKey   (string)      Key of the prompt template in prompts.yaml.
      *     - temperature (float)       Sampling temperature.
@@ -54,6 +57,18 @@ class YandexDriver implements ModelDriverInterface
                 : (\is_string($config['format'] ?? null) ? $config['format'] : 'text'));
 
         $nativeJson = self::nativeRequest($config, $text, $options, $format);
+        $hasSchema = \array_key_exists('response_schema', $options);
+        $schema = $hasSchema ? $options['response_schema'] : null;
+        $schemaName = $options['response_schema_name'] ?? 'anonymous';
+        $strict = $options['strict'] ?? true;
+        if ($hasSchema) {
+            if (!\is_string($schemaName) || !\preg_match('/^[A-Za-z0-9_-]{1,64}$/', $schemaName)) {
+                throw new \InvalidArgumentException('response_schema_name must match [A-Za-z0-9_-]{1,64}');
+            }
+            if (!\is_bool($strict)) {
+                throw new \InvalidArgumentException('strict must be a boolean');
+            }
+        }
 
         $folderId = $options['folder_id'] ?? null;
         if (!\is_string($folderId) || $folderId === '') {
@@ -131,7 +146,11 @@ class YandexDriver implements ModelDriverInterface
                 'stream'      => false,
             ];
             if ($nativeJson) {
-                $payload['response_format'] = ['type' => 'json_object'];
+                $payload['response_format'] = $hasSchema
+                    ? ['type' => 'json_schema', 'json_schema' => [
+                        'name' => $schemaName, 'schema' => $schema, 'strict' => $strict,
+                    ]]
+                    : ['type' => 'json_object'];
             }
             if ($maxTokens > 0) {
                 $payload['max_tokens'] = $maxTokens;
@@ -147,7 +166,11 @@ class YandexDriver implements ModelDriverInterface
                 'messages'          => $messages,
             ];
             if ($nativeJson) {
-                $payload['jsonObject'] = true;
+                if ($hasSchema) {
+                    $payload['jsonSchema'] = ['schema' => $schema];
+                } else {
+                    $payload['jsonObject'] = true;
+                }
             }
         }
 
@@ -165,7 +188,8 @@ class YandexDriver implements ModelDriverInterface
             $headers[] = "x-project: {$folderId}";
         }
         $body = \json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
-        $responseContext = \in_array($format, ['json', 'linedJson'], true) ? ['json_native' => $nativeJson] : null;
+        $responseContext = \in_array($format, ['json', 'linedJson', 'structured_json'], true)
+            ? ['json_native' => $nativeJson] : null;
         if ($format === 'html') {
             $responseContext = [
                 'html_fence_free' => !self::hasFence(\html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8')),
@@ -282,7 +306,8 @@ class YandexDriver implements ModelDriverInterface
         $transport = self::jsonTransport($options);
         $context = $options['responseContext'] ?? null;
         $hasNativeContext = \is_array($context) && \is_bool($context['json_native'] ?? null);
-        if (!$hasNativeContext && $transport === 'native') {
+        $hasSchema = \array_key_exists('response_schema', $options);
+        if (!$hasNativeContext && $transport === 'native' && !$hasSchema) {
             $defaults = \is_array($config['defaults'] ?? null) ? $config['defaults'] : [];
             $format = $options['format'] ?? ($defaults['format'] ?? 'text');
             if (!\in_array($format, ['json', 'linedJson'], true)) {
@@ -290,7 +315,7 @@ class YandexDriver implements ModelDriverInterface
             }
         }
         $nativeJson = $hasNativeContext
-            ? $context['json_native'] : $transport === 'native';
+            ? $context['json_native'] : ($transport === 'native' || $hasSchema);
         if ($nativeJson) {
             // JSON mode is a wire contract, independently of optional container checks.
             $text = \trim($content);
@@ -358,33 +383,41 @@ class YandexDriver implements ModelDriverInterface
     private static function nativeRequest(array $config, string $text, array $options, string $format): bool
     {
         $transport = self::jsonTransport($options);
-        if ($format === 'structured_json' || \array_key_exists('response_schema', $options)) {
-            throw new \InvalidArgumentException(
-                'Yandex JSON object mode does not support response_schema or structured_json'
-            );
+        $hasSchema = \array_key_exists('response_schema', $options);
+        $schema = $hasSchema ? $options['response_schema'] : null;
+        if ($hasSchema && (!\is_array($schema) || $schema === [] || \array_is_list($schema))) {
+            throw new \InvalidArgumentException('response_schema must be a non-empty associative array');
         }
-        $jsonFormat = \in_array($format, ['json', 'linedJson'], true);
-        if ($transport === 'native' && !$jsonFormat) {
-            throw new \InvalidArgumentException('Yandex native JSON requires json or linedJson format');
+        if ($format === 'structured_json' && !$hasSchema) {
+            throw new \InvalidArgumentException('format=structured_json requires response_schema');
+        }
+        if ($hasSchema && $transport === 'markers') {
+            throw new \InvalidArgumentException('Yandex response_schema cannot use the markers transport');
+        }
+        $jsonFormat = \in_array($format, ['json', 'linedJson', 'structured_json'], true);
+        if (($transport === 'native' || $hasSchema) && !$jsonFormat) {
+            throw new \InvalidArgumentException(
+                'Yandex native JSON requires json, linedJson, or structured_json format'
+            );
         }
         $capabilities = \is_array($config['capabilities'] ?? null) ? $config['capabilities'] : [];
         $promptKey = \is_string($options['promptKey'] ?? null) ? $options['promptKey'] : 'translator';
         $eligible = $jsonFormat && $promptKey === 'translator'
             && ($capabilities['native_json'] ?? false) === true
             && \in_array('structured_json', Prompts::list()[$promptKey]['formats'] ?? [], true);
-        if ($transport === 'markers' || ($transport === 'auto' && !$eligible)) {
+        if ($transport === 'markers' || ($transport === 'auto' && !$eligible && !$hasSchema)) {
             return false;
         }
         try {
             $source = \json_decode($text, false, 512, JSON_THROW_ON_ERROR);
         } catch (\JsonException $exception) {
-            if ($transport === 'auto') {
+            if ($transport === 'auto' && !$hasSchema) {
                 return false;
             }
             throw new \InvalidArgumentException('Yandex native JSON requires a valid object source', 0, $exception);
         }
         if (!$source instanceof \stdClass) {
-            if ($transport === 'auto') {
+            if ($transport === 'auto' && !$hasSchema) {
                 return false;
             }
             throw new \InvalidArgumentException('Yandex native JSON requires an object source');

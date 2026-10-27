@@ -9,6 +9,7 @@ namespace Bblslug {
         public static array $scenario = [];
         public static array $requests = [];
         public static array $packets = [];
+        public static array $bodies = [];
         private static array $documents = [];
 
         public static function request(...$arguments): array
@@ -39,7 +40,9 @@ namespace Bblslug {
                 return self::response(json_encode((object) self::translate(self::$documents[$match[1]])));
             }
             $request = json_decode($body, true, 512, JSON_THROW_ON_ERROR);
-            $content = $request['messages'][1]['content'] ?? $request['contents'][0]['parts'][0]['text'] ?? '{}';
+            self::$bodies[] = $request;
+            $content = $request['messages'][1]['content'] ?? $request['messages'][1]['text']
+                ?? $request['input'][1]['content'] ?? $request['contents'][0]['parts'][0]['text'] ?? '{}';
             if (str_starts_with($content, '‹‹TRANSLATION››')) {
                 $content = trim(substr($content, strlen('‹‹TRANSLATION››'), -strlen('‹‹END››')));
             }
@@ -72,6 +75,23 @@ namespace Bblslug {
                     'usageMetadata' => ['totalTokenCount' => 10, 'promptTokenCount' => 4, 'candidatesTokenCount' => 6],
                 ]));
             }
+            if (isset($request['modelUri'])) {
+                return self::response(json_encode([
+                    'result' => ['alternatives' => [[
+                        'status' => 'ALTERNATIVE_STATUS_FINAL',
+                        'message' => ['text' => isset($request['jsonSchema']) || isset($request['jsonObject'])
+                            ? $json : "‹‹TRANSLATION››\n" . $json . "\n‹‹END››"],
+                    ]]],
+                ]));
+            }
+            if (isset($request['input'])) {
+                return self::response(json_encode([
+                    'status' => 'completed', 'output' => [['type' => 'message', 'content' => [[
+                        'type' => 'output_text', 'text' => isset($request['text']['format'])
+                            ? $json : "‹‹TRANSLATION››\n" . $json . "\n‹‹END››",
+                    ]]]], 'usage' => $usage,
+                ]));
+            }
             return self::response(json_encode([
                 'choices' => [['finish_reason' => 'stop', 'message' => [
                     'content' => "‹‹TRANSLATION››\n" . $json . "\n‹‹END››",
@@ -101,9 +121,15 @@ namespace {
             modelKey: $scenario['model'] ?? 'openai:gpt-5-mini',
             format: $scenario['format'] ?? 'html',
             text: $scenario['input'] ?? '<p>One</p><p>Two</p><p>Three</p>',
-            htmlTransport: $scenario['htmlTransport'] ?? 'segments',
+            htmlTransport: $scenario['htmlTransport']
+                ?? (($scenario['format'] ?? 'html') === 'text' ? 'document' : 'segments'),
             htmlJsonPointers: $scenario['htmlJsonPointers'] ?? [],
-            htmlSegmentBatchSize: $scenario['batchSize'] ?? 1,
+            htmlSegmentBatchSize: ($scenario['format'] ?? 'html') === 'text' ? null
+                : (array_key_exists('batchSize', $scenario) ? $scenario['batchSize'] : 1),
+            textTransport: ($scenario['format'] ?? 'html') === 'text' ? 'segments' : 'document',
+            textSegmentBatchSize: ($scenario['format'] ?? 'html') === 'text' ? ($scenario['batchSize'] ?? null) : null,
+            segmentBatchMaxBytes: $scenario['maxBytes'] ?? null,
+            promptKey: $scenario['promptKey'] ?? 'translator',
             validate: $scenario['validate'] ?? true,
             dryRun: $scenario['dryRun'] ?? false,
             variables: $scenario['variables'] ?? [],
@@ -113,6 +139,7 @@ namespace {
     } catch (\Throwable $exception) {
         $output = ['type' => $exception::class, 'message' => $exception->getMessage()];
     }
+    $output['bodies'] = \Bblslug\HttpClient::$bodies;
     $output['packets'] = \Bblslug\HttpClient::$packets;
     $output['networkCalls'] = count(\Bblslug\HttpClient::$requests);
     echo json_encode($output, JSON_THROW_ON_ERROR);

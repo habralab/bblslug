@@ -235,8 +235,21 @@ sent, no partial document is returned, and the CLI keeps existing files unchange
 There are no automatic retries or fallback requests. A successful earlier packet
 is a completed provider operation even when a later packet fails.
 
+For registered models declaring `native_json_schema` (currently Yandex GPT Lite/Pro
+and Grok 4.7), the standard `translator` group requests a native JSON Schema for
+each text or HTML segment packet, including selected HTML inside JSON. Every packet
+requires exactly its own identifiers with nonempty string values (`minLength: 1`),
+including identifiers generated
+when splitting long fragments. This also applies to a single unbatched segment
+request. Custom prompt groups, a `translator` group without `structured_json`, and
+explicit `json_transport=markers` keep their existing protocol. The schema does not
+replace local checks or guarantee translation quality; a rejected or incomplete
+response still fails. Caller-supplied `response_schema` remains incompatible with
+segment transports, since its fields describe the source document rather than the
+internal packet.
+
 Model input-length checks and request-body preparation run for **all** packets
-before the first HTTP call. Without the optional byte [byte limit](#bound-segment-packets-by-serialized-bytes), a single
+before the first HTTP call. Without the optional [byte limit](#bound-segment-packets-by-serialized-bytes), a single
 oversized fragment fails; it is never clipped. The count limit counts fragments,
 not characters or bytes. Smaller
 packets also reduce context across inline text nodes, so translation fidelity still

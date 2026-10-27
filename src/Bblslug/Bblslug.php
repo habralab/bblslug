@@ -265,8 +265,10 @@ class Bblslug
         }
 
         if ($format === 'structured_json' || \array_key_exists('response_schema', $variables)) {
-            if (!\in_array($model['vendor'] ?? null, ['openai', 'google'], true)) {
-                throw new \InvalidArgumentException('Native JSON schema output is supported only by OpenAI and Google');
+            if (!\in_array($model['vendor'] ?? null, ['openai', 'google', 'yandex', 'xai'], true)) {
+                throw new \InvalidArgumentException(
+                    'Native JSON schema output is supported only by OpenAI, Google, Yandex and xAI'
+                );
             }
             if (!\in_array($format, ['json', 'structured_json', 'linedJson'], true)) {
                 throw new \InvalidArgumentException('response_schema requires a JSON format');
@@ -393,9 +395,20 @@ class Bblslug
         // Build every packet before sending any: a later configuration/body-limit
         // failure must not follow an already paid successful packet.
         $requests = [];
-        if ($batching) {
-            foreach ($payloads as $payload) {
-                $requests[] = $driver->buildRequest($model, $payload, $options);
+        $packetOptions = [];
+        $capabilities = \is_array($model['capabilities'] ?? null) ? $model['capabilities'] : [];
+        $nativeSegmentSchema = $segmentDocument !== null && $segmentDocument->hasTexts()
+            && ($capabilities['native_json_schema'] ?? false) === true
+            && $promptKey === 'translator'
+            && in_array('structured_json', Prompts::list()['translator']['formats'] ?? [], true)
+            && ($variables['json_transport'] ?? 'auto') !== 'markers';
+        foreach ($payloads as $index => $payload) {
+            $packetOptions[$index] = $options;
+            if ($nativeSegmentSchema) {
+                $packetOptions[$index]['response_schema'] = SegmentTranslations::schemaFor($payload);
+            }
+            if ($batching) {
+                $requests[$index] = $driver->buildRequest($model, $payload, $packetOptions[$index]);
             }
         }
         $checkpoint = null;
@@ -458,7 +471,7 @@ class Bblslug
                         $model,
                         $modelKey,
                         $payload,
-                        $options,
+                        $packetOptions[$index],
                         $apiKey,
                         $proxy,
                         static fn (string $message, string $level = 'info') => $say($onFeedback, $message, $level),

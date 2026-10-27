@@ -13,7 +13,7 @@ namespace Bblslug {
         {
             $payload = json_decode($arguments['body'], true, 512, JSON_THROW_ON_ERROR);
             self::$payloads[] = $payload;
-            $native = ($payload['jsonObject'] ?? false) === true;
+            $native = ($payload['jsonObject'] ?? false) === true || isset($payload['jsonSchema']);
             $user = $payload['messages'][1]['text'];
             if (!$native) {
                 preg_match('/‹‹TRANSLATION››\n(.*?)\n‹‹END››/s', $user, $match);

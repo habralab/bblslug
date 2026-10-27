@@ -4,6 +4,10 @@ This file follows the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) f
 
 ## [Unreleased]
 
+### Added
+
+- Native JSON Schema output for Yandex and xAI; declared models require every identifier in each text/HTML segment packet, including HTML selected inside JSON.
+
 ### Changed
 
 - Model discovery is sorted by provider and model name. `--list-models` shows models for new integrations; `--list-models=all` includes served snapshots, previews, restricted and deprecated entries. The PHP model list still returns all registered keys.
@@ -18,6 +22,7 @@ This file follows the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) f
 
 ### Fixed
 
+- Explicit xAI Chat Completions refusals are rejected before extracting translated content.
 - Empty provider translations retain masked HTTP request/response diagnostics when verbose mode is enabled. Quiet errors remain concise; empty output for nonempty input still fails without retries.
 
 ## [0.10.0] – 2026-10-26

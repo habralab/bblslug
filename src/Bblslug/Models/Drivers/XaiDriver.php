@@ -30,6 +30,9 @@ class XaiDriver implements ModelDriverInterface
      *     - temperature (float|null)  Sampling temperature; null omits it.
      *     - reasoning_effort (string) Reasoning effort for supported Grok models.
      *     - max_completion_tokens (int) Optional output budget.
+     *     - response_schema (array) Native JSON Schema for structured output.
+     *     - response_schema_name (string) Schema name (default: anonymous).
+     *     - strict (bool) Enforce the native schema (default: true).
      *     - verbose     (bool)        Include debug logs (ignored here).
      *
      * @return array{url:string, headers:string[], body:string}
@@ -71,10 +74,35 @@ class XaiDriver implements ModelDriverInterface
         $tempRaw = \array_key_exists('temperature', $settings) ? $settings['temperature'] : 0.0;
         $temperature = $tempRaw === null ? null : (\is_numeric($tempRaw) ? (float)$tempRaw : 0.0);
 
+        $hasSchema = \array_key_exists('response_schema', $settings);
+        $schema = $settings['response_schema'] ?? null;
+        if ($hasSchema && (!\is_array($schema) || $schema === [] || \array_is_list($schema))) {
+            throw new \InvalidArgumentException('response_schema must be a non-empty associative array');
+        }
+        if ($format === 'structured_json' && !$hasSchema) {
+            throw new \InvalidArgumentException('format=structured_json requires response_schema');
+        }
+        if ($hasSchema && !\in_array($format, ['json', 'structured_json', 'linedJson'], true)) {
+            throw new \InvalidArgumentException('response_schema requires format json, structured_json, or linedJson');
+        }
+        if ($hasSchema && ($options['json_transport'] ?? 'auto') === 'markers') {
+            throw new \InvalidArgumentException('response_schema conflicts with json_transport=markers');
+        }
+        $schemaName = $settings['response_schema_name'] ?? 'anonymous';
+        $strict = $settings['strict'] ?? true;
+        if ($hasSchema) {
+            if (!\is_string($schemaName) || !\preg_match('/^[A-Za-z0-9_-]{1,64}$/', $schemaName)) {
+                throw new \InvalidArgumentException('response_schema_name must match [A-Za-z0-9_-]{1,64}');
+            }
+            if (!\is_bool($strict)) {
+                throw new \InvalidArgumentException('strict must be a boolean');
+            }
+        }
+
         // Render system prompt
         $systemPrompt = Prompts::render(
             $promptKey,
-            $format,
+            $hasSchema ? 'structured_json' : $format,
             [
                 'source'  => $sourceLang,
                 'target'  => $targetLang,
@@ -87,7 +115,7 @@ class XaiDriver implements ModelDriverInterface
         // Compose chat messages
         $messages = [
             ['role' => 'system', 'content' => $systemPrompt],
-            ['role' => 'user',   'content' => self::START . "\n{$text}\n" . self::END],
+            ['role' => 'user',   'content' => $hasSchema ? $text : self::START . "\n{$text}\n" . self::END],
         ];
 
         $payload = [
@@ -104,6 +132,14 @@ class XaiDriver implements ModelDriverInterface
         } else {
             $payload['messages'] = $messages;
             $payload['stream'] = false;
+        }
+        if ($hasSchema) {
+            $nativeFormat = ['name' => $schemaName, 'strict' => $strict, 'schema' => $schema];
+            if ($apiType === 'responses') {
+                $payload['text'] = ['format' => ['type' => 'json_schema'] + $nativeFormat];
+            } else {
+                $payload['response_format'] = ['type' => 'json_schema', 'json_schema' => $nativeFormat];
+            }
         }
         if ($temperature !== null) {
             $payload['temperature'] = $temperature;
@@ -195,6 +231,9 @@ class XaiDriver implements ModelDriverInterface
         // Normal completion path: content string at choices[0].message.content
         $content = null;
         if (\is_array($first) && \is_array($first['message'] ?? null)) {
+            if (\is_string($first['message']['refusal'] ?? null)) {
+                throw new \RuntimeException('Grok returned a refusal');
+            }
             $content = $first['message']['content'] ?? null;
         }
         if (!\is_string($content)) {
@@ -245,12 +284,22 @@ class XaiDriver implements ModelDriverInterface
             throw new \RuntimeException("Grok translation failed: {$responseBody}");
         }
 
-        $pattern = '/' . preg_quote(self::START, '/') . '(.*?)' . preg_quote(self::END, '/') . '/s';
-        if (!preg_match($pattern, $content, $matches)) {
-            throw new \RuntimeException("Markers not found in Grok response");
+        $defaults = \is_array($config['defaults'] ?? null) ? $config['defaults'] : [];
+        $settings = \array_replace($defaults, $options);
+        if (\array_key_exists('response_schema', $settings) || ($settings['format'] ?? null) === 'structured_json') {
+            $text = trim($content);
+            try {
+                json_decode($text, false, 512, JSON_THROW_ON_ERROR);
+            } catch (\JsonException $exception) {
+                throw new \RuntimeException('Grok native JSON response is not valid JSON', 0, $exception);
+            }
+        } else {
+            $pattern = '/' . preg_quote(self::START, '/') . '(.*?)' . preg_quote(self::END, '/') . '/s';
+            if (!preg_match($pattern, $content, $matches)) {
+                throw new \RuntimeException('Markers not found in Grok response');
+            }
+            $text = trim($matches[1]);
         }
-
-        $text  = trim($matches[1]);
         // Usage statistics normalized to array<string,mixed>|null
         $usage = null;
         $u = $data['usage'] ?? null;

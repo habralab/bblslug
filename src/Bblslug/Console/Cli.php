@@ -599,8 +599,8 @@ class Cli
             if (!\in_array($format, ['json', 'structured_json', 'linedJson'], true)) {
                 Help::error('--response-schema requires a JSON format.');
             }
-            if (!\in_array($registry->get($modelKey)['vendor'] ?? null, ['openai', 'google'], true)) {
-                Help::error('Native JSON schema output is supported only by OpenAI and Google.');
+            if (!\in_array($registry->get($modelKey)['vendor'] ?? null, ['openai', 'google', 'yandex', 'xai'], true)) {
+                Help::error('Native JSON schema output is supported only by OpenAI, Google, Yandex and xAI.');
             }
             $schemaPath = $options['response-schema'];
             $schemaJson = \is_string($schemaPath) ? @\file_get_contents($schemaPath) : false;

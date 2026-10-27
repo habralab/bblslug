@@ -36,6 +36,11 @@ namespace {
             ['text' => $translated],
         ]]]]]
         : ['choices' => [['finish_reason' => 'stop', 'message' => ['content' => $translated]]]];
+    if (str_starts_with($model, 'yandex:')) {
+        $response = ['result' => ['alternatives' => [[
+            'status' => 'ALTERNATIVE_STATUS_FINAL', 'message' => ['text' => $translated],
+        ]]]];
+    }
     \Bblslug\HttpClient::$response = json_encode($response, JSON_THROW_ON_ERROR);
     require dirname(__DIR__, 3) . '/vendor/autoload.php';
 
@@ -46,12 +51,12 @@ namespace {
             modelKey: $model,
             text: (string) ($scenario['input'] ?? ''),
             validate: (bool) ($scenario['validate'] ?? true),
-            variables: $scenario['variables'] ?? ['response_schema' => $scenario['schema'] ?? [
+            variables: ($scenario['variables'] ?? ['response_schema' => $scenario['schema'] ?? [
                 'type' => 'object',
                 'properties' => ['message' => ['type' => 'string']],
                 'required' => ['message'],
                 'additionalProperties' => false,
-            ]],
+            ]]) + ['folder_id' => 'fixture-folder'],
             validateEmbeddedJson: (bool) ($scenario['validateEmbeddedJson'] ?? false),
             validateHtmlJsonPointers: $scenario['validateHtmlJsonPointers'] ?? []
         );

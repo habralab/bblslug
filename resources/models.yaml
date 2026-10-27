@@ -1842,6 +1842,8 @@ xai:
       limits:
         max_tokens: 500000
         estimated_max_chars: 2000000
+      capabilities:
+        native_json_schema: true
       api_type: responses
       endpoint: 'https://api.x.ai/v1/responses'
       name: grok-4.7
@@ -2050,6 +2052,7 @@ yandex:
       lifecycle_source: 'https://aistudio.yandex.ru/ru/docs/ai-studio/concepts/generation/models'
     gpt-lite:
       capabilities:
+        native_json_schema: true
         native_json: true
       name: 'Yandex GPT Lite'
       defaults:
@@ -2108,6 +2111,7 @@ yandex:
       shutdown_date: '2026-10-30'
     gpt-pro:
       capabilities:
+        native_json_schema: true
         native_json: true
       name: 'Yandex GPT Pro'
       defaults:

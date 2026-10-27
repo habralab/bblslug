@@ -64,8 +64,8 @@ final class BblslugYandexNativeJsonTest extends TestCase
         );
         self::assertCount(2, $r['requests']);
         self::assertSame(20, $r['result']['consumed']['tokens']['total']);
-        self::assertTrue($r['requests'][0]['jsonObject']);
-        self::assertTrue($r['requests'][1]['jsonObject']);
+        self::assertSame(['s0', 's1'], $r['requests'][0]['jsonSchema']['schema']['required']);
+        self::assertSame(['s2'], $r['requests'][1]['jsonSchema']['schema']['required']);
     }
 
     public function testExplicitNativeRejectsNonObjectInputBeforeHttp(): void

@@ -15,6 +15,15 @@ final class CliSchemaTest extends TestCase
         self::assertSame('{"message":"Hello"}', $result['stdout']);
     }
 
+    public function testSchemaFileIsAcceptedByAdditionalNativeDrivers(): void
+    {
+        foreach (['xai:grok-4.7', 'yandex:gpt-lite'] as $model) {
+            $result = $this->runCli('{"type":"object"}', 'structured_json', $model);
+            self::assertSame(0, $result['exitCode'], $result['stderr']);
+            self::assertSame('{"message":"Hello"}', $result['stdout']);
+        }
+    }
+
     public function testMalformedSchemaFileIsRejected(): void
     {
         $result = $this->runCli('{broken');
@@ -46,14 +55,17 @@ final class CliSchemaTest extends TestCase
     }
 
     /** @return array{exitCode:int,stdout:string,stderr:string} */
-    private function runCli(?string $schema, string $format = 'structured_json'): array
-    {
+    private function runCli(
+        ?string $schema,
+        string $format = 'structured_json',
+        string $model = 'openai:gpt-5-mini'
+    ): array {
         $schemaFile = tempnam(sys_get_temp_dir(), 'bblslug-schema-');
         self::assertIsString($schemaFile);
         $command = [
             PHP_BINARY,
             dirname(__DIR__, 3) . '/bblslug.php',
-            '--model=openai:gpt-5-mini',
+            '--model=' . $model,
             '--format=' . $format,
             '--dry-run',
         ];
@@ -67,7 +79,8 @@ final class CliSchemaTest extends TestCase
                 [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']],
                 $pipes,
                 null,
-                ['BBLSLUG_OPENAI_API_KEY' => 'fixture-key']
+                ['BBLSLUG_OPENAI_API_KEY' => 'fixture-key', 'BBLSLUG_XAI_API_KEY' => 'fixture-key',
+                    'BBLSLUG_YANDEX_API_KEY' => 'fixture-key', 'BBLSLUG_YANDEX_FOLDER_ID' => 'fixture-folder']
             );
             self::assertIsResource($process);
             fwrite($pipes[0], '{"message":"Hello"}');

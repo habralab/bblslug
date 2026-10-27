@@ -70,6 +70,22 @@ REGEX;
         }
         return $strings;
     }
+    /** @return array<string,mixed> */
+    public static function schemaFor(string $payload): array
+    {
+        $packet = json_decode($payload, false, 512, JSON_THROW_ON_ERROR);
+        if (!$packet instanceof \stdClass) {
+            throw new \InvalidArgumentException('Segment schema requires an object payload');
+        }
+        $ids = array_keys(get_object_vars($packet));
+        return [
+            'type' => 'object',
+            'properties' => (object) array_fill_keys($ids, ['type' => 'string', 'minLength' => 1]),
+            'required' => $ids,
+            'additionalProperties' => false,
+        ];
+    }
+
     private static function requireStringId(mixed $key, string $label): string
     {
         if (!is_string($key)) {
