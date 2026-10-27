@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Bblslug\Translation;
 
 use Bblslug\Filters\FilterManager;
+use Bblslug\JsonPointer;
 use Bblslug\Validation\PlaceholderValidator;
 
 /** Translate selected HTML string values while preserving all other JSON bytes. */
@@ -30,11 +31,7 @@ final class JsonHtmlDocument
             throw new \InvalidArgumentException('JSON HTML segments require explicit htmlJsonPointers');
         }
         foreach ($pointers as $pointer) {
-            if (
-                !is_string($pointer)
-                || ($pointer !== '' && $pointer[0] !== '/')
-                || preg_match('/~(?![01])/', $pointer)
-            ) {
+            if (!JsonPointer::isValid($pointer)) {
                 throw new \InvalidArgumentException('Invalid HTML JSON Pointer; use RFC 6901 string syntax');
             }
             $this->pointers[$pointer] = false;
@@ -195,7 +192,7 @@ REGEX;
                 }
                 $seen[$key] = true;
                 $this->cursor += 2; // String key and colon (syntax was validated before scanning).
-                $this->walk($path . '/' . str_replace(['~', '/'], ['~0', '~1'], $key));
+                $this->walk($path . '/' . JsonPointer::encodeToken($key));
                 if ($this->token()[0] !== ',') {
                     break;
                 }

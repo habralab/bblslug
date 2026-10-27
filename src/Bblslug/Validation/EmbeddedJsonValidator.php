@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Bblslug\Validation;
 
+use Bblslug\JsonPointer;
+
 /** Opt-in validation of source string values containing JSON objects or arrays. */
 class EmbeddedJsonValidator implements ValidatorInterface
 {
@@ -59,7 +61,7 @@ class EmbeddedJsonValidator implements ValidatorInterface
             return ValidationResult::success();
         }
         foreach ($children as $key => $child) {
-            $segment = str_replace(['~', '/'], ['~0', '~1'], (string) $key);
+            $segment = JsonPointer::encodeToken((string) $key);
             $result = self::compare($child, $outputs[$key] ?? null, $path . '/' . $segment);
             if (!$result->isValid()) {
                 return $result;

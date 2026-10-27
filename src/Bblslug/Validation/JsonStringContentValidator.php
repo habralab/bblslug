@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Bblslug\Validation;
 
+use Bblslug\JsonPointer;
+
 /** Detect cleared string values after JSON syntax and schema validation. */
 final class JsonStringContentValidator implements ValidatorInterface
 {
@@ -40,7 +42,7 @@ final class JsonStringContentValidator implements ValidatorInterface
             return ValidationResult::success();
         }
         foreach ($children as $key => $child) {
-            $segment = str_replace(['~', '/'], ['~0', '~1'], (string) $key);
+            $segment = JsonPointer::encodeToken((string) $key);
             $result = self::compare($child, $outputs[$key] ?? null, $path . '/' . $segment);
             if (!$result->isValid()) {
                 return $result;

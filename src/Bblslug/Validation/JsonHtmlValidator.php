@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Bblslug\Validation;
 
+use Bblslug\JsonPointer;
+
 /** Check HTML only at JSON string locations explicitly selected by the caller. */
 class JsonHtmlValidator implements ValidatorInterface
 {
@@ -15,11 +17,7 @@ class JsonHtmlValidator implements ValidatorInterface
     {
         $document = json_decode($source, false, 512, JSON_THROW_ON_ERROR);
         foreach ($pointers as $pointer) {
-            if (
-                !is_string($pointer)
-                || ($pointer !== '' && $pointer[0] !== '/')
-                || preg_match('/~(?![01])/', $pointer)
-            ) {
+            if (!JsonPointer::isValid($pointer)) {
                 throw new \InvalidArgumentException('Invalid HTML JSON Pointer; use RFC 6901 string syntax');
             }
             $html = self::resolve($document, $pointer);
@@ -67,8 +65,7 @@ class JsonHtmlValidator implements ValidatorInterface
         $value = $document;
         $tokens = $pointer === '' ? [] : explode('/', substr($pointer, 1));
         foreach ($tokens as $token) {
-            // Decode simultaneously: ~01 means the literal token ~1, not a slash.
-            $token = strtr($token, ['~1' => '/', '~0' => '~']);
+            $token = JsonPointer::decodeToken($token);
             if ($value instanceof \stdClass && property_exists($value, $token)) {
                 $value = $value->{$token};
             } elseif (
