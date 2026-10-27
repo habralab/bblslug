@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Bblslug;
 
+use Bblslug\Diagnostics\ContentPreview;
 use Bblslug\Filters\FilterManager;
 use Bblslug\Models\ModelRegistry;
 use Bblslug\Models\ModelVariables;
@@ -11,6 +12,7 @@ use Bblslug\Models\Prompts;
 use Bblslug\Models\UsageExtractor;
 use Bblslug\Translation\BatchCheckpoint;
 use Bblslug\Translation\CheckpointIdentity;
+use Bblslug\Translation\DocumentValidation;
 use Bblslug\Translation\HtmlTextDocument;
 use Bblslug\Translation\JsonHtmlDocument;
 use Bblslug\Translation\ProviderExecutor;
@@ -18,15 +20,7 @@ use Bblslug\Translation\SegmentBatches;
 use Bblslug\Translation\SegmentPlan;
 use Bblslug\Translation\SegmentTranslations;
 use Bblslug\Translation\TextDocument;
-use Bblslug\Validation\EmbeddedJsonValidator;
-use Bblslug\Validation\JsonHtmlValidator;
-use Bblslug\Validation\HtmlValidator;
-use Bblslug\Validation\HtmlStructureValidator;
-use Bblslug\Validation\JsonValidator;
-use Bblslug\Validation\JsonScalarValidator;
-use Bblslug\Validation\JsonStringContentValidator;
 use Bblslug\Validation\PlaceholderValidator;
-use Bblslug\Validation\Schema;
 use Bblslug\Validation\TextLengthValidator;
 
 class Bblslug
@@ -220,11 +214,8 @@ class Bblslug
             \is_string($variables['folder_id'] ?? null) ? $variables['folder_id'] : '',
         ]);
 
-        // Prepare holders for validation debug
+        // Prepare validation diagnostics
         $valLogPre  = '';
-        $valLogPost = '';
-        /** @var array<string,mixed>|null $schemaIn */
-        $schemaIn = null;
         /** @var array<string,mixed>|null $rawUsage */
         $rawUsage = null;
 
@@ -298,41 +289,20 @@ class Bblslug
         $originalLength = mb_strlen($text);
         $say($onFeedback, "Input received (length={$originalLength})", 'info');
 
-        $jsonHtmlValidator = null;
-
-        // Pre-validation (before filters)
+        $documentValidation = null;
         if ($validate) {
+            $htmlChecks = $jsonHtmlSegments
+                ? array_merge($validateHtmlJsonPointers, $htmlJsonPointers) : $validateHtmlJsonPointers;
+            $documentValidation = new DocumentValidation(
+                $format,
+                $text,
+                $validateEmbeddedJson,
+                $htmlChecks,
+                $verbose,
+                $diagnosticMasker
+            );
             $say($onFeedback, "Pre-validation started ({$format})", 'info');
-            if (\in_array($format, ['json', 'structured_json', 'linedJson'], true)) {
-                $jsonValidator = new JsonValidator();
-                $preResult = $jsonValidator->validate($text);
-                if (! $preResult->isValid()) {
-                    throw new \RuntimeException(
-                        "JSON syntax failed: " . implode('; ', $preResult->getErrors())
-                    );
-                }
-                $htmlChecks = $jsonHtmlSegments
-                    ? array_merge($validateHtmlJsonPointers, $htmlJsonPointers) : $validateHtmlJsonPointers;
-                if ($htmlChecks !== []) {
-                    $jsonHtmlValidator = new JsonHtmlValidator($text, $htmlChecks);
-                }
-                $parsedIn = json_decode($text, false);
-                $schemaIn = Schema::capture($parsedIn);
-                if ($verbose) {
-                    $valLogPre = "[JSON schema captured]\n";
-                }
-            } elseif ($format === 'html') {
-                $htmlValidator = new HtmlValidator();
-                $preResult = $htmlValidator->validate($text);
-                if (! $preResult->isValid()) {
-                    throw new \RuntimeException(
-                        "HTML validation failed: " . implode('; ', $preResult->getErrors())
-                    );
-                }
-                if ($verbose) {
-                    $valLogPre = "[HTML validation pre-pass]\n";
-                }
-            } // other formats: no container validation
+            $valLogPre = $documentValidation->validateSource();
             $say($onFeedback, "Pre-validation passed ({$format})", 'info');
         }
 
@@ -582,111 +552,10 @@ class Bblslug
         // Collect stats
         $filterStats = $jsonHtmlDocument !== null ? $jsonHtmlDocument->getFilterStats() : $filterManager->getStats();
 
-        // Post-validation (after translation)
-        if ($validate) {
+        if ($documentValidation !== null) {
             $say($onFeedback, "Post-validation started ({$format})", 'info');
-
-            if (\in_array($format, ['json', 'structured_json', 'linedJson'], true)) {
-                // Ensure we have input schema captured (head branch safeguard)
-                if ($schemaIn === null) {
-                    $schemaIn = Schema::capture(\json_decode($text, false));
-                }
-
-                // JSON syntax check
-                $postResult = (new JsonValidator())->validate($result);
-                if (! $postResult->isValid()) {
-                    if ($verbose) {
-                        $debugResponse .= "\n[Restored JSON (invalid) dump]\n";
-                        $debugResponse .= self::ellipsize($diagnosticMasker->redact($result), 2000) . "\n";
-                    }
-                    throw new \RuntimeException(
-                        "JSON syntax broken: " . implode('; ', $postResult->getErrors())
-                        . "\n\n" . $debugRequest . $debugResponse
-                    );
-                }
-
-                // Decode produced JSON
-                /** @var mixed $parsedOut */
-                $parsedOut = \json_decode($result, false);
-
-                // Validate the structure of the JSON that will actually be returned.
-                $schemaOut = Schema::capture($parsedOut);
-                $schemaValidation = Schema::validate($schemaIn, $schemaOut);
-
-                if (! $schemaValidation->isValid()) {
-                    throw new \RuntimeException(
-                        "Schema mismatch: "
-                        . implode('; ', $schemaValidation->getErrors())
-                        . "\n\n" . $debugRequest . $debugResponse
-                    );
-                }
-                $scalarValidation = (new JsonScalarValidator($text))->validate($result);
-                if (!$scalarValidation->isValid()) {
-                    throw new \RuntimeException(
-                        "JSON scalar values changed: " . implode('; ', $scalarValidation->getErrors())
-                    );
-                }
-                $stringValidation = (new JsonStringContentValidator($text))->validate($result);
-                if (!$stringValidation->isValid()) {
-                    throw new \RuntimeException(
-                        "JSON string content lost: " . implode('; ', $stringValidation->getErrors())
-                    );
-                }
-                if ($jsonHtmlValidator !== null) {
-                    $htmlResult = $jsonHtmlValidator->validate($result);
-                    if (!$htmlResult->isValid()) {
-                        throw new \RuntimeException(
-                            "HTML inside JSON mismatch: " . implode('; ', $htmlResult->getErrors())
-                        );
-                    }
-                }
-                if ($validateEmbeddedJson) {
-                    $embeddedResult = (new EmbeddedJsonValidator($text))->validate($result);
-                    if (!$embeddedResult->isValid()) {
-                        throw new \RuntimeException(
-                            "Embedded JSON mismatch: " . implode('; ', $embeddedResult->getErrors())
-                        );
-                    }
-                }
-                if ($verbose) {
-                    $valLogPost .= "[JSON schema validated]\n";
-                }
-            } elseif ($format === 'html') {
-                $htmlValidator = new HtmlValidator();
-                $postResult = $htmlValidator->validate($result);
-                if (! $postResult->isValid()) {
-                    if ($verbose) {
-                        $debugResponse .= "\n[Restored HTML (invalid) dump]\n";
-                        $debugResponse .= self::ellipsize($diagnosticMasker->redact($result), 2000) . "\n";
-                    }
-                    throw new \RuntimeException(
-                        "HTML validation failed: "
-                        . implode('; ', $postResult->getErrors())
-                        . "\n\n" . $debugRequest . $debugResponse
-                    );
-                }
-                $structureResult = (new HtmlStructureValidator($text))->validate($result);
-                if (!$structureResult->isValid()) {
-                    if ($verbose) {
-                        $debugResponse .= "\n[Restored HTML (invalid) dump]\n";
-                        $debugResponse .= self::ellipsize($diagnosticMasker->redact($result), 2000) . "\n";
-                    }
-                    throw new \RuntimeException(
-                        "HTML structure mismatch: " . implode('; ', $structureResult->getErrors())
-                        . ($verbose ? "\n\n" . $debugRequest . $debugResponse : '')
-                    );
-                }
-                if ($verbose) {
-                    $valLogPost = "[HTML validation post-pass]\n";
-                }
-            } // other formats: no container validation
-
+            $debugResponse = $documentValidation->validateTranslation($result, $debugRequest, $debugResponse);
             $say($onFeedback, "Post-validation passed ({$format})", 'info');
-        }
-
-        // Append post-validation log into response debug
-        if ($verbose) {
-            $debugResponse .= $valLogPost;
         }
 
         $say($onFeedback, "Done", 'info');
@@ -742,7 +611,7 @@ class Bblslug
                     break;
                 }
                 // Mask the complete slice before truncation can expose a partial credential.
-                $preview = self::ellipsize($masker->redact($value), 200);
+                $preview = ContentPreview::render($value, $masker, 200);
                 $encoded = json_encode(
                     $preview,
                     JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE
@@ -755,10 +624,5 @@ class Bblslug
         } catch (\Throwable $e) {
             // Feedback must not prevent translation.
         }
-    }
-
-    private static function ellipsize(string $value, int $max): string
-    {
-        return mb_strlen($value) > $max ? mb_substr($value, 0, $max) . '…' : $value;
     }
 }

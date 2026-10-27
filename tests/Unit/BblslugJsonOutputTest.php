@@ -8,6 +8,41 @@ use PHPUnit\Framework\TestCase;
 
 final class BblslugJsonOutputTest extends TestCase
 {
+    /** @dataProvider scalarRoots */
+    public function testJsonFormatsAcceptScalarRootsWithExactNonStringValues(
+        string $format,
+        string $input,
+        string $translated
+    ): void {
+        $result = $this->runFixture([
+            'format' => $format, 'input' => $input, 'translated' => $translated,
+        ]);
+
+        self::assertSame('success', $result['type'], $result['message'] ?? '');
+        self::assertSame($translated, $result['result']);
+        self::assertSame(1, $result['httpCalls']);
+        self::assertSame("[JSON schema validated]\n", $result['debugResponse']);
+    }
+
+    /** @return iterable<string,array{string,string,string}> */
+    public static function scalarRoots(): iterable
+    {
+        foreach (['json', 'linedJson'] as $format) {
+            foreach (
+                [
+                'zero' => ['0', '0'],
+                'decimal' => ['1.2300', '1.2300'],
+                'true' => ['true', 'true'],
+                'false' => ['false', 'false'],
+                'null' => ['null', 'null'],
+                'string' => ['"Hello"', '"Hallo"'],
+                ] as $name => [$input, $translated]
+            ) {
+                yield $format . '/' . $name => [$format, $input, $translated];
+            }
+        }
+    }
+
     public function testLinedJsonRejectsMalformedAndStructurallyIncompleteOutput(): void
     {
         foreach (
