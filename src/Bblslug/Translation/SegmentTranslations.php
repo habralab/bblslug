@@ -91,7 +91,8 @@ REGEX;
 
         $keys = array_keys(get_object_vars($decoded));
         foreach ($keys as $key) {
-            if (preg_match('/\As\d+\z/', $key) !== 1) {
+            // PHP converts numeric JSON object keys to integer array keys.
+            if (preg_match('/\As\d+\z/', (string) $key) !== 1) {
                 throw new \InvalidArgumentException('Segment JSON contains an invalid segment id');
             }
             if ($requireBoundedIds) {

@@ -4,6 +4,10 @@ This file follows the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) f
 
 ## [Unreleased]
 
+### Fixed
+
+- Source segment payloads with numeric object keys raise `InvalidArgumentException` instead of `TypeError` during packet preparation.
+
 ## [0.11.0] – 2026-10-27
 
 ### Added

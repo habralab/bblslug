@@ -44,6 +44,11 @@ final class SegmentSourceContractTest extends TestCase
                 $consumer, '{"s0":""}', 'Invalid segment source payload',
                 'HTML segments require nonempty translated strings',
             ];
+            foreach (['0', '-1', (string) PHP_INT_MAX] as $id) {
+                yield $consumer . ' numeric id ' . $id => [
+                    $consumer, '{"' . $id . '":"ok"}', 'Segment JSON contains an invalid segment id', null,
+                ];
+            }
         }
         yield 'plan overflow before invalid id' => [
             'plan', '{"' . $overflow . '":"ok","bad":"ok"}',
