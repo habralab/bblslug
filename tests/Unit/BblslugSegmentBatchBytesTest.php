@@ -98,6 +98,39 @@ final class BblslugSegmentBatchBytesTest extends TestCase
         }
     }
 
+    public function testAbbreviationsReachAllSegmentTransports(): void
+    {
+        foreach (['text', 'html', 'json'] as $format) {
+            $text = 'Dr. Smith met Prof. Jones. Another reviewer agreed. ';
+            $prose = str_repeat($text, 4);
+            $input = $format === 'text' ? $prose : '<p>' . $prose . '</p>';
+            if ($format === 'json') {
+                $input = '{"meta":1.2300,"body":' . json_encode($input, JSON_THROW_ON_ERROR) . '}';
+            }
+            $r = $this->runFixture([
+                'format' => $format, 'input' => $input, 'identity' => true,
+                'textTransport' => $format === 'text' ? 'segments' : 'document',
+                'htmlTransport' => $format === 'text' ? 'document' : 'segments',
+                'htmlJsonPointers' => $format === 'json' ? ['/body'] : [],
+                'segmentBatchMaxBytes' => 100, 'segmentAbbreviations' => ['Dr.', 'Prof.'],
+            ]);
+            self::assertSame('success', $r['type'], $r['message'] ?? '');
+            self::assertSame($input, $r['result']['result']);
+            foreach ($r['packets'] as $packet) {
+                foreach ($packet as $value) {
+                    self::assertNotSame('Dr.', trim($value));
+                    self::assertNotSame('Prof.', trim($value));
+                }
+            }
+        }
+        $r = $this->runFixture(['segmentAbbreviations' => ['Dr.']]);
+        self::assertSame(\InvalidArgumentException::class, $r['type']);
+        self::assertSame(0, $r['networkCalls']);
+        $r = $this->runFixture(['variables' => ['segmentAbbreviations' => ['Dr.']]]);
+        self::assertSame(\InvalidArgumentException::class, $r['type']);
+        self::assertSame(0, $r['networkCalls']);
+    }
+
     public function testNoTextDryRunAndInvalidOptionsAvoidHttp(): void
     {
         foreach ([['input' => "\r\n@@0@@"], ['input' => 'One two three four five', 'dryRun' => true]] as $scenario) {

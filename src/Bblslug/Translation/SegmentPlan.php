@@ -19,8 +19,28 @@ final class SegmentPlan
     /** @var array<string,string> */
     private array $trailing = [];
 
-    public function __construct(string $payload, ?int $maxSegments, int $maxBytes)
+    /** @var array<string,true> */
+    private array $abbreviations = [];
+
+    /** @param array<mixed> $abbreviations */
+    public function __construct(string $payload, ?int $maxSegments, int $maxBytes, array $abbreviations = [])
     {
+        if (!array_is_list($abbreviations)) {
+            throw new \InvalidArgumentException('Segment abbreviations must be a list of tokens');
+        }
+        foreach ($abbreviations as $abbreviation) {
+            if (
+                !is_string($abbreviation) || str_contains($abbreviation, "\0")
+                || preg_match('/\A\S+\z/u', $abbreviation) !== 1
+            ) {
+                throw new \InvalidArgumentException('Segment abbreviations require nonempty UTF-8 tokens');
+            }
+            $key = $this->abbreviationKey($abbreviation);
+            if (preg_match('/\A\S+\.\z/u', $key) !== 1) {
+                throw new \InvalidArgumentException('Segment abbreviations must end with a period');
+            }
+            $this->abbreviations[$key] = true;
+        }
         if ($maxSegments !== null && $maxSegments < 1) {
             throw new \InvalidArgumentException('Segment count cap must be positive');
         }
@@ -84,12 +104,27 @@ final class SegmentPlan
             $currentId = $original;
             $currentBytes = $this->encodedBytes($current);
             $separators = [];
+            $keptThrough = $this->abbreviationEnd($matches[0], 0);
             for ($i = 1, $count = count($matches[0]); $i < $count; ++$i) {
                 $word = (string) $matches[0][$i][0];
                 $offset = (int) $matches[0][$i][1];
                 $separator = substr($value, $lastEnd, $offset - $lastEnd);
                 $candidateBytes = $currentBytes + $this->encodedBytes($separator) - 2
                     + $this->encodedBytes($word) - 2;
+                $moveAbbreviation = false;
+                if ($this->abbreviations !== [] && $i > $keptThrough) {
+                    $keptThrough = $this->abbreviationEnd($matches[0], $i);
+                    if ($keptThrough > $i) {
+                        $end = (int) $matches[0][$keptThrough][1]
+                            + strlen((string) $matches[0][$keptThrough][0]);
+                        $keptBytes = $this->encodedBytes(substr($value, $offset, $end - $offset));
+                        $withKept = $currentBytes + $this->encodedBytes($separator) - 2 + $keptBytes - 2;
+                        // Move the run before it reaches the cap, keeping the abbreviation
+                        // with its following token whenever the run fits a fresh field.
+                        $moveAbbreviation = 2 + $this->entryBytesEncoded($currentId, $withKept) > $maxBytes
+                            && 2 + $this->entryBytesEncoded('s' . $nextId, $keptBytes) <= $maxBytes;
+                    }
+                }
                 // Keep sentence-sized units in oversized values: a provider must
                 // return each unit rather than condensing repeated prose in one string.
                 $sentenceEnd = $oversized && $this->isSentenceEnd(
@@ -97,7 +132,10 @@ final class SegmentPlan
                     $word,
                     $current
                 );
-                if (!$sentenceEnd && 2 + $this->entryBytesEncoded($currentId, $candidateBytes) <= $maxBytes) {
+                if (
+                    !$sentenceEnd && !$moveAbbreviation
+                    && 2 + $this->entryBytesEncoded($currentId, $candidateBytes) <= $maxBytes
+                ) {
                     $current .= $separator . $word;
                     $currentBytes = $candidateBytes;
                 } else {
@@ -168,6 +206,28 @@ final class SegmentPlan
         return $this->encode($restored);
     }
 
+    private function abbreviationKey(string $token): string
+    {
+        $bare = preg_replace('/\A["\x{27}«“‘(\[]+|["\x{27}»”’)\]]+\z/u', '', $token);
+        return mb_strtolower($bare ?? $token);
+    }
+
+    private function isAbbreviation(string $token): bool
+    {
+        return $this->abbreviations !== [] && isset($this->abbreviations[$this->abbreviationKey($token)]);
+    }
+
+    /** @param list<array{string,int}> $words */
+    private function abbreviationEnd(array $words, int $start): int
+    {
+        $end = $start;
+        $count = count($words);
+        while ($end + 1 < $count && $this->isAbbreviation($words[$end][0])) {
+            ++$end;
+        }
+        return $end;
+    }
+
     private function isSentenceEnd(string $previous, string $next, string $current): bool
     {
         if (preg_match('/([.!?。！？])["\x{27}»”’)\]]*\z/u', $previous, $ending) !== 1) {
@@ -175,6 +235,9 @@ final class SegmentPlan
         }
         if ($ending[1] !== '.') {
             return true;
+        }
+        if ($this->isAbbreviation($previous)) {
+            return false;
         }
         // Dotted initials stay with their context; a hard byte cap can still split them.
         if (preg_match('/\A["\x{27}«“‘(\[]*(?:\p{L}\.)+\z/u', $previous) === 1) {

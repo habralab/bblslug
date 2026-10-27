@@ -127,7 +127,8 @@ namespace {
             htmlSegmentBatchSize: $scenario['htmlSegmentBatchSize'] ?? null,
             textTransport: $scenario['textTransport'] ?? 'segments',
             textSegmentBatchSize: $scenario['textSegmentBatchSize'] ?? null,
-            segmentBatchMaxBytes: $scenario['segmentBatchMaxBytes'] ?? null
+            segmentBatchMaxBytes: $scenario['segmentBatchMaxBytes'] ?? null,
+            segmentAbbreviations: $scenario['segmentAbbreviations'] ?? []
         );
         $output = ['type' => 'success', 'result' => $result];
     } catch (\Throwable $exception) {

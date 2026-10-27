@@ -42,6 +42,7 @@ class Cli
             "format:",       // text, HTML or a JSON format
             "html-transport:", // HTML transport: document or segments
             "html-segment-batch-size:", // positive number of HTML segments per request
+            "segment-abbreviation:", // dotted token to keep with next token (repeatable)
             "segment-batch-max-bytes:", // positive serialized segment packet byte limit
             "html-json-pointer:", // JSON Pointer to HTML strings selected for segment translation (repeatable)
             "help",          // show help and exit
@@ -108,6 +109,7 @@ class Cli
         $htmlSegmentBatchSize = null;
         $textSegmentBatchSize = null;
         $segmentBatchMaxBytes = null;
+        $segmentAbbreviations = [];
         $filters    = isset($options['filters']) && is_string($options['filters'])
                         && trim($options['filters']) !== ''
                         ? array_map('trim', explode(',', $options['filters']))
@@ -253,6 +255,13 @@ class Cli
                 $next = $argv[$index + 1] ?? null;
                 if (!is_string($next) || $next === '' || str_starts_with($next, '--')) {
                     Help::error('--text-segment-batch-size requires a value.');
+                }
+            } elseif ($argument === '--segment-abbreviation=') {
+                Help::error('--segment-abbreviation requires a non-empty token.');
+            } elseif ($argument === '--segment-abbreviation') {
+                $next = $argv[$index + 1] ?? null;
+                if (!is_string($next) || $next === '' || str_starts_with($next, '--')) {
+                    Help::error('--segment-abbreviation requires a token.');
                 }
             } elseif ($argument === '--segment-batch-max-bytes=') {
                 Help::error('--segment-batch-max-bytes requires a positive integer value.');
@@ -409,6 +418,16 @@ class Cli
                 $htmlJsonPointers[] = $pointer;
             }
         }
+        if (isset($options['segment-abbreviation'])) {
+            $rawAbbreviations = $options['segment-abbreviation'];
+            $rawAbbreviations = is_array($rawAbbreviations) ? $rawAbbreviations : [$rawAbbreviations];
+            foreach ($rawAbbreviations as $abbreviation) {
+                if (!is_string($abbreviation)) {
+                    Help::error('--segment-abbreviation requires a string token.');
+                }
+                $segmentAbbreviations[] = $abbreviation;
+            }
+        }
         if (isset($options['html-json-pointer'])) {
             $rawPointers = $options['html-json-pointer'];
             $rawPointers = is_array($rawPointers) ? $rawPointers : [$rawPointers];
@@ -474,6 +493,9 @@ class Cli
             Help::error(
                 '--segment-batch-max-bytes requires --text-transport=segments or --html-transport=segments.'
             );
+        }
+        if ($segmentAbbreviations !== [] && $segmentBatchMaxBytes === null) {
+            Help::error('--segment-abbreviation requires --segment-batch-max-bytes.');
         }
         if ($textSegmentBatchSize !== null && $htmlSegmentBatchSize !== null) {
             Help::error('--text-segment-batch-size cannot be combined with --html-segment-batch-size.');
@@ -682,7 +704,8 @@ class Cli
                     new SegmentPlan(
                         $segmentDocument->getJson(),
                         $textSegmentBatchSize ?? $htmlSegmentBatchSize,
-                        $segmentBatchMaxBytes
+                        $segmentBatchMaxBytes,
+                        $segmentAbbreviations
                     );
                 }
             } catch (\Throwable $exception) {
@@ -792,6 +815,7 @@ class Cli
                 textTransport: $textTransport,
                 textSegmentBatchSize: $textSegmentBatchSize,
                 segmentBatchMaxBytes: $segmentBatchMaxBytes,
+                segmentAbbreviations: $segmentAbbreviations,
                 operationTimeoutSeconds: $operationTimeoutSeconds,
                 checkpointPath: $checkpointPath,
             );

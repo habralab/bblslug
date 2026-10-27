@@ -9,6 +9,7 @@ final class ModelVariables
 {
     private const RESERVED = [
         'format', 'dryRun', 'promptKey', 'verbose', 'context', 'responseContext', 'operationDeadline',
+        'segmentAbbreviations',
     ];
 
     /** @param array<string,mixed> $variables */

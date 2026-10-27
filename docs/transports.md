@@ -325,6 +325,49 @@ The default is `null`, preserving existing count-only and single-request behavio
 Enabling the byte cap uses the same `batches`, usage aggregation and ordered raw
 response array as count-based batching. Empty documents make no HTTP requests.
 
+## Keep abbreviations with their context
+
+Set `segmentAbbreviations: ['Dr.', 'Prof.', 'ул.']` in PHP or repeat
+`--segment-abbreviation=TOKEN` in the CLI. This requires a segment transport and
+`segmentBatchMaxBytes` / `--segment-batch-max-bytes`. The list is empty by default;
+callers choose tokens for their source language and content.
+
+Matching ignores case and surrounding quotes or parentheses/brackets. Supply
+nonempty UTF-8 tokens ending in a period; spaces within a token are not supported.
+A configured abbreviation does not force a sentence boundary. When possible, the
+planner moves the abbreviation and its following token into a fresh piece before
+the byte cap would separate them. Consecutive configured abbreviations form one
+run with the next token. If that run cannot fit a fresh piece, the hard byte limit
+still applies and whitespace splitting remains possible. These hints do not
+identify complete multiword names or guarantee translation quality. Hints operate
+within an existing fragment; they do not merge lines, HTML nodes or separately
+selected JSON values.
+
+```bash
+bin/bblslug --model=google:gemini-flash-latest --format=text \
+  --text-transport=segments --segment-batch-max-bytes=2000 \
+  --segment-abbreviation=Dr. --segment-abbreviation=Prof. \
+  --source-lang=EN --target-lang=DE \
+  --source=samples/quickstart/input.txt --translated=output.txt
+```
+
+```php
+$result = \Bblslug\Bblslug::translate(
+    apiKey: $key,
+    format: 'text',
+    modelKey: 'openai:gpt-6-luna',
+    text: 'Dr. Smith met Prof. Jones.',
+    sourceLang: 'EN',
+    targetLang: 'DE',
+    textTransport: 'segments',
+    segmentBatchMaxBytes: 2000,
+    segmentAbbreviations: ['Dr.', 'Prof.'],
+);
+```
+
+Keep the same abbreviation list when resuming a checkpoint. Like packet and token
+limits, changing the list requires a new checkpoint.
+
 ## Resume confirmed successful segment packets
 
 Pass `checkpointPath: '/private/work/translation.checkpoint.json'` in PHP or

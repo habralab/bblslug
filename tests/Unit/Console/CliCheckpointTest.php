@@ -219,6 +219,48 @@ final class CliCheckpointTest extends TestCase
         }
     }
 
+    public function testChangingEvenUnusedAbbreviationsRejectsCheckpointBeforeHttp(): void
+    {
+        $checkpoint = tempnam(sys_get_temp_dir(), 'bblslug-abbreviation-state-');
+        $counter = tempnam(sys_get_temp_dir(), 'bblslug-abbreviation-count-');
+        self::assertIsString($checkpoint);
+        self::assertIsString($counter);
+        unlink($checkpoint);
+        $input = "Hello\nWorld\nThird";
+        $base = ['--text-transport=segments', '--text-segment-batch-size=1',
+            '--segment-batch-max-bytes=100', '--checkpoint=' . $checkpoint];
+        try {
+            file_put_contents($counter, '0');
+            $r = $this->runCli([...$base, '--segment-abbreviation=Dr.'], $input, [
+                'BBLSLUG_TEST_COUNTER_FILE' => $counter, 'BBLSLUG_TEST_FAIL_BATCH' => '2',
+            ]);
+            self::assertNotSame(0, $r['exitCode']);
+            $saved = file_get_contents($checkpoint);
+            self::assertIsString($saved);
+            file_put_contents($counter, '0');
+            $r = $this->runCli(
+                [...$base, '--segment-abbreviation=Prof.'],
+                $input,
+                ['BBLSLUG_TEST_COUNTER_FILE' => $counter]
+            );
+            self::assertNotSame(0, $r['exitCode']);
+            self::assertStringContainsString('identity mismatch', $r['stderr']);
+            self::assertSame('0', file_get_contents($counter));
+            self::assertSame($saved, file_get_contents($checkpoint));
+            $r = $this->runCli(
+                [...$base, '--segment-abbreviation=Dr.'],
+                $input,
+                ['BBLSLUG_TEST_COUNTER_FILE' => $counter]
+            );
+            self::assertSame(0, $r['exitCode'], $r['stderr']);
+            self::assertSame('2', file_get_contents($counter));
+        } finally {
+            @unlink($checkpoint);
+            @unlink($checkpoint . '.lock');
+            @unlink($counter);
+        }
+    }
+
     /** @param list<string> $options @param array<string,string> $extraEnv */
     private function runCli(array $options, ?string $input, array $extraEnv = []): array
     {

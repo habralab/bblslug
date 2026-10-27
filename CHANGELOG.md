@@ -6,6 +6,7 @@ This file follows the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) f
 
 ### Added
 
+- Caller-supplied abbreviation hints for text/HTML segment planning in PHP and CLI, including checkpoint identity checks.
 - Native JSON Schema output for Yandex and xAI; declared models require every identifier in each text/HTML segment packet, including HTML selected inside JSON.
 
 ### Changed

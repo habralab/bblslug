@@ -59,6 +59,8 @@ class Help
         echo "\t{$bold}--html-transport=MODE{$reset} HTML transport: document (default) or segments\n";
         echo "\t{$bold}--html-segment-batch-size=N{$reset} Segments per request "
             . "(positive integer; segments transport only)\n";
+        echo "\t{$bold}--segment-abbreviation=TOKEN{$reset} Keep a dotted token with its next token "
+            . "(repeatable; requires segment byte cap)\n";
         echo "\t{$bold}--segment-batch-max-bytes=N{$reset} Maximum serialized segment packet size "
             . "in bytes (positive integer; segments transport only)\n";
         echo "\t{$bold}--html-json-pointer=POINTER{$reset} Translate HTML at a JSON Pointer "

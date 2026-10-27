@@ -76,6 +76,40 @@ final class CliSegmentBatchBytesTest extends TestCase
         self::assertSame($input, $r['stdout']);
     }
 
+    public function testRepeatableAbbreviationsAffectTheRealRequestPlanAndDryRun(): void
+    {
+        $source = 'Dr. Smith met Prof. Jones. Another reviewer agreed. ';
+        $source = str_repeat($source, 4);
+        $options = ['--text-transport=segments', '--segment-batch-max-bytes=100',
+            '--segment-abbreviation=Dr.', '--segment-abbreviation', 'Prof.'];
+        $r = $this->runCli($options, $source);
+        self::assertSame(0, $r['exitCode'], $r['stderr']);
+        self::assertSame(4, substr_count($r['stdout'], 'T:Dr. Smith met Prof. Jones.'));
+        self::assertStringNotContainsString('T:Jones.', $r['stdout']);
+        $r = $this->runCli([...$options, '--dry-run'], $source);
+        self::assertSame(0, $r['exitCode'], $r['stderr']);
+        self::assertSame($source, $r['stdout']);
+    }
+
+    public function testMalformedAbbreviationOptionsAreRejectedWithoutOutput(): void
+    {
+        $base = ['--text-transport=segments', '--segment-batch-max-bytes=100'];
+        foreach (
+            [['--segment-abbreviation='], ['--segment-abbreviation'],
+            ['--segment-abbreviation', '--verbose'], ['--segment-abbreviation=Dr'],
+            ['--segment-abbreviation=Dr. Smith'], ['--segment-abbreviation', '']] as $bad
+        ) {
+            $r = $this->runCli([...$base, ...$bad], 'Hello');
+            self::assertNotSame(0, $r['exitCode']);
+            self::assertSame('', $r['stdout']);
+        }
+        foreach ([['--text-transport=segments'], []] as $base) {
+            $r = $this->runCli([...$base, '--segment-abbreviation=Dr.'], 'Hello');
+            self::assertNotSame(0, $r['exitCode']);
+            self::assertSame('', $r['stdout']);
+        }
+    }
+
     public function testInvalidByteCapOptionsAndModesAreRejectedUpfront(): void
     {
         foreach (['0', '-1', '1.5', '1e2', '9223372036854775808', ''] as $value) {

@@ -107,6 +107,7 @@ class Bblslug
      * @param int|null $segmentBatchMaxBytes Maximum serialized segment JSON bytes; splits at whitespace if needed.
      * @param int|null $operationTimeoutSeconds Total time budget for preparation and all provider requests.
      * @param string|null $checkpointPath Optional local file retaining validated segment packets for resume.
+     * @param list<string> $segmentAbbreviations Dotted tokens to keep with their following token when possible.
      *
      * @return array{
      *     original: string,
@@ -153,7 +154,8 @@ class Bblslug
         ?int $textSegmentBatchSize = null,
         ?int $segmentBatchMaxBytes = null,
         ?int $operationTimeoutSeconds = null,
-        ?string $checkpointPath = null
+        ?string $checkpointPath = null,
+        array $segmentAbbreviations = []
     ): array {
         $deadline = $operationTimeoutSeconds !== null ? new OperationDeadline($operationTimeoutSeconds) : null;
         if (
@@ -173,6 +175,9 @@ class Bblslug
             throw new \InvalidArgumentException(
                 'segmentBatchMaxBytes requires segments transport and a positive integer'
             );
+        }
+        if ($segmentAbbreviations !== [] && $segmentBatchMaxBytes === null) {
+            throw new \InvalidArgumentException('segmentAbbreviations requires segmentBatchMaxBytes');
         }
         if ($textSegmentBatchSize !== null && ($textSegmentBatchSize < 1 || $textTransport !== 'segments')) {
             throw new \InvalidArgumentException(
@@ -354,7 +359,7 @@ class Bblslug
         $batchConfigured = $segmentBatchSize !== null || $segmentBatchMaxBytes !== null;
         $batching = $batchConfigured && $segmentDocument !== null && $segmentDocument->hasTexts();
         $segmentPlan = $segmentBatchMaxBytes !== null
-            ? new SegmentPlan($requestText, $segmentBatchSize, $segmentBatchMaxBytes) : null;
+            ? new SegmentPlan($requestText, $segmentBatchSize, $segmentBatchMaxBytes, $segmentAbbreviations) : null;
         $payloads = $segmentPlan !== null
             ? ($batching ? $segmentPlan->getPayloads() : [$requestText])
             : ($batching ? SegmentBatches::split($requestText, $segmentBatchSize ?? PHP_INT_MAX) : [$requestText]);
@@ -420,7 +425,7 @@ class Bblslug
                 'validateHtmlJsonPointers' => $validateHtmlJsonPointers, 'htmlJsonPointers' => $htmlJsonPointers,
                 'htmlTransport' => $htmlTransport, 'textTransport' => $textTransport, 'payloads' => $payloads,
                 'htmlSegmentBatchSize' => $htmlSegmentBatchSize, 'textSegmentBatchSize' => $textSegmentBatchSize,
-                'segmentBatchMaxBytes' => $segmentBatchMaxBytes,
+                'segmentBatchMaxBytes' => $segmentBatchMaxBytes, 'segmentAbbreviations' => $segmentAbbreviations,
             ], $promptKey);
             $deadline?->check();
             $checkpoint = new BatchCheckpoint($checkpointPath, $identity, count($payloads));
