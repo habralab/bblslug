@@ -106,7 +106,6 @@ class Cli
             Help::error('--text-transport requires a single string value.');
         }
         $textTransport = $textTransportOption ?? 'document';
-        $segmentAbbreviations = [];
         $filters    = isset($options['filters']) && is_string($options['filters'])
                         && trim($options['filters']) !== ''
                         ? array_map('trim', explode(',', $options['filters']))
@@ -133,11 +132,6 @@ class Cli
         $validate   = ! isset($options['no-validate']);
         $verbose    = isset($options['verbose']);
 
-        // getopt returns a scalar for one occurrence and an array for repeated
-        // occurrences. Preserve empty strings so that the empty JSON Pointer
-        // (the document root) can be requested with --validate-html-json-pointer ''.
-        $htmlJsonPointers = [];
-        $htmlJsonSelectionPointers = [];
         $rawArgv = $_SERVER['argv'] ?? [];
         $argv = is_array($rawArgv) ? array_values($rawArgv) : [];
         try {
@@ -160,39 +154,29 @@ class Cli
             $checkpointPath = $rawCheckpointPath;
         }
 
-        $htmlSegmentBatchSize = self::positiveIntegerOption($options, 'html-segment-batch-size');
-        $textSegmentBatchSize = self::positiveIntegerOption($options, 'text-segment-batch-size');
-        $segmentBatchMaxBytes = self::positiveIntegerOption($options, 'segment-batch-max-bytes');
-        $operationTimeoutSeconds = self::positiveIntegerOption($options, 'operation-timeout');
-        if (isset($options['validate-html-json-pointer'])) {
-            $rawPointers = $options['validate-html-json-pointer'];
-            $rawPointers = is_array($rawPointers) ? $rawPointers : [$rawPointers];
-            foreach ($rawPointers as $pointer) {
-                if (!is_string($pointer)) {
-                    Help::error('--validate-html-json-pointer requires a string value.');
-                }
-                $htmlJsonPointers[] = $pointer;
-            }
-        }
-        if (isset($options['segment-abbreviation'])) {
-            $rawAbbreviations = $options['segment-abbreviation'];
-            $rawAbbreviations = is_array($rawAbbreviations) ? $rawAbbreviations : [$rawAbbreviations];
-            foreach ($rawAbbreviations as $abbreviation) {
-                if (!is_string($abbreviation)) {
-                    Help::error('--segment-abbreviation requires a string token.');
-                }
-                $segmentAbbreviations[] = $abbreviation;
-            }
-        }
-        if (isset($options['html-json-pointer'])) {
-            $rawPointers = $options['html-json-pointer'];
-            $rawPointers = is_array($rawPointers) ? $rawPointers : [$rawPointers];
-            foreach ($rawPointers as $pointer) {
-                if (!is_string($pointer)) {
-                    Help::error('--html-json-pointer requires a string value.');
-                }
-                $htmlJsonSelectionPointers[] = $pointer;
-            }
+        // Preserve getopt repetition and separate empty root-pointer values.
+        try {
+            $htmlSegmentBatchSize = OptionValues::positiveInteger($options, 'html-segment-batch-size');
+            $textSegmentBatchSize = OptionValues::positiveInteger($options, 'text-segment-batch-size');
+            $segmentBatchMaxBytes = OptionValues::positiveInteger($options, 'segment-batch-max-bytes');
+            $operationTimeoutSeconds = OptionValues::positiveInteger($options, 'operation-timeout');
+            $htmlJsonPointers = OptionValues::strings(
+                $options,
+                'validate-html-json-pointer',
+                '--validate-html-json-pointer requires a string value.'
+            );
+            $segmentAbbreviations = OptionValues::strings(
+                $options,
+                'segment-abbreviation',
+                '--segment-abbreviation requires a string token.'
+            );
+            $htmlJsonSelectionPointers = OptionValues::strings(
+                $options,
+                'html-json-pointer',
+                '--html-json-pointer requires a string value.'
+            );
+        } catch (\InvalidArgumentException $exception) {
+            Help::error($exception->getMessage());
         }
 
         if ($modelKey === null || $modelKey === '') {
@@ -329,24 +313,8 @@ class Cli
             );
         }
 
-        // Parse --variables into key=value overrides
-        $cliVars = [];
-        if (isset($options['variables']) && is_string($options['variables']) && $options['variables'] !== '') {
-            foreach (explode(',', $options['variables']) as $pair) {
-                $pair = trim($pair);
-                if ($pair == '') {
-                    continue;
-                }
-                [$k, $v] = array_map('trim', explode('=', $pair, 2)) + [null, null];
-                if ($k !== null && $v !== null) {
-                    $cliVars[$k] = $v;
-                } else {
-                    Help::error("Invalid --variables format: '{$pair}'");
-                }
-            }
-        }
-
         try {
+            $cliVars = OptionValues::variables($options);
             ModelVariables::validate($cliVars);
             $filterManager = new FilterManager($filters);
         } catch (\InvalidArgumentException $exception) {
@@ -666,29 +634,6 @@ class Cli
 
         @fwrite($stderr, $reset);
         @fclose($stderr);
-    }
-
-    /** @param array<string,mixed> $options Parsed getopt values; omitted options stay null. */
-    private static function positiveIntegerOption(array $options, string $name): ?int
-    {
-        if (!isset($options[$name])) {
-            return null;
-        }
-        $raw = $options[$name];
-        if (is_array($raw)) {
-            Help::error("--{$name} may only be specified once.");
-        }
-        if (!is_string($raw) || !preg_match('/\A[1-9][0-9]*\z/', $raw)) {
-            Help::error("--{$name} requires a positive integer value.");
-        }
-        $maxInt = (string) PHP_INT_MAX;
-        if (
-            strlen($raw) > strlen($maxInt)
-            || (strlen($raw) === strlen($maxInt) && strcmp($raw, $maxInt) > 0)
-        ) {
-            Help::error("--{$name} is too large.");
-        }
-        return (int) $raw;
     }
 
     /**
