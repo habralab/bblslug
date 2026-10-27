@@ -15,6 +15,26 @@ use PHPUnit\Framework\TestCase;
  */
 final class PlaceholderCollisionTest extends TestCase
 {
+    public function testUrlFilterSubclassCanKeepItsOwnConstructor(): void
+    {
+        $filter = new class extends UrlFilter {
+            public function __construct()
+            {
+            }
+        };
+
+        self::assertSame(['filter' => 'url', 'count' => 0], $filter->getStats());
+        self::assertSame([], $filter->debugDump());
+        self::assertSame('literal @@0@@', $filter->restore('literal @@0@@'));
+
+        $source = 'literal @@0@@ https://example.test/path';
+        $prepared = $filter->apply($source, new PlaceholderCounter());
+
+        self::assertSame($source, $filter->restore($prepared));
+        self::assertSame(1, $filter->getStats()['count']);
+        self::assertCount(1, $filter->debugDump());
+    }
+
     /** @test */
     public function managerRoundTripsLiteralMarkerAlongsideUrl(): void
     {

@@ -4,44 +4,17 @@ declare(strict_types=1);
 
 namespace Bblslug\Filters;
 
-use Bblslug\Filters\FilterInterface;
 use Bblslug\Filters\PlaceholderCounter;
 
 class UrlFilter implements DebuggableFilterInterface
 {
-    /** @var array<string,string> Placeholder => exact source slice, including JSON escapes. */
-    private array $map = [];
-
-    /** @var array<string,string> generated shield => literal marker-like source text */
-    private array $literalMap = [];
+    private ?FragmentProtection $protection = null;
 
     public function apply(string $text, PlaceholderCounter $counter): string
     {
-        // Shield complete, overlapping, and partial markers before capturing fragments.
-        $shielded = preg_replace_callback(
-            '/(?<![0-9@])[0-9@]*@@[0-9@]*/',
-            /** @param array<int,string> $match */
-            function (array $match) use ($counter): string {
-                $placeholder = $counter->next();
-                $this->literalMap[$placeholder] = $match[0];
-                return $placeholder;
-            },
-            $text
-        );
-        if ($shielded === null) {
-            throw new \RuntimeException('Could not protect literal placeholders');
-        }
-        $text = $shielded;
-
-        $output = '';
-        $cursor = 0;
-        foreach ($this->findUrls($text) as [$offset, $length]) {
-            $placeholder = $counter->next();
-            $this->map[$placeholder] = substr($text, $offset, $length);
-            $output .= substr($text, $cursor, $offset - $cursor) . $placeholder;
-            $cursor = $offset + $length;
-        }
-        return $output . substr($text, $cursor);
+        $protection = $this->protection ??= new FragmentProtection();
+        $shielded = $protection->shieldLiterals($text, $counter);
+        return $protection->capture($shielded, $this->findUrls($shielded), $counter);
     }
 
     /** @return array<int,array{int,int}> URL fragments as source byte offsets/lengths. */
@@ -92,8 +65,7 @@ REGEX;
 
     public function restore(string $text): string
     {
-        // Each pass is simultaneous; source markers return after fragment expansion.
-        return strtr(strtr($text, $this->map), $this->literalMap);
+        return $this->protection?->restore($text) ?? $text;
     }
 
     /**
@@ -101,12 +73,12 @@ REGEX;
      */
     public function getStats(): array
     {
-        return ['filter' => 'url', 'count' => count($this->map)];
+        return ['filter' => 'url', 'count' => count($this->protection?->getCaptures() ?? [])];
     }
 
     /** @return array<string,string> Placeholder => captured source slice. */
     public function debugDump(): array
     {
-        return $this->map;
+        return $this->protection?->getCaptures() ?? [];
     }
 }
