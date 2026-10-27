@@ -24,7 +24,9 @@ Responses-only models use the Responses API with its own request and usage field
 Older OpenAI model identifiers remain available for existing integrations; registry presence does not guarantee access for your API account.
 
 OpenAI's `max_completion_tokens` covers both reasoning and visible output. A request can
-reach that limit before returning a complete translation. GPT-6 Luna also supports
+reach that limit before producing any visible translation, even with `reasoning_effort=low`.
+A `length` finish reason or an incomplete Responses result is rejected, including when
+the visible text contains translation markers. GPT-6 Luna also supports
 `--variables=reasoning_effort=none,max_completion_tokens=8192` (PHP:
 `variables: ['reasoning_effort' => 'none', 'max_completion_tokens' => 8192]`) for callers
 who choose to disable reasoning. This is an explicit per-request option, not a setting
@@ -141,6 +143,19 @@ retain their marker contract. See [xAI structured outputs](https://docs.x.ai/dev
 
 See [xAI reasoning settings](https://docs.x.ai/developers/model-capabilities/text/reasoning) and
 [output limits and timeouts](https://docs.x.ai/developers/model-capabilities/text/best-practices#streaming-and-timeouts).
+
+Grok can return HTTP 200 and Responses status `completed` with only the output markers
+and no translation body. Bblslug rejects that response for nonempty input, preserves
+an existing CLI destination, and does not retry. This is distinct from a truncated
+response; increasing the output limit is not a verified fix for this case.
+
+For fragment-level required output, explicitly select
+[text segments](transports.md#detect-missing-fragments-in-plain-text) or
+[HTML segments](transports.md#keep-html-markup-local-during-translation), including selected HTML inside JSON.
+With the standard `translator` prompt, Grok 4.7 uses a native JSON Schema for each packet,
+requiring every fragment identifier and nonempty string values. This provides a stronger
+output contract; it does not prove that all meaning within each string was translated.
+The default document transport and explicit marker requests retain the marker protocol.
 
 ## Yandex completion status
 

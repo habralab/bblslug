@@ -26,7 +26,12 @@ final class Failure
         ) {
             return 'account_or_model';
         }
-        if (preg_match('/truncated|finish_reason=length|output.*token.*limit/i', $primary)) {
+        if (
+            preg_match(
+                '/truncated|finish_reason=length|incomplete: max_output_tokens\b|output.*token.*limit/i',
+                $primary
+            )
+        ) {
             return 'output_budget';
         }
         if (preg_match('/timed out|timeout|deadline/i', $primary)) {

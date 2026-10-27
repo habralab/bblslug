@@ -20,6 +20,7 @@ final class SmokeFailureTest extends TestCase
             . "\nHeaders: billing-account\nBody: quota exceeded";
         self::assertSame('Translation was truncated (finish_reason=length)', Failure::primary($message));
         self::assertSame('output_budget', Failure::category($message));
+        self::assertSame('output_budget', Failure::category('OpenAI response is incomplete: max_output_tokens'));
         self::assertSame('response_or_assertion', Failure::category("Missing segment s1\nBilling: quota exceeded"));
     }
 

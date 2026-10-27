@@ -68,6 +68,18 @@ final class XaiDriverTest extends TestCase
         self::assertSame('Привет', $result['text']);
     }
 
+    public function testTruncationHintNamesThePublicBudgetOption(): void
+    {
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('increase max_completion_tokens or split input');
+        (new XaiDriver())->parseResponse([], json_encode([
+            'choices' => [[
+                'finish_reason' => 'length',
+                'message' => ['content' => "‹‹TRANSLATION››partial‹‹END››"],
+            ]],
+        ], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR));
+    }
+
     /** @test */
     public function incompleteResponsesAreRejectedEvenWhenMarkersArePresent(): void
     {

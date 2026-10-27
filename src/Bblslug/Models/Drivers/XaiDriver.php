@@ -327,7 +327,7 @@ class XaiDriver implements ModelDriverInterface
         if ($finishReason === 'length') {
             throw new \RuntimeException(
                 "Grok: translation was truncated (finish_reason=length) — "
-                . "increase max_tokens or split input."
+                . "increase max_completion_tokens or split input."
             );
         }
         if ($finishReason !== 'stop') {

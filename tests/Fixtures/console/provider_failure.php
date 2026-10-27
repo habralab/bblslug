@@ -61,6 +61,32 @@ namespace Bblslug {
                         'message' => ['content' => "‹‹TRANSLATION››\n<p></p>\n‹‹END››"],
                     ]]], JSON_THROW_ON_ERROR);
                     break;
+                case 'openai-reasoning-budget':
+                    $status = 200;
+                    $body = json_encode([
+                        'choices' => [[
+                            'finish_reason' => 'length',
+                            'message' => ['content' => ''],
+                        ]],
+                        'usage' => [
+                            'completion_tokens' => 8192,
+                            'completion_tokens_details' => ['reasoning_tokens' => 8192],
+                        ],
+                    ], JSON_THROW_ON_ERROR);
+                    break;
+                case 'grok-empty-markers':
+                    $status = 200;
+                    $body = json_encode([
+                        'model' => 'grok-4.7',
+                        'status' => 'completed',
+                        'output' => [[
+                            'type' => 'message',
+                            'status' => 'completed',
+                            'role' => 'assistant',
+                            'content' => [['type' => 'output_text', 'text' => "‹‹TRANSLATION››\n\n‹‹END››"]],
+                        ]],
+                    ], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+                    break;
                 case 'empty-translation':
                 case 'whitespace-translation':
                     $status = 200;

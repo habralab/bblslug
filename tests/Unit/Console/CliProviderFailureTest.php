@@ -30,6 +30,7 @@ final class CliProviderFailureTest extends TestCase
     public static function failures(): array
     {
         return [
+            'OpenAI reasoning budget' => ['openai-reasoning-budget', 'openai:gpt-6-luna', 'finish_reason=length'],
             'authentication' => ['http401', 'openai:gpt-5-mini', 'HTTP 401 error'],
             'rate limit' => ['http429', 'openai:gpt-5-mini', 'HTTP 429 error'],
             'anthropic credit' => ['anthropic-credit', 'anthropic:claude-haiku-5.5', 'Credit balance too low'],
@@ -61,6 +62,7 @@ final class CliProviderFailureTest extends TestCase
         $result = $this->runCli($case, $model, $key, $source, $destination);
 
         self::assertNotSame(0, $result['exitCode']);
+        self::assertSame(1, substr_count($result['stderr'], 'Sending HTTP request'));
         self::assertSame('', $result['stdout']);
         self::assertStringContainsString($reason, $result['stderr']);
         self::assertStringNotContainsString('Translation complete', $result['stderr']);
@@ -77,7 +79,8 @@ final class CliProviderFailureTest extends TestCase
      */
     public function testEmptyProviderTranslationDoesNotOverwriteFilesOrWriteStdout(
         string $case,
-        bool $noValidate
+        bool $noValidate,
+        string $model
     ): void {
         $source = $this->temporaryDirectory . '/source.txt';
         $destination = $this->temporaryDirectory . '/translated.txt';
@@ -88,7 +91,7 @@ final class CliProviderFailureTest extends TestCase
 
         $result = $this->runCli(
             $case,
-            'openai:gpt-5-mini',
+            $model,
             'cli-secret +/key=value',
             $source,
             $destination,
@@ -96,6 +99,7 @@ final class CliProviderFailureTest extends TestCase
         );
 
         self::assertNotSame(0, $result['exitCode']);
+        self::assertSame(1, substr_count($result['stderr'], 'Sending HTTP request'));
         self::assertSame('', $result['stdout']);
         self::assertStringContainsString(
             'Provider returned an empty translation for nonempty input',
@@ -106,12 +110,14 @@ final class CliProviderFailureTest extends TestCase
         self::assertFileDoesNotExist($source . '.prepared');
     }
 
-    /** @return array<string,array{case:string,noValidate:bool}> */
+    /** @return array<string,array{case:string,noValidate:bool,model:string}> */
     public static function emptyTranslationCases(): array
     {
         return [
-            'empty with validation' => ['empty-translation', false],
-            'whitespace without validation' => ['whitespace-translation', true],
+            'empty with validation' => ['empty-translation', false, 'openai:gpt-5-mini'],
+            'whitespace without validation' => ['whitespace-translation', true, 'openai:gpt-5-mini'],
+            'Grok completed with empty markers' => ['grok-empty-markers', false, 'xai:grok-4.7'],
+            'Grok empty markers without validation' => ['grok-empty-markers', true, 'xai:grok-4.7'],
         ];
     }
 

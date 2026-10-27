@@ -42,11 +42,14 @@ final class OpenAiDriverTest extends TestCase
     ): void {
         $config = (new ModelRegistry())->get($modelKey);
         $this->assertNotNull($config);
-        $request = (new OpenAiDriver())->buildRequest($config, $input, ['format' => $format]);
+        $request = (new OpenAiDriver())->buildRequest($config, $input, [
+            'format' => $format, 'max_completion_tokens' => '8192',
+        ]);
         $body = json_decode($request['body'], true, 512, JSON_THROW_ON_ERROR);
 
         $this->assertSame(substr($modelKey, 7), $body['model']);
         $this->assertSame('low', $body['reasoning_effort']);
+        $this->assertSame(8192, $body['max_completion_tokens']);
         $this->assertArrayNotHasKey('temperature', $body);
         $this->assertSame("‹‹TRANSLATION››\n{$input}\n‹‹END››", $body['messages'][1]['content']);
 
@@ -164,6 +167,44 @@ final class OpenAiDriverTest extends TestCase
                 'content' => [['type' => 'refusal', 'refusal' => 'policy restriction']],
             ]],
         ], JSON_THROW_ON_ERROR));
+    }
+
+    /** @dataProvider exhaustedBudgetContent */
+    public function testExhaustedReasoningBudgetIsRejectedBeforeExtractingContent(string $content): void
+    {
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage(
+            'translation was truncated (finish_reason=length) — increase max_completion_tokens or split input.'
+        );
+        (new OpenAiDriver())->parseResponse([], json_encode([
+            'choices' => [[
+                'finish_reason' => 'length',
+                'message' => ['content' => $content],
+            ]],
+            'usage' => [
+                'completion_tokens' => 8192,
+                'completion_tokens_details' => ['reasoning_tokens' => 8192],
+            ],
+        ], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR));
+    }
+
+    /** @return array<string,array{string}> */
+    public static function exhaustedBudgetContent(): array
+    {
+        return ['no visible output' => [''], 'partial marked output' => ["‹‹TRANSLATION››partial‹‹END››"]];
+    }
+
+    public function testResponsesOutputLimitRetainsTheProviderReason(): void
+    {
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('OpenAI response is incomplete: max_output_tokens');
+        (new OpenAiDriver())->parseResponse([], json_encode([
+            'status' => 'incomplete',
+            'incomplete_details' => ['reason' => 'max_output_tokens'],
+            'output' => [['type' => 'message', 'content' => [
+                ['type' => 'output_text', 'text' => "‹‹TRANSLATION››partial‹‹END››"],
+            ]]],
+        ], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR));
     }
 
     /** @dataProvider rejectedChatFinishReasonProvider */
