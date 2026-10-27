@@ -5,16 +5,61 @@ on:
   push:
     branches: [ "main","develop","tests" ]
 
+permissions:
+  contents: read
+
 jobs:
   notify:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Notify Packagist
-        uses: mnavarrocarter/packagist-update@v1.0.0
-        with:
-          username: ${{ secrets.PACKAGIST_USERNAME }}
-          api_token: ${{ secrets.PACKAGIST_TOKEN }}
+        env:
+          PACKAGIST_USERNAME: ${{ secrets.PACKAGIST_USERNAME }}
+          PACKAGIST_TOKEN: ${{ secrets.PACKAGIST_TOKEN }}
+        run: |
+          python3 - <<'PYTHON'
+          import json
+          import os
+          from pathlib import Path
+          from urllib.error import HTTPError, URLError
+          from urllib.request import Request, urlopen
+
+          username = os.environ.get("PACKAGIST_USERNAME", "")
+          token = os.environ.get("PACKAGIST_TOKEN", "")
+          if not username or not token:
+              raise SystemExit("Packagist credentials are missing.")
+
+          package = json.loads(Path("composer.json").read_text())["name"]
+          request = Request(
+              "https://packagist.org/api/update-package",
+              data=json.dumps({"repository": f"https://packagist.org/packages/{package}"}).encode(),
+              headers={
+                  "Authorization": f"Bearer {username}:{token}",
+                  "Content-Type": "application/json",
+                  "User-Agent": "habr/bblslug CI (https://github.com/habralab/bblslug)",
+              },
+              method="POST",
+          )
+          try:
+              with urlopen(request, timeout=30) as response:
+                  result = json.load(response)
+          except HTTPError as error:
+              raise SystemExit(f"Packagist notification failed (HTTP {error.code}).")
+          except (URLError, OSError):
+              raise SystemExit("Packagist notification failed: network error.")
+          except (ValueError, UnicodeError):
+              raise SystemExit("Packagist notification failed: invalid JSON response.")
+
+          if (
+              not isinstance(result, dict)
+              or result.get("status") != "success"
+              or not isinstance(result.get("jobs"), list)
+              or not result["jobs"]
+          ):
+              raise SystemExit("Packagist did not confirm an update job.")
+          print(f"Packagist update queued for {package}.")
+          PYTHON

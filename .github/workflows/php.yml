@@ -13,23 +13,39 @@ permissions:
 jobs:
   test:
 
-    runs-on: ubuntu-latest
+    name: PHP ${{ matrix.php }}
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        php: [ "8.2", "8.3", "8.4", "8.5" ]
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: curl, dom, mbstring, xml, xmlwriter
+          tools: composer:v2
+          coverage: none
 
       - name: Validate Composer manifest
         run: composer validate --strict
 
-      - name: Cache Composer dependencies
+      - name: Locate Composer cache
         id: composer-cache
-        uses: actions/cache@v3
+        run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Composer downloads
+        uses: actions/cache@v6
         with:
-          path: vendor
-          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.json','**/composer.lock') }}
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-php-${{ matrix.php }}-composer-${{ hashFiles('**/composer.json','**/composer.lock') }}
           restore-keys: |
-            ${{ runner.os }}-composer-
+            ${{ runner.os }}-php-${{ matrix.php }}-composer-
 
       - name: Install dependencies
         run: make install
@@ -52,8 +68,9 @@ jobs:
         run: make test-phpstan
 
       - name: Upload PHPUnit report
-        uses: actions/upload-artifact@v4
+        if: always()
+        uses: actions/upload-artifact@v7
         with:
-          name: phpunit-report
+          name: phpunit-report-php-${{ matrix.php }}
           path: .phpunit.junit.xml
           include-hidden-files: true
