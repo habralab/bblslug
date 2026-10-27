@@ -8,6 +8,44 @@ use PHPUnit\Framework\TestCase;
 
 final class BblslugJsonOutputTest extends TestCase
 {
+    public function testFilteredJsonSentToProviderKeepsEscapesAndNestedContainersValid(): void
+    {
+        $inner = <<<'JSON'
+{"body":"\u0020https://example.org/path \u003Ccode\u003Efixed\u003C/code\u003E","literal":"\u0031@@0@@"}
+JSON;
+        foreach ([false, true] as $nested) {
+            $source = $nested ? json_encode(['embedded' => $inner], JSON_THROW_ON_ERROR) : $inner;
+            foreach ([['url', 'html_code'], ['html_code', 'url']] as $filters) {
+                $result = $this->runFixture([
+                    'input' => $source, 'filters' => $filters, 'echoPrepared' => true,
+                    'checkEmbedded' => $nested, 'validateEmbeddedJson' => $nested,
+                ]);
+                self::assertSame('success', $result['type'], $result['message'] ?? '');
+                self::assertSame($source, $result['result']);
+                self::assertSame(1, $result['httpCalls']);
+            }
+        }
+    }
+
+    public function testEncodedMarkerKeyRemainsCompatibleWithNativeSchema(): void
+    {
+        $source = <<<'JSON'
+{"\u0040\u00405\u0040\u0040":"fixed","url":"https://example.org/path"}
+JSON;
+        $translated = str_replace('https://example.org/path', '@@0@@', $source);
+        $result = $this->runFixture([
+            'format' => 'structured_json', 'input' => $source, 'translated' => $translated, 'filters' => ['url'],
+            'variables' => ['response_schema' => [
+                'type' => 'object',
+                'properties' => ['@@5@@' => ['type' => 'string'], 'url' => ['type' => 'string']],
+                'required' => ['@@5@@', 'url'], 'additionalProperties' => false,
+            ]],
+        ]);
+        self::assertSame('success', $result['type'], $result['message'] ?? '');
+        self::assertSame($source, $result['result']);
+        self::assertSame(1, $result['httpCalls']);
+    }
+
     /** @dataProvider scalarRoots */
     public function testJsonFormatsAcceptScalarRootsWithExactNonStringValues(
         string $format,
