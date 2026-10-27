@@ -70,6 +70,49 @@ REGEX;
         }
         return $strings;
     }
+
+    /**
+     * Decode a source segment object, preserving source-specific diagnostics.
+     *
+     * @internal
+     * @param bool $requireBoundedIds Require numeric suffixes usable for allocating new IDs.
+     * @return array<string,string>
+     */
+    public static function decodeSource(string $payload, bool $requireBoundedIds = false): array
+    {
+        try {
+            $decoded = json_decode($payload, false, 512, JSON_THROW_ON_ERROR);
+        } catch (\JsonException $exception) {
+            throw new \InvalidArgumentException('Invalid segment JSON', 0, $exception);
+        }
+        if (!$decoded instanceof \stdClass) {
+            throw new \InvalidArgumentException('Segment JSON must be an object');
+        }
+
+        $keys = array_keys(get_object_vars($decoded));
+        foreach ($keys as $key) {
+            if (preg_match('/\As\d+\z/', $key) !== 1) {
+                throw new \InvalidArgumentException('Segment JSON contains an invalid segment id');
+            }
+            if ($requireBoundedIds) {
+                $number = substr($key, 1);
+                if (
+                    strlen($number) > strlen((string) PHP_INT_MAX)
+                    || (strlen($number) === strlen((string) PHP_INT_MAX) && strcmp($number, (string) PHP_INT_MAX) > 0)
+                ) {
+                    throw new \InvalidArgumentException('Segment JSON contains an out-of-range segment id');
+                }
+            }
+        }
+        try {
+            /** @var array<string,string> $values */
+            $values = self::decode($payload, $keys);
+        } catch (\RuntimeException $exception) {
+            throw new \InvalidArgumentException('Invalid segment source payload', 0, $exception);
+        }
+        return $values;
+    }
+
     /** @return array<string,mixed> */
     public static function schemaFor(string $payload): array
     {

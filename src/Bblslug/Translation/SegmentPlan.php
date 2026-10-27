@@ -48,34 +48,7 @@ final class SegmentPlan
             throw new \InvalidArgumentException('Segment byte cap must be positive');
         }
 
-        try {
-            $decoded = json_decode($payload, false, 512, JSON_THROW_ON_ERROR);
-        } catch (\JsonException $exception) {
-            throw new \InvalidArgumentException('Invalid segment JSON', 0, $exception);
-        }
-        if (!$decoded instanceof \stdClass) {
-            throw new \InvalidArgumentException('Segment JSON must be an object');
-        }
-
-        $keys = array_keys(get_object_vars($decoded));
-        foreach ($keys as $key) {
-            if (preg_match('/\As\d+\z/', $key) !== 1) {
-                throw new \InvalidArgumentException('Segment JSON contains an invalid segment id');
-            }
-            $number = substr($key, 1);
-            if (
-                strlen($number) > strlen((string) PHP_INT_MAX)
-                || (strlen($number) === strlen((string) PHP_INT_MAX) && strcmp($number, (string) PHP_INT_MAX) > 0)
-            ) {
-                throw new \InvalidArgumentException('Segment JSON contains an out-of-range segment id');
-            }
-        }
-        try {
-            /** @var array<string,string> $values */
-            $values = SegmentTranslations::decode($payload, $keys);
-        } catch (\RuntimeException $exception) {
-            throw new \InvalidArgumentException('Invalid segment source payload', 0, $exception);
-        }
+        $values = SegmentTranslations::decodeSource($payload, requireBoundedIds: true);
         $this->originals = $values;
         if ($values === []) {
             return;

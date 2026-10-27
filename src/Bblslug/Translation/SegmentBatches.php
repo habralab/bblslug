@@ -16,27 +16,7 @@ final class SegmentBatches
             throw new \InvalidArgumentException('Segment batch size must be positive');
         }
 
-        try {
-            $decoded = json_decode($payload, false, 512, JSON_THROW_ON_ERROR);
-        } catch (\JsonException $exception) {
-            throw new \InvalidArgumentException('Invalid segment JSON', 0, $exception);
-        }
-        if (!$decoded instanceof \stdClass) {
-            throw new \InvalidArgumentException('Segment JSON must be an object');
-        }
-
-        $expected = array_keys(get_object_vars($decoded));
-        foreach ($expected as $key) {
-            if (preg_match('/\As\d+\z/', $key) !== 1) {
-                throw new \InvalidArgumentException('Segment JSON contains an invalid segment id');
-            }
-        }
-
-        try {
-            $values = SegmentTranslations::decode($payload, $expected);
-        } catch (\RuntimeException $exception) {
-            throw new \InvalidArgumentException('Invalid segment source payload', 0, $exception);
-        }
+        $values = SegmentTranslations::decodeSource($payload);
         if ($values === []) {
             return [];
         }
