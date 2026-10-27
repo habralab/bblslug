@@ -54,6 +54,32 @@ final class BblslugCheckpointTest extends TestCase
         self::assertStringNotContainsString('debugRequest', $stored);
     }
 
+    /** @dataProvider invalidSecondResponses */
+    public function testInvalidSecondResponseIsNotCheckpointed(string $failure): void
+    {
+        $failed = $this->runFixture(['failAt' => 2, 'failure' => $failure]);
+        self::assertSame(\RuntimeException::class, $failed['type']);
+        self::assertSame(2, $failed['networkCalls']);
+        $state = json_decode(file_get_contents($this->checkpoint), true, 512, JSON_THROW_ON_ERROR);
+        self::assertCount(1, $state['contiguousPrefixRecords']);
+        $firstRecord = json_encode($state['contiguousPrefixRecords'][0], JSON_THROW_ON_ERROR);
+
+        $resumed = $this->runFixture();
+        self::assertSame('success', $resumed['type'], (string) ($resumed['message'] ?? ''));
+        self::assertSame(2, $resumed['networkCalls']);
+        self::assertSame(1, $resumed['result']['reusedBatches']);
+        self::assertSame(30, $resumed['result']['consumed']['tokens']['total']);
+        self::assertSame(20, $resumed['result']['consumedThisRun']['tokens']['total']);
+        $completed = json_decode(file_get_contents($this->checkpoint), true, 512, JSON_THROW_ON_ERROR);
+        self::assertCount(3, $completed['contiguousPrefixRecords']);
+        self::assertSame($firstRecord, json_encode($completed['contiguousPrefixRecords'][0], JSON_THROW_ON_ERROR));
+    }
+
+    public static function invalidSecondResponses(): array
+    {
+        return [['missing'], ['duplicate'], ['newline'], ['marker']];
+    }
+
     public function testMalformedUsageDoesNotBreakTranslationOrCheckpointResume(): void
     {
         $settings = ['rawUsage' => [
@@ -152,6 +178,27 @@ final class BblslugCheckpointTest extends TestCase
         self::assertSame(\RuntimeException::class, $r['type']);
         self::assertStringContainsString('ids mismatch', $r['message']);
         self::assertSame(0, $r['networkCalls']);
+    }
+
+    public function testLaterCorruptCachedProtocolFailsBeforeAnyNewRequest(): void
+    {
+        $failed = $this->runFixture(['failAt' => 3, 'failure' => 'http']);
+        self::assertSame(\RuntimeException::class, $failed['type']);
+        $state = json_decode(file_get_contents($this->checkpoint), true, 512, JSON_THROW_ON_ERROR);
+        self::assertCount(2, $state['contiguousPrefixRecords']);
+        $state['contiguousPrefixRecords'][1]['text'] = '{}';
+        $state['checksums'][1] = hash('sha256', json_encode(
+            $state['contiguousPrefixRecords'][1],
+            JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR
+        ));
+        file_put_contents($this->checkpoint, json_encode($state, JSON_THROW_ON_ERROR));
+        $before = file_get_contents($this->checkpoint);
+
+        $result = $this->runFixture();
+        self::assertSame(\RuntimeException::class, $result['type']);
+        self::assertStringContainsString('ids mismatch', $result['message']);
+        self::assertSame(0, $result['networkCalls']);
+        self::assertSame($before, file_get_contents($this->checkpoint));
     }
 
     public function testSplitHtmlInJsonCanBeFullyReusedWithoutChangingOtherTokens(): void

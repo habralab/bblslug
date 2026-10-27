@@ -17,6 +17,7 @@ use Bblslug\Translation\HtmlTextDocument;
 use Bblslug\Translation\JsonHtmlDocument;
 use Bblslug\Translation\ProviderExecutor;
 use Bblslug\Translation\SegmentBatches;
+use Bblslug\Translation\SegmentBatchState;
 use Bblslug\Translation\SegmentPlan;
 use Bblslug\Translation\SegmentTranslations;
 use Bblslug\Translation\TextDocument;
@@ -408,28 +409,17 @@ class Bblslug
             ], $promptKey);
             $deadline?->check();
             $checkpoint = new BatchCheckpoint($checkpointPath, $identity, count($payloads));
-            // Validate every retained packet before issuing any new paid request.
-            foreach ($payloads as $savedIndex => $savedPayload) {
-                $deadline?->check();
-                $saved = $checkpoint->get($savedIndex);
-                if ($saved === null) {
-                    break;
-                }
-                $savedPacket = json_decode($savedPayload, false, 512, JSON_THROW_ON_ERROR);
-                if (!$savedPacket instanceof \stdClass) {
-                    throw new \LogicException('Checkpoint packet must be an object');
-                }
-                $savedIds = array_keys(get_object_vars($savedPacket));
-                SegmentTranslations::decode($saved['text'], $savedIds, $segmentLabel, $textTransport !== 'segments');
-            }
         }
+        $batchState = $batching ? new SegmentBatchState(
+            $model,
+            $segmentLabel,
+            $textTransport !== 'segments',
+            $checkpoint,
+            $deadline
+        ) : null;
+        $batchState?->validateRetained($payloads);
         $emptySegments = $segmentDocument !== null && !$segmentDocument->hasTexts();
         $providers = [];
-        $batchSummaries = [];
-        $batchUsages = [];
-        $freshUsages = [];
-        $reusedBatches = 0;
-        $combined = [];
         $debugRequest = '';
         $debugResponse = '';
         foreach ($payloads as $index => $payload) {
@@ -441,13 +431,11 @@ class Bblslug
             try {
                 $deadline?->check();
                 $saved = $checkpoint?->get($index);
-                $reused = $saved !== null;
                 if ($saved !== null) {
                     $provider = [
                         'text' => $saved['text'], 'usage' => null, 'httpStatus' => $saved['httpStatus'],
                         'debugRequest' => '', 'debugResponse' => '', 'rawResponseBody' => '',
                     ];
-                    ++$reusedBatches;
                     $say($onFeedback, 'Reusing ' . $batchLabel, 'info');
                 } else {
                     $provider = $executor->execute(
@@ -458,39 +446,9 @@ class Bblslug
                         $requests[$index] ?? null
                     );
                 }
-                if ($batching) {
+                if ($batchState !== null) {
                     $protocolDebug = $verbose ? "\n\n" . $provider['debugRequest'] . $provider['debugResponse'] : '';
-                    $packet = json_decode($payload, false, 512, JSON_THROW_ON_ERROR);
-                    if (!$packet instanceof \stdClass) {
-                        throw new \LogicException($segmentLabel . ' segment packet must be an object');
-                    }
-                    $expected = array_keys(get_object_vars($packet));
-                    $combined += SegmentTranslations::decode(
-                        $provider['text'],
-                        $expected,
-                        $segmentLabel,
-                        $textTransport !== 'segments'
-                    );
-                    $usage = $saved !== null
-                        ? $saved['consumed'] : UsageExtractor::extract($model, $provider['usage']);
-                    if (!$reused) {
-                        $freshUsages[] = $usage;
-                        if ($checkpoint !== null) {
-                            $checkpoint->append($index, [
-                                'text' => $provider['text'], 'httpStatus' => $provider['httpStatus'],
-                                'consumed' => $usage,
-                            ]);
-                        }
-                    }
-                    $batchUsages[] = $usage;
-                    $batchSummary = [
-                        'index' => $index + 1, 'segments' => count($expected),
-                        'httpStatus' => $provider['httpStatus'], 'consumed' => $usage,
-                    ];
-                    if ($checkpointPath !== null) {
-                        $batchSummary['reused'] = $reused;
-                    }
-                    $batchSummaries[] = $batchSummary;
+                    $batchState->accept($index, $payload, $provider, $saved);
                     $say($onFeedback, 'Completed ' . $batchLabel, 'info');
                 }
             } catch (\RuntimeException $exception) {
@@ -512,8 +470,9 @@ class Bblslug
             ? json_encode(array_column($batching ? $providers : [], 'rawResponseBody'), JSON_THROW_ON_ERROR)
             : $provider['rawResponseBody'];
         $rawUsage = $provider['usage'];
-        if ($batching) {
-            $provider['text'] = json_encode((object) $combined, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+        $batchResult = $batchState?->result($checkpointPath !== null);
+        if ($batchResult !== null) {
+            $provider['text'] = $batchResult['text'];
             if ($segmentPlan !== null) {
                 $provider['text'] = $segmentPlan->restore($provider['text']);
             }
@@ -531,7 +490,7 @@ class Bblslug
             }
         }
 
-        $consumed = $batching ? UsageExtractor::sum($batchUsages) : UsageExtractor::extract($model, $rawUsage);
+        $consumed = $batchResult !== null ? $batchResult['consumed'] : UsageExtractor::extract($model, $rawUsage);
 
         // Integrity is required for safe restoration, independently of container validation.
         if ($filterManager->getStats() !== []) {
@@ -577,11 +536,11 @@ class Bblslug
             'filterStats' => $filterStats,
         ];
         if ($batchConfigured) {
-            $resultData['batches'] = $batchSummaries;
+            $resultData['batches'] = $batchResult['batches'] ?? [];
         }
         if ($checkpointPath !== null) {
-            $resultData['reusedBatches'] = $reusedBatches;
-            $resultData['consumedThisRun'] = UsageExtractor::sum($freshUsages);
+            $resultData['reusedBatches'] = $batchResult['reusedBatches'] ?? 0;
+            $resultData['consumedThisRun'] = $batchResult['consumedThisRun'] ?? [];
         }
         $deadline?->check();
         return $resultData;
