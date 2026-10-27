@@ -4,6 +4,12 @@ This file follows the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) f
 
 ## [Unreleased]
 
+## [0.11.1] – 2026-10-27
+
+### Changed
+
+- Refactor translation and CLI internals while preserving public PHP signatures, CLI options and provider protocols. See [checkpoint upgrade guidance](docs/upgrading.md#upgrading-to-0111).
+
 ### Fixed
 
 - Source segment payloads with numeric object keys raise `InvalidArgumentException` instead of `TypeError` during packet preparation.

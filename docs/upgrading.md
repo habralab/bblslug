@@ -2,6 +2,20 @@
 
 Read the changes between your installed version and the version you are adopting. Released compatibility notes below describe the behavior introduced by each release.
 
+## Upgrading to 0.11.1
+
+Existing translation calls and CLI commands keep their arguments. This release reorganizes internal
+components and corrects validation of malformed source segment payloads.
+
+Source segment objects passed directly to `SegmentBatches` or `SegmentPlan` require identifiers such
+as `s0`. Numeric object keys now raise `InvalidArgumentException` with the existing invalid-ID message;
+previously these inputs could raise `TypeError`.
+
+Use a new checkpoint file after upgrading from 0.11.0. Checkpoint identity includes library source code,
+so saved records from the previous version are rejected before HTTP even for unchanged input and options.
+Complete pending translations with their original library version, or start a new translation and budget
+for its requests. Do not modify saved identities to bypass this check.
+
 ## Upgrading to 0.11.0
 
 ### Translation settings
