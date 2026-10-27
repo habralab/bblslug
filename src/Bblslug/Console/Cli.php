@@ -9,10 +9,9 @@ use Bblslug\Console\Help;
 use Bblslug\Filters\FilterManager;
 use Bblslug\Models\ModelRegistry;
 use Bblslug\Models\ModelVariables;
-use Bblslug\Translation\HtmlTextDocument;
 use Bblslug\Translation\JsonHtmlDocument;
+use Bblslug\Translation\SegmentDocumentFactory;
 use Bblslug\Translation\SegmentPlan;
-use Bblslug\Translation\TextDocument;
 use Bblslug\Validation\JsonHtmlValidator;
 
 /**
@@ -422,12 +421,7 @@ class Cli
                     $segmentDocument = $jsonDocument;
                 } else {
                     $prepared = $filterManager->apply($text);
-                    if ($htmlTransport === 'segments') {
-                        $segmentDocument = new HtmlTextDocument($prepared);
-                    }
-                    if ($textTransport === 'segments') {
-                        $segmentDocument = new TextDocument($prepared);
-                    }
+                    $segmentDocument = SegmentDocumentFactory::create($prepared, $htmlTransport, $textTransport);
                 }
                 if ($segmentBatchMaxBytes !== null && $segmentDocument !== null) {
                     new SegmentPlan(

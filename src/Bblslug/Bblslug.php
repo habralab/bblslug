@@ -13,14 +13,13 @@ use Bblslug\Models\UsageExtractor;
 use Bblslug\Translation\BatchCheckpoint;
 use Bblslug\Translation\CheckpointIdentity;
 use Bblslug\Translation\DocumentValidation;
-use Bblslug\Translation\HtmlTextDocument;
 use Bblslug\Translation\JsonHtmlDocument;
 use Bblslug\Translation\ProviderExecutor;
 use Bblslug\Translation\SegmentBatches;
 use Bblslug\Translation\SegmentBatchState;
+use Bblslug\Translation\SegmentDocumentFactory;
 use Bblslug\Translation\SegmentPlan;
 use Bblslug\Translation\SegmentTranslations;
-use Bblslug\Translation\TextDocument;
 use Bblslug\Translation\TransportValidation;
 use Bblslug\Validation\PlaceholderValidator;
 use Bblslug\Validation\TextLengthValidator;
@@ -294,8 +293,7 @@ class Bblslug
         }
 
         $segmentDocument = $jsonHtmlDocument
-            ?? ($htmlTransport === 'segments' ? new HtmlTextDocument($prepared)
-                : ($textTransport === 'segments' ? new TextDocument($prepared) : null));
+            ?? SegmentDocumentFactory::create($prepared, $htmlTransport, $textTransport);
         $requestText = $segmentDocument !== null ? $segmentDocument->getJson() : $prepared;
         $segmentBatchSize = $textSegmentBatchSize ?? $htmlSegmentBatchSize;
         $segmentLabel = $textTransport === 'segments' ? 'Text' : 'HTML';
