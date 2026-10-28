@@ -34,12 +34,28 @@ REGEX;
     {
         $protection = $this->protection ??= new FragmentProtection();
         $shielded = $protection->shieldLiterals($text, $counter);
+        return $this->captureTags($shielded, $counter);
+    }
+
+    /**
+     * @internal Capture tags after the caller shields literals with this same counter.
+     * The caller must restore those literals after restoring all tag captures.
+     */
+    public function applyToShielded(string $text, PlaceholderCounter $counter): string
+    {
+        $protection = $this->protection ??= new FragmentProtection();
+        return $this->captureTags($protection->shieldLiterals($text, $counter, preservePlaceholders: true), $counter);
+    }
+
+    private function captureTags(string $text, PlaceholderCounter $counter): string
+    {
+        $protection = $this->protection ??= new FragmentProtection();
         $ranges = JsonStringRanges::iterate(
-            $shielded,
+            $text,
             $this->findHtmlBlocks(...),
             'Could not inspect JSON strings for HTML fragments'
         );
-        return $protection->capture($shielded, $ranges, $counter);
+        return $protection->capture($text, $ranges, $counter);
     }
 
     /** @return \Generator<int,array{int,int}> Protected HTML blocks as byte offsets/lengths. */

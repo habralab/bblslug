@@ -37,7 +37,7 @@ final class FilterRangesMemoryTest extends TestCase
     {
         return [
             ['url', '64M'], ['html', '128M'], ['nested-url', '96M'], ['nested-html', '128M'],
-            ['api-url', '96M'], ['api-html', '256M'],
+            ['api-url', '96M'], ['api-html', '128M'],
         ];
     }
 }

@@ -12,13 +12,21 @@ final class FragmentProtection
     /** @var array<string,string> Shield => literal marker-like source bytes. */
     private array $literalMap = [];
 
-    public function shieldLiterals(string $text, PlaceholderCounter $counter): string
-    {
-        return self::replaceRanges($text, self::sourceLiteralRanges($text), $counter, $this->literalMap);
+    public function shieldLiterals(
+        string $text,
+        PlaceholderCounter $counter,
+        bool $preservePlaceholders = false
+    ): string {
+        return self::replaceRanges(
+            $text,
+            self::sourceLiteralRanges($text, $preservePlaceholders),
+            $counter,
+            $this->literalMap
+        );
     }
 
     /** @return \Generator<int,array{int,int}> */
-    private static function sourceLiteralRanges(string $text): \Generator
+    private static function sourceLiteralRanges(string $text, bool $preservePlaceholders): \Generator
     {
         $ranges = JsonStringRanges::iterate(
             $text,
@@ -29,9 +37,15 @@ final class FragmentProtection
         );
         foreach ($ranges as [$offset, $length]) {
             // Decoding may reveal other markers; retain the original source-literal trigger.
-            if (str_contains(substr($text, $offset, $length), '@@')) {
-                yield [$offset, $length];
+            $literal = substr($text, $offset, $length);
+            if (!str_contains($literal, '@@')) {
+                continue;
             }
+            // Internal pipelines already own single markers; adjacent digits/@ still need shielding.
+            if ($preservePlaceholders && preg_match('/\A@@[0-9]++@@\z/', $literal) === 1) {
+                continue;
+            }
+            yield [$offset, $length];
         }
     }
 

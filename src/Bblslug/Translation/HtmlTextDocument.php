@@ -4,25 +4,38 @@ declare(strict_types=1);
 
 namespace Bblslug\Translation;
 
-use Bblslug\Filters\FilterManager;
+use Bblslug\Filters\FragmentProtection;
+use Bblslug\Filters\HtmlTagFilter;
+use Bblslug\Filters\PlaceholderCounter;
 
 /** Keep markup local and translate an explicitly keyed collection of text spans. */
 final class HtmlTextDocument
 {
+    private const OPAQUE_TAGS = [
+        'pre', 'code', 'script', 'style', 'xmp', 'iframe', 'noembed', 'noframes',
+        'noscript', 'plaintext', 'svg', 'math',
+    ];
+
     /** @var list<HtmlTextSpan> */
     private array $spans = [];
     private readonly string $html;
-    private FilterManager $opaque;
+    /** @var list<HtmlTagFilter> */
+    private array $opaque = [];
+    private FragmentProtection $literals;
 
     public function __construct(string $preparedHtml)
     {
         // Reuse the filters' handling of nested tags, comments and raw-text contexts.
-        $this->opaque = new FilterManager([
-            'html_pre', 'html_code', 'html_script', 'html_style', 'html_xmp',
-            'html_iframe', 'html_noembed', 'html_noframes', 'html_noscript',
-            'html_plaintext', 'html_svg', 'html_math',
-        ]);
-        $this->html = $this->opaque->apply($preparedHtml);
+        // Own source literals once; tag passes shield only boundaries around earlier markers.
+        $this->literals = new FragmentProtection();
+        $counter = new PlaceholderCounter();
+        $html = $this->literals->shieldLiterals($preparedHtml, $counter);
+        foreach (self::OPAQUE_TAGS as $tag) {
+            $filter = new HtmlTagFilter($tag);
+            $html = $filter->applyToShielded($html, $counter);
+            $this->opaque[] = $filter;
+        }
+        $this->html = $html;
         $this->scan();
     }
 
@@ -76,7 +89,11 @@ final class HtmlTextDocument
             $output .= substr($this->html, $cursor, $span->start - $cursor) . $replacement;
             $cursor = $span->end;
         }
-        return $this->opaque->restore($output . substr($this->html, $cursor));
+        $output .= substr($this->html, $cursor);
+        foreach (array_reverse($this->opaque) as $filter) {
+            $output = $filter->restore($output);
+        }
+        return $this->literals->restore($output);
     }
 
     private function scan(): void
