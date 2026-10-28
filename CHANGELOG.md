@@ -4,30 +4,22 @@ This file follows the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) f
 
 ## [Unreleased]
 
+### Added
+
+- Optional per-response HTTP body byte limit through `BBLSLUG_HTTP_MAX_RESPONSE_BYTES` or `HttpClient::request(maxResponseBytes: ...)`. Downloads exceeding the limit fail without returning a partial body.
+
 ### Changed
 
-- Allow an optional per-response HTTP body byte limit through `BBLSLUG_HTTP_MAX_RESPONSE_BYTES` or `HttpClient::request(maxResponseBytes: ...)`. Downloads exceeding the limit fail without returning a partial body.
 - Create new checkpoints as append-only JSONL journals with recovery of incomplete trailing records; retain version-1 snapshot support. See [checkpoint compatibility](docs/upgrading.md#unreleased-checkpoint-format).
 
 ### Fixed
 
-- Reduce peak memory when filtering dense URL/HTML fragments while preserving exact restoration and diagnostic captures.
-- Avoid repeated literal-marker maps when protecting opaque HTML in segment transport.
-- Restore collected segment values without aggregate JSON round trips or redundant planning maps, preventing post-request memory exhaustion on dense text inputs.
-- Reduce temporary memory when saving large checkpoints while preserving atomic version-1 snapshots.
+- Reduce peak memory when preparing, planning and validating text, HTML and JSON segments, including dense URL/HTML captures and nested JSON strings.
+- Reduce memory needed to collect and restore batched translations, particularly documents with many short segments.
+- Reduce temporary memory when saving large version-1 checkpoints while preserving atomic snapshots.
 - Keep checkpoint state unchanged when a record cannot be JSON-encoded, allowing a valid retry.
-- Reduce peak memory during batched translation by releasing completed requests and intermediate planning state.
-- Avoid full word-match arrays when planning long segments, including abbreviation-chain lookahead.
-- Avoid retaining all JSON tokens while translating explicitly selected HTML fields in large containers.
-- Avoid large temporary line and placeholder match arrays during segment extraction; reject failed scans.
-- Reduce text and HTML segment memory by storing compact source spans instead of duplicate text slices.
-- Reduce memory retained by segment plans with compact typed chunk records.
 - Reject segment payloads when the token scan fails instead of accepting unchecked duplicate IDs.
-- Reduce segment decoding memory by scanning tokens in order and reusing validated values.
-- Reduce HTML structure validation memory without weakening markup or text-loss checks.
 - Preserve JSON escapes adjacent to source-literal markers during filtering, including keys and JSON stored inside strings.
-- Avoid per-escape JSON position maps that could exhaust memory while protecting fragments in large or nested JSON strings.
-- Avoid per-character HTML boundary maps that could exhaust memory when preparing long text spans for segment translation.
 
 ## [0.11.2] – 2026-10-27
 
