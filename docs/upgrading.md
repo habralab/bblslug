@@ -2,6 +2,18 @@
 
 Read the changes between your installed version and the version you are adopting. Released compatibility notes below describe the behavior introduced by each release.
 
+## Unreleased checkpoint format
+
+New checkpoints use a version-2 JSONL journal, even when the supplied filename ends in `.json`.
+Older library versions cannot read these journals. Existing version-1 JSON snapshots remain supported
+and keep their original storage format when their identity matches. Checkpoint identity still includes
+library source code: this format support does not make checkpoints from a different source version
+reusable. Finish pending translations with the original library version or use a new checkpoint path.
+
+No new PHP or CLI arguments are required. Storage remains opt-in at the exact `checkpointPath` /
+`--checkpoint` supplied by the caller; installed library files may be read-only. See
+[checkpoint storage and recovery](transports.md#resume-confirmed-successful-segment-packets).
+
 ## Upgrading to 0.11.2
 
 Existing PHP calls and CLI commands keep their arguments and behavior. Internal segment preparation

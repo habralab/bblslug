@@ -284,15 +284,19 @@ final class Segments
                 'checkpoint' => $directory . '/checkpoint.json']);
             $input = file_get_contents($job['source']);
             file_put_contents($guard['source'], $kind === 'source' ? ' ' . $input : $input);
-            $state = json_decode(file_get_contents($job['checkpoint']), true, 512, JSON_THROW_ON_ERROR);
+            $state = file_get_contents($job['checkpoint']);
             if ($kind === 'cap') {
                 ++$guard['cap'];
             } elseif ($kind === 'hints') {
                 $guard['hints'][] = 'UnusedHint.';
             } elseif ($kind === 'checksum') {
-                $state['contiguousPrefixRecords'][0]['text'] .= ' corrupted';
+                $lines = explode("\n", $state);
+                $row = json_decode($lines[1], true, 512, JSON_THROW_ON_ERROR);
+                $row['record']['text'] .= ' corrupted';
+                $lines[1] = json_encode($row, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
+                $state = implode("\n", $lines);
             }
-            $this->write($guard['checkpoint'], $state);
+            file_put_contents($guard['checkpoint'], $state);
             $saved = file_get_contents($guard['checkpoint']);
             file_put_contents($directory . '/translated.txt', 'EXISTING_DESTINATION');
             $result = $this->cli($guard, 'reject', true);
@@ -414,8 +418,15 @@ final class Segments
 
     private function records(array $job): array
     {
-        $state = json_decode(file_get_contents($job['checkpoint']), true, 512, JSON_THROW_ON_ERROR);
-        return $state['contiguousPrefixRecords'];
+        $lines = file($job['checkpoint'], FILE_IGNORE_NEW_LINES);
+        $header = json_decode(array_shift($lines), true, 512, JSON_THROW_ON_ERROR);
+        self::need(($header['version'] ?? null) === 2, 'Unexpected checkpoint version');
+        $records = [];
+        foreach ($lines as $line) {
+            $row = json_decode($line, true, 512, JSON_THROW_ON_ERROR);
+            $records[] = $row['record'];
+        }
+        return $records;
     }
 
     private static function usage(array $records): array

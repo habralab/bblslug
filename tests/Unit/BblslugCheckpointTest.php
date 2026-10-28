@@ -60,9 +60,9 @@ final class BblslugCheckpointTest extends TestCase
         $failed = $this->runFixture(['failAt' => 2, 'failure' => $failure]);
         self::assertSame(\RuntimeException::class, $failed['type']);
         self::assertSame(2, $failed['networkCalls']);
-        $state = json_decode(file_get_contents($this->checkpoint), true, 512, JSON_THROW_ON_ERROR);
-        self::assertCount(1, $state['contiguousPrefixRecords']);
-        $firstRecord = json_encode($state['contiguousPrefixRecords'][0], JSON_THROW_ON_ERROR);
+        $state = $this->readEntries();
+        self::assertCount(1, $state['records']);
+        $firstRecord = json_encode($state['records'][0], JSON_THROW_ON_ERROR);
 
         $resumed = $this->runFixture();
         self::assertSame('success', $resumed['type'], (string) ($resumed['message'] ?? ''));
@@ -70,9 +70,9 @@ final class BblslugCheckpointTest extends TestCase
         self::assertSame(1, $resumed['result']['reusedBatches']);
         self::assertSame(30, $resumed['result']['consumed']['tokens']['total']);
         self::assertSame(20, $resumed['result']['consumedThisRun']['tokens']['total']);
-        $completed = json_decode(file_get_contents($this->checkpoint), true, 512, JSON_THROW_ON_ERROR);
-        self::assertCount(3, $completed['contiguousPrefixRecords']);
-        self::assertSame($firstRecord, json_encode($completed['contiguousPrefixRecords'][0], JSON_THROW_ON_ERROR));
+        $completed = $this->readEntries();
+        self::assertCount(3, $completed['records']);
+        self::assertSame($firstRecord, json_encode($completed['records'][0], JSON_THROW_ON_ERROR));
     }
 
     public static function invalidSecondResponses(): array
@@ -167,13 +167,13 @@ final class BblslugCheckpointTest extends TestCase
     public function testCorruptCachedProtocolFailsBeforeAnyNewRequest(): void
     {
         $this->runFixture(['failAt' => 2, 'failure' => 'http']);
-        $state = json_decode(file_get_contents($this->checkpoint), true, 512, JSON_THROW_ON_ERROR);
-        $state['contiguousPrefixRecords'][0]['text'] = '{}';
+        $state = $this->readEntries();
+        $state['records'][0]['text'] = '{}';
         $state['checksums'][0] = hash('sha256', json_encode(
-            $state['contiguousPrefixRecords'][0],
+            $state['records'][0],
             JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR
         ));
-        file_put_contents($this->checkpoint, json_encode($state, JSON_THROW_ON_ERROR));
+        $this->writeEntries($state);
         $r = $this->runFixture();
         self::assertSame(\RuntimeException::class, $r['type']);
         self::assertStringContainsString('ids mismatch', $r['message']);
@@ -184,14 +184,14 @@ final class BblslugCheckpointTest extends TestCase
     {
         $failed = $this->runFixture(['failAt' => 3, 'failure' => 'http']);
         self::assertSame(\RuntimeException::class, $failed['type']);
-        $state = json_decode(file_get_contents($this->checkpoint), true, 512, JSON_THROW_ON_ERROR);
-        self::assertCount(2, $state['contiguousPrefixRecords']);
-        $state['contiguousPrefixRecords'][1]['text'] = '{}';
+        $state = $this->readEntries();
+        self::assertCount(2, $state['records']);
+        $state['records'][1]['text'] = '{}';
         $state['checksums'][1] = hash('sha256', json_encode(
-            $state['contiguousPrefixRecords'][1],
+            $state['records'][1],
             JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR
         ));
-        file_put_contents($this->checkpoint, json_encode($state, JSON_THROW_ON_ERROR));
+        $this->writeEntries($state);
         $before = file_get_contents($this->checkpoint);
 
         $result = $this->runFixture();
@@ -263,8 +263,8 @@ final class BblslugCheckpointTest extends TestCase
             ['phase' => 'Post-validation started (html)', 'held' => true],
         ], $result['lockProbes']);
         self::assertFalse($result['lockedAfterReturn']);
-        $state = json_decode(file_get_contents($this->checkpoint), true, 512, JSON_THROW_ON_ERROR);
-        self::assertCount(2, $state['contiguousPrefixRecords']);
+        $state = $this->readEntries();
+        self::assertCount(2, $state['records']);
     }
 
     public function testDryRunAndNoTextDoNotReadOrCreateState(): void
@@ -278,12 +278,113 @@ final class BblslugCheckpointTest extends TestCase
         }
     }
 
-    /** @param array<string,mixed> $scenario @return array<string,mixed> */
-    private function runFixture(array $scenario = []): array
+    public function testPartialTailIsRepairedBeforeResume(): void
     {
+        $this->runFixture(['failAt' => 2, 'failure' => 'http']);
+        $prefix = file_get_contents($this->checkpoint);
+        file_put_contents($this->checkpoint, '{"index":1,"record":"partial', FILE_APPEND);
+        $result = $this->runFixture();
+        self::assertSame('success', $result['type'], (string) ($result['message'] ?? ''));
+        self::assertSame(2, $result['networkCalls']);
+        self::assertSame(1, $result['result']['reusedBatches']);
+        self::assertStringStartsWith($prefix, file_get_contents($this->checkpoint));
+        self::assertStringNotContainsString('"record":"partial', file_get_contents($this->checkpoint));
+    }
+
+    /** @dataProvider recoveryFailures */
+    public function testTailRecoveryFailureRejectsBeforeHttpAndCanResume(string $fault): void
+    {
+        $this->runFixture(['failAt' => 2, 'failure' => 'http']);
+        $prefix = file_get_contents($this->checkpoint);
+        $tail = '{"index":1,"record":"partial';
+        file_put_contents($this->checkpoint, $tail, FILE_APPEND);
+        $result = $this->runFixture([], 'checkpoint_recovery_failure.php', [$fault]);
+        self::assertSame(\RuntimeException::class, $result['type']);
+        self::assertSame(0, $result['networkCalls']);
+        $after = file_get_contents($this->checkpoint);
+        self::assertStringStartsWith($prefix, $after);
+        if ($fault === 'ftruncate') {
+            self::assertSame($prefix . $tail, $after);
+        }
+        $resumed = $this->runFixture();
+        self::assertSame('success', $resumed['type'], (string) ($resumed['message'] ?? ''));
+        self::assertSame(2, $resumed['networkCalls']);
+        self::assertSame(1, $resumed['result']['reusedBatches']);
+        self::assertStringStartsWith($prefix, file_get_contents($this->checkpoint));
+    }
+
+    public static function recoveryFailures(): array
+    {
+        return [['ftruncate'], ['fflush'], ['fsync']];
+    }
+
+    public function testCompleteCorruptRowFailsBeforeHttpWithoutMutation(): void
+    {
+        $this->runFixture(['failAt' => 2, 'failure' => 'http']);
+        file_put_contents($this->checkpoint, "{bad}\n", FILE_APPEND);
+        $before = file_get_contents($this->checkpoint);
+        $result = $this->runFixture();
+        self::assertSame(\RuntimeException::class, $result['type']);
+        self::assertSame(0, $result['networkCalls']);
+        self::assertSame($before, file_get_contents($this->checkpoint));
+    }
+
+    public function testReadOnlyCheckpointFailsBeforeHttp(): void
+    {
+        $this->runFixture(['failAt' => 2, 'failure' => 'http']);
+        chmod($this->checkpoint, 0400);
+        try {
+            $probe = @fopen($this->checkpoint, 'r+b');
+            if ($probe !== false) {
+                fclose($probe);
+                self::markTestSkipped('Filesystem does not enforce read-only file permissions for this user');
+            }
+            $before = file_get_contents($this->checkpoint);
+            $result = $this->runFixture();
+            self::assertSame(\RuntimeException::class, $result['type']);
+            self::assertSame(0, $result['networkCalls']);
+            self::assertSame($before, file_get_contents($this->checkpoint));
+        } finally {
+            chmod($this->checkpoint, 0600);
+        }
+    }
+
+    /** @return array{header: array, records: array, checksums: array} */
+    private function readEntries(): array
+    {
+        $lines = file($this->checkpoint, FILE_IGNORE_NEW_LINES);
+        $header = json_decode(array_shift($lines), true, 512, JSON_THROW_ON_ERROR);
+        $records = [];
+        $checksums = [];
+        foreach ($lines as $line) {
+            $entry = json_decode($line, true, 512, JSON_THROW_ON_ERROR);
+            $records[] = $entry['record'];
+            $checksums[] = $entry['checksum'];
+        }
+        return compact('header', 'records', 'checksums');
+    }
+
+    private function writeEntries(array $state): void
+    {
+        $flags = JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR;
+        $bytes = json_encode($state['header'], $flags) . "\n";
+        foreach ($state['records'] as $index => $record) {
+            $bytes .= json_encode([
+                'index' => $index, 'record' => $record, 'checksum' => $state['checksums'][$index],
+            ], $flags) . "\n";
+        }
+        file_put_contents($this->checkpoint, $bytes);
+    }
+
+    /** @param array<string,mixed> $scenario @return array<string,mixed> */
+    private function runFixture(
+        array $scenario = [],
+        string $fixture = 'checkpoint.php',
+        array $arguments = []
+    ): array {
         $scenario += ['checkpointPath' => $this->checkpoint, 'textSegmentBatchSize' => 1];
         $process = proc_open(
-            [PHP_BINARY, dirname(__DIR__) . '/Fixtures/translation/checkpoint.php'],
+            [PHP_BINARY, dirname(__DIR__) . '/Fixtures/translation/' . $fixture, ...$arguments],
             [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']],
             $pipes,
             dirname(__DIR__, 2),

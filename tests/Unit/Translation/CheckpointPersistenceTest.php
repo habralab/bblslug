@@ -39,6 +39,10 @@ final class CheckpointPersistenceTest extends TestCase
         $normalized = $inputs;
         $normalized[0]['consumed'] = ['a' => [], 'z' => ['total' => 3, 'breakdown' => ['a' => 1, 'z' => 2]]];
         $normalized[2]['consumed'] = ['api' => ['total' => 0, 'breakdown' => []]];
+        file_put_contents($path, json_encode([
+            'version' => 1, 'fingerprint' => $fingerprint, 'packetCount' => count($inputs),
+            'contiguousPrefixRecords' => [], 'checksums' => [],
+        ], self::jsonFlags()) . "\n");
         $checkpoint = new BatchCheckpoint($path, $fingerprint, count($inputs));
         $records = [];
         $checksums = [];

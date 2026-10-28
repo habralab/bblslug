@@ -7,11 +7,15 @@ namespace Bblslug\Translation;
 /** Durable, resumable storage for a sequence of translated packets. */
 final class BatchCheckpoint
 {
-    private const VERSION = 1;
+    private const VERSION = 2;
+    private const LEGACY_VERSION = 1;
     private const WRITE_BUFFER_BYTES = 64 * 1024;
 
     /** @var resource */
     private $lock;
+    /** @var resource|null */
+    private $journal = null;
+    private bool $legacy = false;
     private string $path;
     private string $fingerprint;
     private int $packetCount;
@@ -37,23 +41,21 @@ final class BatchCheckpoint
 
         if (file_exists($path) || is_link($path)) {
             self::assertRegular($path, 'checkpoint');
-            $data = @file_get_contents($path);
-            if ($data === false) {
-                throw new \RuntimeException('Could not read checkpoint');
-            }
-            [$storedFingerprint, $storedCount, $records, $checksums] = self::decode($data);
-            if ($storedFingerprint !== $fingerprint || $storedCount !== $packetCount) {
-                throw new \RuntimeException('Checkpoint identity mismatch');
-            }
-            $this->records = $records;
-            $this->checksums = $checksums;
+            $this->load();
         } else {
-            $this->persist();
+            $header = json_encode([
+                'version' => self::VERSION, 'fingerprint' => $fingerprint, 'packetCount' => $packetCount,
+            ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR) . "\n";
+            $this->replaceFile([$header]);
+            $this->load();
         }
     }
 
     public function __destruct()
     {
+        if (is_resource($this->journal)) {
+            fclose($this->journal);
+        }
         if (is_resource($this->lock)) {
             flock($this->lock, LOCK_UN);
             fclose($this->lock);
@@ -77,13 +79,158 @@ final class BatchCheckpoint
         }
         $record = self::normalizeRecord($record);
         $checksum = self::checksum($record);
+        if (!$this->legacy) {
+            $this->appendJournal($index, $record, $checksum);
+            $this->records[] = $record;
+            return;
+        }
         $this->records[] = $record;
         $this->checksums[] = $checksum;
         try {
-            $this->persist();
+            $this->persistLegacy();
         } catch (\Throwable $exception) {
             array_pop($this->records);
             array_pop($this->checksums);
+            throw new \RuntimeException('Could not persist checkpoint', 0, $exception);
+        }
+    }
+
+    private function load(): void
+    {
+        $handle = @fopen($this->path, 'r+b');
+        if ($handle === false) {
+            throw new \RuntimeException('Could not open checkpoint for writing');
+        }
+        try {
+            $first = fgets($handle);
+            if ($first === false) {
+                throw new \RuntimeException('Malformed checkpoint');
+            }
+            $header = json_decode($first, true);
+            if (is_array($header) && ($header['version'] ?? null) === self::VERSION) {
+                $this->loadJournal($handle, $first);
+                $this->journal = $handle;
+                $handle = null;
+            } else {
+                unset($header);
+                $rest = stream_get_contents($handle);
+                if ($rest === false) {
+                    throw new \RuntimeException('Could not read checkpoint');
+                }
+                [$fingerprint, $count, $records, $checksums] = self::decode($first . $rest);
+                $this->assertIdentity($fingerprint, $count);
+                if (!is_writable(dirname($this->path))) {
+                    throw new \RuntimeException('Checkpoint parent directory is not writable');
+                }
+                $this->legacy = true;
+                $this->records = $records;
+                $this->checksums = $checksums;
+            }
+        } finally {
+            if (is_resource($handle)) {
+                fclose($handle);
+            }
+        }
+    }
+
+    /** @param resource $handle */
+    private function loadJournal($handle, string $first): void
+    {
+        if (!function_exists('fsync')) {
+            throw new \RuntimeException('Checkpoint journals require fsync');
+        }
+        $header = self::decodeLine($first, ['version', 'fingerprint', 'packetCount']);
+        if (!is_string($header['fingerprint']) || !is_int($header['packetCount']) || $header['packetCount'] < 0) {
+            throw new \RuntimeException('Malformed checkpoint');
+        }
+        $this->assertIdentity($header['fingerprint'], $header['packetCount']);
+        $end = ftell($handle);
+        if ($end === false || $end < 0) {
+            throw new \RuntimeException('Could not inspect checkpoint position');
+        }
+        $partial = false;
+        while (($line = fgets($handle)) !== false) {
+            if (!str_ends_with($line, "\n")) {
+                $partial = true;
+                break;
+            }
+            $entry = self::decodeLine($line, ['index', 'record', 'checksum']);
+            if (
+                $entry['index'] !== count($this->records) || $entry['index'] >= $this->packetCount
+                || !is_array($entry['record']) || !is_string($entry['checksum'])
+            ) {
+                throw new \RuntimeException('Malformed checkpoint');
+            }
+            /** @var array<string,mixed> $raw */
+            $raw = $entry['record'];
+            $record = self::normalizeRecord($raw);
+            if (!hash_equals(self::checksum($record), $entry['checksum'])) {
+                throw new \RuntimeException('Checkpoint checksum mismatch');
+            }
+            $this->records[] = $record;
+            $end = ftell($handle);
+            if ($end === false || $end < 0) {
+                throw new \RuntimeException('Could not inspect checkpoint position');
+            }
+        }
+        if (!feof($handle)) {
+            throw new \RuntimeException('Could not read checkpoint');
+        }
+        if ($partial && (!ftruncate($handle, $end) || !fflush($handle) || !fsync($handle))) {
+            throw new \RuntimeException('Could not recover checkpoint tail');
+        }
+        if (fseek($handle, $end) !== 0) {
+            throw new \RuntimeException('Could not seek checkpoint');
+        }
+    }
+
+    /**
+     * @param list<string> $keys
+     * @return array<string,mixed>
+     */
+    private static function decodeLine(string $line, array $keys): array
+    {
+        try {
+            $value = json_decode($line, true, 512, JSON_THROW_ON_ERROR);
+        } catch (\JsonException $exception) {
+            throw new \RuntimeException('Malformed checkpoint', 0, $exception);
+        }
+        if (!str_ends_with($line, "\n") || !is_array($value)) {
+            throw new \RuntimeException('Malformed checkpoint');
+        }
+        $actual = array_keys($value);
+        sort($actual);
+        sort($keys);
+        if ($actual !== $keys) {
+            throw new \RuntimeException('Malformed checkpoint');
+        }
+        /** @var array<string,mixed> $value */
+        return $value;
+    }
+
+    private function assertIdentity(string $fingerprint, int $count): void
+    {
+        if ($fingerprint !== $this->fingerprint || $count !== $this->packetCount) {
+            throw new \RuntimeException('Checkpoint identity mismatch');
+        }
+    }
+
+    /** @param array<string,mixed> $record */
+    private function appendJournal(int $index, array $record, string $checksum): void
+    {
+        if (!is_resource($this->journal)) {
+            throw new \RuntimeException('Checkpoint journal is closed; reopen it before appending');
+        }
+        $line = json_encode([
+            'index' => $index, 'record' => $record, 'checksum' => $checksum,
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR) . "\n";
+        try {
+            if (fwrite($this->journal, $line) !== strlen($line) || !fflush($this->journal) || !fsync($this->journal)) {
+                throw new \RuntimeException('Could not write checkpoint journal');
+            }
+        } catch (\Throwable $exception) {
+            fclose($this->journal);
+            $this->journal = null;
             throw new \RuntimeException('Could not persist checkpoint', 0, $exception);
         }
     }
@@ -104,7 +251,7 @@ final class BatchCheckpoint
         $expected = ['checksums', 'contiguousPrefixRecords', 'fingerprint', 'packetCount', 'version'];
         sort($expected);
         if (
-            $keys !== $expected || $value['version'] !== self::VERSION || !is_string($value['fingerprint'])
+            $keys !== $expected || $value['version'] !== self::LEGACY_VERSION || !is_string($value['fingerprint'])
             || !is_int($value['packetCount']) || $value['packetCount'] < 0
             || !is_array($value['contiguousPrefixRecords']) || !array_is_list($value['contiguousPrefixRecords'])
             || !is_array($value['checksums']) || !array_is_list($value['checksums'])
@@ -205,13 +352,19 @@ final class BatchCheckpoint
         return hash('sha256', $encoded);
     }
 
-    private function persist(): void
+    private function persistLegacy(): void
     {
         $header = substr(json_encode([
-            'version' => self::VERSION,
+            'version' => self::LEGACY_VERSION,
             'fingerprint' => $this->fingerprint,
             'packetCount' => $this->packetCount,
         ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR), 0, -1);
+        $this->replaceFile($this->snapshotChunks($header));
+    }
+
+    /** @param iterable<string> $chunks */
+    private function replaceFile(iterable $chunks): void
+    {
         $temp = @tempnam(dirname($this->path), '.batch-checkpoint-');
         if ($temp === false) {
             throw new \RuntimeException('Could not create checkpoint temporary file');
@@ -228,7 +381,7 @@ final class BatchCheckpoint
             if ($handle === false) {
                 throw new \RuntimeException('Could not write checkpoint temporary file');
             }
-            foreach ($this->snapshotChunks($header) as $chunk) {
+            foreach ($chunks as $chunk) {
                 if (fwrite($handle, $chunk) !== strlen($chunk)) {
                     throw new \RuntimeException('Could not write checkpoint temporary file');
                 }

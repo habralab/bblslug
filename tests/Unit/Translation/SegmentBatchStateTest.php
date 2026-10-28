@@ -48,8 +48,10 @@ final class SegmentBatchStateTest extends TestCase
         $fresh = ['text' => '{"s2":"nouveau"}', 'httpStatus' => 202, 'consumed' => ['tokens' => ['total' => 3]]];
         self::assertSame($fresh, $checkpoint->get(1));
         // Read the file while the checkpoint is still locked: acceptance must already be durable.
-        $disk = json_decode((string) file_get_contents($path), true, 512, JSON_THROW_ON_ERROR);
-        self::assertSame([$saved, $fresh], $disk['contiguousPrefixRecords']);
+        $lines = file($path, FILE_IGNORE_NEW_LINES);
+        $first = json_decode($lines[1], true, 512, JSON_THROW_ON_ERROR);
+        $second = json_decode($lines[2], true, 512, JSON_THROW_ON_ERROR);
+        self::assertSame([$saved, $fresh], [$first['record'], $second['record']]);
         $result = $state->result(true);
         self::assertSame('{"s1":"ancien","s2":"nouveau"}', $result['text']);
         self::assertSame(['tokens' => ['total' => 10]], $result['consumed']);

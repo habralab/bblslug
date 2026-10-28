@@ -390,7 +390,7 @@ never saved. The final output file is still written only after complete success.
 
 Compatibility is checked against source bytes, effective model configuration,
 translation settings, filters, actual loaded prompt templates, validation flags,
-packet boundaries and library source code. A mismatch or corrupt checkpoint
+packet boundaries and library source code. An identity mismatch or a corrupt complete checkpoint record
 fails before new HTTP requests and preserves the file. A library update also
 invalidates the checkpoint conservatively. An API key or proxy may change;
 HTTP environment settings and the operation timeout may also change. Each new
@@ -399,13 +399,26 @@ This allows resuming after a timeout with a longer timeout while retaining succe
 packets. Changing output-token settings or packet limits changes checkpoint identity;
 use a new checkpoint for that configuration instead of editing saved state.
 
-The local JSON file contains translated fragments, normalized usage and success
+The local checkpoint contains translated fragments, normalized usage and success
 statuses, plus identity/checksum metadata. It does not serialize authentication
 settings, input requests, raw provider responses or debug logs. It still contains
 translation content and should be handled like an output document. New state and
-lock files use mode `0600`. Writes use a temporary file in the same directory and
-atomic replacement. A nonblocking exclusive lock prevents two processes from
-using the same checkpoint concurrently. The empty `.lock` file remains after the
+lock files use mode `0600`. New files are version-2 JSONL journals: an identity header followed
+by one indexed, checksummed record per completed packet. Each append is flushed and synced before
+completion is reported, without rewriting earlier packets. A trailing record without its final newline
+is removed on the next open, after the identity and complete records have passed validation.
+A malformed or checksum-invalid newline-terminated record is rejected rather than discarded.
+
+After a write or sync error, the operation stops and the journal handle closes. Repeat the operation
+to reopen it; a fully written valid record may be recovered even when the previous append reported
+an error. An incomplete record may require translating its packet again. Version-1 JSON snapshots
+remain supported and continue to use a temporary file in the same directory with atomic replacement;
+there is no automatic format migration or compaction.
+
+Storage is used only at the caller-supplied path, outside a read-only library installation if needed.
+No checkpoint path means no checkpoint or spool files. The supplied checkpoint must be writable;
+creation and known access errors fail before provider requests. A nonblocking exclusive lock prevents
+two processes from using the same checkpoint concurrently. The empty `.lock` file remains after the
 run; the lock itself is released when the operation ends. Parent directories must
 already exist. State/lock symlinks are rejected. CLI state and lock paths must
 not alias source, prepared output or translated output paths. Dry-run and inputs

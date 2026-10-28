@@ -33,7 +33,8 @@ final class BatchCheckpointTest extends TestCase
         self::assertNull($checkpoint->get(0));
         $beforeInode = fileinode($path);
         $checkpoint->append(0, $record);
-        self::assertNotSame($beforeInode, fileinode($path));
+        clearstatcache(true, $path);
+        self::assertSame($beforeInode, fileinode($path));
         self::assertSame($record, $checkpoint->get(0));
         unset($checkpoint);
         $resumed = new BatchCheckpoint($path, 'fingerprint', 2);
@@ -73,9 +74,11 @@ final class BatchCheckpointTest extends TestCase
         $checkpoint = new BatchCheckpoint($path, 'fingerprint', 1);
         $checkpoint->append(0, ['text' => 'x', 'httpStatus' => 200, 'consumed' => []]);
         unset($checkpoint);
-        $decoded = json_decode((string) file_get_contents($path), true, 512, JSON_THROW_ON_ERROR);
-        $decoded['contiguousPrefixRecords'][0]['text'] = 'changed';
-        file_put_contents($path, json_encode($decoded));
+        $lines = file($path);
+        $decoded = json_decode($lines[1], true, 512, JSON_THROW_ON_ERROR);
+        $decoded['record']['text'] = 'changed';
+        $lines[1] = json_encode($decoded, JSON_THROW_ON_ERROR) . "\n";
+        file_put_contents($path, implode('', $lines));
         try {
             new BatchCheckpoint($path, 'fingerprint', 1);
             self::fail('Expected checksum rejection');

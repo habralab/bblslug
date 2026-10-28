@@ -4,6 +4,10 @@ This file follows the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) f
 
 ## [Unreleased]
 
+### Changed
+
+- Create new checkpoints as append-only JSONL journals with recovery of incomplete trailing records; retain version-1 snapshot support. See [checkpoint compatibility](docs/upgrading.md#unreleased-checkpoint-format).
+
 ### Fixed
 
 - Reduce temporary memory when saving large checkpoints while preserving atomic version-1 snapshots.

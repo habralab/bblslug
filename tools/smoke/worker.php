@@ -50,9 +50,13 @@ try {
             ++$sends;
         }
         if ($mode === 'interrupt' && preg_match('/^Completed (?:Text|HTML) segment batch 1\//', $message)) {
-            $state = json_decode(file_get_contents($job['checkpoint']), true, 512, JSON_THROW_ON_ERROR);
+            $lines = file($job['checkpoint'], FILE_IGNORE_NEW_LINES);
+            $header = json_decode($lines[0], true, 512, JSON_THROW_ON_ERROR);
+            if (($header['version'] ?? null) !== 2) {
+                throw new \RuntimeException('Unexpected checkpoint version');
+            }
             $ready = json_encode(
-                ['prefix' => count($state['contiguousPrefixRecords']), 'sends' => $sends],
+                ['prefix' => count($lines) - 1, 'sends' => $sends],
                 JSON_THROW_ON_ERROR
             );
             $path = $job['directory'] . '/ready.json';

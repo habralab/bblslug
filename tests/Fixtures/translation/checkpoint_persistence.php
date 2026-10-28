@@ -43,6 +43,10 @@ namespace {
     $fault = $argv[2];
     $first = ['text' => 'saved', 'httpStatus' => 200, 'consumed' => []];
     $second = ['text' => str_repeat('large value ', 8000), 'httpStatus' => 201, 'consumed' => []];
+    file_put_contents($path, json_encode([
+        'version' => 1, 'fingerprint' => 'fingerprint', 'packetCount' => 2,
+        'contiguousPrefixRecords' => [], 'checksums' => [],
+    ], JSON_THROW_ON_ERROR) . "\n");
     $checkpoint = new \Bblslug\Translation\BatchCheckpoint($path, 'fingerprint', 2);
     $checkpoint->append(0, $first);
     $before = file_get_contents($path);
@@ -53,6 +57,7 @@ namespace {
         $error = null;
     } catch (\RuntimeException $exception) {
         $error = $exception->getMessage();
+        unset($exception);
     }
     $writes = $GLOBALS['checkpointWrites'];
     $GLOBALS['checkpointFault'] = '';
