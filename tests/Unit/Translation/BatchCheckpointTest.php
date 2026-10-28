@@ -112,6 +112,38 @@ final class BatchCheckpointTest extends TestCase
         }
     }
 
+    /** @dataProvider unencodableRecords */
+    public function testEncodingFailureLeavesPrefixReadyForRetry(array $record): void
+    {
+        $path = $this->directory . '/state.json';
+        $checkpoint = new BatchCheckpoint($path, 'fingerprint', 1);
+        $before = file_get_contents($path);
+        try {
+            $checkpoint->append(0, $record);
+            self::fail('Expected JSON encoding rejection');
+        } catch (\JsonException) {
+            self::assertNull($checkpoint->get(0));
+        }
+        self::assertSame($before, file_get_contents($path));
+        self::assertSame([], glob($this->directory . '/.batch-checkpoint-*'));
+        $valid = ['text' => 'retry', 'httpStatus' => 200, 'consumed' => []];
+        $checkpoint->append(0, $valid);
+        self::assertSame($valid, $checkpoint->get(0));
+        unset($checkpoint);
+        $resumed = new BatchCheckpoint($path, 'fingerprint', 1);
+        self::assertSame($valid, $resumed->get(0));
+    }
+
+    /** @return list<array{array<string,mixed>}> */
+    public static function unencodableRecords(): array
+    {
+        return [
+            [['text' => "\xff", 'httpStatus' => 200, 'consumed' => []]],
+            [['text' => 'text', 'httpStatus' => 200, 'consumed' => ["\xff" => ['total' => 1]]]],
+            [['text' => 'text', 'httpStatus' => 200, 'consumed' => ['api' => ['breakdown' => ["\xff" => 1]]]]],
+        ];
+    }
+
     public function testRejectsBadIndexesAndUsage(): void
     {
         $checkpoint = new BatchCheckpoint($this->directory . '/state.json', 'fingerprint', 1);

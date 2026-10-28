@@ -6,6 +6,7 @@ This file follows the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) f
 
 ### Fixed
 
+- Keep checkpoint state unchanged when a record cannot be JSON-encoded, allowing a valid retry.
 - Reduce peak memory during batched translation by releasing completed requests and intermediate planning state.
 - Avoid full word-match arrays when planning long segments, including abbreviation-chain lookahead.
 - Avoid retaining all JSON tokens while translating explicitly selected HTML fields in large containers.

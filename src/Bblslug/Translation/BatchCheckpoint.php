@@ -75,8 +75,9 @@ final class BatchCheckpoint
             throw new \InvalidArgumentException('Checkpoint append index is not the current prefix');
         }
         $record = self::normalizeRecord($record);
+        $checksum = self::checksum($record);
         $this->records[] = $record;
-        $this->checksums[] = self::checksum($record);
+        $this->checksums[] = $checksum;
         try {
             $this->persist();
         } catch (\Throwable $exception) {
