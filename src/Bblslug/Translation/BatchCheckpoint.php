@@ -8,6 +8,7 @@ namespace Bblslug\Translation;
 final class BatchCheckpoint
 {
     private const VERSION = 1;
+    private const WRITE_BUFFER_BYTES = 64 * 1024;
 
     /** @var resource */
     private $lock;
@@ -206,17 +207,16 @@ final class BatchCheckpoint
 
     private function persist(): void
     {
-        $json = json_encode([
+        $header = substr(json_encode([
             'version' => self::VERSION,
             'fingerprint' => $this->fingerprint,
             'packetCount' => $this->packetCount,
-            'contiguousPrefixRecords' => $this->records,
-            'checksums' => $this->checksums,
-        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR) . "\n";
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR), 0, -1);
         $temp = @tempnam(dirname($this->path), '.batch-checkpoint-');
         if ($temp === false) {
             throw new \RuntimeException('Could not create checkpoint temporary file');
         }
+        $handle = null;
         try {
             if (realpath(dirname($temp)) !== realpath(dirname($this->path))) {
                 throw new \RuntimeException('Checkpoint temporary file must share its parent directory');
@@ -225,27 +225,60 @@ final class BatchCheckpoint
                 throw new \RuntimeException('Could not restrict checkpoint file permissions');
             }
             $handle = @fopen($temp, 'wb');
-            if ($handle === false || fwrite($handle, $json) !== strlen($json) || !fflush($handle)) {
-                if (is_resource($handle)) {
-                    fclose($handle);
+            if ($handle === false) {
+                throw new \RuntimeException('Could not write checkpoint temporary file');
+            }
+            foreach ($this->snapshotChunks($header) as $chunk) {
+                if (fwrite($handle, $chunk) !== strlen($chunk)) {
+                    throw new \RuntimeException('Could not write checkpoint temporary file');
                 }
+            }
+            if (!fflush($handle)) {
                 throw new \RuntimeException('Could not write checkpoint temporary file');
             }
             if (function_exists('fsync') && !@fsync($handle)) {
-                fclose($handle);
                 throw new \RuntimeException('Could not sync checkpoint temporary file');
             }
             fclose($handle);
+            $handle = null;
             if (!@rename($temp, $this->path)) {
                 throw new \RuntimeException('Could not install checkpoint');
             }
             $temp = '';
             @chmod($this->path, 0600);
         } finally {
+            if (is_resource($handle)) {
+                fclose($handle);
+            }
             if ($temp !== '') {
                 @unlink($temp);
             }
         }
+    }
+
+    /**
+     * Encode bounded batches; one record can exceed the target buffer size.
+     *
+     * @return \Generator<int,string>
+     */
+    private function snapshotChunks(string $header): \Generator
+    {
+        $buffer = $header;
+        foreach (['contiguousPrefixRecords' => $this->records, 'checksums' => $this->checksums] as $name => $values) {
+            $buffer .= ',"' . $name . '":[';
+            foreach ($values as $index => $value) {
+                $buffer .= ($index === 0 ? '' : ',') . json_encode(
+                    $value,
+                    JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR
+                );
+                if (strlen($buffer) >= self::WRITE_BUFFER_BYTES) {
+                    yield $buffer;
+                    $buffer = '';
+                }
+            }
+            $buffer .= ']';
+        }
+        yield $buffer . "}\n";
     }
 
     private static function validatePath(string $path): void
