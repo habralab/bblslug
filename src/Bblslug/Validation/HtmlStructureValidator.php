@@ -27,44 +27,70 @@ class HtmlStructureValidator implements ValidatorInterface
         'noscript', 'plaintext', 'svg', 'math',
     ];
 
-    /** @var array<string,true> */
-    private array $requiredContent;
+    private string $expectedTree = '';
+    /** One byte per content candidate, in captureContent traversal order. */
+    private string $requiredContent = '';
 
-
-    /** @var array<string,mixed> */
-    private array $expected;
+    /** @var array{leadingFence:?string,trailingFence:?string,fenceRuns:array<int,string>} */
+    private array $expectedFences;
 
     public function __construct(string $source)
     {
-        $expected = self::structure($source);
-        $this->requiredContent = $expected['nonempty'];
-        unset($expected['nonempty']);
-        $this->expected = $expected;
+        $structure = self::structure($source);
+        $document = $structure['document'];
+        unset($structure['document']);
+        $this->expectedFences = $structure;
+        // Retain exact records, not per-node PHP arrays or a second live DOM.
+        foreach (self::capture($document) as $record) {
+            $this->expectedTree .= $record;
+        }
+        foreach (self::captureContent($document, '$') as $nonempty) {
+            $this->requiredContent .= $nonempty ? '1' : '0';
+        }
     }
 
     public function validate(string $content): ValidationResult
     {
         $actual = self::structure($content);
-        $nonempty = $actual['nonempty'];
-        unset($actual['nonempty']);
-        if ($this->expected !== $actual) {
+        $document = $actual['document'];
+        unset($actual['document']);
+        if ($this->expectedFences !== $actual || !$this->matchesTree($document)) {
             return ValidationResult::failure([
                 'Markup, non-translatable attributes, and Markdown fences must match the source HTML',
             ]);
         }
-        $missing = array_diff_key($this->requiredContent, $nonempty);
+        // Equal structure guarantees that content candidates have the same order.
+        $missing = [];
+        $index = 0;
+        foreach (self::captureContent($document, '$') as $path => $nonempty) {
+            if ($this->requiredContent[$index] === '1' && !$nonempty && count($missing) < 10) {
+                $missing[] = $path;
+            }
+            ++$index;
+        }
         if ($missing !== []) {
             return ValidationResult::failure([
-                'Nonempty HTML text or translatable attribute became empty at '
-                . implode(', ', array_slice(array_keys($missing), 0, 10)),
+                'Nonempty HTML text or translatable attribute became empty at ' . implode(', ', $missing),
             ]);
         }
         return ValidationResult::success();
     }
 
+    private function matchesTree(DOMDocument $document): bool
+    {
+        $offset = 0;
+        foreach (self::capture($document) as $record) {
+            $length = strlen($record);
+            if (substr_compare($this->expectedTree, $record, $offset, $length) !== 0) {
+                return false;
+            }
+            $offset += $length;
+        }
+        return $offset === strlen($this->expectedTree);
+    }
+
     /**
-     * @return array{tree:array<string,mixed>,nonempty:array<string,true>,leadingFence:?string,
-     *     trailingFence:?string,fenceRuns:array<int,string>}
+     * @return array{document:DOMDocument,leadingFence:?string,trailingFence:?string,fenceRuns:array<int,string>}
      */
     private static function structure(string $content): array
     {
@@ -99,11 +125,8 @@ class HtmlStructureValidator implements ValidatorInterface
         if ($leadingMatch === false || $trailingMatch === false || $fenceMatch === false) {
             throw new \RuntimeException('Could not inspect Markdown fences in HTML');
         }
-        $nonempty = [];
-        self::captureContent($dom, '$', $nonempty);
         return [
-            'tree' => self::capture($dom),
-            'nonempty' => $nonempty,
+            'document' => $dom,
             // libxml treats fences as text; preserve delimiters and boundary labels separately.
             'leadingFence' => $leadingMatch === 1 ? rtrim($leading[1], "\t ") : null,
             'trailingFence' => $trailingMatch === 1 ? $trailing[1] : null,
@@ -111,19 +134,16 @@ class HtmlStructureValidator implements ValidatorInterface
         ];
     }
 
-    /** @param array<string,true> $nonempty */
-    private static function captureContent(DOMNode $node, string $path, array &$nonempty, bool $opaque = false): bool
+    /** @return \Generator<string,bool,mixed,bool> Nonempty candidates in stable structural order. */
+    private static function captureContent(DOMNode $node, string $path, bool $opaque = false): \Generator
     {
         if ($node instanceof DOMText) {
             return !$opaque && preg_match('/\A\s*\z/u', $node->nodeValue ?? '') !== 1;
         }
         if ($node instanceof DOMElement) {
             foreach (self::TRANSLATABLE_ATTRIBUTES as $attribute) {
-                if (
-                    $node->hasAttribute($attribute)
-                    && preg_match('/\A\s*\z/u', $node->getAttribute($attribute)) !== 1
-                ) {
-                    $nonempty[$path . '/@' . $attribute] = true;
+                if ($node->hasAttribute($attribute)) {
+                    yield $path . '/@' . $attribute => preg_match('/\A\s*\z/u', $node->getAttribute($attribute)) !== 1;
                 }
             }
             $opaque = $opaque || in_array($node->nodeName, self::OPAQUE_ELEMENTS, true);
@@ -133,20 +153,22 @@ class HtmlStructureValidator implements ValidatorInterface
         foreach ($node->childNodes as $child) {
             $childPath = $child instanceof DOMText ? $path : $path . '/' . $child->nodeName . '[' . ++$index . ']';
             // Visit every child even when an earlier child already contained text.
-            $hasText = self::captureContent($child, $childPath, $nonempty, $opaque) || $hasText;
+            $childContent = self::captureContent($child, $childPath, $opaque);
+            yield from $childContent;
+            $hasText = $childContent->getReturn() || $hasText;
         }
         if (
-            !$opaque && $hasText
+            !$opaque
             && ($node instanceof DOMDocument
                 || ($node instanceof DOMElement && in_array($node->nodeName, self::TEXT_CONTAINERS, true)))
         ) {
-            $nonempty[$path] = true;
+            yield $path => $hasText;
         }
         return $hasText;
     }
 
-    /** @return array<string,mixed> */
-    private static function capture(DOMNode $node): array
+    /** @return \Generator<int,string> Exact node records; depth preserves nesting without child arrays. */
+    private static function capture(DOMNode $node, int $depth = 0): \Generator
     {
         $attributes = [];
         if ($node instanceof DOMElement) {
@@ -160,13 +182,8 @@ class HtmlStructureValidator implements ValidatorInterface
             }
             ksort($attributes, SORT_STRING);
         }
-        $children = [];
-        foreach ($node->childNodes as $child) {
-            if (!$child instanceof DOMText) {
-                $children[] = self::capture($child);
-            }
-        }
-        return [
+        yield serialize([
+            'depth' => $depth,
             'type' => $node->nodeType,
             'name' => $node->nodeName,
             'attributes' => $attributes,
@@ -176,7 +193,11 @@ class HtmlStructureValidator implements ValidatorInterface
             'doctype' => $node instanceof DOMDocumentType
                 ? [$node->publicId, $node->systemId, $node->internalSubset]
                 : null,
-            'children' => $children,
-        ];
+        ]);
+        foreach ($node->childNodes as $child) {
+            if (!$child instanceof DOMText) {
+                yield from self::capture($child, $depth + 1);
+            }
+        }
     }
 }

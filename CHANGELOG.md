@@ -6,6 +6,7 @@ This file follows the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) f
 
 ### Fixed
 
+- Reduce HTML structure validation memory without weakening markup or text-loss checks.
 - Preserve JSON escapes adjacent to source-literal markers during filtering, including keys and JSON stored inside strings.
 - Avoid per-escape JSON position maps that could exhaust memory while protecting fragments in large or nested JSON strings.
 - Avoid per-character HTML boundary maps that could exhaust memory when preparing long text spans for segment translation.

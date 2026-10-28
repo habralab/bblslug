@@ -194,4 +194,54 @@ final class HtmlStructureValidatorTest extends TestCase
             libxml_use_internal_errors($previous);
         }
     }
+
+    public function testRepeatedValidationRecoversAfterBothKindsOfFailure(): void
+    {
+        $validator = new HtmlStructureValidator('<p title="Hint">Hello</p>');
+        self::assertTrue($validator->validate('<p title="Conseil">Bonjour</p>')->isValid());
+        self::assertFalse($validator->validate('<p title="">Bonjour</p>')->isValid());
+        self::assertFalse($validator->validate('<p title="Hint" id="added">Hello</p>')->isValid());
+        self::assertTrue($validator->validate('<p title="Hinweis">Hallo</p>')->isValid());
+    }
+
+    public function testMissingContentReportsFirstTenPathsInTraversalOrder(): void
+    {
+        $source = '<section title="t" alt="a" aria-label="l"><p title="t">One <span>two</span></p>'
+            . '<pre title="t"><p title="t">opaque</p></pre><p alt="a" aria-label="l">Three</p>'
+            . '<p>Four</p><p>Five</p></section>';
+        $output = '<section title="" alt="" aria-label=""><p title=""> <span></span></p>'
+            . '<pre title=""><p title=""></p></pre><p alt="" aria-label=""></p>'
+            . '<p></p><p></p></section>';
+        $result = (new HtmlStructureValidator($source))->validate($output);
+
+        self::assertSame([
+            'Nonempty HTML text or translatable attribute became empty at '
+            . '$/div[1]/section[1]/@title, $/div[1]/section[1]/@alt, '
+            . '$/div[1]/section[1]/@aria-label, $/div[1]/section[1]/p[1]/@title, '
+            . '$/div[1]/section[1]/p[1], $/div[1]/section[1]/pre[2]/@title, '
+            . '$/div[1]/section[1]/pre[2]/p[1]/@title, $/div[1]/section[1]/p[3]/@alt, '
+            . '$/div[1]/section[1]/p[3]/@aria-label, $/div[1]/section[1]/p[3]',
+        ], $result->getErrors());
+    }
+
+    public function testMarkupMismatchTakesPrecedenceOverClearedText(): void
+    {
+        $result = (new HtmlStructureValidator('<p title="Hint">Hello</p>'))
+            ->validate('<p title="" id="added"></p>');
+
+        self::assertSame([
+            'Markup, non-translatable attributes, and Markdown fences must match the source HTML',
+        ], $result->getErrors());
+    }
+
+    public function testSameElementSequenceWithDifferentNestingIsRejected(): void
+    {
+        $source = '<div><section><span>One</span></section><span>Two</span></div>';
+        $output = '<div><section><span>Un</span><span>Deux</span></section></div>';
+        $result = (new HtmlStructureValidator($source))->validate($output);
+
+        self::assertSame([
+            'Markup, non-translatable attributes, and Markdown fences must match the source HTML',
+        ], $result->getErrors());
+    }
 }
