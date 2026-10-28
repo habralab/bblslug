@@ -2,37 +2,31 @@
 
 [README](../README.md) · [Usage](usage.md) · [Transports](transports.md) · [Providers](providers.md) · [Models](models.md)
 
-Start with the CLI and PHP examples in the [README](../README.md). This page covers configuration, I/O, diagnostics and the library result. For all CLI flags, run `bin/bblslug --help`.
+Start with the CLI and PHP examples in the [README](../README.md). This page covers configuration, I/O, diagnostics and the library result. For all CLI flags, run `vendor/bin/bblslug --help`.
 
-- [Running the file examples](#running-the-file-examples)
-- [Credentials, input and output](#credentials-input-and-output)
+- [Example setup](#running-the-file-examples)
+- [Credentials and I/O](#credentials-input-and-output)
 - [Formats](#formats)
 - [Filters and model options](#filters-and-model-options)
-- [Translate a JSON file and write to another file](#translate-a-json-file-and-write-to-another-file)
-- [Translate an HTML file and write to another file with filters](#translate-an-html-file-and-write-to-another-file-with-filters)
-- [Add translation context (prompt), source and target language](#add-translation-context-prompt-source-and-target-language)
-- [Pass model-specific variables](#pass-model-specific-variables)
-- [Choose a different prompt template](#choose-a-different-prompt-template)
-- [Dry-run placeholders only](#dry-run-placeholders-only)
-- [Verbose mode (prints request preview to stderr)](#verbose-mode-prints-request-preview-to-stderr)
-- [Standard input and output](#standard-input-and-output)
-- [Secret masking in diagnostics](#secret-masking-in-diagnostics)
-- [Verbose filter and validation diagnostics](#verbose-filter-and-validation-diagnostics)
+- [File translation](#translate-a-json-file-and-write-to-another-file)
+- [Prompts and provider settings](#pass-model-specific-variables)
+- [Dry-run](#dry-run-placeholders-only) and [diagnostics](#verbose-mode-prints-request-preview-to-stderr)
 - [Statistics](#statistics)
-- [PHP library](#php-library)
+- [PHP API](#php-library)
 
 ## Running the file examples
 
-The file examples in this guide, [transports](transports.md) and [providers](providers.md)
-run from a repository checkout with `composer install` completed. They use `bin/bblslug`
-and the authored inputs in [samples/quickstart](../samples/quickstart/).
-For a Composer-installed package, use `vendor/bin/bblslug`; the same samples live under
-`vendor/habr/bblslug/samples/quickstart/`. Supply your own source paths or use those bundled inputs.
-Translation examples contact the selected provider. Add `--dry-run` for preparation only;
-that mode still requires a key value but does not prove that the provider accepts a request.
+Examples use a Composer-installed package and run from your project directory. Use your own input
+files, or copy `input.txt`, `input.html`, `input.json` and `translation.schema.json` from
+`vendor/habr/bblslug/samples/quickstart/` into that directory. The [sample guide](../samples/README.md)
+describes their contents.
 
-Use the full option names shown in `--help`. Unknown options and abbreviated names are rejected
-before input is read or requests are sent, including when combined with `--help` or `--dry-run`.
+From a repository checkout, use `bin/bblslug` instead of `vendor/bin/bblslug`; the same inputs are in
+`samples/quickstart/`.
+
+Translation commands contact the selected provider. Add `--dry-run` to prepare input without a
+translation request; it still requires a configured key. Use full option names from `--help`.
+Unknown or abbreviated flags fail before input is read or requests are sent, including with `--help`.
 
 ## Credentials, input and output
 
@@ -52,31 +46,29 @@ precedence over the unprefixed fallback, including for the Yandex folder ID.
 
 ### Input and output
 
-Omit `--source` to read STDIN and `--translated` to write STDOUT. Progress,
-errors and usage statistics go to STDERR. If STDERR is unavailable or its pipe
-is broken, diagnostics are skipped; they never fall back to STDOUT. Failed
-requests or output writes return a nonzero exit status.
+Omit `--source` to read STDIN and `--translated` to write STDOUT. Progress, errors and usage go to
+STDERR. Translation or output-write failures return a nonzero exit status; diagnostics never use STDOUT.
 
-`--translated` accepts one nonempty path. Missing, empty and repeated values
-fail before translation. For ordinary local paths, directories, missing parent
-directories and obvious permission failures are checked before API calls.
-Preflight does not create or truncate output. Existing writable files can be
-updated inside read-only parent directories. Stream outputs retain write-time
-checks; dry-run ignores a valid `--translated` path. Disk space and permissions
-can change after preflight, so final write errors are checked separately.
+`--translated` accepts one nonempty path. Known invalid local paths fail before API calls, without
+creating or truncating output. Dry-run ignores a valid `--translated` path and writes prepared input instead.
 
-Ordinary local output files are staged in their destination directory, flushed
-and replaced only after the complete write succeeds. The same writer protects
-dry-run `.prepared` files. Failed staged writes leave previous files intact.
-Existing symlinks to regular files are retained while their targets are replaced.
-Basic permission bits are preserved; new files use `0666 & ~umask`. Replacement
-creates a new inode and does not copy ACLs or extended attributes.
+For ordinary local files with a writable parent, output is staged and replaced after a complete write.
+A failed staged write preserves the previous file. Streams and other paths that require direct writing
+can receive partial output on I/O failure. This applies to dry-run `.prepared` files too.
 
-Stream URIs (including `file://`), special files, hardlinks, dangling symlinks,
-existing writable files inside read-only directories, and files whose ownership
-or group would change on replacement use checked direct writes. These can
-receive a partial write on I/O failure. Failed atomic replacement is reported
-without retrying through a destructive direct write.
+<details>
+<summary>File replacement details</summary>
+
+Existing symlinks to regular files retain the link while their targets are replaced. Basic permission
+bits are preserved; new files use `0666 & ~umask`. Replacement creates a new inode and does not copy
+ACLs or extended attributes.
+
+Stream URIs (including `file://`), special files, hardlinks, dangling symlinks, existing writable files
+in read-only directories, and files whose ownership or group would change on replacement use checked
+direct writes. Failed atomic replacement is reported without falling back to a direct write.
+Disk space and permissions can change after preflight, so writes are checked again at completion.
+
+</details>
 
 ### Proxy
 
@@ -100,7 +92,8 @@ For a shared budget across multiple requests, use an
 [operation timeout](transports.md#limit-the-whole-translation-operation).
 
 Direct `HttpClient::request()` callers can pass `connectTimeoutSeconds` and
-`timeoutSeconds`; explicit arguments take precedence over environment values.
+`timeoutSeconds`; explicit arguments take precedence over environment values. The optional positive
+`timeoutMilliseconds` cap can shorten, but cannot extend, that request timeout.
 Network failures throw `RuntimeException` with the cURL error code (28 for a
 timeout). Requests are not automatically retried.
 
@@ -130,44 +123,41 @@ result can use additional memory.
 | `structured_json` | JSON with an explicit provider-supported response schema; see [native structured JSON](providers.md#native-structured-json) |
 
 Translation and dry-run require both a registered model and a format. Use
-`bin/bblslug --list-models` and `--list-prompts` to inspect available keys
+`vendor/bin/bblslug --list-models` and `--list-prompts` to inspect available keys
 and template formats without credentials or a translation request.
 
 ## Filters and model options
 
-Filter names are `url` or `html_TAG`. Unknown names (for example `urll`) and
-malformed tag names cause an error before translation. `TAG` starts with an ASCII
-letter and cannot contain whitespace, quotes, angle brackets, forward slashes, or control
-characters; custom names such as `x-panel`, `svg:path`, and `x-элемент` are allowed.
-An empty API list (`filters: []`) or CLI `--filters=` applies no filters. Empty
-entries inside a nonempty CLI list, such as `url,,html_code`, are rejected.
+Use `url` to preserve URLs or `html_TAG` to preserve complete HTML blocks, for example
+`html_code` or `html_pre`. `filters: []` and CLI `--filters=` disable filters.
+Unknown names and empty entries such as `url,,html_code` fail before translation.
 
-`variables` / `--variables` accepts model-specific options. The names `format`,
-`dryRun`, `promptKey`, `verbose`, and `context` are reserved: use the corresponding
-`translate()` arguments or CLI flags. `responseContext` is internal request state
-and cannot be supplied through variables. Reserved names cause an error even if
-the value is `null` or equals the explicit argument, including in dry-run mode.
-The diagnostic names the option without printing its value. Options such as
-`temperature`, `response_schema`, `json_transport`, and `document_timeout` remain
-available through variables.
+Tag names start with an ASCII letter and exclude whitespace, quotes, angle brackets, `/` and control
+characters. Custom names such as `x-panel`, `svg:path` and `x-элемент` are supported. See
+[JSON filtering and tag boundaries](transports.md#filters-inside-json).
+
+Pass provider settings through `variables` / `--variables`, such as `temperature`, `response_schema`,
+`json_transport` or `document_timeout`. Use dedicated arguments for `format`, `dryRun`, `promptKey`,
+`verbose` and `context`; these names and the internal `responseContext` are reserved and rejected in
+variables, including during dry-run.
 
 ## Translate a JSON file and write to another file
 
 ```bash
-bin/bblslug \
+vendor/bin/bblslug \
   --model=google:gemini-flash-latest \
   --format=json \
-  --source=samples/quickstart/input.json \
+  --source=input.json \
   --translated=output.json
 ```
 
 ## Translate an HTML file and write to another file with filters
 
 ```bash
-bin/bblslug \
+vendor/bin/bblslug \
   --model=google:gemini-flash-latest \
   --format=html \
-  --source=samples/quickstart/input.html \
+  --source=input.html \
   --translated=output.html \
   --filters=url,html_code,html_pre
 ```
@@ -175,10 +165,10 @@ bin/bblslug \
 ## Add translation context (prompt), source and target language
 
 ```bash
-bin/bblslug \
+vendor/bin/bblslug \
   --model=google:gemini-flash-latest \
   --format=html \
-  --source=samples/quickstart/input.html \
+  --source=input.html \
   --translated=output.html \
   --target-lang=DE \
   --source-lang=EN \
@@ -197,11 +187,11 @@ options using a PHP boolean cast, such as Gemini's `includeThoughts`, use `0` or
 the non-empty string `false` is treated as true.
 
 ```bash
-bin/bblslug \
+vendor/bin/bblslug \
   --model=openai:gpt-6-luna \
   --format=text \
   --variables=max_completion_tokens=8192,reasoning_effort=low \
-  --source=samples/quickstart/input.txt \
+  --source=input.txt \
   --translated=out.txt
 ```
 
@@ -211,10 +201,10 @@ Use `--list-prompts` to check supported formats. The `experimental` and
 `experimental_xml` groups support JSON only.
 
 ```bash
-bin/bblslug \
+vendor/bin/bblslug \
   --model=openai:gpt-6-luna \
   --format=json \
-  --source=samples/quickstart/input.json \
+  --source=input.json \
   --translated=out.json \
   --prompt-key=experimental
 ```
@@ -222,50 +212,47 @@ bin/bblslug \
 The opt-in `experimental_xml` group uses an XML-style JSON prompt:
 
 ```bash
-bin/bblslug --model=openai:gpt-6-luna --format=json \
-  --source=samples/quickstart/input.json --target-lang=DE --prompt-key=experimental_xml
+vendor/bin/bblslug --model=openai:gpt-6-luna --format=json \
+  --source=input.json --target-lang=DE --prompt-key=experimental_xml
 ```
 
-PHP callers select `promptKey: 'experimental_xml'`. The template is sent verbatim
-as text with XML-like tags. The library substitutes its placeholders; it does not
-parse XML, expand entities, or run a [POML renderer](https://microsoft.github.io/poml/latest/language/basic/).
-`translator` remains the default. This experimental group provides no `text`,
-`html`, `linedJson`, or `structured_json` template; native JSON mode requests
-`structured_json` and therefore cannot use this group.
+PHP callers use `promptKey: 'experimental_xml'`. This JSON-only template is plain text with
+XML-like tags; no XML/POML renderer is required. It cannot be combined with native structured JSON,
+which needs a `structured_json` template. `translator` is the default group.
 
 ## Dry-run placeholders only
 
 CLI dry-run applies filters without calling a provider or validating the container.
 It still requires a registered model, format, and API-key environment variable.
-With `--source=samples/quickstart/input.txt`, it writes `input.txt.prepared`; with STDIN, it writes
+With `--source=input.txt`, it writes `input.txt.prepared`; with STDIN, it writes
 the prepared text to STDOUT. `--translated` is not used in this mode.
 The library's `dryRun: true` follows the full preparation and validation path and
 returns a request preview without sending a request.
 
 ```bash
-bin/bblslug \
+vendor/bin/bblslug \
   --model=google:gemini-flash-latest \
   --format=text \
   --filters=url \
-  --source=samples/quickstart/input.txt \
+  --source=input.txt \
   --dry-run
 ```
 
 ## Verbose mode (prints request preview to stderr)
 
 ```bash
-bin/bblslug \
+vendor/bin/bblslug \
   --model=google:gemini-flash-latest \
   --format=html \
   --verbose \
-  --source=samples/quickstart/input.html \
+  --source=input.html \
   --translated=out.html
 ```
 
 ## Standard input and output
 
 ```bash
-printf 'Hello world\n' | bin/bblslug \
+printf 'Hello world\n' | vendor/bin/bblslug \
   --model=google:gemini-flash-latest --format=text --target-lang=DE > translated.txt
 ```
 
@@ -273,70 +260,46 @@ Use `--translated=translated.txt` instead of shell redirection to use the CLI ou
 
 ## Secret masking in diagnostics
 
-With verbose mode enabled, empty-translation errors retain masked HTTP request and
-response diagnostics, as parsing errors do. Quiet empty-translation errors omit those diagnostics.
+API keys are masked in HTTP diagnostics and provider exceptions, including URL/form encoding and
+up to two layers of JSON string escaping. Raw response bodies, headers and sent payloads retain their data.
+Low-level `HttpClient::request()` callers supply secrets through `maskPatterns`.
 
-The facade masks the API key in HTTP diagnostic logs and provider exceptions.
-Low-level `HttpClient::request()` callers supply raw secrets through
-`maskPatterns`. Masking covers raw text, URL/form encoding, and up to two layers
-of JSON string escaping, including hexadecimal escape case variations. Empty
-patterns are ignored; overlapping secrets are matched longest first.
-
-Request and response diagnostic copies are sanitized. Sent payloads, returned
-response bodies and headers keep their original data. Network exceptions retain
-the cURL error code and redact known secrets from the message.
+Verbose error reports include masked request/response diagnostics. Source and translated content can
+remain visible, so treat logs as translation data. Network exceptions retain their cURL error code.
 
 ## Verbose filter and validation diagnostics
 
-With `--verbose`, the CLI prints captured URL and HTML-filter previews to stderr.
-Library callers receive these messages through `onFeedback` when `verbose: true`.
-Each filter shows at most 50 captures; each value is masked before being shortened
-to 200 characters plus an ellipsis. Values are JSON-quoted so line breaks and
-backslashes remain visible on one log line. Maps describe intermediate filter
-stages and may contain internal placeholder tokens. Translation output and exact
-protected source bytes are unchanged.
+With `--verbose`, the CLI prints masked filter and validation previews to STDERR. PHP callers receive
+them through `onFeedback` with `verbose: true`.
 
-JSON syntax errors and HTML syntax/structure errors include a preview of the
-restored invalid document only in verbose mode. This preview is masked before
-being limited to 2000 characters plus an ellipsis. Existing HTTP diagnostic logs
-have their own behavior; this limit applies to the restored-document preview.
-These previews mask the supplied API key, proxy URI, and Yandex folder ID using
-the same encoded-secret representations as `SecretMasker`. Other source content
-can remain visible, so verbose output is diagnostic data.
+| Preview | Limit |
+| --- | --- |
+| Captured URL or HTML-filter values | 50 captures per filter; 200 characters per value |
+| Restored document in JSON/HTML validation errors | 2000 characters |
 
-`FilterManager::getDebugMaps()` and `DebuggableFilterInterface::debugDump()` expose
-raw captures for diagnostic integrations; callers must mask them before logging.
-The optional interface leaves the existing `FilterInterface` contract unchanged.
-Callback exceptions remain isolated from translation.
+Values are masked before truncation; an ellipsis marks shortened content. Filter values are
+JSON-quoted and can show intermediate placeholders. HTTP request/response logs have separate behavior
+and are not covered by these preview limits.
+
+`FilterManager::getDebugMaps()` and `DebuggableFilterInterface::debugDump()` return raw captures.
+Mask them before logging. Callback exceptions are ignored.
 
 ## Statistics
 
-- **Usage metrics**
+After a successful translation, the CLI prints provider-reported usage to STDERR:
 
-  Counters accept nonnegative integers, decimal integer strings (including Yandex's
-  string counters), and finite whole-valued floats within PHP's integer range.
-  Missing or malformed values use the existing zero fallback. Negative, fractional,
-  nonfinite and out-of-range values are not truncated, rounded or saturated into
-  counts. Decimal fractions and exponent notation in strings are rejected rather
-  than passed through a floating-point conversion. This applies equally with or
-  without checkpointing.
+```text
+Usage metrics:
+    Tokens:
+        Total:       1074
+        Prompt:      631
+        Completion:  443
+```
 
-  When summing packets, a total or breakdown counter that exceeds `PHP_INT_MAX`
-  is omitted for the entire aggregation. Other representable counters remain.
-  Later packets do not restart an incomplete sum. No overflowed count is returned
-  as a float, saturated value or artificial zero; the CLI omits its line too.
-  This applies to both whole-document and current-run checkpoint statistics.
-
-  After each successful CLI translation (except dry-run), the CLI prints consumed usage metrics to STDERR, for example:
-
-  ```
-  Usage metrics:
-      Tokens:
-          Total:       1074
-          -----------------
-          Prompt:      631
-          Completion:  443
-  ```
+The PHP result exposes the same normalized counters in `consumed`. Counters are nonnegative integers;
+missing or invalid values use zero. When a packet sum exceeds `PHP_INT_MAX`, that counter is omitted
+rather than estimated or clipped; other counters remain available. With checkpoints, `consumed`
+covers the whole document and `consumedThisRun` covers new successful requests.
 
 ## PHP library
 
@@ -355,70 +318,56 @@ Credentials are supplied explicitly to `translate()`; the CLI resolves provider 
 Translate an HTML document with optional settings:
 
 ```php
-$text = file_get_contents('samples/quickstart/input.html');
+$text = file_get_contents('input.html');
 if ($text === false) {
-    throw new \RuntimeException('Cannot read samples/quickstart/input.html');
+    throw new \RuntimeException('Cannot read input.html');
 }
 $apiKey = getenv('BBLSLUG_OPENAI_API_KEY') ?: getenv('OPENAI_API_KEY');
 if ($apiKey === false || $apiKey === '') {
     throw new \RuntimeException('Set BBLSLUG_OPENAI_API_KEY or OPENAI_API_KEY');
 }
-$verbose = true;
 $result = Bblslug::translate(
-    apiKey:   $apiKey,
-    format:   'html',                          // text, html, json, structured_json, linedJson
-    modelKey: 'openai:gpt-6-luna',              // A key from Bblslug::listModels()
-    text:     $text,                           // Source text to be translated
-    // optional:
-    // Additional context/prompt pass to model
-    context:    'Translate as a professional technical translator',
-    filters:    ['url', 'html_code'],           // List of placeholder filters
-    onFeedback: $verbose ? static function (string $message, string $level = 'info'): void { error_log("[$level] $message"); } : null, // Optional progress callback
-    promptKey: 'translator',                   // which prompt template to use
-    proxy:      getenv('BBLSLUG_PROXY') ?: null, // Optional proxy URI
-    sourceLang: 'EN',                          // Source language code (optional; autodetect if null)
-    targetLang: 'DE',                          // Target language code (optional; default from driver settings)
-    validate: true,                            // Container syntax and JSON structure validation
-    variables:  ['max_completion_tokens' => '8192'], // Model-specific overrides
-    verbose:    true,                          // If true, returns debug request/response
+    apiKey: $apiKey,
+    format: 'html',
+    modelKey: 'openai:gpt-6-luna',
+    text: $text,
+    filters: ['url', 'html_code'],
+    sourceLang: 'EN',
+    targetLang: 'DE',
 );
 echo $result['result'];
 ```
 
-`onFeedback` is an optional callback for the progress information, accepts (string $message, string $level),
-where `$level` includes `'info' | 'warning' | 'error'`. Pass null to switch it off.
+Optional settings are grouped by purpose:
 
-Result structure:
+| Settings | Purpose |
+| --- | --- |
+| `context`, `promptKey`, `sourceLang`, `targetLang` | Translation instructions and languages |
+| `filters` | Content preserved through placeholders |
+| `variables`, `proxy` | [Provider settings](providers.md) and HTTP proxy |
+| `validate`, `validateEmbeddedJson`, `validateHtmlJsonPointers` | [Container and selected-content checks](transports.md#validation-and-opting-out) |
+| `textTransport`, `htmlTransport`, `htmlJsonPointers` | [Segment translation](transports.md) |
+| `textSegmentBatchSize`, `htmlSegmentBatchSize`, `segmentBatchMaxBytes`, `segmentAbbreviations` | [Packet planning](transports.md#bound-segment-packets-by-serialized-bytes) |
+| `checkpointPath`, `operationTimeoutSeconds` | [Resume](transports.md#resume-confirmed-successful-segment-packets) and [operation deadline](transports.md#limit-the-whole-translation-operation) |
+| `dryRun` | Prepare and validate without sending a request |
+| `verbose`, `onFeedback` | Diagnostics and progress callback |
 
-```text
-[
-  'original'        => string,   // Original input
-  'prepared'        => string,   // After placeholder filters
-  'result'          => string,   // Translated result
-  'httpStatus'      => int,      // HTTP status
-  'debugRequest'    => string,   // Request debug
-  'debugResponse'   => string,   // Response debug
-  'rawResponseBody' => string,   // Response body
-  'consumed'        => [                  // Normalized usage metrics; [] if unavailable
-     'tokens' => [
-       'total'     => int,                // Total tokens consumed
-       'breakdown' => [                   // Per-type breakdown
-         'prompt'      => int,            // Names depend on the model
-         'completion'  => int,
-       ],
-     ],
-     // additional categories if supported by the model...
-  ],
-  'lengths'         => [         // Text length statistics
-     'original'    => int,       // - original text
-     'prepared'    => int,       // - after placeholder filters
-     'translated'  => int,       // - returned translated text
-  ],
-  'filterStats'     => [         // Placeholder stats
-     ['filter'=>'url','count'=>3], …
-  ],
-]
-```
+`onFeedback` receives `(string $message, string $level = 'info')`; levels are `info`, `warning` and
+`error`. Pass `null` to disable it. Callback exceptions do not interrupt translation.
+
+`translate()` returns an array:
+
+| Key | Value |
+| --- | --- |
+| `original`, `prepared`, `result` | Input, filtered input and translated output strings |
+| `httpStatus` | Last response status; 0 for dry-run |
+| `debugRequest`, `debugResponse` | Request/response diagnostics |
+| `rawResponseBody` | Raw provider response; a JSON array of response strings when batching is configured |
+| `consumed` | Provider usage grouped by category, for example `tokens` with `total` and `breakdown`; `[]` when unavailable |
+| `lengths` | Character counts keyed by `original`, `prepared` and `translated` |
+| `filterStats` | Entries such as `['filter' => 'url', 'count' => 3]` |
+| `batches` | Ordered packet summaries when a count or byte cap is configured |
+| `reusedBatches`, `consumedThisRun` | Reuse count and fresh usage when checkpointing is enabled |
 
 ### List available models
 
@@ -432,7 +381,6 @@ foreach ($modelsByVendor as $vendor => $models) {
     }
 }
 ```
-
 
 ### List available prompts
 
@@ -449,20 +397,14 @@ foreach ($prompts as $key => $info) {
 }
 ```
 
-
 ### Error handling
 
-```php
-try {
-    $res = Bblslug::translate(
-        apiKey: $apiKey,
-        format: 'html',
-        modelKey: 'openai:gpt-6-luna',
-        text: $text
-    );
-} catch (\InvalidArgumentException $e) {
-    // Invalid model, unsupported format, invalid timeout settings, etc.
-} catch (\RuntimeException $e) {
-    // HTTP error, parse failure, driver-specific error
-}
-```
+`translate()` returns a result after complete success and throws on failure. Common exception classes:
+
+| Exception | Meaning |
+| --- | --- |
+| `InvalidArgumentException` | Invalid arguments or settings, such as an unknown model, unsupported format or invalid timeout |
+| `RuntimeException` | Request/provider failure, rejected response, failed integrity/validation check or checkpoint I/O error |
+
+Use [checkpoints](transports.md#resume-confirmed-successful-segment-packets) to retain confirmed
+packets when a multi-packet job fails.

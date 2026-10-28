@@ -3,8 +3,7 @@
 Bblslug is a PHP library and CLI for translating **plain text, HTML and JSON** through translation APIs.
 It supports Anthropic, DeepL, Google, OpenAI, xAI and Yandex AI Studio.
 
-Filters protect URLs and selected HTML blocks. Validation checks document structure and protected content.
-Optional segment transport keeps HTML markup or plain-text line separators local while translating text fragments.
+Filters preserve URLs and selected HTML blocks. Validation checks structure and protected content.
 
 ## Installation
 
@@ -38,14 +37,11 @@ Diagnostics and usage statistics go to STDERR. Failed translations return a nonz
 
 ```bash
 vendor/bin/bblslug --list-models
-vendor/bin/bblslug --list-models=all
-vendor/bin/bblslug --list-prompts
 vendor/bin/bblslug --help
 ```
 
-Credentials with the `BBLSLUG_` prefix take precedence over their unprefixed equivalents.
-Other provider credentials, proxy settings and timeouts are covered in the [usage guide](docs/usage.md#credentials-input-and-output).
-The [model catalogue](docs/models.md) lists registered models; availability depends on your provider account.
+See the [usage guide](docs/usage.md#credentials-input-and-output) for other providers, credentials,
+proxy settings and timeouts. The [model catalogue](docs/models.md) lists selectable model keys.
 
 ## First translation with PHP
 
@@ -76,31 +72,27 @@ and exact non-string values by default. See [PHP options, result fields and erro
 
 ## Choosing how to translate
 
-The default **document** transport sends the prepared document to the provider.
-Use filters such as `url`, `html_code` and `html_pre` to keep matching source content unchanged.
+| Mode | Behavior | Selection |
+| --- | --- | --- |
+| Document (default) | The provider translates the prepared document; filters preserve selected content. | No transport option needed. |
+| Segments | Bblslug preserves text line separators or HTML markup and translates text fragments. | `--text-transport=segments` or `--html-transport=segments` |
 
-For stricter reconstruction, opt into **segments** with `--text-transport=segments` or
-`--html-transport=segments`. Segment mode checks that each requested fragment has a response.
-HTML tags and non-language attributes stay local. Selected HTML strings inside JSON can also use this mode.
-Count and byte limits split requests into packets; optional checkpoints retain confirmed successful packets.
-See [transports, protection and validation](docs/transports.md) for examples and tradeoffs.
+Segments also support selected HTML strings inside JSON. Count and byte caps divide fragments into
+requests; checkpoints retain confirmed packets for resuming a job. See
+[transports and validation](docs/transports.md) for examples and tradeoffs.
 
 ## Limits and data handling
 
-Validation detects structural changes and some content loss; it does **not** prove translation accuracy or completeness.
-Document mode can omit prose inside an otherwise valid document. Segment mode can retain all fragment identifiers
-while losing meaning within a fragment. Review translations where accuracy matters.
+Validation checks structure, protected content and some content loss. It does not establish translation
+accuracy or completeness: a valid document or fragment can still omit meaning. Review translations
+where accuracy matters.
 
-JSON string values are translatable content. Paths, identifiers, embedded JSON and HTML inside strings
-need appropriate protection or explicit validation; the library does not infer business rules from field names.
-See [filters and validation](docs/transports.md#filters-inside-json) and [provider-specific JSON modes](docs/providers.md).
+JSON strings are translatable, including paths, identifiers and encoded content. Use
+[filters or explicit validation](docs/transports.md#filters-inside-json) for content that must be preserved.
 
-Failed requests are not retried automatically, and another model is not substituted.
-A later failure can occur after earlier packets have been billed. Output is returned only after complete success;
-local file-write guarantees and exceptions are described in the [usage guide](docs/usage.md#credentials-input-and-output).
-
-Diagnostic key masking does not remove all source or translated content. Verbose logs and checkpoints can contain
-that content; handle them as private translation data.
+Requests are not retried automatically, and models are not substituted. A failed job can include
+already billed packets; use checkpoints to retain confirmed results. Verbose logs and checkpoints
+can contain source and translated content even when credentials are masked.
 
 ## Documentation
 
