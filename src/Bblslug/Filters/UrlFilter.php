@@ -14,7 +14,7 @@ class UrlFilter implements DebuggableFilterInterface
     {
         $protection = $this->protection ??= new FragmentProtection();
         $shielded = $protection->shieldLiterals($text, $counter);
-        $ranges = JsonStringRanges::find(
+        $ranges = JsonStringRanges::iterate(
             $shielded,
             $this->findLiteralUrls(...),
             'Could not inspect JSON strings for URL fragments'
@@ -22,24 +22,23 @@ class UrlFilter implements DebuggableFilterInterface
         return $protection->capture($shielded, $ranges, $counter);
     }
 
-    /** @return array<int,array{int,int}> URL fragments as source byte offsets/lengths. */
-    private function findLiteralUrls(string $text): array
+    /** @return \Generator<int,array{int,int}> URL fragments as source byte offsets/lengths. */
+    private function findLiteralUrls(string $text): \Generator
     {
         // Literal text/HTML retains support for escaped slash spellings.
         $pattern = <<<'REGEX'
 ~\b(?:(?:https?|ftp):(?://|\\+/\\+/)|mailto:)(?:\\+/|[^\s"'<>()\\]++)++~i
 REGEX;
-        if (preg_match_all($pattern, $text, $matches, PREG_OFFSET_CAPTURE) === false) {
+        $position = 0;
+        while (($matched = preg_match($pattern, $text, $match, PREG_OFFSET_CAPTURE, $position)) === 1) {
+            [$url, $offset] = $match[0];
+            $length = strlen($url);
+            yield [$offset, $length];
+            $position = $offset + $length;
+        }
+        if ($matched === false) {
             throw new \RuntimeException('Could not protect URL fragments');
         }
-        return array_map(
-            /**
-             * @param array{string,int} $match
-             * @return array{int,int}
-             */
-            static fn (array $match): array => [$match[1], strlen($match[0])],
-            $matches[0]
-        );
     }
 
     public function restore(string $text): string

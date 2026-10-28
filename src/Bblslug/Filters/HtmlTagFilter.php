@@ -34,7 +34,7 @@ REGEX;
     {
         $protection = $this->protection ??= new FragmentProtection();
         $shielded = $protection->shieldLiterals($text, $counter);
-        $ranges = JsonStringRanges::find(
+        $ranges = JsonStringRanges::iterate(
             $shielded,
             $this->findHtmlBlocks(...),
             'Could not inspect JSON strings for HTML fragments'
@@ -42,8 +42,8 @@ REGEX;
         return $protection->capture($shielded, $ranges, $counter);
     }
 
-    /** @return array<int,array{int,int}> Protected HTML blocks as byte offsets/lengths. */
-    private function findHtmlBlocks(string $text): array
+    /** @return \Generator<int,array{int,int}> Protected HTML blocks as byte offsets/lengths. */
+    private function findHtmlBlocks(string $text): \Generator
     {
         // Opaque contexts come first: their apparent tags must not change depth.
         // Token offsets let restoration preserve the user's original HTML bytes.
@@ -62,7 +62,6 @@ REGEX;
         $depth = 0;
         $start = 0;
         $position = 0;
-        $blocks = [];
         while (($matched = preg_match($pattern, $text, $token, PREG_OFFSET_CAPTURE, $position)) === 1) {
             [$markup, $offset] = $token[0];
             $position = $offset + strlen($markup);
@@ -74,7 +73,7 @@ REGEX;
                 strcasecmp($this->tag, 'plaintext') === 0
                 && preg_match('~\A<plaintext(?=[\s/>])~i', $markup) === 1
             ) {
-                $blocks[] = [$offset, strlen($markup)];
+                yield [$offset, strlen($markup)];
                 continue;
             }
             $rawTag = $token[1][0] ?? '';
@@ -83,7 +82,7 @@ REGEX;
                     if (preg_match('~</' . preg_quote($rawTag, '~') . '\\s*>\z~i', $markup) !== 1) {
                         throw new \RuntimeException('Unclosed selected HTML tag <' . $this->tag . '>');
                     }
-                    $blocks[] = [$offset, strlen($markup)];
+                    yield [$offset, strlen($markup)];
                 }
                 continue;
             }
@@ -92,7 +91,7 @@ REGEX;
             }
             if (($token[2][0] ?? '') === '') {
                 if (in_array(strtolower($this->tag), self::VOID_TAGS, true)) {
-                    $blocks[] = [$offset, strlen($markup)];
+                    yield [$offset, strlen($markup)];
                     continue;
                 }
                 if ($depth === 0) {
@@ -101,13 +100,13 @@ REGEX;
                 // SVG/MathML roots honor self-closing syntax; ordinary HTML tags do not.
                 if ($this->isSelfClosingForeignRoot($markup)) {
                     if ($depth === 0) {
-                        $blocks[] = [$offset, strlen($markup)];
+                        yield [$offset, strlen($markup)];
                     }
                     continue;
                 }
                 $depth++;
             } elseif ($depth > 0 && --$depth === 0) {
-                $blocks[] = [$start, $offset + strlen($markup) - $start];
+                yield [$start, $offset + strlen($markup) - $start];
             }
         }
         if ($matched === false) {
@@ -116,7 +115,6 @@ REGEX;
         if ($depth > 0 && !in_array(strtolower($this->tag), self::VOID_TAGS, true)) {
             throw new \RuntimeException('Unclosed selected HTML tag <' . $this->tag . '>');
         }
-        return $blocks;
     }
 
     private function isSelfClosingForeignRoot(string $markup): bool

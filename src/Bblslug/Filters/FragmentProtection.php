@@ -35,10 +35,29 @@ final class FragmentProtection
         }
     }
 
-    /** @param array<int,array{int,int}> $ranges Source byte offsets and lengths, in matching order. */
-    public function capture(string $text, array $ranges, PlaceholderCounter $counter): string
+    /** @param iterable<array{int,int}> $ranges Source byte offsets and lengths, in matching order. */
+    public function capture(string $text, iterable $ranges, PlaceholderCounter $counter): string
     {
-        return self::replaceRanges($text, $ranges, $counter, $this->map);
+        return self::replaceRanges($text, self::bufferedRanges($ranges), $counter, $this->map);
+    }
+
+    /**
+     * Finish scanning before allocating placeholders, retaining only flat integer bounds.
+     *
+     * @param iterable<array{int,int}> $ranges
+     * @return \Generator<int,array{int,int}>
+     */
+    private static function bufferedRanges(iterable $ranges): \Generator
+    {
+        $bounds = [];
+        foreach ($ranges as [$offset, $length]) {
+            $bounds[] = $offset;
+            $bounds[] = $length;
+        }
+        $count = count($bounds);
+        for ($index = 0; $index < $count; $index += 2) {
+            yield [$bounds[$index], $bounds[$index + 1]];
+        }
     }
 
     private static function mayContainMarker(string $text): bool
