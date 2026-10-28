@@ -136,13 +136,9 @@ REGEX;
     {
         $view = new HtmlTextView($raw);
         $decoded = $view->getText();
-        preg_match_all('/@@[0-9]+@@/', $decoded, $markers, PREG_OFFSET_CAPTURE);
-        $cursor = 0;
-        foreach ($markers[0] as [$marker, $offset]) {
-            $this->addSpan($start, $decoded, $view, $cursor, $offset, $context);
-            $cursor = $offset + strlen($marker);
+        foreach (UnprotectedText::ranges($decoded) as [$from, $to]) {
+            $this->addSpan($start, $decoded, $view, $from, $to, $context);
         }
-        $this->addSpan($start, $decoded, $view, $cursor, strlen($decoded), $context);
     }
 
     private function addSpan(

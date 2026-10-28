@@ -15,14 +15,13 @@ final class TextDocument
         if (!mb_check_encoding($text, 'UTF-8')) {
             throw new \InvalidArgumentException('Text segment transport requires UTF-8 text');
         }
-        preg_match_all('/[^\r\n]+/', $text, $lines, PREG_OFFSET_CAPTURE);
-        foreach ($lines[0] as [$line, $start]) {
+        $position = 0;
+        while (($matched = preg_match('/[^\r\n]+/', $text, $match, PREG_OFFSET_CAPTURE, $position)) === 1) {
+            [$line, $start] = $match[0];
+            $position = $start + strlen($line);
             // Filters restore placeholders after reconstruction, without sending them for translation.
-            $chunks = preg_split('/@@[0-9]+@@/', $line, -1, PREG_SPLIT_OFFSET_CAPTURE);
-            if ($chunks === false) {
-                throw new \RuntimeException('Could not extract text segments');
-            }
-            foreach ($chunks as [$chunk, $offset]) {
+            foreach (UnprotectedText::ranges($line) as [$offset, $end]) {
+                $chunk = substr($line, $offset, $end - $offset);
                 if (
                     preg_match('/\A\s*/u', $chunk, $leading) !== 1
                     || preg_match('/\s*\z/u', $chunk, $trailing) !== 1
@@ -35,6 +34,9 @@ final class TextDocument
                     $this->spans[] = new TextSpan($start + $offset + $from, $length);
                 }
             }
+        }
+        if ($matched === false) {
+            throw new \RuntimeException('Could not extract text segments');
         }
     }
 
