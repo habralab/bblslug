@@ -6,6 +6,7 @@ This file follows the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) f
 
 ### Fixed
 
+- Reduce text and HTML segment memory by storing compact source spans instead of duplicate text slices.
 - Reduce memory retained by segment plans with compact typed chunk records.
 - Reject segment payloads when the token scan fails instead of accepting unchecked duplicate IDs.
 - Reduce segment decoding memory by scanning tokens in order and reusing validated values.

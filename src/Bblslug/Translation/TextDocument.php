@@ -7,10 +7,10 @@ namespace Bblslug\Translation;
 /** Keep line separators, boundary whitespace and protected placeholders local. */
 final class TextDocument
 {
-    /** @var list<array{start:int,length:int,value:string}> */
+    /** @var list<TextSpan> */
     private array $spans = [];
 
-    public function __construct(private string $text)
+    public function __construct(private readonly string $text)
     {
         if (!mb_check_encoding($text, 'UTF-8')) {
             throw new \InvalidArgumentException('Text segment transport requires UTF-8 text');
@@ -32,11 +32,7 @@ final class TextDocument
                 $length = strlen($chunk) - strlen($leading[0]) - strlen($trailing[0]);
                 if ($length > 0) {
                     $from = strlen($leading[0]);
-                    $this->spans[] = [
-                        'start' => $start + $offset + $from,
-                        'length' => $length,
-                        'value' => substr($chunk, $from, $length),
-                    ];
+                    $this->spans[] = new TextSpan($start + $offset + $from, $length);
                 }
             }
         }
@@ -46,7 +42,7 @@ final class TextDocument
     {
         $values = [];
         foreach ($this->spans as $index => $span) {
-            $values['s' . $index] = $span['value'];
+            $values['s' . $index] = substr($this->text, $span->start, $span->length);
         }
         return json_encode((object) $values, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
     }
@@ -63,8 +59,8 @@ final class TextDocument
         $output = '';
         $cursor = 0;
         foreach ($this->spans as $index => $span) {
-            $output .= substr($this->text, $cursor, $span['start'] - $cursor) . $values['s' . $index];
-            $cursor = $span['start'] + $span['length'];
+            $output .= substr($this->text, $cursor, $span->start - $cursor) . $values['s' . $index];
+            $cursor = $span->start + $span->length;
         }
         return $output . substr($this->text, $cursor);
     }

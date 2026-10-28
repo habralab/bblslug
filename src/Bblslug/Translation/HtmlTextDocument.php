@@ -9,9 +9,9 @@ use Bblslug\Filters\FilterManager;
 /** Keep markup local and translate an explicitly keyed collection of text spans. */
 final class HtmlTextDocument
 {
-    /** @var list<array{start:int,end:int,value:string,raw:string,context:string}> */
+    /** @var list<HtmlTextSpan> */
     private array $spans = [];
-    private string $html;
+    private readonly string $html;
     private FilterManager $opaque;
 
     public function __construct(string $preparedHtml)
@@ -30,7 +30,7 @@ final class HtmlTextDocument
     {
         $values = [];
         foreach ($this->spans as $index => $span) {
-            $values['s' . $index] = $span['value'];
+            $values['s' . $index] = $span->value;
         }
         return json_encode((object) $values, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
     }
@@ -48,9 +48,11 @@ final class HtmlTextDocument
         $cursor = 0;
         foreach ($this->spans as $index => $span) {
             $value = $values['s' . $index];
-            $replacement = $value === $span['value'] ? $span['raw'] : self::encode($value, $span['context']);
-            $output .= substr($this->html, $cursor, $span['start'] - $cursor) . $replacement;
-            $cursor = $span['end'];
+            $replacement = $value === $span->value
+                ? substr($this->html, $span->start, $span->end - $span->start)
+                : self::encode($value, $span->context);
+            $output .= substr($this->html, $cursor, $span->start - $cursor) . $replacement;
+            $cursor = $span->end;
         }
         return $this->opaque->restore($output . substr($this->html, $cursor));
     }
@@ -137,15 +139,14 @@ REGEX;
         preg_match_all('/@@[0-9]+@@/', $decoded, $markers, PREG_OFFSET_CAPTURE);
         $cursor = 0;
         foreach ($markers[0] as [$marker, $offset]) {
-            $this->addSpan($start, $raw, $decoded, $view, $cursor, $offset, $context);
+            $this->addSpan($start, $decoded, $view, $cursor, $offset, $context);
             $cursor = $offset + strlen($marker);
         }
-        $this->addSpan($start, $raw, $decoded, $view, $cursor, strlen($decoded), $context);
+        $this->addSpan($start, $decoded, $view, $cursor, strlen($decoded), $context);
     }
 
     private function addSpan(
         int $start,
-        string $raw,
         string $decoded,
         HtmlTextView $view,
         int $from,
@@ -169,13 +170,12 @@ REGEX;
         if ($rawStart === null || $rawEnd === null) {
             throw new \InvalidArgumentException('Unsupported HTML entity boundary in segment transport');
         }
-        $this->spans[] = [
-            'start' => $start + $rawStart,
-            'end' => $start + $rawEnd,
-            'value' => substr($decoded, $from, $to - $from),
-            'raw' => substr($raw, $rawStart, $rawEnd - $rawStart),
-            'context' => $context,
-        ];
+        $this->spans[] = new HtmlTextSpan(
+            $start + $rawStart,
+            $start + $rawEnd,
+            substr($decoded, $from, $to - $from),
+            $context
+        );
     }
 
     private static function encode(string $value, string $context): string
