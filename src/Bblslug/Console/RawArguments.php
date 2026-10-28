@@ -8,6 +8,38 @@ namespace Bblslug\Console;
 final class RawArguments
 {
     /**
+     * Reject unknown flags before getopt can silently discard or abbreviate them.
+     *
+     * @param list<mixed> $argv Arguments including the program name.
+     * @param list<string> $longOptions Long-option declarations passed to getopt.
+     */
+    public static function validateKnownOptions(array $argv, array $longOptions): void
+    {
+        $known = [];
+        foreach ($longOptions as $declaration) {
+            $known['--' . rtrim($declaration, ':')] = str_ends_with($declaration, ':')
+                && !str_ends_with($declaration, '::');
+        }
+        for ($index = 1, $count = count($argv); $index < $count; ++$index) {
+            $argument = $argv[$index];
+            if ($argument === '--') {
+                break;
+            }
+            if (!is_string($argument) || $argument === '-' || !str_starts_with($argument, '-')) {
+                continue;
+            }
+            $option = explode('=', $argument, 2)[0];
+            if (!isset($known[$option])) {
+                throw new \InvalidArgumentException('Unknown option: ' . $option . '.');
+            }
+            // A required value is data even when it resembles an option name.
+            if ($known[$option] && !str_contains($argument, '=')) {
+                ++$index;
+            }
+        }
+    }
+
+    /**
      * @param list<mixed> $argv Arguments including the program name.
      * @param list<string> $longOptions Long-option declarations passed to getopt.
      * @throws \InvalidArgumentException If a checked option is missing, empty or repeated.

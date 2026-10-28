@@ -4,6 +4,10 @@ This file follows the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) f
 
 ## [Unreleased]
 
+### Fixed
+
+- Reject unknown CLI options before reading input or sending requests, so a misspelled `--dry-run` cannot silently trigger translation. Option names must match the full names shown in help.
+
 ## [0.12.0] – 2026-10-28
 
 ### Added

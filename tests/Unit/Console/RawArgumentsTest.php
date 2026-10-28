@@ -16,6 +16,49 @@ final class RawArgumentsTest extends TestCase
         'segment-batch-max-bytes:', 'operation-timeout:', 'checkpoint:', 'segment-abbreviation:',
     ];
 
+    /** @dataProvider knownOptionArguments */
+    public function testKnownOptionValidationPreservesValuesAndTerminator(array $argv): void
+    {
+        RawArguments::validateKnownOptions($argv, [...self::LONG_OPTIONS, 'dry-run', 'list-models::']);
+        self::assertTrue(true);
+    }
+
+    /** @return list<array{list<mixed>}> */
+    public static function knownOptionArguments(): array
+    {
+        return [
+            [['cli', '--source', '--unknown', '--dry-run']],
+            [['cli', '--source=--unknown', '--dry-run']],
+            [['cli', '--list-models=all']],
+            [['cli', '--list-models', '--dry-run']],
+            [['cli', '--', '--unknown']],
+            [['cli', '--source', '--', '--dry-run']],
+            [['cli', null, 17, ['--unknown'], '-']],
+        ];
+    }
+
+    /** @dataProvider unknownOptionArguments */
+    public function testKnownOptionValidationRejectsExactNamesOnly(array $argv, string $option): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Unknown option: ' . $option . '.');
+        RawArguments::validateKnownOptions($argv, ['dry-run', 'list-models::', 'context:']);
+    }
+
+    /** @return list<array{list<string>,string}> */
+    public static function unknownOptionArguments(): array
+    {
+        return [
+            [['cli', '--dry-runn'], '--dry-runn'],
+            [['cli', '--dry'], '--dry'],
+            [['cli', '--list-models', '--unknown'], '--unknown'],
+            [['cli', '--context', '--literal', '--unknown'], '--unknown'],
+            [['cli', '--unknown=private-value'], '--unknown'],
+            [['cli', '-x'], '-x'],
+            [['cli', 'positional', '--unknown'], '--unknown'],
+        ];
+    }
+
     /** @dataProvider acceptedArguments */
     public function testAcceptsArguments(array $argv): void
     {

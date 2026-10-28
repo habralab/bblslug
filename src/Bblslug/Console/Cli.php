@@ -64,6 +64,13 @@ class Cli
             "variables:",    // model-specific overrides
             "verbose",       // enable debug logs
         ];
+        $rawArgv = $_SERVER['argv'] ?? [];
+        $argv = is_array($rawArgv) ? array_values($rawArgv) : [];
+        try {
+            RawArguments::validateKnownOptions($argv, $longOptions);
+        } catch (\InvalidArgumentException $exception) {
+            Help::error($exception->getMessage());
+        }
         $options = getopt("", $longOptions);
 
         // Initialize registry
@@ -131,8 +138,6 @@ class Cli
         $validate   = ! isset($options['no-validate']);
         $verbose    = isset($options['verbose']);
 
-        $rawArgv = $_SERVER['argv'] ?? [];
-        $argv = is_array($rawArgv) ? array_values($rawArgv) : [];
         try {
             RawArguments::validate($argv, $longOptions);
         } catch (\InvalidArgumentException $exception) {

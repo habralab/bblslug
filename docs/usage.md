@@ -31,6 +31,9 @@ For a Composer-installed package, use `vendor/bin/bblslug`; the same samples liv
 Translation examples contact the selected provider. Add `--dry-run` for preparation only;
 that mode still requires a key value but does not prove that the provider accepts a request.
 
+Use the full option names shown in `--help`. Unknown options and abbreviated names are rejected
+before input is read or requests are sent, including when combined with `--help` or `--dry-run`.
+
 ## Credentials, input and output
 
 Export credentials only for the provider you use:

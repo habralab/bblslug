@@ -86,6 +86,8 @@ class Help
         echo "\t{$bold}--variables=K=V,...{$reset}  Comma-separated model-specific overrides (string values)\n";
         echo "\t{$bold}--verbose{$reset}            Show extra debug info after processing\n";
 
+        echo "\nUse full option names; unknown or abbreviated options are rejected before input or HTTP.\n";
+
         echo "\nEnvironment:\n";
         echo "\tSet API keys via environment variables depending on the model:\n";
         echo "\t  export ANTHROPIC_API_KEY=\"...\" # for Anthropic (Claude)\n";
