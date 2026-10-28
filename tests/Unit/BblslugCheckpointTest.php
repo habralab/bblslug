@@ -219,6 +219,54 @@ final class BblslugCheckpointTest extends TestCase
         self::assertSame($input, $second['result']['result']);
     }
 
+    public function testLockIsHeldThroughValidationAndDoneOnFreshAndReusedBatches(): void
+    {
+        $settings = [
+            'format' => 'html', 'input' => '<p>one</p><p>two</p>',
+            'textTransport' => 'document', 'textSegmentBatchSize' => null,
+            'htmlTransport' => 'segments', 'htmlSegmentBatchSize' => 1,
+            'identity' => true, 'probeLock' => true,
+        ];
+        $first = $this->runFixture($settings);
+        self::assertSame('success', $first['type'], (string) ($first['message'] ?? ''));
+        self::assertSame(2, $first['networkCalls']);
+        $stored = file_get_contents($this->checkpoint);
+        $second = $this->runFixture($settings);
+        self::assertSame('success', $second['type'], (string) ($second['message'] ?? ''));
+        self::assertSame(0, $second['networkCalls']);
+        self::assertSame(2, $second['result']['reusedBatches']);
+        self::assertSame(['', ''], json_decode($second['result']['rawResponseBody'], true, 512, JSON_THROW_ON_ERROR));
+        self::assertSame([], $second['result']['consumedThisRun']);
+        self::assertSame($stored, file_get_contents($this->checkpoint));
+        foreach ([$first, $second] as $result) {
+            self::assertSame($settings['input'], $result['result']['result']);
+            self::assertSame([
+                ['phase' => 'Post-validation started (html)', 'held' => true],
+                ['phase' => 'Done', 'held' => true],
+            ], $result['lockProbes']);
+            self::assertFalse($result['lockedAfterReturn']);
+        }
+    }
+
+    public function testValidationFailureReleasesLockAfterKeepingCompletedBatches(): void
+    {
+        $result = $this->runFixture([
+            'format' => 'html', 'input' => '<p>one</p><p>two</p>',
+            'textTransport' => 'document', 'textSegmentBatchSize' => null,
+            'htmlTransport' => 'segments', 'htmlSegmentBatchSize' => 1,
+            'translated' => '{"s0":"~~~","s1":"two"}', 'probeLock' => true,
+        ]);
+        self::assertSame(\RuntimeException::class, $result['type']);
+        self::assertStringContainsString('Markup, non-translatable attributes', $result['message']);
+        self::assertSame(2, $result['networkCalls']);
+        self::assertSame([
+            ['phase' => 'Post-validation started (html)', 'held' => true],
+        ], $result['lockProbes']);
+        self::assertFalse($result['lockedAfterReturn']);
+        $state = json_decode(file_get_contents($this->checkpoint), true, 512, JSON_THROW_ON_ERROR);
+        self::assertCount(2, $state['contiguousPrefixRecords']);
+    }
+
     public function testDryRunAndNoTextDoNotReadOrCreateState(): void
     {
         foreach ([['dryRun' => true], ['input' => " \n@@0@@"]] as $settings) {

@@ -390,7 +390,7 @@ class Bblslug
         ) : null;
         $batchState?->validateRetained($payloads);
         $emptySegments = $segmentDocument !== null && !$segmentDocument->hasTexts();
-        $providers = [];
+        $rawResponses = [];
         $debugRequest = '';
         $debugResponse = '';
         foreach ($payloads as $index => $payload) {
@@ -435,23 +435,33 @@ class Bblslug
                     . $exception->getMessage() . $protocolDebug
                 ), $exception->getCode(), $exception);
             }
-            $providers[] = $provider;
+            if ($batching) {
+                $rawResponses[] = $provider['rawResponseBody'];
+            }
             $logLabel = $batching && ($verbose || $dryRun) ? '[' . $batchLabel . "]\n" : '';
             $debugRequest .= $logLabel . $provider['debugRequest'];
             $debugResponse .= $logLabel . $provider['debugResponse'];
+            // Each completed packet has consumed its prebuilt request and schema.
+            unset($requests[$index], $packetOptions[$index]);
         }
         $httpStatus = $provider['httpStatus'];
         $raw = $batchConfigured
-            ? json_encode(array_column($batching ? $providers : [], 'rawResponseBody'), JSON_THROW_ON_ERROR)
+            ? json_encode($rawResponses, JSON_THROW_ON_ERROR)
             : $provider['rawResponseBody'];
         $rawUsage = $provider['usage'];
+        unset($rawResponses, $requests, $packetOptions);
         $batchResult = $batchState?->result($checkpointPath !== null);
+        // $checkpoint remains the lock owner until the operation exits.
+        unset($batchState);
         if ($batchResult !== null) {
             $provider['text'] = $batchResult['text'];
             if ($segmentPlan !== null) {
                 $provider['text'] = $segmentPlan->restore($provider['text']);
             }
+            unset($batchResult['text']);
         }
+        // Reconstruction no longer needs the planning records.
+        unset($segmentPlan);
         if ($dryRun || $emptySegments) {
             $translated = $jsonHtmlDocument !== null ? $text : $prepared;
         } else {

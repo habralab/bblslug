@@ -115,6 +115,27 @@ namespace {
     if (isset($scenario['promptFile'])) {
         \Bblslug\Models\Prompts::load($scenario['promptFile']);
     }
+    $lockProbes = [];
+    $probeLock = static function () use ($scenario): bool {
+        $handle = fopen($scenario['checkpointPath'] . '.lock', 'c+b');
+        if ($handle === false) {
+            throw new \RuntimeException('Could not probe the checkpoint lock');
+        }
+        $acquired = flock($handle, LOCK_EX | LOCK_NB);
+        if ($acquired) {
+            flock($handle, LOCK_UN);
+        }
+        fclose($handle);
+        return !$acquired;
+    };
+    $feedback = ($scenario['probeLock'] ?? false) ? static function (string $message) use (
+        &$lockProbes,
+        $probeLock
+    ): void {
+        if (str_starts_with($message, 'Post-validation started (') || $message === 'Done') {
+            $lockProbes[] = ['phase' => $message, 'held' => $probeLock()];
+        }
+    } : null;
     try {
         $result = \Bblslug\Bblslug::translate(
             apiKey: $scenario['apiKey'] ?? 'fixture-key',
@@ -134,11 +155,16 @@ namespace {
             textSegmentBatchSize: $scenario['textSegmentBatchSize'] ?? null,
             segmentBatchMaxBytes: $scenario['segmentBatchMaxBytes'] ?? null,
             operationTimeoutSeconds: $scenario['operationTimeoutSeconds'] ?? null,
-            checkpointPath: $scenario['checkpointPath'] ?? null
+            checkpointPath: $scenario['checkpointPath'] ?? null,
+            onFeedback: $feedback
         );
         $output = ['type' => 'success', 'result' => $result];
     } catch (\Throwable $exception) {
         $output = ['type' => $exception::class, 'message' => $exception->getMessage()];
+    }
+    if ($scenario['probeLock'] ?? false) {
+        $output['lockProbes'] = $lockProbes;
+        $output['lockedAfterReturn'] = $probeLock();
     }
     $output['packets'] = \Bblslug\HttpClient::$packets;
     $output['networkCalls'] = \Bblslug\HttpClient::$networkCalls;
