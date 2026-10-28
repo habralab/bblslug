@@ -14,22 +14,25 @@ final class FragmentProtection
 
     public function shieldLiterals(string $text, PlaceholderCounter $counter): string
     {
-        // Match decoded JSON strings so digit runs cannot split an adjacent escape.
-        $ranges = JsonStringRanges::find(
+        return self::replaceRanges($text, self::sourceLiteralRanges($text), $counter, $this->literalMap);
+    }
+
+    /** @return \Generator<int,array{int,int}> */
+    private static function sourceLiteralRanges(string $text): \Generator
+    {
+        $ranges = JsonStringRanges::iterate(
             $text,
             self::literalRanges(...),
             'Could not protect literal placeholders',
             includeKeys: true,
             mayContainFragments: self::mayContainMarker(...)
         );
-        // Decoding may reveal other markers in the same string.
-        // Keep the original source-literal trigger so those are not renamed here.
-        foreach ($ranges as $index => [$offset, $length]) {
-            if (!str_contains(substr($text, $offset, $length), '@@')) {
-                unset($ranges[$index]);
+        foreach ($ranges as [$offset, $length]) {
+            // Decoding may reveal other markers; retain the original source-literal trigger.
+            if (str_contains(substr($text, $offset, $length), '@@')) {
+                yield [$offset, $length];
             }
         }
-        return self::replaceRanges($text, $ranges, $counter, $this->literalMap);
     }
 
     /** @param array<int,array{int,int}> $ranges Source byte offsets and lengths, in matching order. */
@@ -43,27 +46,30 @@ final class FragmentProtection
         return str_contains($text, '@@');
     }
 
-    /** @return array<int,array{int,int}> */
-    private static function literalRanges(string $text): array
+    /** @return \Generator<int,array{int,int}> */
+    private static function literalRanges(string $text): \Generator
     {
         // Shield complete, overlapping, and partial markers before capturing fragments.
-        if (preg_match_all('/(?<![0-9@])[0-9@]*@@[0-9@]*/', $text, $matches, PREG_OFFSET_CAPTURE) === false) {
+        $position = 0;
+        $pattern = '/(?<![0-9@])[0-9@]*@@[0-9@]*/';
+        while (($matched = preg_match($pattern, $text, $match, PREG_OFFSET_CAPTURE, $position)) === 1) {
+            [$marker, $offset] = $match[0];
+            $length = strlen($marker);
+            yield [$offset, $length];
+            $position = $offset + $length;
+        }
+        if ($matched === false) {
             throw new \RuntimeException('Could not protect literal placeholders');
         }
-        $ranges = [];
-        foreach ($matches[0] as [$match, $offset]) {
-            $ranges[] = [$offset, strlen($match)];
-        }
-        return $ranges;
     }
 
     /**
-     * @param array<int,array{int,int}> $ranges
+     * @param iterable<array{int,int}> $ranges
      * @param array<string,string> $map
      */
     private static function replaceRanges(
         string $text,
-        array $ranges,
+        iterable $ranges,
         PlaceholderCounter $counter,
         array &$map
     ): string {
