@@ -10,7 +10,7 @@ final class SegmentPlan
     /** @var array<string,string> */
     private array $originals;
 
-    /** @var list<array{id:string, original:string, text:string, separator:string}> */
+    /** @var list<SegmentChunk> */
     private array $chunks = [];
 
     /** @var list<string> */
@@ -134,7 +134,7 @@ final class SegmentPlan
         $packet = [];
         $packetBytes = 2;
         foreach ($this->chunks as $chunk) {
-            $entry = $this->entryBytes($chunk['id'], $chunk['text']);
+            $entry = $this->entryBytes($chunk->id, $chunk->text);
             $wouldBytes = count($packet) === 0 ? 2 + $entry : $packetBytes + 1 + $entry;
             if (
                 count($packet) > 0
@@ -148,7 +148,7 @@ final class SegmentPlan
             if ($wouldBytes > $maxBytes) {
                 throw new \InvalidArgumentException('Segment value cannot fit within the byte cap');
             }
-            $packet[$chunk['id']] = $chunk['text'];
+            $packet[$chunk->id] = $chunk->text;
             $packetBytes = $wouldBytes;
         }
         if (count($packet) > 0) {
@@ -164,14 +164,14 @@ final class SegmentPlan
 
     public function restore(string $translatedJson): string
     {
-        $expected = array_map(static fn(array $chunk): string => $chunk['id'], $this->chunks);
+        $expected = array_map(static fn(SegmentChunk $chunk): string => $chunk->id, $this->chunks);
         $values = SegmentTranslations::decode($translatedJson, $expected);
         $restored = [];
         foreach ($this->originals as $original => $_source) {
             $restored[$original] = '';
         }
         foreach ($this->chunks as $chunk) {
-            $restored[$chunk['original']] .= $chunk['separator'] . $values[$chunk['id']];
+            $restored[$chunk->original] .= $chunk->separator . $values[$chunk->id];
         }
         foreach ($this->trailing as $original => $suffix) {
             $restored[$original] .= $suffix;
@@ -267,12 +267,12 @@ final class SegmentPlan
         if (2 + $this->entryBytes($id, $text) > $maxBytes) {
             throw new \InvalidArgumentException('Segment value cannot fit within the byte cap');
         }
-        $this->chunks[] = [
-            'id' => $id,
-            'original' => $original,
-            'text' => $text,
-            'separator' => $separators === [] ? '' : (string) end($separators),
-        ];
+        $this->chunks[] = new SegmentChunk(
+            $id,
+            $original,
+            $text,
+            $separators === [] ? '' : (string) end($separators)
+        );
     }
 
     /** @param array<string,string> $values */
