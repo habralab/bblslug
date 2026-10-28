@@ -61,7 +61,7 @@ final class SegmentTranslations
 REGEX;
         $seen = [];
         $position = 0;
-        while (preg_match($pattern, $translatedJson, $match, PREG_OFFSET_CAPTURE, $position) === 1) {
+        while (($matched = preg_match($pattern, $translatedJson, $match, PREG_OFFSET_CAPTURE, $position)) === 1) {
             [$token, $offset] = $match[0];
             $position = $offset + strlen($token);
             if (preg_match('/\G\s*:/', $translatedJson, $unused, 0, $position) !== 1) {
@@ -72,6 +72,9 @@ REGEX;
                 throw new \RuntimeException('Duplicate ' . $label . ' segment ids');
             }
             $seen[$key] = true;
+        }
+        if ($matched === false) {
+            throw new \RuntimeException('Could not inspect ' . $label . ' segment ids');
         }
         unset($seen);
         foreach ($values as $key => $value) {

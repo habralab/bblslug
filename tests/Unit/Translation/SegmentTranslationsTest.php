@@ -69,6 +69,38 @@ final class SegmentTranslationsTest extends TestCase
         }
     }
 
+    /** @dataProvider scanFailureOperations */
+    public function testFailedTokenScanCannotAcceptDuplicateIds(bool $source): void
+    {
+        $previousLimit = ini_set('pcre.backtrack_limit', '1');
+        $failure = null;
+        try {
+            $payload = '{"s0":"first","s0":"second"}';
+            if ($source) {
+                SegmentTranslations::decodeSource($payload);
+            } else {
+                SegmentTranslations::decode($payload, ['s0']);
+            }
+        } catch (\Throwable $exception) {
+            $failure = $exception;
+        } finally {
+            ini_set('pcre.backtrack_limit', (string) $previousLimit);
+        }
+        if ($source) {
+            self::assertInstanceOf(\InvalidArgumentException::class, $failure);
+            self::assertSame('Invalid segment source payload', $failure->getMessage());
+            $failure = $failure->getPrevious();
+        }
+        self::assertInstanceOf(\RuntimeException::class, $failure);
+        self::assertSame('Could not inspect HTML segment ids', $failure->getMessage());
+    }
+
+    /** @return list<array{bool}> */
+    public static function scanFailureOperations(): array
+    {
+        return [[false], [true]];
+    }
+
     /** @return iterable<string, array{string, bool, string, ?string}> */
     public static function invalidSources(): iterable
     {

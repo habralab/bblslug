@@ -6,6 +6,7 @@ This file follows the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) f
 
 ### Fixed
 
+- Reject segment payloads when the token scan fails instead of accepting unchecked duplicate IDs.
 - Reduce segment decoding memory by scanning tokens in order and reusing validated values.
 - Reduce HTML structure validation memory without weakening markup or text-loss checks.
 - Preserve JSON escapes adjacent to source-literal markers during filtering, including keys and JSON stored inside strings.
