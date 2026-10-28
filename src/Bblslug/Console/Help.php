@@ -104,6 +104,7 @@ class Help
         echo "\t  export BBLSLUG_PROXY=\"socks5h://127.0.0.1:9050\" # SOCKS5 proxy\n";
         echo "\n\tHTTP timeouts (positive integer seconds):\n";
         echo "\t  BBLSLUG_HTTP_CONNECT_TIMEOUT=10; BBLSLUG_HTTP_TIMEOUT=120 (defaults)\n";
+        echo "\t  BBLSLUG_HTTP_MAX_RESPONSE_BYTES: optional positive body byte cap (unset = unlimited)\n";
         echo "\tHTTP requests are not automatically retried. CLI dry-run does not use HTTP.\n";
         echo "\tThe operation timeout covers all packets, including DeepL upload, polling, and download;\n";
         echo "\trequests are not retried.\n";

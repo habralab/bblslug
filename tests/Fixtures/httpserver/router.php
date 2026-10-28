@@ -31,6 +31,45 @@ $send = static function (int $code, array $headers = [], string $body = ''): voi
     echo $body;
 };
 
+// Stream a deterministic opaque body without allocating the full response.
+if ($uri === '/bytes') {
+    $size = filter_var($_GET['size'] ?? '0', FILTER_VALIDATE_INT, [
+        'options' => ['min_range' => 0, 'max_range' => 128 * 1024 * 1024],
+    ]);
+    $mode = (string) ($_GET['mode'] ?? 'length');
+    $status = filter_var($_GET['status'] ?? '200', FILTER_VALIDATE_INT, [
+        'options' => ['min_range' => 200, 'max_range' => 599],
+    ]);
+    if ($size === false || $status === false || !in_array($mode, ['length', 'nolength', 'chunked'], true)) {
+        $send(400, [], 'invalid fixture parameters');
+        return;
+    }
+    http_response_code($status);
+    header('Content-Type: application/octet-stream');
+    header('X-Fixture-Secret: fixture-secret');
+    if ($mode === 'length') {
+        header('Content-Length: ' . $size);
+    } elseif ($mode === 'chunked') {
+        header('Transfer-Encoding: chunked');
+    }
+    $pattern = "fixture-secret\0\xc3\xa9\xff";
+    $block = substr(str_repeat($pattern, (int) ceil(16384 / strlen($pattern))), 0, 16384);
+    for ($remaining = $size; $remaining > 0;) {
+        $chunk = substr($block, 0, min($remaining, strlen($block)));
+        if ($mode === 'chunked') {
+            echo dechex(strlen($chunk)) . "\r\n" . $chunk . "\r\n";
+        } else {
+            echo $chunk;
+        }
+        $remaining -= strlen($chunk);
+        flush();
+    }
+    if ($mode === 'chunked') {
+        echo "0\r\n\r\n";
+    }
+    return;
+}
+
 // Delayed endpoint used to verify that the client enforces request timeouts.
 if ($uri === '/slow') {
     usleep(1_500_000);

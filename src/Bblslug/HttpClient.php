@@ -25,6 +25,8 @@ class HttpClient
      * @param int|null      $connectTimeoutSeconds Connection timeout in seconds (default 10).
      *                                            Overrides BBLSLUG_HTTP_CONNECT_TIMEOUT.
      * @param int|null      $timeoutMilliseconds Optional total request timeout cap in milliseconds.
+     * @param int|null      $maxResponseBytes Response body byte cap; overrides BBLSLUG_HTTP_MAX_RESPONSE_BYTES.
+     *                                       Unset or empty environment means no cap.
      *
      * @return array{
      *     body: string,
@@ -35,7 +37,7 @@ class HttpClient
      * }
      *
      * @throws \RuntimeException On network or cURL errors.
-     * @throws \InvalidArgumentException On invalid timeout settings.
+     * @throws \InvalidArgumentException On invalid timeout or response byte-limit settings.
      */
     public static function request(
         string $method,
@@ -48,10 +50,12 @@ class HttpClient
         bool $verbose = false,
         ?int $timeoutSeconds = null,
         ?int $connectTimeoutSeconds = null,
-        ?int $timeoutMilliseconds = null
+        ?int $timeoutMilliseconds = null,
+        ?int $maxResponseBytes = null
     ): array {
         $timeoutSeconds = self::resolveTimeout($timeoutSeconds, 'BBLSLUG_HTTP_TIMEOUT', 120);
         $connectTimeoutSeconds = self::resolveTimeout($connectTimeoutSeconds, 'BBLSLUG_HTTP_CONNECT_TIMEOUT', 10);
+        $maxResponseBytes = self::resolveResponseLimit($maxResponseBytes);
         if ($timeoutMilliseconds !== null && $timeoutMilliseconds <= 0) {
             throw new \InvalidArgumentException('timeoutMilliseconds must be a positive integer in milliseconds.');
         }
@@ -135,7 +139,34 @@ class HttpClient
             }
         );
 
+        $limitedBody = '';
+        $bodyTooLarge = false;
+        if ($maxResponseBytes !== null) {
+            \curl_setopt(
+                $ch,
+                CURLOPT_WRITEFUNCTION,
+                static function ($curl, string $chunk) use (&$limitedBody, &$bodyTooLarge, $maxResponseBytes): int {
+                    $length = strlen($chunk);
+                    if ($length > $maxResponseBytes - strlen($limitedBody)) {
+                        $bodyTooLarge = true;
+                        return 0;
+                    }
+                    $limitedBody .= $chunk;
+                    return $length;
+                }
+            );
+        }
+
         $respBody = \curl_exec($ch);
+        if ($bodyTooLarge) {
+            throw new \RuntimeException(
+                "HTTP response body exceeds the {$maxResponseBytes}-byte limit.",
+                CURLE_WRITE_ERROR
+            );
+        }
+        if ($maxResponseBytes !== null) {
+            $respBody = $limitedBody;
+        }
         if ($respBody === false) {
             $respBody = '';
         }
@@ -192,6 +223,26 @@ class HttpClient
             throw new \InvalidArgumentException("{$environmentName} must be a positive integer in seconds.");
         }
         return $seconds;
+    }
+
+    private static function resolveResponseLimit(?int $explicit): ?int
+    {
+        if ($explicit !== null) {
+            if ($explicit <= 0) {
+                throw new \InvalidArgumentException('maxResponseBytes must be a positive integer in bytes.');
+            }
+            return $explicit;
+        }
+
+        $value = getenv('BBLSLUG_HTTP_MAX_RESPONSE_BYTES');
+        if ($value === false || $value === '') {
+            return null;
+        }
+        $bytes = filter_var($value, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+        if ($bytes === false) {
+            throw new \InvalidArgumentException('BBLSLUG_HTTP_MAX_RESPONSE_BYTES must be a positive integer in bytes.');
+        }
+        return $bytes;
     }
 
     private static function capMilliseconds(int $seconds, int $cap): int

@@ -29,7 +29,7 @@ final class HttpClientTest extends TestCase
 
     protected function setUp(): void
     {
-        foreach (['BBLSLUG_HTTP_TIMEOUT', 'BBLSLUG_HTTP_CONNECT_TIMEOUT'] as $name) {
+        foreach (['BBLSLUG_HTTP_TIMEOUT', 'BBLSLUG_HTTP_CONNECT_TIMEOUT', 'BBLSLUG_HTTP_MAX_RESPONSE_BYTES'] as $name) {
             $this->originalTimeoutEnvironment[$name] = getenv($name);
             putenv($name);
         }
@@ -632,5 +632,120 @@ final class HttpClientTest extends TestCase
                 $this->assertStringContainsString('timeoutMilliseconds', $exception->getMessage());
             }
         }
+    }
+
+    public function testResponseByteLimitPreservesExactOpaqueBodyAcrossFramingModes(): void
+    {
+        $pattern = "fixture-secret\0\xc3\xa9\xff";
+        $block = substr(str_repeat($pattern, (int) ceil(16384 / strlen($pattern))), 0, 16384);
+        $expected = $block . substr($block, 0, 123);
+        foreach (['length', 'nolength', 'chunked'] as $mode) {
+            $response = HttpClient::request(
+                method: 'GET',
+                url: $this->url('/bytes?size=16507&status=429&mode=' . $mode),
+                maskPatterns: ['fixture-secret'],
+                verbose: true,
+                maxResponseBytes: 16507
+            );
+            self::assertSame(429, $response['status']);
+            self::assertSame($expected, $response['body']);
+            self::assertSame('fixture-secret', $response['headers']['X-Fixture-Secret'][0]);
+            self::assertStringNotContainsString('fixture-secret', $response['debugResponse']);
+            self::assertStringContainsString('***', $response['debugResponse']);
+        }
+    }
+
+    public function testResponseByteLimitRejectsOverflowWithoutLeakingResponse(): void
+    {
+        foreach (['length', 'nolength', 'chunked'] as $mode) {
+            try {
+                HttpClient::request(
+                    method: 'GET',
+                    url: $this->url('/bytes?size=16508&status=429&mode=' . $mode . '&secret=url-secret'),
+                    headers: ['X-Secret: header-secret'],
+                    maskPatterns: ['fixture-secret', 'url-secret', 'header-secret'],
+                    verbose: true,
+                    maxResponseBytes: 16507
+                );
+                self::fail('An oversized response must fail.');
+            } catch (\RuntimeException $exception) {
+                self::assertSame('HTTP response body exceeds the 16507-byte limit.', $exception->getMessage());
+                self::assertSame(CURLE_WRITE_ERROR, $exception->getCode());
+            }
+        }
+    }
+
+    public function testResponseByteLimitEnvironmentAndOverrides(): void
+    {
+        foreach ([false, '', '16507'] as $value) {
+            putenv($value === false ? 'BBLSLUG_HTTP_MAX_RESPONSE_BYTES' : 'BBLSLUG_HTTP_MAX_RESPONSE_BYTES=' . $value);
+            $response = HttpClient::request(method: 'GET', url: $this->url('/bytes?size=16507'));
+            self::assertSame(16507, strlen($response['body']));
+        }
+        putenv('BBLSLUG_HTTP_MAX_RESPONSE_BYTES=1');
+        try {
+            HttpClient::request(method: 'GET', url: $this->url('/bytes?size=2'));
+            self::fail('The environment limit must be applied.');
+        } catch (\RuntimeException $exception) {
+            self::assertSame('HTTP response body exceeds the 1-byte limit.', $exception->getMessage());
+            self::assertSame(CURLE_WRITE_ERROR, $exception->getCode());
+        }
+        putenv('BBLSLUG_HTTP_MAX_RESPONSE_BYTES=invalid');
+        $response = HttpClient::request(method: 'GET', url: $this->url('/bytes?size=2'), maxResponseBytes: 2);
+        self::assertSame(2, strlen($response['body']));
+        $dryRun = HttpClient::request(
+            method: 'GET',
+            url: $this->url('/bytes?size=2'),
+            dryRun: true,
+            maxResponseBytes: 2
+        );
+        self::assertSame('[dry-run]', $dryRun['body']);
+        self::assertSame(0, $dryRun['status']);
+    }
+
+    public function testInvalidResponseByteLimitsAreRejectedBeforeDryRun(): void
+    {
+        foreach (['0', '-1', 'invalid', '1.5'] as $value) {
+            putenv('BBLSLUG_HTTP_MAX_RESPONSE_BYTES=' . $value);
+            try {
+                HttpClient::request(method: 'GET', url: $this->url('/bytes?size=2'), dryRun: true);
+                self::fail('Invalid response limit environment must fail.');
+            } catch (\InvalidArgumentException $exception) {
+                self::assertStringContainsString('BBLSLUG_HTTP_MAX_RESPONSE_BYTES', $exception->getMessage());
+            }
+        }
+        putenv('BBLSLUG_HTTP_MAX_RESPONSE_BYTES');
+        foreach ([0, -1] as $value) {
+            try {
+                HttpClient::request(
+                    method: 'GET',
+                    url: $this->url('/bytes?size=2'),
+                    dryRun: true,
+                    maxResponseBytes: $value
+                );
+                self::fail('Invalid explicit response limit must fail.');
+            } catch (\InvalidArgumentException $exception) {
+                self::assertNotSame('', $exception->getMessage());
+            }
+        }
+    }
+
+    public function testLargeResponseFailsWithinConstrainedMemory(): void
+    {
+        $process = proc_open(
+            [PHP_BINARY, '-d', 'memory_limit=16M', __DIR__ . '/../Fixtures/httpserver/response_memory.php',
+                $this->url('/bytes?size=67108864&mode=nolength')],
+            [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']],
+            $pipes
+        );
+        self::assertIsResource($process);
+        fclose($pipes[0]);
+        $stdout = stream_get_contents($pipes[1]);
+        $stderr = stream_get_contents($pipes[2]);
+        fclose($pipes[1]);
+        fclose($pipes[2]);
+        $exitCode = proc_close($process);
+        self::assertSame(0, $exitCode, (string) $stderr);
+        self::assertSame("bounded\n", $stdout);
     }
 }

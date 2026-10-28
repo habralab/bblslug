@@ -6,6 +6,7 @@ This file follows the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) f
 
 ### Changed
 
+- Allow an optional per-response HTTP body byte limit through `BBLSLUG_HTTP_MAX_RESPONSE_BYTES` or `HttpClient::request(maxResponseBytes: ...)`. Downloads exceeding the limit fail without returning a partial body.
 - Create new checkpoints as append-only JSONL journals with recovery of incomplete trailing records; retain version-1 snapshot support. See [checkpoint compatibility](docs/upgrading.md#unreleased-checkpoint-format).
 
 ### Fixed

@@ -101,6 +101,21 @@ Direct `HttpClient::request()` callers can pass `connectTimeoutSeconds` and
 Network failures throw `RuntimeException` with the cURL error code (28 for a
 timeout). Requests are not automatically retried.
 
+### HTTP response size
+
+Set `BBLSLUG_HTTP_MAX_RESPONSE_BYTES` to a positive integer byte count to cap each
+HTTP response body, including error responses and DeepL document downloads.
+Unset or empty means unlimited. Invalid values fail before sending a request;
+CLI dry-run does not use or validate HTTP settings. Direct `HttpClient::request()`
+callers can pass `maxResponseBytes` to override the environment value.
+
+The client counts received body bytes rather than trusting `Content-Length`;
+chunked transfer framing does not count toward the limit. Exceeding the cap aborts
+the download with `RuntimeException` and cURL code 23 (`CURLE_WRITE_ERROR`), without
+returning a partial response or automatically retrying. The cap covers one response
+body; request data, response headers, verbose logs and the aggregated translation
+result can use additional memory.
+
 ## Formats
 
 | Format | Input |
