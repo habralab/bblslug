@@ -162,4 +162,16 @@ final class JsonHtmlDocumentTest extends TestCase
         $this->expectException(\InvalidArgumentException::class);
         new JsonHtmlDocument('{"html":"<p>one</p>","html":"<p>two</p>"}', ['/html']);
     }
+
+    public function testSourceScanFailureRetainsItsDiagnostic(): void
+    {
+        $previousLimit = ini_set('pcre.backtrack_limit', '0');
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Could not scan source JSON for HTML selections');
+        try {
+            new JsonHtmlDocument('"<p>Hello</p>"', ['']);
+        } finally {
+            ini_set('pcre.backtrack_limit', (string) $previousLimit);
+        }
+    }
 }

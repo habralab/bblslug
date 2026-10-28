@@ -11,21 +11,25 @@ use Bblslug\Validation\PlaceholderValidator;
 /** Translate selected HTML string values while preserving all other JSON bytes. */
 final class JsonHtmlDocument
 {
+    private const TOKEN_PATTERN = <<<'REGEX'
+~"(?:[^"\\]++|\\.)*+"|[{}\[\],:]|[^\s{}\[\],:"]+~s
+REGEX;
+
     /** @var list<array{offset:int,token:string,value:string,prepared:string,filter:FilterManager,html:HtmlTextDocument,ids:array<string,string>}> */
     private array $parts = [];
     /** @var array<string,string> */
     private array $texts = [];
     /** @var array<string,bool> */
     private array $pointers = [];
-    /** @var list<array{string,int}> */
-    private array $tokens = [];
-    private int $cursor = 0;
+    /** @var array{string,int}|null */
+    private ?array $currentToken = null;
+    private int $position = 0;
 
     /**
      * @param array<int,mixed> $pointers
      * @param array<int,string> $filters
      */
-    public function __construct(private string $source, array $pointers, private array $filters = [])
+    public function __construct(private readonly string $source, array $pointers, private array $filters = [])
     {
         if ($pointers === []) {
             throw new \InvalidArgumentException('JSON HTML segments require explicit htmlJsonPointers');
@@ -37,13 +41,6 @@ final class JsonHtmlDocument
             $this->pointers[$pointer] = false;
         }
         json_decode($source, false, 512, JSON_THROW_ON_ERROR);
-        $pattern = <<<'REGEX'
-~"(?:[^"\\]++|\\.)*+"|[{}\[\],:]|[^\s{}\[\],:"]+~s
-REGEX;
-        if (preg_match_all($pattern, $source, $matches, PREG_OFFSET_CAPTURE) === false) {
-            throw new \InvalidArgumentException('Could not scan source JSON for HTML selections');
-        }
-        $this->tokens = $matches[0];
         $this->walk('');
         foreach ($this->pointers as $pointer => $found) {
             if (!$found) {
@@ -53,8 +50,6 @@ REGEX;
                 );
             }
         }
-        // Token ranges have now been captured; the complete token stream is no longer needed.
-        $this->tokens = [];
     }
 
     public function getJson(): string
@@ -151,10 +146,26 @@ REGEX;
     /** @return array{string,int} */
     private function token(): array
     {
-        if (!isset($this->tokens[$this->cursor])) {
-            throw new \LogicException('Unexpected end of validated JSON token stream');
+        if ($this->currentToken === null) {
+            $matched = preg_match(self::TOKEN_PATTERN, $this->source, $match, PREG_OFFSET_CAPTURE, $this->position);
+            if ($matched === false) {
+                throw new \InvalidArgumentException('Could not scan source JSON for HTML selections');
+            }
+            if ($matched === 0) {
+                throw new \LogicException('Unexpected end of validated JSON token stream');
+            }
+            $this->currentToken = $match[0];
         }
-        return $this->tokens[$this->cursor];
+        return $this->currentToken;
+    }
+
+    private function advance(int $count = 1): void
+    {
+        for ($index = 0; $index < $count; ++$index) {
+            [$token, $offset] = $this->token();
+            $this->position = $offset + strlen($token);
+            $this->currentToken = null;
+        }
     }
 
     private static function stringValue(string $token): string
@@ -173,7 +184,7 @@ REGEX;
             if (array_key_exists($path, $this->pointers)) {
                 $this->capture($path, $token, $offset);
             }
-            $this->cursor++;
+            $this->advance();
             return;
         }
         if (array_key_exists($path, $this->pointers)) {
@@ -182,7 +193,7 @@ REGEX;
                 . json_encode($path, JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR)
             );
         }
-        $this->cursor++;
+        $this->advance();
         if ($token === '{') {
             $seen = [];
             while ($this->token()[0] !== '}') {
@@ -191,14 +202,14 @@ REGEX;
                     throw new \InvalidArgumentException('Duplicate source JSON keys are ambiguous for HTML selection');
                 }
                 $seen[$key] = true;
-                $this->cursor += 2; // String key and colon (syntax was validated before scanning).
+                $this->advance(2); // String key and colon (syntax was validated before scanning).
                 $this->walk($path . '/' . JsonPointer::encodeToken($key));
                 if ($this->token()[0] !== ',') {
                     break;
                 }
-                $this->cursor++;
+                $this->advance();
             }
-            $this->cursor++; // Closing brace.
+            $this->advance(); // Closing brace.
         } elseif ($token === '[') {
             $index = 0;
             while ($this->token()[0] !== ']') {
@@ -206,9 +217,9 @@ REGEX;
                 if ($this->token()[0] !== ',') {
                     break;
                 }
-                $this->cursor++;
+                $this->advance();
             }
-            $this->cursor++; // Closing bracket.
+            $this->advance(); // Closing bracket.
         }
     }
 

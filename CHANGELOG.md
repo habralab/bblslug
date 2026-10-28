@@ -6,6 +6,7 @@ This file follows the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) f
 
 ### Fixed
 
+- Avoid retaining all JSON tokens while translating explicitly selected HTML fields in large containers.
 - Avoid large temporary line and placeholder match arrays during segment extraction; reject failed scans.
 - Reduce text and HTML segment memory by storing compact source spans instead of duplicate text slices.
 - Reduce memory retained by segment plans with compact typed chunk records.
