@@ -28,6 +28,22 @@ final class SegmentTranslations
             throw new \RuntimeException($label . ' segment JSON must be an object');
         }
         $values = get_object_vars($decoded);
+        unset($decoded);
+        return self::validateValues($translatedJson, $values, $expected, $label, $allowLineBreaks);
+    }
+
+    /**
+     * @param array<string|int,mixed> $values
+     * @param list<string> $expected
+     * @return array<string,string>
+     */
+    private static function validateValues(
+        string $translatedJson,
+        array $values,
+        array $expected,
+        string $label,
+        bool $allowLineBreaks
+    ): array {
         $actual = array_keys($values);
         sort($expected);
         sort($actual);
@@ -38,14 +54,17 @@ final class SegmentTranslations
                 . 'unexpected count ' . count(array_diff($actual, $expected))
             );
         }
+        unset($actual, $expected);
         // Consume complete JSON strings so escaped quotes/colons in values are never keys.
         $pattern = <<<'REGEX'
 ~"(?:[^"\\]++|\\.)*+"~s
 REGEX;
-        preg_match_all($pattern, $translatedJson, $tokens, PREG_OFFSET_CAPTURE);
         $seen = [];
-        foreach ($tokens[0] as [$token, $offset]) {
-            if (preg_match('/\G\s*:/', $translatedJson, $unused, 0, $offset + strlen($token)) !== 1) {
+        $position = 0;
+        while (preg_match($pattern, $translatedJson, $match, PREG_OFFSET_CAPTURE, $position) === 1) {
+            [$token, $offset] = $match[0];
+            $position = $offset + strlen($token);
+            if (preg_match('/\G\s*:/', $translatedJson, $unused, 0, $position) !== 1) {
                 continue;
             }
             $key = self::requireStringId(json_decode($token, true, 512, JSON_THROW_ON_ERROR), $label);
@@ -54,9 +73,9 @@ REGEX;
             }
             $seen[$key] = true;
         }
-        $strings = [];
+        unset($seen);
         foreach ($values as $key => $value) {
-            $key = self::requireStringId($key, $label);
+            self::requireStringId($key, $label);
             if (!is_string($value) || preg_match('/\A\s*\z/u', $value) === 1) {
                 throw new \RuntimeException($label . ' segments require nonempty translated strings');
             }
@@ -66,9 +85,9 @@ REGEX;
             if (!(new PlaceholderValidator(''))->validate($value)->isValid()) {
                 throw new \RuntimeException($label . ' segment translations may not introduce placeholders');
             }
-            $strings[$key] = $value;
         }
-        return $strings;
+        /** @var array<string,string> $values */
+        return $values;
     }
 
     /**
@@ -89,7 +108,9 @@ REGEX;
             throw new \InvalidArgumentException('Segment JSON must be an object');
         }
 
-        $keys = array_keys(get_object_vars($decoded));
+        $values = get_object_vars($decoded);
+        unset($decoded);
+        $keys = array_keys($values);
         foreach ($keys as $key) {
             // PHP converts numeric JSON object keys to integer array keys.
             if (preg_match('/\As\d+\z/', (string) $key) !== 1) {
@@ -106,12 +127,10 @@ REGEX;
             }
         }
         try {
-            /** @var array<string,string> $values */
-            $values = self::decode($payload, $keys);
+            return self::validateValues($payload, $values, $keys, 'HTML', true);
         } catch (\RuntimeException $exception) {
             throw new \InvalidArgumentException('Invalid segment source payload', 0, $exception);
         }
-        return $values;
     }
 
     /** @return array<string,mixed> */
