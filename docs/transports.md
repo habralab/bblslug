@@ -404,9 +404,10 @@ statuses, plus identity/checksum metadata. It does not serialize authentication
 settings, input requests, raw provider responses or debug logs. It still contains
 translation content and should be handled like an output document. New state and
 lock files use mode `0600`. New files are version-2 JSONL journals: an identity header followed
-by one indexed, checksummed record per completed packet. Each append is flushed and synced before
-completion is reported, without rewriting earlier packets. A trailing record without its final newline
-is removed on the next open, after the identity and complete records have passed validation.
+by one indexed, checksummed record per completed packet. Journals require PHP's `fsync()` function.
+Each append is flushed and synced before completion is reported, without rewriting earlier packets.
+A trailing record without its final newline is removed on the next open, after the identity and complete
+records have passed validation.
 A malformed or checksum-invalid newline-terminated record is rejected rather than discarded.
 
 After a write or sync error, the operation stops and the journal handle closes. Repeat the operation

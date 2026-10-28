@@ -2,7 +2,21 @@
 
 Read the changes between your installed version and the version you are adopting. Released compatibility notes below describe the behavior introduced by each release.
 
-## Unreleased checkpoint format
+## Upgrading to 0.12.0
+
+Existing translation calls and CLI options keep their arguments. PHP and dependency requirements,
+models and prompts are unchanged. Memory optimizations retain strict segment validation and exact
+restoration of protected source bytes.
+
+### HTTP response limits
+
+`HttpClient::request()` adds `maxResponseBytes` as its last optional argument. The equivalent environment
+setting is `BBLSLUG_HTTP_MAX_RESPONSE_BYTES`; unset or empty keeps the previous unlimited behavior.
+A configured cap applies to each response body, including DeepL document downloads. Exceeding it
+aborts the request without returning a partial response. This is not a limit on the memory used by the
+whole translation. See [HTTP response size](usage.md#http-response-size).
+
+### Checkpoints
 
 New checkpoints use a version-2 JSONL journal, even when the supplied filename ends in `.json`.
 Older library versions cannot read these journals. Existing version-1 JSON snapshots remain supported
@@ -10,7 +24,7 @@ and keep their original storage format when their identity matches. Checkpoint i
 library source code: this format support does not make checkpoints from a different source version
 reusable. Finish pending translations with the original library version or use a new checkpoint path.
 
-No new PHP or CLI arguments are required. Storage remains opt-in at the exact `checkpointPath` /
+New journals require PHP's `fsync()` function. Checkpoint storage still uses the existing `checkpointPath` /
 `--checkpoint` supplied by the caller; installed library files may be read-only. See
 [checkpoint storage and recovery](transports.md#resume-confirmed-successful-segment-packets).
 
