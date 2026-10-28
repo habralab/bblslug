@@ -57,7 +57,29 @@ final class TextDocument
     public function restore(string $translatedJson): string
     {
         $expected = array_map(static fn (int $index): string => 's' . $index, array_keys($this->spans));
-        $values = SegmentTranslations::decode($translatedJson, $expected, 'Text', false);
+        return $this->restoreValidated(SegmentTranslations::decode($translatedJson, $expected, 'Text', false));
+    }
+
+    /**
+     * @internal Restore a decoded collection while preserving segment validation.
+     * @param array<string|int,mixed> $values
+     */
+    public function restoreValues(array $values): string
+    {
+        return $this->restoreValidated(SegmentTranslations::validate($values, $this->expectedIds(), 'Text', false));
+    }
+
+    /** @return \Generator<int,string> */
+    private function expectedIds(): \Generator
+    {
+        foreach ($this->spans as $index => $_span) {
+            yield 's' . $index;
+        }
+    }
+
+    /** @param array<string,string> $values */
+    private function restoreValidated(array $values): string
+    {
         $output = '';
         $cursor = 0;
         foreach ($this->spans as $index => $span) {

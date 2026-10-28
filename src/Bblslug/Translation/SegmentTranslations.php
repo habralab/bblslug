@@ -44,17 +44,8 @@ final class SegmentTranslations
         string $label,
         bool $allowLineBreaks
     ): array {
-        $actual = array_keys($values);
-        sort($expected);
-        sort($actual);
-        if ($expected !== $actual) {
-            $missing = array_values(array_diff($expected, $actual));
-            throw new \RuntimeException(
-                $label . ' segment ids mismatch: missing [' . implode(', ', array_slice($missing, 0, 10)) . ']; '
-                . 'unexpected count ' . count(array_diff($actual, $expected))
-            );
-        }
-        unset($actual, $expected);
+        self::validateIds($values, $expected, $label);
+        unset($expected);
         // Consume complete JSON strings so escaped quotes/colons in values are never keys.
         $pattern = <<<'REGEX'
 ~"(?:[^"\\]++|\\.)*+"~s
@@ -77,9 +68,72 @@ REGEX;
             throw new \RuntimeException('Could not inspect ' . $label . ' segment ids');
         }
         unset($seen);
+        return self::validateStrings($values, $label, $allowLineBreaks);
+    }
+
+    /**
+     * @internal Validate against the distinct IDs supplied by a local document or plan.
+     * @param array<string|int,mixed> $values
+     * @param iterable<string> $expected Distinct source IDs, without materializing another key list.
+     * @return array<string,string>
+     */
+    public static function validate(
+        array $values,
+        iterable $expected,
+        string $label = 'HTML',
+        bool $allowLineBreaks = true
+    ): array {
+        $count = 0;
+        $missing = [];
+        foreach ($expected as $id) {
+            ++$count;
+            if (!array_key_exists($id, $values)) {
+                $missing[] = $id;
+            }
+        }
+        if ($missing !== [] || $count !== count($values)) {
+            sort($missing);
+            self::idMismatch($missing, count($values) - $count + count($missing), $label);
+        }
+        return self::validateStrings($values, $label, $allowLineBreaks);
+    }
+
+    /**
+     * @param array<string|int,mixed> $values
+     * @param list<string> $expected
+     */
+    private static function validateIds(array $values, array $expected, string $label): void
+    {
+        $actual = array_keys($values);
+        sort($expected);
+        sort($actual);
+        if ($expected !== $actual) {
+            $missing = array_values(array_diff($expected, $actual));
+            self::idMismatch($missing, count(array_diff($actual, $expected)), $label);
+        }
+    }
+
+    /** @param list<string> $missing */
+    private static function idMismatch(array $missing, int $unexpected, string $label): never
+    {
+        throw new \RuntimeException(
+            $label . ' segment ids mismatch: missing [' . implode(', ', array_slice($missing, 0, 10)) . ']; '
+            . 'unexpected count ' . $unexpected
+        );
+    }
+
+    /**
+     * @param array<string|int,mixed> $values
+     * @return array<string,string>
+     */
+    private static function validateStrings(array $values, string $label, bool $allowLineBreaks): array
+    {
         foreach ($values as $key => $value) {
             self::requireStringId($key, $label);
-            if (!is_string($value) || preg_match('/\A\s*\z/u', $value) === 1) {
+            if (
+                !is_string($value) || !mb_check_encoding($value, 'UTF-8')
+                || preg_match('/\A\s*\z/u', $value) === 1
+            ) {
                 throw new \RuntimeException($label . ' segments require nonempty translated strings');
             }
             if (!$allowLineBreaks && strpbrk($value, "\r\n") !== false) {

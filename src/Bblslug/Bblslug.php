@@ -450,15 +450,12 @@ class Bblslug
             : $provider['rawResponseBody'];
         $rawUsage = $provider['usage'];
         unset($rawResponses, $requests, $packetOptions);
-        $batchResult = $batchState?->result($checkpointPath !== null);
+        $batchResult = $batchState?->summary($checkpointPath !== null);
+        $translations = $batchState?->translations();
         // $checkpoint remains the lock owner until the operation exits.
         unset($batchState);
-        if ($batchResult !== null) {
-            $provider['text'] = $batchResult['text'];
-            if ($segmentPlan !== null) {
-                $provider['text'] = $segmentPlan->restore($provider['text']);
-            }
-            unset($batchResult['text']);
+        if ($translations !== null && $segmentPlan !== null) {
+            $translations = $segmentPlan->restoreValues($translations);
         }
         // Reconstruction no longer needs the planning records.
         unset($segmentPlan);
@@ -466,14 +463,21 @@ class Bblslug
             $translated = $jsonHtmlDocument !== null ? $text : $prepared;
         } else {
             try {
-                $translated = $segmentDocument !== null
-                    ? $segmentDocument->restore($provider['text']) : $provider['text'];
+                if ($segmentDocument === null) {
+                    $translated = $provider['text'];
+                } elseif ($translations !== null) {
+                    $translated = $segmentDocument->restoreValues($translations);
+                } else {
+                    $translated = $segmentDocument->restore($provider['text']);
+                }
             } catch (\RuntimeException $exception) {
                 throw new \RuntimeException((new SecretMasker([$apiKey]))->redact(
                     $exception->getMessage() . "\n\n" . $debugRequest . $debugResponse
                 ));
             }
         }
+
+        unset($translations);
 
         $consumed = $batchResult !== null ? $batchResult['consumed'] : UsageExtractor::extract($model, $rawUsage);
 

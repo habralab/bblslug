@@ -114,7 +114,30 @@ REGEX;
 
     public function restore(string $translatedJson): string
     {
-        $translations = SegmentTranslations::decode($translatedJson, array_keys($this->texts));
+        $expected = array_keys($this->texts);
+        return $this->restoreValidated(SegmentTranslations::decode($translatedJson, $expected));
+    }
+
+    /**
+     * @internal Restore a decoded collection while preserving segment validation.
+     * @param array<string|int,mixed> $values
+     */
+    public function restoreValues(array $values): string
+    {
+        return $this->restoreValidated(SegmentTranslations::validate($values, $this->expectedIds()));
+    }
+
+    /** @return \Generator<int,string> */
+    private function expectedIds(): \Generator
+    {
+        foreach ($this->texts as $id => $_text) {
+            yield $id;
+        }
+    }
+
+    /** @param array<string,string> $translations */
+    private function restoreValidated(array $translations): string
+    {
         $output = '';
         $cursor = 0;
         foreach ($this->parts as $part) {
@@ -122,7 +145,7 @@ REGEX;
             foreach ($part['ids'] as $local => $global) {
                 $values[$local] = $translations[$global];
             }
-            $html = $part['html']->restore(json_encode((object) $values, JSON_THROW_ON_ERROR));
+            $html = $part['html']->restoreValues($values);
             $integrity = (new PlaceholderValidator($part['prepared']))->validate($html);
             if (!$integrity->isValid()) {
                 throw new \RuntimeException(

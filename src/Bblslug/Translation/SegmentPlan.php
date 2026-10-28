@@ -7,9 +7,6 @@ namespace Bblslug\Translation;
 /** Plan byte- and count-bounded packets of a flat segment document. */
 final class SegmentPlan
 {
-    /** @var array<string,string> */
-    private array $originals;
-
     /** @var list<SegmentChunk> */
     private array $chunks = [];
 
@@ -49,7 +46,6 @@ final class SegmentPlan
         }
 
         $values = SegmentTranslations::decodeSource($payload, requireBoundedIds: true);
-        $this->originals = $values;
         if ($values === []) {
             return;
         }
@@ -125,7 +121,9 @@ final class SegmentPlan
                 $currentBytes = $fullBytes;
                 $suffix = '';
             }
-            $this->trailing[$original] = $suffix;
+            if ($suffix !== '') {
+                $this->trailing[$original] = $suffix;
+            }
             $this->appendChunk($currentId, $original, $current, $separators, $maxBytes);
         }
 
@@ -163,18 +161,42 @@ final class SegmentPlan
     public function restore(string $translatedJson): string
     {
         $expected = array_map(static fn(SegmentChunk $chunk): string => $chunk->id, $this->chunks);
-        $values = SegmentTranslations::decode($translatedJson, $expected);
-        $restored = [];
-        foreach ($this->originals as $original => $_source) {
-            $restored[$original] = '';
-        }
+        return $this->encode($this->restoreValidated(SegmentTranslations::decode($translatedJson, $expected)));
+    }
+
+    /**
+     * @internal Rejoin a decoded collection while preserving segment validation.
+     * @param array<string|int,mixed> $values
+     * @return array<string,string>
+     */
+    public function restoreValues(array $values): array
+    {
+        return $this->restoreValidated(SegmentTranslations::validate($values, $this->expectedIds()));
+    }
+
+    /** @return \Generator<int,string> */
+    private function expectedIds(): \Generator
+    {
         foreach ($this->chunks as $chunk) {
-            $restored[$chunk->original] .= $chunk->separator . $values[$chunk->id];
+            yield $chunk->id;
+        }
+    }
+
+    /**
+     * @param array<string,string> $values
+     * @return array<string,string>
+     */
+    private function restoreValidated(array $values): array
+    {
+        $restored = [];
+        foreach ($this->chunks as $chunk) {
+            $restored[$chunk->original] = ($restored[$chunk->original] ?? '')
+                . $chunk->separator . $values[$chunk->id];
         }
         foreach ($this->trailing as $original => $suffix) {
             $restored[$original] .= $suffix;
         }
-        return $this->encode($restored);
+        return $restored;
     }
 
     private function abbreviationKey(string $token): string

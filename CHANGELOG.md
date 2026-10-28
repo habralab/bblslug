@@ -11,6 +11,7 @@ This file follows the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) f
 
 ### Fixed
 
+- Restore collected segment values without aggregate JSON round trips or redundant planning maps, preventing post-request memory exhaustion on dense text inputs.
 - Reduce temporary memory when saving large checkpoints while preserving atomic version-1 snapshots.
 - Keep checkpoint state unchanged when a record cannot be JSON-encoded, allowing a valid retry.
 - Reduce peak memory during batched translation by releasing completed requests and intermediate planning state.

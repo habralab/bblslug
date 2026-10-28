@@ -112,6 +112,24 @@ final class SegmentBatchState
      */
     public function result(bool $reportReuse): array
     {
+        return [
+            'text' => json_encode((object) $this->translations, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR),
+        ] + $this->summary($reportReuse);
+    }
+
+    /** @return array<string,string> */
+    public function translations(): array
+    {
+        return $this->translations;
+    }
+
+    /**
+     * @return array{consumed:array<string,array{total?:int,breakdown?:array<string,int>}>,
+     *     batches:list<array{index:int,segments:int,httpStatus:int,consumed:array<string,array{total?:int,breakdown?:array<string,int>}>,reused?:bool}>,
+     *     reusedBatches:int,consumedThisRun:array<string,array{total?:int,breakdown?:array<string,int>}>}
+     */
+    public function summary(bool $reportReuse): array
+    {
         $summaries = $this->summaries;
         if (!$reportReuse) {
             foreach ($summaries as &$summary) {
@@ -120,7 +138,6 @@ final class SegmentBatchState
             unset($summary);
         }
         return [
-            'text' => json_encode((object) $this->translations, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR),
             'consumed' => UsageExtractor::sum($this->usages),
             'batches' => $summaries,
             'reusedBatches' => $this->reusedBatches,
