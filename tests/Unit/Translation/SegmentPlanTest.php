@@ -215,4 +215,12 @@ final class SegmentPlanTest extends TestCase
         yield 'bad id' => ['{"text":"ok"}', null, 100];
         yield 'missing source value' => ['{"s0":""}', null, 100];
     }
+
+    public function testZeroWordsRemainNonemptyAndPreserveWhitespace(): void
+    {
+        $source = '{"s0":" 0 0 0 "}';
+        $plan = new SegmentPlan($source, 64, 4096);
+        self::assertSame([$source], $plan->getPayloads());
+        self::assertSame($source, $plan->restore($source));
+    }
 }

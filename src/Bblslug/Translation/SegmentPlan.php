@@ -65,32 +65,29 @@ final class SegmentPlan
 
         foreach ($values as $original => $value) {
             $oversized = 2 + $this->entryBytes($original, $value) > $maxBytes;
-            $matches = [];
-            preg_match_all('/\S+/u', $value, $matches, PREG_OFFSET_CAPTURE);
-            if ($matches[0] === []) {
+            $first = self::nextWord($value, 0);
+            if ($first === null) {
                 throw new \InvalidArgumentException('Segment values must contain non-whitespace text');
             }
-            $firstOffset = (int) $matches[0][0][1];
+            [$previous, $firstOffset] = $first;
             $leading = substr($value, 0, $firstOffset);
-            $lastEnd = $firstOffset + strlen((string) $matches[0][0][0]);
-            $current = $leading . (string) $matches[0][0][0];
+            $lastEnd = $firstOffset + strlen($previous);
+            $current = $leading . $previous;
             $currentId = $original;
             $currentBytes = $this->encodedBytes($current);
             $separators = [];
-            $keptThrough = $this->abbreviationEnd($matches[0], 0);
-            for ($i = 1, $count = count($matches[0]); $i < $count; ++$i) {
-                $word = (string) $matches[0][$i][0];
-                $offset = (int) $matches[0][$i][1];
+            $keptEnd = $this->abbreviationEnd($value, $previous, $firstOffset);
+            unset($first);
+            while (($next = self::nextWord($value, $lastEnd)) !== null) {
+                [$word, $offset] = $next;
                 $separator = substr($value, $lastEnd, $offset - $lastEnd);
                 $candidateBytes = $currentBytes + $this->encodedBytes($separator) - 2
                     + $this->encodedBytes($word) - 2;
                 $moveAbbreviation = false;
-                if ($this->abbreviations !== [] && $i > $keptThrough) {
-                    $keptThrough = $this->abbreviationEnd($matches[0], $i);
-                    if ($keptThrough > $i) {
-                        $end = (int) $matches[0][$keptThrough][1]
-                            + strlen((string) $matches[0][$keptThrough][0]);
-                        $keptBytes = $this->encodedBytes(substr($value, $offset, $end - $offset));
+                if ($this->abbreviations !== [] && $offset >= $keptEnd) {
+                    $keptEnd = $this->abbreviationEnd($value, $word, $offset);
+                    if ($keptEnd > $offset + strlen($word)) {
+                        $keptBytes = $this->encodedBytes(substr($value, $offset, $keptEnd - $offset));
                         $withKept = $currentBytes + $this->encodedBytes($separator) - 2 + $keptBytes - 2;
                         // Move the run before it reaches the cap, keeping the abbreviation
                         // with its following token whenever the run fits a fresh field.
@@ -101,7 +98,7 @@ final class SegmentPlan
                 // Keep sentence-sized units in oversized values: a provider must
                 // return each unit rather than condensing repeated prose in one string.
                 $sentenceEnd = $oversized && $this->isSentenceEnd(
-                    (string) $matches[0][$i - 1][0],
+                    $previous,
                     $word,
                     $current
                 );
@@ -118,6 +115,7 @@ final class SegmentPlan
                     $currentId = $this->nextId($nextId, $used);
                     $currentBytes = $this->encodedBytes($word);
                 }
+                $previous = $word;
                 $lastEnd = $offset + strlen($word);
             }
             $suffix = substr($value, $lastEnd);
@@ -190,13 +188,27 @@ final class SegmentPlan
         return $this->abbreviations !== [] && isset($this->abbreviations[$this->abbreviationKey($token)]);
     }
 
-    /** @param list<array{string,int}> $words */
-    private function abbreviationEnd(array $words, int $start): int
+    /** @return array{string,int}|null */
+    private static function nextWord(string $value, int $offset): ?array
     {
-        $end = $start;
-        $count = count($words);
-        while ($end + 1 < $count && $this->isAbbreviation($words[$end][0])) {
-            ++$end;
+        $matched = preg_match('/\S+/u', $value, $match, PREG_OFFSET_CAPTURE, $offset);
+        if ($matched === false) {
+            throw new \InvalidArgumentException('Could not inspect segment words');
+        }
+        return $matched === 1 ? $match[0] : null;
+    }
+
+    /** End byte offset of an abbreviation run and its following word. */
+    private function abbreviationEnd(string $value, string $word, int $offset): int
+    {
+        $end = $offset + strlen($word);
+        while ($this->isAbbreviation($word)) {
+            $next = self::nextWord($value, $end);
+            if ($next === null) {
+                break;
+            }
+            [$word, $offset] = $next;
+            $end = $offset + strlen($word);
         }
         return $end;
     }
