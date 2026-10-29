@@ -1,6 +1,10 @@
 # Samples
 
-Use the small, repository-authored [quickstart inputs](quickstart/) with the commands in the [main README](../README.md), [usage guide](../docs/usage.md) and [transport guide](../docs/transports.md). Commands run from the checkout root; source paths are `samples/quickstart/input.txt`, `samples/quickstart/input.html` and `samples/quickstart/input.json`. Installed package examples use `vendor/bin/bblslug`; this checkout also has `bin/bblslug`.
+Use the authored [quickstart inputs](quickstart/) with the [README](../README.md),
+[usage](../docs/usage.md#running-the-file-examples) and [transport](../docs/transports.md) examples.
+Composer installations include them under `vendor/habr/bblslug/samples/quickstart/`; copy the files
+into your working directory or supply your own paths. Run the installed CLI as `vendor/bin/bblslug`.
+From a checkout, the CLI is `bin/bblslug` and inputs are under `samples/quickstart/`.
 
 | Path | Purpose and expected behavior |
 |---|---|

@@ -2,10 +2,10 @@
 
 [README](../README.md) · [Usage](usage.md) · [Transports](transports.md) · [Providers](providers.md) · [Models](models.md)
 
-File commands use a [prepared repository checkout](usage.md#running-the-file-examples).
+File commands follow the [example setup](usage.md#running-the-file-examples).
 PHP fragments assume the import, credentials and input variables from the [usage guide](usage.md#php-library).
 
-These are integration-specific settings and response contracts. Available model keys are listed in the [model catalogue](models.md); account access and provider limits still apply. The library does not automatically retry requests or substitute another model after a failure.
+Choose a model from the [model catalogue](models.md) and configure its provider options below. Account access and provider limits apply. Failed requests are not automatically retried or sent to another model.
 
 - [Model defaults](#model-defaults)
 - [Native structured JSON](#native-structured-json)
@@ -21,7 +21,7 @@ These are integration-specific settings and response contracts. Available model 
 
 The GPT-6 defaults use Chat Completions with `reasoning_effort=low` and omit `temperature`.
 Responses-only models use the Responses API with its own request and usage fields.
-Older OpenAI model identifiers remain available for existing integrations; registry presence does not guarantee access for your API account.
+Older OpenAI identifiers remain available; check your account for access.
 
 OpenAI's `max_completion_tokens` covers both reasoning and visible output. A request can
 reach that limit before producing any visible translation, even with `reasoning_effort=low`.
@@ -29,8 +29,7 @@ A `length` finish reason or an incomplete Responses result is rejected, includin
 the visible text contains translation markers. GPT-6 Luna also supports
 `--variables=reasoning_effort=none,max_completion_tokens=8192` (PHP:
 `variables: ['reasoning_effort' => 'none', 'max_completion_tokens' => 8192]`) for callers
-who choose to disable reasoning. This is an explicit per-request option, not a setting
-supported by every model or provider. See [GPT-6 Luna settings](https://developers.openai.com/api/docs/models/gpt-6-luna).
+who choose to disable reasoning. Model and provider support for this option varies. See [GPT-6 Luna settings](https://developers.openai.com/api/docs/models/gpt-6-luna).
 
 The Claude 5.5 entries use the [Anthropic Messages API](https://platform.claude.com/docs/en/api/messages/create)
 with `effort=low`, no `temperature`, and an initial output budget of 4096 tokens.
@@ -39,12 +38,10 @@ Claude snapshots omit unsupported thinking and effort parameters.
 
 DeepL Free and Pro are service tiers. Select any documented translation engine
 with `--variables=model_type=quality_optimized`, `prefer_quality_optimized`, or
-`latency_optimized`. The provider default applies when omitted. These are engine
-options, rather than additional model IDs.
+`latency_optimized`. The provider default applies when omitted. These options select an engine within the chosen tier.
 
 Yandex models using the OpenAI-compatible API retain the `yandex:` prefix and the
-same credentials/folder variables. The registry selects the required endpoint;
-the application does not substitute another model after a failure.
+same credentials/folder variables. The model determines the endpoint.
 
 ## Native structured JSON
 
@@ -74,13 +71,12 @@ $translation = \Bblslug\Bblslug::translate(
 The CLI reads a schema from a JSON file. The bundled schema describes the bundled JSON input:
 
 ```bash
-bin/bblslug --model=openai:gpt-6-luna --format=structured_json \
-  --response-schema=samples/quickstart/translation.schema.json --source=samples/quickstart/input.json --target-lang=DE
+vendor/bin/bblslug --model=openai:gpt-6-luna --format=structured_json \
+  --response-schema=translation.schema.json --source=input.json --target-lang=DE
 ```
 
-Input and output are JSON **strings**, not PHP arrays. Native mode sends the
-schema without rewriting it and reads the JSON response without translation
-markers. OpenAI, xAI and Yandex Chat Completions use strict schema mode by default;
+Input and output are JSON **strings**. Native mode sends the
+schema unchanged and reads the response without translation markers. OpenAI, xAI and Yandex Chat Completions use strict schema mode by default;
 PHP callers may override `strict` with a boolean and `response_schema_name` with a name of 1–64 letters,
 digits, underscores, or dashes. A schema supplied with `format: 'json'` also enables
 native mode. The library still validates returned JSON syntax and source structure;
@@ -89,25 +85,24 @@ it does not independently implement every JSON Schema constraint.
 `linedJson` selects an alternative JSON translation prompt with the same container
 validation as `json`. It processes one JSON document, not JSON Lines, and does not
 silently repair malformed output. Neither mode assumes particular field names
-or a document domain. Use the existing context or a custom prompt for application
-rules. Custom prompt templates must provide the requested format; native mode
-requests the `structured_json` template.
+or a document domain. Use [context](usage.md#add-translation-context-prompt-source-and-target-language)
+for application instructions or [application-owned templates](usage.md#application-owned-templates)
+for an application-wide prompt policy. Custom templates must provide the requested format; native
+mode requests `structured_json`.
 
 ## Google native JSON transport
 
 Google JSON requests default to `json_transport=auto`. For registered Gemini models
 with a declared native JSON capability, `json` and `linedJson` with the standard
 `translator` group request `application/json` output without translation markers
-or a required JSON Schema. The registry declares this capability per model; the
-driver does not infer it from names or endpoints. The current Gemini entries have
-it enabled; Gemma and undeclared custom configurations retain markers.
+or a required JSON Schema. Current Gemini entries declare this capability; Gemma and custom configurations
+without it retain markers.
 
 ```bash
-printf '%s' '{"title":"Hello"}' | bin/bblslug --model=google:gemini-flash-latest \
+printf '%s' '{"title":"Hello"}' | vendor/bin/bblslug --model=google:gemini-flash-latest \
   --format=json --source-lang=EN --target-lang=DE
 ```
 
-The driver uses the same automatic selection to build requests and parse responses.
 Text and default document-mode HTML retain markers. [HTML segment mode](transports.md#keep-html-markup-local-during-translation)
 uses the JSON transport instead. Custom prompt groups retain their existing marker
 contract in auto mode; a custom `translator` group without `structured_json` also
@@ -127,15 +122,14 @@ Google transport choices are separate from DeepL's transport choices.
 
 ## Grok 4.7 request settings
 
-The `xai:grok-4.7` registry entry uses the Responses API with explicit
+`xai:grok-4.7` uses the Responses API with
 `reasoning_effort=low`. Its output budget can be overridden with
 `variables: ['max_completion_tokens' => 8192]`; the driver maps that option to
 `max_output_tokens` on this endpoint. For Grok's Responses API, this caps the visible
 answer; reasoning and function-call tokens do not count toward that cap. Reasoning
 can still increase latency. For large packets, set an appropriate `BBLSLUG_HTTP_TIMEOUT`
 alongside the shared operation deadline, or reduce the packet byte cap.
-`none` is not accepted by this model. Other Grok entries retain their configured
-protocol and settings; the library does not retry a rejected response on another endpoint.
+`none` is not accepted by this model. Other Grok entries use their configured protocol and settings.
 For JSON formats, `response_schema` selects native JSON Schema output with the
 existing `structured_json` template and no markers. Responses uses `text.format`;
 Chat Completions uses `response_format`. Without a schema, document-mode requests
@@ -159,7 +153,7 @@ The default document transport and explicit marker requests retain the marker pr
 
 ## Yandex completion status
 
-The driver checks completion metadata before extracting text, even when translation
+Yandex completion metadata is checked before text is extracted, even when translation
 markers are present. Foundation API alternatives must have
 `ALTERNATIVE_STATUS_FINAL`; Chat Completions and legacy completion responses must
 have `finish_reason=stop`, when that field is supplied. Truncated, partial,
@@ -170,16 +164,16 @@ is considered; another alternative does not replace a rejected one.
 Older response shapes without completion metadata remain accepted for compatibility;
 the selected framing and enabled output validation still apply. CLI provider failures leave the
 source and an existing destination file unchanged. No automatic retry is performed.
-The documented Yandex API format controls target JSON; this change does not add an
-HTML output mode or strip Markdown wrappers from a model response.
+The Yandex API format controls target JSON; it does not add an HTML output mode
+or strip Markdown wrappers.
 
 ## Yandex native JSON transport
 
 Yandex supports JSON-object generation through
 [`jsonObject` in the Foundation API](https://aistudio.yandex.ru/ru/docs/ai-studio/text-generation/api-ref/TextGeneration/completion)
 and [`response_format: {type: json_object}` in Chat Completions](https://aistudio.yandex.ru/ru/docs/ai-studio/api/Chat-Completions/createChatCompletion).
-The driver uses these controls with the existing generic `structured_json` prompt,
-without translation markers. It does not strip JSON fences or repair escaping.
+These controls use the `structured_json` prompt without translation markers. JSON fences
+and escaping are not repaired.
 
 `json_transport=auto` is the default. It selects native mode for `json`/`linedJson`
 only when the source root is an object, the model declares `native_json`, and the
@@ -200,8 +194,7 @@ $result = Bblslug::translate(
 
 CLI overrides use `--variables=json_transport=native` or `json_transport=markers`.
 Explicit native mode requires `json`/`linedJson` and a valid object-root source;
-custom groups need a `structured_json` template. Explicit markers preserve the
-previous protocol. `structured_json` requires `response_schema`. Supplying a schema
+custom groups need a `structured_json` template. Explicit markers select the marker protocol. `structured_json` requires `response_schema`. Supplying a schema
 with `json` or `linedJson` also selects native output: Foundation uses `jsonSchema.schema`,
 and Chat Completions uses `response_format.type=json_schema`. Yandex native requests
 require an object-root source. Explicit markers conflict with a response schema.
@@ -211,8 +204,7 @@ See [Yandex schema output](https://aistudio.yandex.ru/en/docs/ai-studio/operatio
 The response must be a JSON object even with container validation disabled.
 Truncation, content-filter, refusal, and completion-state checks happen first.
 Enabled schema/scalar checks and mandatory segment checks still reject changed,
-missing, duplicated, or empty values as appropriate. Request-local state fixes the
-selected framing at build time. `rawResponseBody` remains the raw provider response
+missing, duplicated, or empty values as appropriate. `rawResponseBody` remains the raw provider response
 (or the ordered raw-response array when batching is enabled). Chat Completions
 usage is preserved from its top-level `usage` field.
 
@@ -236,10 +228,8 @@ inline, tilde, or unfamiliar labelled fences fail explicitly for fence-free inpu
 also when container validation is disabled. Text and JSON responses are unchanged.
 This is not a Markdown parser or general repair of model output.
 
-The facade forwards the request-local `responseContext` automatically. Low-level
-driver integrations must pass that context to `parseResponse()`; without it, the
-driver retains its previous parsing behavior and does not guess source formatting.
-No shared mutable request state or automatic HTTP retry is used.
+Low-level driver integrations must pass the request’s `responseContext` to
+`parseResponse()` for this handling. The facade forwards it automatically.
 
 ## DeepL JSON transport
 
@@ -282,7 +272,6 @@ Low-level integrations must forward each request's `responseContext` to
 continuation after the upload, using authenticated HTTP with the supplied timeout
 and mask patterns, then parse the downloaded response. The optional `localResult`
 means no HTTP exchange is needed. `Bblslug::translate()` handles this automatically.
-The driver keeps no shared current-document state.
 
 ## DeepL HTML placeholders
 

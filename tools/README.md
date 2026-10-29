@@ -11,19 +11,18 @@ php tools/check-docs.php
 
 The catalogue check compares the generated model page with the registry and fails when a recorded retirement date has arrived, requiring a source review rather than an automatic model substitution. Regenerate it with
 `php tools/model-catalog.php` after updating model metadata and lifecycle sources.
-The example checker uses temporary files, fake credentials and dry-run preparation for documented
-CLI and PHP calls, including rendered CLI help. It does not verify provider availability, translation quality,
-checkpoint persistence or successful real HTTP requests. Explicit live-suite and installation commands are skipped.
+The example checker prepares documented CLI and PHP calls, including CLI help, with temporary files and fake credentials. It skips live-suite and installation commands. It does not check provider availability, translation quality, checkpoint persistence or real HTTP requests.
 
 ## Live provider checks
 
 `tools/live-smoke.php` makes real API requests through both the library and CLI. Requests may cost money and consume provider quota. Run it from a development checkout with Composer dependencies and provider credentials configured in the environment.
 
 ```bash
-php tools/live-smoke.php
+BBLSLUG_SMOKE_MODELS=google:gemini-flash-latest \
+BBLSLUG_SMOKE_FORMATS=text BBLSLUG_SMOKE_ENTRIES=api php tools/live-smoke.php
 ```
 
-By default, it checks the configured model list with `text`, `html`, and `json` through both `api` and `cli`. Set these environment variables to select cases:
+By default, it checks the configured models with `text`, `html`, and `json` through both `api` and `cli`. Select cases with these environment variables:
 
 | Variable | Default | Meaning |
 | --- | --- | --- |
@@ -46,17 +45,16 @@ Credential lookup prefers each non-empty `BBLSLUG_<NAME>` variable, then its unp
 
 The report directory is created with mode `0700`. `summary.json` is updated as cases finish; text reports contain synthetic output and diagnostics, with configured credentials and folder IDs masked. Keep reports local. Use a new report directory for each run when you need to retain separate results.
 
-The checks cover nonempty translated output, JSON decoding and selected invariants, protected content, and diagnostic key masking. They are small synthetic English-to-German requests, not a translation-quality benchmark. This runner does not cover every prompt, format, model, or provider failure mode.
+The small synthetic English-to-German cases check nonempty output, JSON decoding and selected invariants, protected content, and diagnostic key masking. They do not measure translation quality.
 
 ## Segment acceptance suite
 
 Select `BBLSLUG_SMOKE_SUITE=segments` to check large text, HTML and selected HTML inside JSON,
-plus Russian-to-English abbreviation boundaries. The default `small` suite above remains unchanged.
+plus Russian-to-English abbreviation boundaries.
 The segment suite requires exactly one explicit mode: `BBLSLUG_SMOKE_OFFLINE=1` or
 `BBLSLUG_SMOKE_LIVE=1`. Offline mode is rejected by the small suite.
 
-The offline mode uses a controlled HTTP client in child processes, requires no credentials,
-and runs in CI. It exercises the real library and CLI checkpoint workflows:
+Offline mode uses a controlled HTTP client, requires no credentials, and exercises the library and CLI checkpoint workflows:
 
 ```bash
 BBLSLUG_SMOKE_SUITE=segments BBLSLUG_SMOKE_OFFLINE=1 php tools/live-smoke.php
@@ -107,7 +105,7 @@ BBLSLUG_SMOKE_VARIABLES='{"openai:gpt-6-luna":{"reasoning_effort":"none"}}' \
 php tools/live-smoke.php
 ```
 
-The suite never retries provider requests or silently changes a model or reasoning setting.
+Provider requests are not retried, and the selected model and reasoning settings remain unchanged.
 A reasoning model can exhaust its output budget before producing a translation; that is a failed case.
 The report records the selected request settings, source and packet plans, sanitized child diagnostics,
 per-case results and source-code hashes. `summary.json` is updated after each case. A missing credential,
