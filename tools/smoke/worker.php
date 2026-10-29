@@ -16,6 +16,13 @@ use Bblslug\Translation\JsonHtmlDocument;
 use Bblslug\Translation\SegmentPlan;
 use Bblslug\Translation\TextDocument;
 
+if (($argv[2] ?? '') === 'prompts') {
+    require_once __DIR__ . '/Failure.php';
+    require_once __DIR__ . '/Prompts.php';
+    \Bblslug\Tools\Smoke\Prompts::worker(json_decode(file_get_contents($argv[1]), true, 512, JSON_THROW_ON_ERROR));
+    exit(0);
+}
+
 $job = json_decode(file_get_contents($argv[1]), true, 512, JSON_THROW_ON_ERROR);
 $mode = $argv[2];
 $env = static fn (string $name): string => (string) (getenv('BBLSLUG_' . $name) ?: getenv($name) ?: '');

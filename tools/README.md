@@ -111,6 +111,30 @@ The report records the selected request settings, source and packet plans, sanit
 per-case results and source-code hashes. `summary.json` is updated after each case. A missing credential,
 a skipped case or any failed assertion gives a nonzero exit status. Keep report directories local.
 
+## Prompt live suite
+
+This optional suite makes paid API requests only with explicit live mode and model selection:
+
+```bash
+BBLSLUG_SMOKE_SUITE=prompts BBLSLUG_SMOKE_LIVE=1 \
+BBLSLUG_SMOKE_MODELS=google:gemini-flash-latest php tools/live-smoke.php
+```
+
+Each LLM model runs three isolated cases: two consecutive calls with different glossary contexts in
+one PHP process, the `experimental_xml` prompt group with context, and an application-owned YAML
+group with a separate formal-address context. The custom group clones the bundled translator and
+sets the term in both its `json` and `structured_json` templates. Each response checks the nested JSON
+keys, scalar values, and exact expected German term in both messages. These are bounded fixture
+checks, not a general translation-quality assessment. DeepL does not use LLM prompt groups: it is
+reported as unsupported with a nonzero exit; use its native context through the existing transport.
+
+Credentials and Yandex folder ID use the `BBLSLUG_`-first environment lookup, as does `PROXY`.
+A new or empty report directory can be selected with `BBLSLUG_SMOKE_REPORT_DIR`; it is secured with
+mode `0700`. The sanitized `summary.json` records results and checks. Missing credentials, unknown
+models, unsupported DeepL, and failed cases produce a nonzero exit. Requests are not retried.
+Offline mode is rejected before any request. Each request has a 120-second operation limit and each
+case has a 270-second process limit; the output token budget is 1024 per request.
+
 ## PHPUnit live integration suite
 
 The PHPUnit `integration` suite makes paid requests only when `RUN_LIVE_TESTS` is exactly `1`. By default it chooses the first registry model for each vendor that has credentials. Set `BBLSLUG_LIVE_MODEL` to select one exact model:

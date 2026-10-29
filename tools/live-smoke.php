@@ -11,6 +11,11 @@ require dirname(__DIR__) . '/vendor/autoload.php';
 
 require_once __DIR__ . '/smoke/Failure.php';
 $suite = getenv('BBLSLUG_SMOKE_SUITE') ?: 'small';
+if ($suite === 'prompts') {
+    require_once __DIR__ . '/smoke/Process.php';
+    require_once __DIR__ . '/smoke/Prompts.php';
+    exit(\Bblslug\Tools\Smoke\Prompts::run());
+}
 if ($suite === 'segments') {
     require_once __DIR__ . '/smoke/Fixtures.php';
     require_once __DIR__ . '/smoke/Process.php';
