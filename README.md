@@ -59,13 +59,18 @@ $result = Bblslug::translate(
     apiKey: $apiKey,
     format: 'json',
     modelKey: 'google:gemini-flash-latest',
-    text: '{"message":"Hello, world!","count":2}',
+    text: '{"message":"Welcome to your workspace!","count":2}',
+    context: 'Use formal address. Translate "workspace" as "Arbeitsbereich".',
     sourceLang: 'EN',
     targetLang: 'DE',
 );
 
 echo $result['result'];
 ```
+
+Use `context` for tone, terminology, audience or domain instructions. It supplements the built-in
+LLM prompt; format and protection settings still apply. See
+[context and application-owned templates](docs/usage.md#add-translation-context-prompt-source-and-target-language).
 
 Inputs and translated results are strings, including for JSON. The library validates the JSON structure
 and exact non-string values by default. See [PHP options, result fields and error handling](docs/usage.md#php-library).

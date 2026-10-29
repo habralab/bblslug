@@ -9,7 +9,8 @@ Start with the CLI and PHP examples in the [README](../README.md). This page cov
 - [Formats](#formats)
 - [Filters and model options](#filters-and-model-options)
 - [File translation](#translate-a-json-file-and-write-to-another-file)
-- [Prompts and provider settings](#pass-model-specific-variables)
+- [Tone and terminology](#add-translation-context-prompt-source-and-target-language)
+- [Prompt templates](#choose-a-different-prompt-template) and [provider settings](#pass-model-specific-variables)
 - [Dry-run](#dry-run-placeholders-only) and [diagnostics](#verbose-mode-prints-request-preview-to-stderr)
 - [Statistics](#statistics)
 - [PHP API](#php-library)
@@ -164,6 +165,29 @@ vendor/bin/bblslug \
 
 ## Add translation context (prompt), source and target language
 
+Use `context` on each PHP call for tone, terminology, audience or subject matter. The built-in LLM
+templates include it alongside their translation and response-format instructions. For example
+(with the [PHP setup](#php-library) and `$apiKey`):
+
+```php
+$result = \Bblslug\Bblslug::translate(
+    apiKey: $apiKey,
+    format: 'text',
+    modelKey: 'google:gemini-flash-latest',
+    text: 'Welcome to your workspace!',
+    context: 'Use formal address. Translate "workspace" as "Arbeitsbereich".',
+    sourceLang: 'EN',
+    targetLang: 'DE',
+);
+```
+
+`context` adds instructions; `promptKey` selects a template group. Format, filters and validation
+remain controlled by their own arguments. A custom template must contain `{context}` to include it.
+DeepL uses its native context field rather than an LLM prompt; the Document API rejects context.
+See [DeepL transport options](providers.md#deepl-json-transport).
+
+The CLI equivalent is `--context`:
+
 ```bash
 vendor/bin/bblslug \
   --model=google:gemini-flash-latest \
@@ -172,7 +196,7 @@ vendor/bin/bblslug \
   --translated=output.html \
   --target-lang=DE \
   --source-lang=EN \
-  --context="Translate as a professional technical translator"
+  --context='Use formal address. Translate "workspace" as "Arbeitsbereich".'
 ```
 
 ## Pass model-specific variables
@@ -219,6 +243,28 @@ vendor/bin/bblslug --model=openai:gpt-6-luna --format=json \
 PHP callers use `promptKey: 'experimental_xml'`. This JSON-only template is plain text with
 XML-like tags; no XML/POML renderer is required. It cannot be combined with native structured JSON,
 which needs a `structured_json` template. `translator` is the default group.
+
+### Application-owned templates
+
+For an application-wide prompt policy, copy the [bundled YAML](../resources/prompts.yaml) from
+`vendor/habr/bblslug/resources/prompts.yaml` to your application, for example `config/prompts.yaml`.
+Edit its groups or add your own, then load it during application startup:
+
+```php
+require 'vendor/autoload.php';
+
+\Bblslug\Models\Prompts::load(__DIR__ . '/config/prompts.yaml');
+```
+
+Load it before the first `translate()`, `listPrompts()` or template render. The first load determines
+all groups for the PHP process; built-in groups are not merged and later `load()` calls have no effect.
+This is bootstrap configuration, not a per-request template switch for a long-running worker.
+
+Select an added group with `promptKey: 'my_translator'`, or keep `translator` if you edited that group.
+Templates can use `{source}`, `{target}`, `{context}`, `{start}` and `{end}`; input content is sent
+separately. Preserve the response and placeholder rules in the template you replace. Segments use
+`json` templates, or `structured_json` when native JSON is selected; native document mode also uses
+`structured_json`. Supply the formats your application uses. DeepL does not use these LLM templates.
 
 ## Dry-run placeholders only
 
@@ -342,7 +388,9 @@ Optional settings are grouped by purpose:
 
 | Settings | Purpose |
 | --- | --- |
-| `context`, `promptKey`, `sourceLang`, `targetLang` | Translation instructions and languages |
+| `context` | Additional tone, terminology, audience or domain instructions for this call |
+| `promptKey` | Named template group; default `translator` |
+| `sourceLang`, `targetLang` | Source and target languages |
 | `filters` | Content preserved through placeholders |
 | `variables`, `proxy` | [Provider settings](providers.md) and HTTP proxy |
 | `validate`, `validateEmbeddedJson`, `validateHtmlJsonPointers` | [Container and selected-content checks](transports.md#validation-and-opting-out) |

@@ -85,9 +85,10 @@ it does not independently implement every JSON Schema constraint.
 `linedJson` selects an alternative JSON translation prompt with the same container
 validation as `json`. It processes one JSON document, not JSON Lines, and does not
 silently repair malformed output. Neither mode assumes particular field names
-or a document domain. Use the existing context or a custom prompt for application
-rules. Custom prompt templates must provide the requested format; native mode
-requests the `structured_json` template.
+or a document domain. Use [context](usage.md#add-translation-context-prompt-source-and-target-language)
+for application instructions or [application-owned templates](usage.md#application-owned-templates)
+for an application-wide prompt policy. Custom templates must provide the requested format; native
+mode requests `structured_json`.
 
 ## Google native JSON transport
 
