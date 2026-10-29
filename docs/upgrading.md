@@ -2,6 +2,19 @@
 
 Read the changes between your installed version and the version you are adopting. Released compatibility notes below describe the behavior introduced by each release.
 
+## Upgrading to 0.12.1
+
+PHP calls keep their arguments. CLI option names must now match the full documented names;
+unknown or abbreviated options fail before input is read or a request is sent. Check scripts that
+previously relied on ignored flags, especially `--dry-run` typos.
+
+The default marker-based JSON prompt now shows the exact response layout. Custom templates
+and native structured JSON keep their existing protocols; malformed markers are still rejected.
+
+Checkpoint identity includes library source and prompt templates. Finish pending translations with
+their original version, or use a new checkpoint path after upgrading. Existing saved identities must
+not be edited to bypass this check.
+
 ## Upgrading to 0.12.0
 
 Existing translation calls and CLI options keep their arguments. PHP and dependency requirements,

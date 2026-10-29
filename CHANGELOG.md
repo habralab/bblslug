@@ -4,6 +4,16 @@ This file follows the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) f
 
 ## [Unreleased]
 
+## [0.12.1] – 2026-10-29
+
+### Added
+
+- Optional developer live prompt smoke suite covering per-call context, named prompt groups and application-owned YAML templates.
+
+### Changed
+
+- Simplify the guides around Composer installation and make PHP prompt customization explicit, with executable examples and template-loading limits.
+
 ### Fixed
 
 - Clarify the default JSON prompt’s response layout to reduce incomplete boundary markers observed with Claude Haiku; malformed responses remain rejected.
