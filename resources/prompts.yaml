@@ -75,11 +75,14 @@ translator:
       * Do NOT HTML-escape/unescape; do NOT change tags/attributes or code bytes; translate only human-language text within the string.
       * Between the required boundary markers, output one valid RFC 8259 JSON document that parses as-is.
     - If a glossary is provided, use it strictly; otherwise preserve any untranslatable, unknown, or proper-name terms as in source.
-    - First line of your output must be exactly {start}.
-    - Last line of your output must be exactly {end}.
-    - There must be a blank line immediately before the {end} marker.
-    - Return the required boundary markers and the translated JSON only, without commentary or Markdown fences.
     {context}
+    - Return the boundary markers and the translated JSON only, without commentary or Markdown fences.
+    - Copy both marker lines exactly, including both closing › characters.
+    - Use this response layout, replacing JSON_DOCUMENT with the translated JSON document:
+    {start}
+    JSON_DOCUMENT
+
+    {end}
 
   structured_json: |
       You are a professional translator of JSON content.

@@ -70,6 +70,30 @@ final class AnthropicDriverTest extends TestCase
     }
 
     /** @return array<string,array{string}> */
+    public static function malformedBoundaries(): array
+    {
+        return [
+            'shortened end' => ["‹‹TRANSLATION››\n{\"message\":\"Hallo\"}\n\n‹‹END›"],
+            'altered start' => ['‹‹TRANSLATION›Hallo‹‹END››'],
+            'reversed markers' => ['‹‹END››Hallo‹‹TRANSLATION››'],
+            'absent markers' => ['Hallo'],
+        ];
+    }
+
+    /** @dataProvider malformedBoundaries */
+    public function testRejectsMalformedBoundariesOnCompletedResponse(string $text): void
+    {
+        $response = json_encode([
+            'content' => [['type' => 'text', 'text' => $text]],
+            'stop_reason' => 'end_turn',
+        ], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Markers not found in Anthropic response');
+        (new AnthropicDriver())->parseResponse([], $response);
+    }
+
+    /** @return array<string,array{string}> */
     public function incompleteResponses(): array
     {
         return [
