@@ -22,6 +22,11 @@ files, or copy `input.txt`, `input.html`, `input.json` and `translation.schema.j
 `vendor/habr/bblslug/samples/quickstart/` into that directory. The [sample guide](../samples/README.md)
 describes their contents.
 
+The package requires PHP 8.2 or later, cURL, DOM and mbstring extensions, and Symfony YAML
+`^6.4.50 || ^7.4.23 || ^8.1.11`. Composer selects a version compatible with the application's other
+dependencies and PHP version; Symfony YAML 8.1 requires PHP 8.4 or later. Development tools such as
+PHPUnit, PHPStan and PHP_CodeSniffer are not installed as dependencies of applications using the library.
+
 From a repository checkout, use `bin/bblslug` instead of `vendor/bin/bblslug`; the same inputs are in
 `samples/quickstart/`.
 

@@ -18,6 +18,7 @@ This file follows the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) f
 
 ### Fixed
 
+- Require patched Symfony YAML versions while supporting the 6.4, 7.4 and 8.1 branches for embedding in other applications.
 - Exclude reasoning and other non-answer text from Responses output; reject whitespace-only provider replies.
 - Review provider lifecycles against public documentation as of November 11, 2026. Record Yandex shutdowns, Google reroutes and Anthropic minimum support dates without treating lower bounds as scheduled shutdowns.
 - Use registered canonical IDs in current examples and offline fixtures while preserving explicit driver coverage for older request formats.

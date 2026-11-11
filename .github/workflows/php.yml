@@ -23,6 +23,12 @@ jobs:
         include:
           - php: "8.2"
             dependencies: lowest
+          - php: "8.2"
+            dependencies: yaml-7.4.23
+            yaml: "7.4.23"
+          - php: "8.4"
+            dependencies: yaml-8.1.11
+            yaml: "8.1.11"
 
     steps:
       - name: Checkout repository
@@ -58,6 +64,15 @@ jobs:
       - name: Install lowest dependencies
         if: matrix.dependencies == 'lowest'
         run: composer update --prefer-lowest --prefer-stable --no-interaction --optimize-autoloader
+
+      - name: Install selected YAML version
+        if: startsWith(matrix.dependencies, 'yaml-')
+        run: composer update --with symfony/yaml:${{ matrix.yaml }} --prefer-stable --no-interaction --optimize-autoloader
+
+      - name: Show YAML version and audit runtime dependencies
+        run: |
+          composer show symfony/yaml
+          composer audit --no-dev
 
       - name: Lint PHP code (PSR-12)
         run: make test-phplint
