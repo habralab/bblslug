@@ -9,6 +9,7 @@ Choose a model from the [model catalogue](models.md) and configure its provider 
 
 - [Model defaults](#model-defaults)
 - [Native structured JSON](#native-structured-json)
+- [DeepSeek Responses API](#deepseek-responses-api)
 - [Google native JSON transport](#google-native-json-transport)
 - [Grok 4.7 request settings](#grok-47-request-settings)
 - [Yandex completion status](#yandex-completion-status)
@@ -47,7 +48,7 @@ same credentials/folder variables. The model determines the endpoint.
 
 Use `format: 'structured_json'` with an explicit JSON Schema in
 `variables['response_schema']`. This mode is implemented for OpenAI Chat
-Completions/Responses, Google Gemini, Yandex Foundation/Chat Completions, and
+Completions/Responses, DeepSeek Responses, Google Gemini, Yandex Foundation/Chat Completions, and
 xAI Chat Completions/Responses; the selected model must support native
 structured output. Unsupported providers and legacy OpenAI Completions are
 rejected locally. Provider schema restrictions and access rules still apply.
@@ -89,6 +90,21 @@ or a document domain. Use [context](usage.md#add-translation-context-prompt-sour
 for application instructions or [application-owned templates](usage.md#application-owned-templates)
 for an application-wide prompt policy. Custom templates must provide the requested format; native
 mode requests `structured_json`.
+
+## DeepSeek Responses API
+
+`deepseek:deepseek-flash` and `deepseek:deepseek-v4-pro` use the [DeepSeek Responses API](https://api-docs.deepseek.com/guides/responses_api/)
+and `DEEPSEEK_API_KEY`. Pro defaults to `reasoning_effort=none`; Flash uses `low`
+because its non-thinking mode can omit HTML framing markers. Both omit temperature
+and set an output budget of 4096 tokens. Override the budget with
+`max_completion_tokens`; select `reasoning_effort=low`, `high`, or `max` to enable
+reasoning. The output budget includes reasoning and visible output. Failed requests
+are not automatically retried.
+
+Explicit native schemas use `text.format=json_schema`. DeepSeek does not provide a
+strict schema enforcement guarantee through this integration, so `strict=true` is
+rejected. Segment transport automatically uses native schemas. Flash is the primary
+provider ID and follows provider updates; the library does not pin its served build.
 
 ## Google native JSON transport
 

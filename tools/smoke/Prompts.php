@@ -26,7 +26,8 @@ final class Prompts
         $environment = getenv();
         $secrets = [];
         foreach (
-            ['OPENAI_API_KEY', 'ANTHROPIC_API_KEY', 'GOOGLE_API_KEY', 'XAI_API_KEY', 'YANDEX_API_KEY',
+            ['OPENAI_API_KEY', 'DEEPSEEK_API_KEY', 'ANTHROPIC_API_KEY', 'GOOGLE_API_KEY', 'XAI_API_KEY',
+            'YANDEX_API_KEY',
             'YANDEX_FOLDER_ID', 'DEEPL_FREE_API_KEY', 'DEEPL_PRO_API_KEY', 'PROXY'] as $name
         ) {
             $secrets[] = $environment[$name] ?? '';

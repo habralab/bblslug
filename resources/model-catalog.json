@@ -2297,6 +2297,66 @@
         }
       },
       "policy_excluded_lifecycle": {}
+    },
+    "deepseek": {
+      "sources": [
+        "https://api-docs.deepseek.com/quick_start/pricing/",
+        "https://api-docs.deepseek.com/updates/",
+        "https://api-docs.deepseek.com/api/list-models/",
+        "https://api-docs.deepseek.com/api/create-chat-completion/",
+        "https://api-docs.deepseek.com/api/create-response/",
+        "https://api-docs.deepseek.com/guides/responses_api/",
+        "https://api-docs.deepseek.com/guides/json_mode/",
+        "https://api-docs.deepseek.com/guides/thinking_mode/"
+      ],
+      "models": {
+        "deepseek-flash": "deepseek-flash",
+        "deepseek-v4-pro": "deepseek-v4-pro"
+      },
+      "exclusions": {
+        "compatibility_redirects": [
+          "deepseek-v4-flash",
+          "deepseek-v4-flash-vision-exp"
+        ],
+        "shutdown_2026-07-24": [
+          "deepseek-chat",
+          "deepseek-reasoner"
+        ]
+      },
+      "audit_notes": [
+        "deepseek-flash is the primary documented provider ID. Its served version is updated by the provider; no versioned V4.1 Flash API ID is invented. Compatibility redirects remain excluded.",
+        "The original September 14 Pro reroute announcement was superseded by the revised changelog and current catalogue retaining Pro service.",
+        "Public documentation and bounded live checks on 2026-11-11: PHP/CLI text, HTML, nested JSON, explicit schema and automatic HTML segment schemas passed with final defaults (Flash low, Pro none). This is not a translation-quality benchmark or universal adherence guarantee."
+      ],
+      "lifecycle_checked_at": "2026-11-11",
+      "lifecycle_source": "https://api-docs.deepseek.com/updates/",
+      "lifecycle_evidence": {
+        "deepseek-v4-pro": {
+          "kind": "model",
+          "status": "available",
+          "access": "standard",
+          "checked_at": "2026-11-11",
+          "lifecycle_source": "https://api-docs.deepseek.com/updates/"
+        },
+        "deepseek-flash": {
+          "kind": "model",
+          "status": "available",
+          "access": "standard",
+          "checked_at": "2026-11-11",
+          "lifecycle_source": "https://api-docs.deepseek.com/updates/"
+        }
+      },
+      "live_checked_at": "2026-11-11",
+      "text_smoke": {
+        "deepseek-flash": {
+          "status": "translated",
+          "served_model": "deepseek-flash"
+        },
+        "deepseek-v4-pro": {
+          "status": "translated",
+          "served_model": "deepseek-v4-pro"
+        }
+      }
     }
   },
   "verification": {

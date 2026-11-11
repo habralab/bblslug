@@ -4,7 +4,9 @@ Read the changes between your installed version and the version you are adopting
 
 ## Upcoming minor version (Unreleased)
 
-The built-in registry contains canonical model IDs and DeepL tiers. Provider aliases such as
+The built-in registry contains canonical model IDs and DeepL tiers. DeepSeek Flash uses its
+primary `deepseek-flash` API ID, whose served version follows provider updates.
+ Provider aliases such as
 `openai:gpt-5-mini`, `google:gemini-flash-latest` and `yandex:gpt-lite`, and pinned snapshots such as
 `openai:gpt-5-mini-2025-08-07`, are absent from PHP `listModels()` and both CLI listings.
 Selecting a removed key fails locally as an unknown model. Choose a canonical ID from the

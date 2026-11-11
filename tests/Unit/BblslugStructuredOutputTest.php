@@ -207,7 +207,10 @@ final class BblslugStructuredOutputTest extends TestCase
     {
         $result = $this->runFixture(['model' => 'deepl:free', 'input' => '{}', 'translated' => '{}']);
         self::assertSame(\InvalidArgumentException::class, $result['type']);
-        self::assertStringContainsString('only by OpenAI, Google, Yandex and xAI', $result['message']);
+        self::assertStringContainsString(
+            'only by OpenAI, Google, Yandex, xAI and DeepSeek',
+            $result['message']
+        );
     }
 
     public function testOldPositionalOptionalArgumentsKeepTheirMeaning(): void

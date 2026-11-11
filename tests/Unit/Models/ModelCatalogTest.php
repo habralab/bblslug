@@ -303,7 +303,7 @@ final class ModelCatalogTest extends TestCase
     public function testPhpModelListIsSortedAndContainsNamedModels(): void
     {
         $groups = \Bblslug\Bblslug::listModels();
-        self::assertSame(['anthropic', 'deepl', 'google', 'openai', 'xai', 'yandex'], array_keys($groups));
+        self::assertSame(['anthropic', 'deepl', 'deepseek', 'google', 'openai', 'xai', 'yandex'], array_keys($groups));
         self::assertArrayHasKey('openai:gpt-6.1-terra', $groups['openai']);
         foreach ($groups as $models) {
             $keys = array_keys($models);

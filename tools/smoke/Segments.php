@@ -41,7 +41,7 @@ final class Segments
         }
         $this->environment = getenv();
         $secrets = [];
-        $names = ['OPENAI_API_KEY', 'ANTHROPIC_API_KEY', 'GOOGLE_API_KEY', 'XAI_API_KEY',
+        $names = ['OPENAI_API_KEY', 'DEEPSEEK_API_KEY', 'ANTHROPIC_API_KEY', 'GOOGLE_API_KEY', 'XAI_API_KEY',
             'YANDEX_API_KEY', 'YANDEX_FOLDER_ID', 'DEEPL_FREE_API_KEY', 'DEEPL_PRO_API_KEY', 'PROXY'];
         foreach ($names as $name) {
             foreach ([$name, 'BBLSLUG_' . $name] as $variable) {
@@ -97,7 +97,8 @@ final class Segments
         $registry = new ModelRegistry();
         $models = explode(',', getenv('BBLSLUG_SMOKE_MODELS') ?: ($this->offline ? 'google:gemini-3.6-flash'
             : 'openai:gpt-6-luna,anthropic:claude-haiku-5.5,google:gemini-3.6-flash,xai:grok-4.7,'
-                . 'deepl:free,deepl:pro,yandex:aliceai-llm,yandex:yandexgpt-5-pro'));
+                . 'deepseek:deepseek-flash,deepseek:deepseek-v4-pro,deepl:free,deepl:pro,'
+                . 'yandex:aliceai-llm,yandex:yandexgpt-5-pro'));
         foreach ($models as $model) {
             if (!$registry->has($model) || ($this->offline && $model !== 'google:gemini-3.6-flash')) {
                 throw new \InvalidArgumentException('Unknown model or unsupported offline model: ' . $model);

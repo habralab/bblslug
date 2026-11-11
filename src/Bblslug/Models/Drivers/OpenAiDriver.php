@@ -80,13 +80,18 @@ class OpenAiDriver implements ModelDriverInterface
             throw new \InvalidArgumentException('response_schema requires format json, structured_json, or linedJson');
         }
         $schemaName = $settings['response_schema_name'] ?? 'anonymous';
-        $strict = $settings['strict'] ?? true;
+        $capabilities = \is_array($config['capabilities'] ?? null) ? $config['capabilities'] : [];
+        $supportsStrict = ($capabilities['strict_json_schema'] ?? true) !== false;
+        $strict = $settings['strict'] ?? $supportsStrict;
         if ($native) {
             if (!\is_string($schemaName) || !\preg_match('/^[A-Za-z0-9_-]{1,64}$/', $schemaName)) {
                 throw new \InvalidArgumentException('response_schema_name must match [A-Za-z0-9_-]{1,64}');
             }
             if (!\is_bool($strict)) {
                 throw new \InvalidArgumentException('strict must be a boolean');
+            }
+            if ($strict && !$supportsStrict) {
+                throw new \InvalidArgumentException('The selected model does not support strict JSON Schema output');
             }
         }
         $tempRaw = \array_key_exists('temperature', $settings) ? $settings['temperature'] : 0.0;
@@ -140,8 +145,12 @@ class OpenAiDriver implements ModelDriverInterface
         if ($native) {
             if ($apiType === 'responses') {
                 $payload['text'] = ['format' => [
-                    'type' => 'json_schema', 'name' => $schemaName, 'strict' => $strict, 'schema' => $schema,
+                    'type' => 'json_schema', 'name' => $schemaName,
                 ]];
+                if ($supportsStrict) {
+                    $payload['text']['format']['strict'] = $strict;
+                }
+                $payload['text']['format']['schema'] = $schema;
             } else {
                 $payload['response_format'] = ['type' => 'json_schema', 'json_schema' => [
                     'name' => $schemaName, 'strict' => $strict, 'schema' => $schema,
@@ -251,7 +260,7 @@ class OpenAiDriver implements ModelDriverInterface
 
         // Validate response structure
         $content = $contentRaw;
-        if ($content === '') {
+        if (\trim($content) === '') {
             throw new \RuntimeException("OpenAI translation failed: {$responseBody}");
         }
 
@@ -329,11 +338,19 @@ class OpenAiDriver implements ModelDriverInterface
         if (\is_array($output)) {
             $parts = '';
             foreach ($output as $item) {
-                if (!\is_array($item) || !\is_array($item['content'] ?? null)) {
+                if (
+                    !\is_array($item)
+                    || (isset($item['type']) && $item['type'] !== 'message')
+                    || !\is_array($item['content'] ?? null)
+                ) {
                     continue;
                 }
                 foreach ($item['content'] as $part) {
-                    if (\is_array($part) && \is_string($part['text'] ?? null)) {
+                    if (
+                        \is_array($part)
+                        && (!isset($part['type']) || $part['type'] === 'output_text')
+                        && \is_string($part['text'] ?? null)
+                    ) {
                         $parts .= $part['text'];
                     }
                 }

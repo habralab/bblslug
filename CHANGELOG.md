@@ -6,6 +6,7 @@ This file follows the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) f
 
 ### Added
 
+- DeepSeek Flash and V4 Pro through the existing Responses transport, with explicit JSON Schema support and provider-specific credentials.
 - Canonical Claude Fable/Mythos 5.2, Gemini 4 Carbon, GPT-6.1 Terra, GPT-6 Cyber and restricted GPT-5.5 Cyber Preview entries.
 - Distinct lifecycle labels for exact shutdown dates, earliest possible retirements and automatic model reroutes in the CLI catalogue and documentation.
 
@@ -17,7 +18,8 @@ This file follows the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) f
 
 ### Fixed
 
-- Review all six providers against public documentation as of November 11, 2026. Record Yandex shutdowns, Google reroutes and Anthropic minimum support dates without treating lower bounds as scheduled shutdowns.
+- Exclude reasoning and other non-answer text from Responses output; reject whitespace-only provider replies.
+- Review provider lifecycles against public documentation as of November 11, 2026. Record Yandex shutdowns, Google reroutes and Anthropic minimum support dates without treating lower bounds as scheduled shutdowns.
 - Use registered canonical IDs in current examples and offline fixtures while preserving explicit driver coverage for older request formats.
 
 ## [0.12.1] – 2026-10-29

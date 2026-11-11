@@ -371,6 +371,64 @@ deepl:
       access: standard
       checked_at: '2026-11-11'
       lifecycle_source: 'https://developers.deepl.com/api-reference/translate/request-translation'
+deepseek:
+  endpoint: 'https://api.deepseek.com/responses'
+  api_type: responses
+  format: text
+  defaults:
+    temperature: null
+    reasoning_effort: none
+    max_completion_tokens: 4096
+    source_lang: auto
+    target_lang: EN
+  capabilities:
+    strict_json_schema: false
+    native_json_schema: true
+  requirements:
+    auth:
+      type: header
+      key_name: Authorization
+      prefix: Bearer
+      env: DEEPSEEK_API_KEY
+      help_url: 'https://platform.deepseek.com/api_keys'
+    headers:
+      - 'Content-Type: application/json'
+  limits:
+    max_tokens: 1048576
+    max_output_tokens: 393216
+    estimated_max_chars: 4194304
+    token_estimator: gpt
+  http_error_handling: true
+  usage:
+    tokens:
+      total: total_tokens
+      breakdown:
+        prompt: input_tokens
+        completion: output_tokens
+        cached: input_tokens_details.cached_tokens
+        reasoning: output_tokens_details.reasoning_tokens
+  models:
+    deepseek-flash:
+      defaults:
+        model: deepseek-flash
+        reasoning_effort: low
+      name: DeepSeek Flash
+      notes: 'Primary provider API ID, currently V4.1 Flash; the served version is updated by the provider. Low reasoning effort by default for reliable HTML framing.'
+      status: available
+      kind: model
+      access: standard
+      checked_at: '2026-11-11'
+      lifecycle_source: 'https://api-docs.deepseek.com/updates/'
+    deepseek-v4-pro:
+      defaults:
+        model: deepseek-v4-pro
+      name: DeepSeek V4 Pro
+      notes: 'Provider-hosted model; non-thinking by default. Explicit JSON Schema requests are supported without a strict-mode guarantee.'
+      status: available
+      kind: model
+      access: standard
+      checked_at: '2026-11-11'
+      lifecycle_source: 'https://api-docs.deepseek.com/updates/'
 google:
   format: text
   defaults:

@@ -26,7 +26,7 @@ By default, it checks the configured models with `text`, `html`, and `json` thro
 
 | Variable | Default | Meaning |
 | --- | --- | --- |
-| `BBLSLUG_SMOKE_MODELS` | Eight models configured in the script | Comma-separated `vendor:model` keys |
+| `BBLSLUG_SMOKE_MODELS` | Ten models configured in the script | Comma-separated `vendor:model` keys |
 | `BBLSLUG_SMOKE_FORMATS` | `text,html,json` | Comma-separated formats supported by the runner |
 | `BBLSLUG_SMOKE_ENTRIES` | `api,cli` | Either or both entry points |
 | `BBLSLUG_SMOKE_PROMPT_KEY` | `translator` | Prompt group used for both entry points |
@@ -81,7 +81,7 @@ These authored fixture checks do not establish general translation quality or se
 | --- | --- | --- |
 | `BBLSLUG_SMOKE_CASES` | `large,abbreviations` | Comma-separated fixture names |
 | `BBLSLUG_SMOKE_FORMATS` | `text,html,json` | Selected formats |
-| `BBLSLUG_SMOKE_MODELS` | Eight models in live mode; canonical Google Flash offline | Exact registered keys; offline supports only its controlled Google client |
+| `BBLSLUG_SMOKE_MODELS` | Ten models in live mode; canonical Google Flash offline | Exact registered keys; offline supports only its controlled Google client |
 | `BBLSLUG_SMOKE_ENTRIES` | `api,cli` | Both are required for this composite check |
 | `BBLSLUG_SMOKE_PROMPT_KEY` | `translator` | Only the standard translator prompt is supported |
 | `BBLSLUG_SMOKE_REPORT_DIR` | A unique directory under system temp | Must be new or empty; newly created directories use mode `0700` |

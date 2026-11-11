@@ -312,6 +312,7 @@ class ModelRegistry
         return match ($vendor) {
             'anthropic' => new AnthropicDriver(),
             'deepl' => new DeepLDriver(),
+            'deepseek' => new OpenAiDriver(),
             'google' => new GoogleDriver(),
             'openai' => new OpenAiDriver(),
             'yandex' => new YandexDriver(),

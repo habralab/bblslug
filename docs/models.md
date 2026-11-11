@@ -51,6 +51,8 @@ It is a discovery aid, not a claim that every listed model was live-tested for e
 | `anthropic:claude-sonnet-5.5` | model |
 | `deepl:free` | tier |
 | `deepl:pro` | tier |
+| `deepseek:deepseek-flash` | model |
+| `deepseek:deepseek-v4-pro` | model |
 | `google:gemini-3.1-flash-lite` | model |
 | `google:gemini-3.5-flash-lite` | model |
 | `google:gemini-3.6-flash` | model |
@@ -106,6 +108,9 @@ APIs supported:
 - deepl:
   - `deepl:free` — tier; available; standard
   - `deepl:pro` — tier; available; standard
+- deepseek:
+  - `deepseek:deepseek-flash` — model; available; standard
+  - `deepseek:deepseek-v4-pro` — model; available; standard
 - google:
   - `google:gemini-2.5-flash` — model; deprecated; existing_customers; redirect 2026-12-01; replacement google:gemini-3.5-flash-lite
   - `google:gemini-2.5-flash-lite` — model; available; existing_customers
@@ -162,6 +167,7 @@ not similarly named models on third-party hosting. Verified retired IDs are excl
 
 - [anthropic](https://platform.claude.com/docs/en/about-claude/model-deprecations)
 - [deepl](https://developers.deepl.com/api-reference/translate/request-translation)
+- [deepseek](https://api-docs.deepseek.com/updates/)
 - [google](https://aistudio.google.com/docs/deprecations)
 - [openai](https://developers.openai.com/api/docs/deprecations)
 - [xai](https://docs.x.ai/developers/pricing)

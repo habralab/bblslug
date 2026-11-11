@@ -1,7 +1,7 @@
 # Bblslug
 
 Bblslug is a PHP library and CLI for translating **plain text, HTML and JSON** through translation APIs.
-It supports Anthropic, DeepL, Google, OpenAI, xAI and Yandex AI Studio.
+It supports Anthropic, DeepL, DeepSeek, Google, OpenAI, xAI and Yandex AI Studio.
 
 Filters preserve URLs and selected HTML blocks. Validation checks structure and protected content.
 
