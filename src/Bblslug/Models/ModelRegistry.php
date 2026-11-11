@@ -92,6 +92,35 @@ class ModelRegistry
         return $this->models[$key] ?? null;
     }
 
+    /** Explain a previously registered key without making it selectable again. */
+    public function getUnavailableMessage(string $key): ?string
+    {
+        if ($this->has($key)) {
+            return null;
+        }
+
+        $catalog = \json_decode(
+            (string) \file_get_contents(__DIR__ . '/../../../resources/unavailable-models.json'),
+            true,
+            512,
+            JSON_THROW_ON_ERROR
+        );
+        $entry = \is_array($catalog) ? ($catalog[$key] ?? null) : null;
+        if (!\is_array($entry) || !\is_string($entry['reason'] ?? null)) {
+            return null;
+        }
+
+        $message = "Model key '{$key}' is unavailable in this library. Reason: " . $entry['reason'];
+        if (\is_string($entry['replacement'] ?? null) && $this->has($entry['replacement'])) {
+            $message .= ' Suggested replacement: ' . $entry['replacement'] . '.';
+            $message .= ' Review API settings, capabilities, access and pricing before switching.';
+            if (\is_string($entry['migration_note'] ?? null)) {
+                $message .= ' ' . $entry['migration_note'];
+            }
+        }
+        return $message . ' No automatic replacement is made. Use --list-models to choose an available model.';
+    }
+
     /**
      * Check whether a model is registered.
      *
@@ -305,7 +334,9 @@ class ModelRegistry
     {
         $model  = $this->get($key);
         if ($model === null) {
-            throw new \InvalidArgumentException("Unknown model key '{$key}'.");
+            throw new \InvalidArgumentException(
+                $this->getUnavailableMessage($key) ?? "Unknown model key '{$key}'."
+            );
         }
         $vendor = \is_string($model['vendor'] ?? null) ? $model['vendor'] : '';
 

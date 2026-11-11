@@ -6,10 +6,12 @@ Read the changes between your installed version and the version you are adopting
 
 The built-in registry contains canonical model IDs and DeepL tiers. DeepSeek Flash uses its
 primary `deepseek-flash` API ID, whose served version follows provider updates.
- Provider aliases such as
+Provider aliases such as
 `openai:gpt-5-mini`, `google:gemini-flash-latest` and `yandex:gpt-lite`, and pinned snapshots such as
 `openai:gpt-5-mini-2025-08-07`, are absent from PHP `listModels()` and both CLI listings.
-Selecting a removed key fails locally as an unknown model. Choose a canonical ID from the
+Previously registered keys are recognized as unavailable and rejected before a provider request.
+The error explains the recorded reason and includes a verified current successor when known.
+An unknown spelling still produces an unknown-model error. Choose a canonical ID from the
 [catalogue](models.md), such as `openai:gpt-5.6-luna`, `google:gemini-3.6-flash` or
 `yandex:yandexgpt-5-pro`, after reviewing capabilities, access and cost. These are migration
 examples, not interchangeable replacements. Some older families, including Claude 4.5, have

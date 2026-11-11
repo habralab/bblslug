@@ -1,0 +1,324 @@
+{
+  "anthropic:claude-haiku-3.5": {
+    "reason": "This previously registered name was removed from the built-in registry."
+  },
+  "anthropic:claude-haiku-4.5": {
+    "reason": "Provider alias excluded by registry policy; this does not mean the provider has retired it."
+  },
+  "anthropic:claude-haiku-4.5-20251001": {
+    "reason": "Pinned snapshot excluded by registry policy; this does not mean the provider has retired it."
+  },
+  "anthropic:claude-opus-4": {
+    "reason": "This previously registered name was removed from the built-in registry."
+  },
+  "anthropic:claude-opus-4.5": {
+    "reason": "Provider alias excluded by registry policy; this does not mean the provider has retired it."
+  },
+  "anthropic:claude-opus-4.5-20251101": {
+    "reason": "Pinned snapshot excluded by registry policy; this does not mean the provider has retired it."
+  },
+  "anthropic:claude-sonnet-4": {
+    "reason": "This previously registered name was removed from the built-in registry."
+  },
+  "anthropic:claude-sonnet-4.5": {
+    "reason": "Provider alias excluded by registry policy; this does not mean the provider has retired it.",
+    "replacement": "anthropic:claude-sonnet-5.5"
+  },
+  "anthropic:claude-sonnet-4.5-20250929": {
+    "reason": "Pinned snapshot excluded by registry policy; this does not mean the provider has retired it.",
+    "replacement": "anthropic:claude-sonnet-5.5"
+  },
+  "gemini:1.5-pro": {
+    "reason": "The former gemini vendor namespace is no longer registered."
+  },
+  "gemini:2.0-flash": {
+    "reason": "The former gemini vendor namespace is no longer registered."
+  },
+  "gemini:2.5-flash": {
+    "reason": "The former gemini vendor namespace is no longer registered.",
+    "replacement": "google:gemini-2.5-flash"
+  },
+  "gemini:2.5-flash-lite": {
+    "reason": "The former gemini vendor namespace is no longer registered.",
+    "replacement": "google:gemini-2.5-flash-lite"
+  },
+  "gemini:2.5-pro": {
+    "reason": "The former gemini vendor namespace is no longer registered.",
+    "replacement": "google:gemini-2.5-pro"
+  },
+  "google:gemini-2.0-flash": {
+    "reason": "This previously registered name was removed from the built-in registry."
+  },
+  "google:gemini-3.1-flash-lite-preview": {
+    "reason": "This previously registered name was removed from the built-in registry."
+  },
+  "google:gemini-flash-latest": {
+    "reason": "Provider alias excluded by registry policy; this does not mean the provider has retired it."
+  },
+  "google:gemini-flash-lite-latest": {
+    "reason": "Provider alias excluded by registry policy; this does not mean the provider has retired it."
+  },
+  "google:gemini-pro-latest": {
+    "reason": "Provider alias excluded by registry policy; this does not mean the provider has retired it."
+  },
+  "openai:chat-latest": {
+    "reason": "Provider alias excluded by registry policy; this does not mean the provider has retired it."
+  },
+  "openai:gpt-3.5-turbo": {
+    "reason": "Provider API retirement was announced for 2026-10-23."
+  },
+  "openai:gpt-3.5-turbo-0125": {
+    "reason": "Provider API retirement was announced for 2026-10-23."
+  },
+  "openai:gpt-3.5-turbo-16k": {
+    "reason": "This previously registered name was removed from the built-in registry."
+  },
+  "openai:gpt-4": {
+    "reason": "Provider API retirement was announced for 2026-10-23."
+  },
+  "openai:gpt-4-0613": {
+    "reason": "Provider API retirement was announced for 2026-10-23."
+  },
+  "openai:gpt-4-1106-preview": {
+    "reason": "Provider API retirement was announced for 2026-10-23."
+  },
+  "openai:gpt-4-turbo": {
+    "reason": "Provider API retirement was announced for 2026-10-23."
+  },
+  "openai:gpt-4-turbo-2024-04-09": {
+    "reason": "Provider API retirement was announced for 2026-10-23."
+  },
+  "openai:gpt-4.1": {
+    "reason": "Provider alias excluded by registry policy; this does not mean the provider has retired it."
+  },
+  "openai:gpt-4.1-2025-04-14": {
+    "reason": "Pinned snapshot excluded by registry policy; this does not mean the provider has retired it."
+  },
+  "openai:gpt-4.1-mini": {
+    "reason": "Provider alias excluded by registry policy; this does not mean the provider has retired it."
+  },
+  "openai:gpt-4.1-mini-2025-04-14": {
+    "reason": "Pinned snapshot excluded by registry policy; this does not mean the provider has retired it."
+  },
+  "openai:gpt-4.1-nano": {
+    "reason": "Provider API retirement was announced for 2026-10-23."
+  },
+  "openai:gpt-4.1-nano-2025-04-14": {
+    "reason": "Provider API retirement was announced for 2026-10-23."
+  },
+  "openai:gpt-4o": {
+    "reason": "Provider alias excluded by registry policy; this does not mean the provider has retired it."
+  },
+  "openai:gpt-4o-2024-05-13": {
+    "reason": "Provider API retirement was announced for 2026-10-23."
+  },
+  "openai:gpt-4o-2024-08-06": {
+    "reason": "Pinned snapshot excluded by registry policy; this does not mean the provider has retired it."
+  },
+  "openai:gpt-4o-2024-11-20": {
+    "reason": "Pinned snapshot excluded by registry policy; this does not mean the provider has retired it."
+  },
+  "openai:gpt-4o-mini": {
+    "reason": "Provider alias excluded by registry policy; this does not mean the provider has retired it."
+  },
+  "openai:gpt-4o-mini-2024-07-18": {
+    "reason": "Pinned snapshot excluded by registry policy; this does not mean the provider has retired it."
+  },
+  "openai:gpt-5": {
+    "reason": "Provider alias excluded by registry policy; this does not mean the provider has retired it.",
+    "replacement": "openai:gpt-5.6-sol"
+  },
+  "openai:gpt-5-2025-08-07": {
+    "reason": "Pinned snapshot excluded by registry policy; this does not mean the provider has retired it."
+  },
+  "openai:gpt-5-mini": {
+    "reason": "Provider alias excluded by registry policy; this does not mean the provider has retired it.",
+    "replacement": "openai:gpt-5.6-terra"
+  },
+  "openai:gpt-5-mini-2025-08-07": {
+    "reason": "Pinned snapshot excluded by registry policy; this does not mean the provider has retired it."
+  },
+  "openai:gpt-5-nano": {
+    "reason": "Provider alias excluded by registry policy; this does not mean the provider has retired it.",
+    "replacement": "openai:gpt-5.6-luna"
+  },
+  "openai:gpt-5-nano-2025-08-07": {
+    "reason": "Pinned snapshot excluded by registry policy; this does not mean the provider has retired it."
+  },
+  "openai:gpt-5-pro": {
+    "reason": "Provider alias excluded by registry policy; this does not mean the provider has retired it.",
+    "replacement": "openai:gpt-5.6-sol",
+    "migration_note": "Selecting the successor key does not automatically enable the provider's separate Pro reasoning mode."
+  },
+  "openai:gpt-5-pro-2025-10-06": {
+    "reason": "Pinned snapshot excluded by registry policy; this does not mean the provider has retired it."
+  },
+  "openai:gpt-5-search-api": {
+    "reason": "Current canonical identity or supported provider transport could not be verified; retirement is not asserted."
+  },
+  "openai:gpt-5-search-api-2025-10-14": {
+    "reason": "Pinned snapshot excluded by registry policy; this does not mean the provider has retired it."
+  },
+  "openai:gpt-5.1": {
+    "reason": "Provider alias excluded by registry policy; this does not mean the provider has retired it."
+  },
+  "openai:gpt-5.1-2025-11-13": {
+    "reason": "Pinned snapshot excluded by registry policy; this does not mean the provider has retired it."
+  },
+  "openai:gpt-5.2": {
+    "reason": "Provider alias excluded by registry policy; this does not mean the provider has retired it."
+  },
+  "openai:gpt-5.2-2025-12-11": {
+    "reason": "Pinned snapshot excluded by registry policy; this does not mean the provider has retired it."
+  },
+  "openai:gpt-5.2-pro": {
+    "reason": "Provider alias excluded by registry policy; this does not mean the provider has retired it."
+  },
+  "openai:gpt-5.2-pro-2025-12-11": {
+    "reason": "Pinned snapshot excluded by registry policy; this does not mean the provider has retired it."
+  },
+  "openai:gpt-5.4": {
+    "reason": "Provider alias excluded by registry policy; this does not mean the provider has retired it."
+  },
+  "openai:gpt-5.4-2026-03-05": {
+    "reason": "Pinned snapshot excluded by registry policy; this does not mean the provider has retired it."
+  },
+  "openai:gpt-5.4-mini": {
+    "reason": "Provider alias excluded by registry policy; this does not mean the provider has retired it."
+  },
+  "openai:gpt-5.4-mini-2026-03-17": {
+    "reason": "Pinned snapshot excluded by registry policy; this does not mean the provider has retired it."
+  },
+  "openai:gpt-5.4-nano": {
+    "reason": "Provider alias excluded by registry policy; this does not mean the provider has retired it."
+  },
+  "openai:gpt-5.4-nano-2026-03-17": {
+    "reason": "Pinned snapshot excluded by registry policy; this does not mean the provider has retired it."
+  },
+  "openai:gpt-5.4-pro": {
+    "reason": "Provider alias excluded by registry policy; this does not mean the provider has retired it."
+  },
+  "openai:gpt-5.4-pro-2026-03-05": {
+    "reason": "Pinned snapshot excluded by registry policy; this does not mean the provider has retired it."
+  },
+  "openai:gpt-5.5": {
+    "reason": "Provider alias excluded by registry policy; this does not mean the provider has retired it."
+  },
+  "openai:gpt-5.5-2026-04-23": {
+    "reason": "Pinned snapshot excluded by registry policy; this does not mean the provider has retired it."
+  },
+  "openai:gpt-5.5-pro": {
+    "reason": "Provider alias excluded by registry policy; this does not mean the provider has retired it."
+  },
+  "openai:gpt-5.5-pro-2026-04-23": {
+    "reason": "Pinned snapshot excluded by registry policy; this does not mean the provider has retired it."
+  },
+  "openai:gpt-5.6-cyber": {
+    "reason": "Provider alias excluded by registry policy; this does not mean the provider has retired it."
+  },
+  "openai:gpt-rosalind-discovery": {
+    "reason": "Current canonical identity or supported provider transport could not be verified; retirement is not asserted."
+  },
+  "openai:gpt-rosalind-research": {
+    "reason": "Current canonical identity or supported provider transport could not be verified; retirement is not asserted."
+  },
+  "openai:o1": {
+    "reason": "Provider API retirement was announced for 2026-10-23."
+  },
+  "openai:o1-2024-12-17": {
+    "reason": "Provider API retirement was announced for 2026-10-23."
+  },
+  "openai:o1-pro": {
+    "reason": "Provider API retirement was announced for 2026-10-23."
+  },
+  "openai:o1-pro-2025-03-19": {
+    "reason": "Provider API retirement was announced for 2026-10-23."
+  },
+  "openai:o3": {
+    "reason": "Provider alias excluded by registry policy; this does not mean the provider has retired it.",
+    "replacement": "openai:gpt-5.6-sol"
+  },
+  "openai:o3-2025-04-16": {
+    "reason": "Pinned snapshot excluded by registry policy; this does not mean the provider has retired it."
+  },
+  "openai:o3-mini": {
+    "reason": "Provider API retirement was announced for 2026-10-23."
+  },
+  "openai:o3-mini-2025-01-31": {
+    "reason": "Provider API retirement was announced for 2026-10-23."
+  },
+  "openai:o3-pro": {
+    "reason": "Provider alias excluded by registry policy; this does not mean the provider has retired it.",
+    "replacement": "openai:gpt-5.6-sol",
+    "migration_note": "Selecting the successor key does not automatically enable the provider's separate Pro reasoning mode."
+  },
+  "openai:o3-pro-2025-06-10": {
+    "reason": "Pinned snapshot excluded by registry policy; this does not mean the provider has retired it."
+  },
+  "openai:o4-mini": {
+    "reason": "Provider API retirement was announced for 2026-10-23."
+  },
+  "openai:o4-mini-2025-04-16": {
+    "reason": "Provider API retirement was announced for 2026-10-23."
+  },
+  "xai:grok-3": {
+    "reason": "Compatibility redirect excluded by registry policy.",
+    "replacement": "xai:grok-4.3"
+  },
+  "xai:grok-3-fast": {
+    "reason": "This previously registered name was removed from the built-in registry."
+  },
+  "xai:grok-3-mini": {
+    "reason": "Compatibility redirect excluded by registry policy.",
+    "replacement": "xai:grok-4.3"
+  },
+  "xai:grok-3-mini-fast": {
+    "reason": "This previously registered name was removed from the built-in registry."
+  },
+  "xai:grok-4": {
+    "reason": "Compatibility redirect excluded by registry policy.",
+    "replacement": "xai:grok-4.3"
+  },
+  "xai:grok-4.20-0309-non-reasoning": {
+    "reason": "Pinned snapshot excluded by registry policy; this does not mean the provider has retired it."
+  },
+  "xai:grok-4.20-0309-reasoning": {
+    "reason": "Pinned snapshot excluded by registry policy; this does not mean the provider has retired it."
+  },
+  "xai:grok-4.20-multi-agent-0309": {
+    "reason": "Pinned snapshot excluded by registry policy; this does not mean the provider has retired it."
+  },
+  "yandex:gpt-32k": {
+    "reason": "Provider alias excluded by registry policy; this does not mean the provider has retired it."
+  },
+  "yandex:gpt-lite": {
+    "reason": "Provider alias excluded by registry policy; this does not mean the provider has retired it."
+  },
+  "yandex:gpt-oss-120b": {
+    "reason": "Yandex retired this hosted model on 2026-10-30."
+  },
+  "yandex:gpt-oss-20b": {
+    "reason": "Yandex retired this hosted model on 2026-10-30."
+  },
+  "yandex:gpt-pro": {
+    "reason": "Provider alias excluded by registry policy; this does not mean the provider has retired it.",
+    "replacement": "yandex:yandexgpt-5-pro"
+  },
+  "yandex:llama": {
+    "reason": "The former hosted API identifier was not recognized by Yandex; this is not a claim about self-hosted models."
+  },
+  "yandex:llama-lite": {
+    "reason": "The former hosted API identifier was not recognized by Yandex; this is not a claim about self-hosted models."
+  },
+  "yandex:qwen3-235b-a22b-fp8": {
+    "reason": "Current canonical identity or supported provider transport could not be verified; retirement is not asserted."
+  },
+  "yandex:yandexgpt-latest": {
+    "reason": "Provider alias excluded by registry policy; this does not mean the provider has retired it.",
+    "replacement": "yandex:yandexgpt-5-pro"
+  },
+  "yandex:yandexgpt-rc": {
+    "reason": "This previously registered name was removed from the built-in registry.",
+    "replacement": "yandex:yandexgpt-5.1"
+  }
+}

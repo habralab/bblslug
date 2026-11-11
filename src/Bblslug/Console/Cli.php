@@ -294,7 +294,8 @@ class Cli
 
         if (!$registry->has($modelKey)) {
             Help::error(
-                "Unknown model key: {$modelKey}. Use --list-models to view available models."
+                $registry->getUnavailableMessage($modelKey)
+                ?? "Unknown model key: {$modelKey}. Use --list-models to view available models."
             );
         }
 

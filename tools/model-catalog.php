@@ -122,6 +122,8 @@ $lines = array_merge($lines, [
     '[model-catalog.json](../resources/model-catalog.json). Historical checks are not current availability guarantees.',
     'When updating a provider, check its lifecycle source, update metadata and exclusions, regenerate this page,',
     'then run `php tools/model-catalog.php --check` and the registry tests.',
+    'Keep removed keys in `resources/unavailable-models.json` with a reason and, when verified, a currently',
+    'registered replacement. PHP and CLI use this separate history for errors; removed keys stay unselectable.',
     'No provider API is contacted by generation.',
     '',
 ]);

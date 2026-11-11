@@ -6,6 +6,7 @@ This file follows the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) f
 
 ### Added
 
+- Recognize previously registered model keys in PHP and CLI errors, with removal reasons and verified successor guidance where known; do not redirect requests automatically.
 - DeepSeek Flash and V4 Pro through the existing Responses transport, with explicit JSON Schema support and provider-specific credentials.
 - Canonical Claude Fable/Mythos 5.2, Gemini 4 Carbon, GPT-6.1 Terra, GPT-6 Cyber and restricted GPT-5.5 Cyber Preview entries.
 - Distinct lifecycle labels for exact shutdown dates, earliest possible retirements and automatic model reroutes in the CLI catalogue and documentation.

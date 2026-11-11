@@ -214,7 +214,9 @@ class Bblslug
         // Validate model
         $registry = new ModelRegistry();
         if (!$registry->has($modelKey)) {
-            throw new \InvalidArgumentException("Unknown model key: {$modelKey}");
+            throw new \InvalidArgumentException(
+                $registry->getUnavailableMessage($modelKey) ?? "Unknown model key: {$modelKey}"
+            );
         }
         $endpoint = $registry->getEndpoint($modelKey);
         if (!$endpoint) {
