@@ -2,7 +2,7 @@
 
 Read the changes between your installed version and the version you are adopting. Released compatibility notes below describe the behavior introduced by each release.
 
-## Upcoming minor version (Unreleased)
+## Upgrading to 0.13.0
 
 The built-in registry contains canonical model IDs and DeepL tiers. DeepSeek Flash uses its
 primary `deepseek-flash` API ID, whose served version follows provider updates.
@@ -29,9 +29,13 @@ and `retirement_not_before` (a lower bound, not a scheduled shutdown). In partic
 Pro and Flash will be rerouted on December 1, 2026; Gemini 3.1 Flash Lite's May 7, 2027 date is
 only an earliest possible retirement. Missing dates mean unknown, not indefinite support.
 
-These registry removals require a minor version. Published 0.12.x tags are unchanged.
+Update application model keys when upgrading from 0.12.x.
 Complete pending checkpointed jobs with their original library version, or use a new checkpoint
 path after upgrading; source and template identity checks still apply.
+
+Symfony YAML must now be a patched version in the 6.4, 7.4 or 8.1 branch. Update the
+application's Composer constraint and lockfile together; an exact 0.12.x pin will not select
+0.13.0. The PHP minimum remains 8.2. See [installation requirements](usage.md#running-the-file-examples).
 
 ## Upgrading to 0.12.1
 

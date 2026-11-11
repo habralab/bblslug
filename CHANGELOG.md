@@ -4,26 +4,25 @@ This file follows the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) f
 
 ## [Unreleased]
 
+## [0.13.0] – 2026-11-11
+
 ### Added
 
-- Recognize previously registered model keys in PHP and CLI errors, with removal reasons and verified successor guidance where known; do not redirect requests automatically.
-- A manually triggered DeepSeek smoke workflow using a repository secret; regular pull-request tests remain offline.
-- DeepSeek Flash and V4 Pro through the existing Responses transport, with explicit JSON Schema support and provider-specific credentials.
-- Canonical Claude Fable/Mythos 5.2, Gemini 4 Carbon, GPT-6.1 Terra, GPT-6 Cyber and restricted GPT-5.5 Cyber Preview entries.
-- Distinct lifecycle labels for exact shutdown dates, earliest possible retirements and automatic model reroutes in the CLI catalogue and documentation.
+- DeepSeek Flash and V4 Pro through the Responses API, including native JSON Schema and segment translation.
+- Claude Fable/Mythos 5.2, Gemini 4 Carbon, GPT-6.1 Terra, GPT-6 Cyber and restricted GPT-5.5 Cyber Preview entries.
+- Clear PHP and CLI errors for previously registered model keys, with removal reasons and verified successor guidance where known.
 
-### Removed
+### Changed
 
-- Remove provider aliases and pinned snapshots from the built-in registry, PHP model list and CLI catalogue. Selecting a removed ID now fails locally; canonical model versions remain selectable and no replacement is automatic.
-- Remove Yandex AI Studio `gpt-oss-20b` and `gpt-oss-120b`, retired on October 30, 2026.
-- Exclude Rosalind and older search/Qwen identifiers whose current canonical identity or supported transport could not be established from public documentation; this is not a retirement claim.
+- **Breaking:** keep canonical/primary model IDs and DeepL tiers in the built-in registry. Remove 62 keys, including provider aliases, pinned snapshots, retired models and identifiers whose current canonical identity or transport could not be verified. Add 8 keys, leaving 58 entries. Requests are never redirected automatically. See [upgrade guidance](docs/upgrading.md#upgrading-to-0130).
+- Support patched Symfony YAML versions across the 6.4, 7.4 and 8.1 branches: `^6.4.50 || ^7.4.23 || ^8.1.11`. PHP 8.2 remains the minimum.
+- Distinguish exact shutdown dates, automatic model reroutes and earliest possible retirements in the CLI catalogue and documentation.
+- Use registered canonical IDs in current examples.
 
 ### Fixed
 
-- Require patched Symfony YAML versions while supporting the 6.4, 7.4 and 8.1 branches for embedding in other applications.
 - Exclude reasoning and other non-answer text from Responses output; reject whitespace-only provider replies.
-- Review provider lifecycles against public documentation as of November 11, 2026. Record Yandex shutdowns, Google reroutes and Anthropic minimum support dates without treating lower bounds as scheduled shutdowns.
-- Use registered canonical IDs in current examples and offline fixtures while preserving explicit driver coverage for older request formats.
+- Correct provider lifecycle metadata, including Yandex retirements, Google reroutes and Anthropic minimum support dates.
 
 ## [0.12.1] – 2026-10-29
 
