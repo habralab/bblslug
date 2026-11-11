@@ -1,0 +1,59 @@
+name: DeepSeek smoke (manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      model:
+        description: Models to check (paid API requests)
+        type: choice
+        default: both
+        options:
+          - both
+          - flash
+          - pro
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: curl, dom, mbstring
+          tools: composer:v2
+          coverage: none
+      - name: Install production dependencies
+        run: composer install --no-dev --prefer-dist --no-interaction --no-plugins --no-scripts
+      - name: Select models
+        env:
+          MODEL: ${{ inputs.model }}
+        run: |
+          case "$MODEL" in
+            flash) models='deepseek:deepseek-flash' ;;
+            pro) models='deepseek:deepseek-v4-pro' ;;
+            both) models='deepseek:deepseek-flash,deepseek:deepseek-v4-pro' ;;
+            *) echo 'Unknown model selection' >&2; exit 1 ;;
+          esac
+          echo "BBLSLUG_SMOKE_MODELS=$models" >> "$GITHUB_ENV"
+      - name: Translate small text, HTML and nested JSON through PHP and CLI
+        env:
+          BBLSLUG_DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          BBLSLUG_SMOKE_REPORT_DIR: ${{ runner.temp }}/deepseek-smoke
+        run: |
+          if [ -z "$BBLSLUG_DEEPSEEK_API_KEY" ]; then
+            echo 'Configure the DEEPSEEK_API_KEY repository secret' >&2
+            exit 1
+          fi
+          php tools/live-smoke.php
+      - name: Upload sanitized reports
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: deepseek-smoke
+          path: ${{ runner.temp }}/deepseek-smoke
+          if-no-files-found: ignore

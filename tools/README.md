@@ -145,3 +145,10 @@ RUN_LIVE_TESTS=1 BBLSLUG_LIVE_MODEL=google:gemini-3.6-flash \
 ```
 
 Credentials use the same `BBLSLUG_`-first lookup and unprefixed fallback; Yandex needs its folder ID. These tests check basic translation and container invariants. They do not measure translation quality.
+
+## GitHub Actions live checks
+
+Maintainers can run [DeepSeek smoke (manual)](../.github/workflows/deepseek-smoke.yml) from Actions
+and select Flash, Pro or both. Configure the repository secret `DEEPSEEK_API_KEY` first.
+The workflow makes paid requests through PHP and CLI and uploads sanitized reports.
+Regular pull-request checks use no provider credentials and do not make paid requests.
