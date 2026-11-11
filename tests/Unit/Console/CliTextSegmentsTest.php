@@ -24,7 +24,7 @@ final class CliTextSegmentsTest extends TestCase
                 ['--text-transport'],
                 ['--text-transport='],
                 ['--text-transport=segments', '--text-transport=document'],
-                ['--text-transport', '--model=openai:gpt-5-mini'],
+                ['--text-transport', '--model=openai:gpt-5.6-luna'],
             ] as $options
         ) {
             $result = $this->runCli($options, 'Hello');
@@ -123,7 +123,7 @@ final class CliTextSegmentsTest extends TestCase
         array $extraEnv = []
     ): array {
         $command = [PHP_BINARY, $fixture ?? dirname(__DIR__, 3) . '/bblslug.php',
-            '--model=openai:gpt-5-mini', '--format=' . $format, ...$options];
+            '--model=openai:gpt-5.6-luna', '--format=' . $format, ...$options];
         $process = proc_open(
             $command,
             [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']],

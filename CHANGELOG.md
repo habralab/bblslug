@@ -6,16 +6,19 @@ This file follows the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) f
 
 ### Added
 
-- Official undated Claude Haiku, Opus and Sonnet 4.5 aliases retain access to those families without registering pinned builds.
+- Canonical Claude Fable/Mythos 5.2, Gemini 4 Carbon, GPT-6.1 Terra, GPT-6 Cyber and restricted GPT-5.5 Cyber Preview entries.
+- Distinct lifecycle labels for exact shutdown dates, earliest possible retirements and automatic model reroutes in the CLI catalogue and documentation.
 
 ### Removed
 
-- Remove pinned snapshot IDs from the built-in registry, PHP model list and CLI catalogue. Selecting a removed ID now fails locally; named model versions remain selectable and no replacement is automatic.
+- Remove provider aliases and pinned snapshots from the built-in registry, PHP model list and CLI catalogue. Selecting a removed ID now fails locally; canonical model versions remain selectable and no replacement is automatic.
 - Remove Yandex AI Studio `gpt-oss-20b` and `gpt-oss-120b`, retired on October 30, 2026.
+- Exclude Rosalind and older search/Qwen identifiers whose current canonical identity or supported transport could not be established from public documentation; this is not a retirement claim.
 
 ### Fixed
 
-- Mark the GPT-5, GPT-5 mini/nano/pro and o3/o3-pro aliases as deprecated until their announced December 11, 2026 shutdown, with official replacement guidance.
+- Review all six providers against public documentation as of November 11, 2026. Record Yandex shutdowns, Google reroutes and Anthropic minimum support dates without treating lower bounds as scheduled shutdowns.
+- Use registered canonical IDs in current examples and offline fixtures while preserving explicit driver coverage for older request formats.
 
 ## [0.12.1] – 2026-10-29
 

@@ -31,9 +31,9 @@ final class BblslugTextSegmentBatchesTest extends TestCase
     public static function providers(): array
     {
         return [
-            'OpenAI' => ['openai:gpt-5-mini', []],
-            'Google' => ['google:gemini-2.5-flash', []],
-            'Yandex' => ['yandex:gpt-lite', ['folder_id' => 'fixture-folder']],
+            'OpenAI' => ['openai:gpt-5.6-luna', []],
+            'Google' => ['google:gemini-3.6-flash', []],
+            'Yandex' => ['yandex:yandexgpt-5-pro', ['folder_id' => 'fixture-folder']],
             'DeepL' => ['deepl:free', ['json_transport' => 'text_batch']],
         ];
     }

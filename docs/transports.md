@@ -33,7 +33,7 @@ Use `textTransport: 'segments'` / `--text-transport=segments` with `format=text`
 Each nonempty line is translated separately; protected placeholders split it into additional fragments.
 
 ```bash
-vendor/bin/bblslug --model=google:gemini-flash-latest --format=text \
+vendor/bin/bblslug --model=google:gemini-3.6-flash --format=text \
   --text-transport=segments --source=input.txt --translated=output.txt
 ```
 
@@ -53,7 +53,7 @@ Use `htmlTransport: 'segments'` / `--html-transport=segments` to translate text 
 provider to rewrite markup. The default is `document`.
 
 ```bash
-vendor/bin/bblslug --model=google:gemini-flash-latest --format=html \
+vendor/bin/bblslug --model=google:gemini-3.6-flash --format=html \
   --html-transport=segments --filters=url,html_code,html_pre \
   --source=input.html --translated=out.html
 ```
@@ -62,7 +62,7 @@ vendor/bin/bblslug --model=google:gemini-flash-latest --format=html \
 $result = Bblslug::translate(
     apiKey: $key,
     format: 'html',
-    modelKey: 'google:gemini-flash-latest',
+    modelKey: 'google:gemini-3.6-flash',
     text: $html,
     filters: ['url', 'html_code', 'html_pre'],
     htmlTransport: 'segments',
@@ -96,7 +96,7 @@ Use `htmlTransport: 'segments'` with `htmlJsonPointers` for `json` or `linedJson
 $result = Bblslug::translate(
     apiKey: $key,
     format: 'json',
-    modelKey: 'google:gemini-flash-latest',
+    modelKey: 'google:gemini-3.6-flash',
     text: $json,
     filters: ['url', 'html_code'],
     htmlTransport: 'segments',
@@ -105,7 +105,7 @@ $result = Bblslug::translate(
 ```
 
 ```bash
-vendor/bin/bblslug --model=google:gemini-flash-latest --format=json \
+vendor/bin/bblslug --model=google:gemini-3.6-flash --format=json \
   --html-transport=segments --html-json-pointer=/body \
   --html-json-pointer=/items/0/html --filters=url,html_code \
   --source=input.json --translated=out.json
@@ -145,7 +145,7 @@ Set `textSegmentBatchSize: 25` / `--text-segment-batch-size=25` with text segmen
 25 fragments per packet. The default `null` keeps one packet.
 
 ```bash
-vendor/bin/bblslug --model=google:gemini-flash-latest --format=text \
+vendor/bin/bblslug --model=google:gemini-3.6-flash --format=text \
   --text-transport=segments --text-segment-batch-size=25 \
   --source=input.txt --translated=output.txt
 ```
@@ -208,7 +208,7 @@ The positive integer cap works alone or together with a count cap; both limits a
 `null` (no byte cap).
 
 ```bash
-vendor/bin/bblslug --model=google:gemini-flash-latest --format=text \
+vendor/bin/bblslug --model=google:gemini-3.6-flash --format=text \
   --text-transport=segments --segment-batch-max-bytes=4000 \
   --source=input.txt --translated=output.txt
 ```
@@ -245,7 +245,7 @@ cap still applies when the run cannot fit. Hints operate inside a fragment and d
 HTML nodes or separately selected JSON strings.
 
 ```bash
-vendor/bin/bblslug --model=google:gemini-flash-latest --format=text \
+vendor/bin/bblslug --model=google:gemini-3.6-flash --format=text \
   --text-transport=segments --segment-batch-max-bytes=2000 \
   --segment-abbreviation=Dr. --segment-abbreviation=Prof. \
   --source-lang=EN --target-lang=DE \
@@ -274,7 +274,7 @@ Set `checkpointPath` / `--checkpoint` alongside a segment count or byte cap. Che
 HTML and selected HTML strings inside JSON.
 
 ```bash
-vendor/bin/bblslug --model=google:gemini-flash-latest --format=text \
+vendor/bin/bblslug --model=google:gemini-3.6-flash --format=text \
   --text-transport=segments --text-segment-batch-size=25 \
   --checkpoint=translation.checkpoint.json \
   --source=input.txt --translated=output.txt
@@ -323,7 +323,7 @@ Set `operationTimeoutSeconds: 60` / `--operation-timeout=60` for a shared budget
 seconds. The default `null` leaves only the existing request and provider-workflow timeouts.
 
 ```bash
-vendor/bin/bblslug --model=google:gemini-flash-latest --format=text \
+vendor/bin/bblslug --model=google:gemini-3.6-flash --format=text \
   --text-transport=segments --text-segment-batch-size=25 --operation-timeout=60 \
   --source=input.txt --translated=output.txt
 ```
@@ -409,7 +409,7 @@ existing destination files intact and write no partial translation to STDOUT. To
 
 ```bash
 vendor/bin/bblslug \
-  --model=google:gemini-flash-latest \
+  --model=google:gemini-3.6-flash \
   --format=html \
   --no-validate \
   --source=input.html \

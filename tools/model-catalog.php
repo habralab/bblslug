@@ -31,14 +31,13 @@ $lines = [
     '',
     '## Choosing a model',
     '',
-    'Prefer a current undated provider model ID or alias in application configuration. An undated ID is not',
-    'necessarily a rolling alias: current Claude IDs, for example, can identify fixed versions without dates.',
-    'A rolling `latest` alias can change the served model, capabilities and pricing, and may point at a preview.',
+    'Choose a canonical provider model ID. The built-in registry excludes provider aliases, compatibility',
+    'redirects and dated snapshots. An undated ID can identify a fixed version; the absence of a date alone',
+    'does not establish whether an ID is canonical. Some older families have no entry under this policy.',
     'The library sends the selected API identifier; it does not silently replace retired models.',
     '',
     '| Kind | Meaning |',
     '| --- | --- |',
-    '| `alias` | Provider-maintained alias; the target may change |',
     '| `model` | Version/family ID without a pinned build date |',
     '| `preview` | Preview or release-candidate identifier |',
     '| `tier` | DeepL service tier; choose the translation engine with `model_type` |',
@@ -47,12 +46,12 @@ $lines = [
     '`restricted`). Standard access still requires a valid account, region, quota and supported API.',
     'Announced shutdown dates are shown where known; an absent date means no date is recorded,',
     'not indefinite support.',
-    'Google dates can be earliest possible retirement dates.',
-    'Anthropic “not sooner than” guarantees are not shutdown dates.',
+    '`shutdown` is an announced API retirement; `redirect` is an announced automatic model reroute.',
+    '`retirement not before` is a lower bound, not a scheduled retirement or a guarantee beyond that date.',
     '',
     '## Models for new integrations',
     '',
-    'The built-in registry excludes pinned snapshots. Named model versions remain selectable.',
+    'Canonical model versions remain selectable, including supported legacy versions.',
     'This view omits previews, deprecated entries, and models with',
     '`restricted` or `existing_customers` access.',
     'It is a discovery aid, not a claim that every listed model was live-tested for every format.',
@@ -82,8 +81,16 @@ foreach ($groups as $vendor => $models) {
     $lines[] = '- ' . $vendor . ':';
     foreach ($models as $key => $config) {
         $labels = [$config['kind'], $config['status'], $config['access']];
-        if (isset($config['shutdown_date'])) {
-            $labels[] = 'shutdown ' . $config['shutdown_date'];
+        foreach (
+            [
+            'shutdown_date' => 'shutdown',
+            'retirement_not_before' => 'retirement not before',
+            'redirect_date' => 'redirect',
+            ] as $field => $description
+        ) {
+            if (isset($config[$field])) {
+                $labels[] = $description . ' ' . $config[$field];
+            }
         }
         if (isset($config['replacement'])) {
             $labels[] = 'replacement ' . $config['replacement'];
@@ -100,7 +107,8 @@ $lines = array_merge($lines, [
     '## Lifecycle sources and maintenance',
     '',
     'Lifecycle metadata lives in `resources/models.yaml`: `kind`, `status`, `access`, optional',
-    '`shutdown_date` / `replacement`, `checked_at` and `lifecycle_source`. Sources apply to the provider-hosted API,',
+    '`shutdown_date`, `retirement_not_before`, `redirect_date`, `replacement`, `checked_at` and',
+    '`lifecycle_source`. Sources apply to the provider-hosted API,',
     'not similarly named models on third-party hosting. Verified retired IDs are excluded rather than redirected.',
     '',
 ]);
@@ -123,9 +131,11 @@ if ($argc === 2) {
     $today = gmdate('Y-m-d');
     foreach ($groups as $models) {
         foreach ($models as $key => $config) {
-            if (isset($config['shutdown_date']) && $config['shutdown_date'] <= $today) {
-                fwrite(STDERR, "Recheck expired lifecycle date for {$key}: {$config['shutdown_date']}\n");
-                exit(1);
+            foreach (['shutdown_date', 'redirect_date'] as $field) {
+                if (isset($config[$field]) && $config[$field] <= $today) {
+                    fwrite(STDERR, "Recheck expired {$field} for {$key}: {$config[$field]}\n");
+                    exit(1);
+                }
             }
         }
     }

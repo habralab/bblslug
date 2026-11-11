@@ -38,7 +38,7 @@ namespace {
     if (($argv[1] ?? '') === 'api') {
         $source = str_repeat('<p>Hello</p>', intdiv(1024 * 1024, 12));
         $result = \Bblslug\Bblslug::translate(
-            modelKey: 'openai:gpt-5-mini',
+            modelKey: 'openai:gpt-5.6-luna',
             apiKey: 'fixture-key',
             text: $source,
             format: 'html',

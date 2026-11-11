@@ -32,7 +32,7 @@ final class CliUsageOverflowTest extends TestCase
     {
         $process = proc_open(
             [PHP_BINARY, dirname(__DIR__, 2) . '/Fixtures/console/usage_overflow.php',
-                '--model=openai:gpt-5-mini', '--format=html', '--html-transport=segments',
+                '--model=openai:gpt-5.6-luna', '--format=html', '--html-transport=segments',
                 '--html-segment-batch-size=1', '--no-validate'],
             [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']],
             $pipes,

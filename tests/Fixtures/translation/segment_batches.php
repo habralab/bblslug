@@ -118,7 +118,7 @@ namespace {
     try {
         $result = \Bblslug\Bblslug::translate(
             apiKey: 'fixture-key',
-            modelKey: $scenario['model'] ?? 'openai:gpt-5-mini',
+            modelKey: $scenario['model'] ?? 'openai:gpt-5.6-luna',
             format: $scenario['format'] ?? 'html',
             text: $scenario['input'] ?? '<p>One</p><p>Two</p><p>Three</p>',
             htmlTransport: $scenario['htmlTransport']

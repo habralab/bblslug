@@ -95,11 +95,11 @@ final class Segments
     private function execute(): int
     {
         $registry = new ModelRegistry();
-        $models = explode(',', getenv('BBLSLUG_SMOKE_MODELS') ?: ($this->offline ? 'google:gemini-flash-latest'
-            : 'openai:gpt-6-luna,anthropic:claude-haiku-5.5,google:gemini-flash-latest,xai:grok-4.7,'
-                . 'deepl:free,deepl:pro,yandex:gpt-lite,yandex:gpt-pro'));
+        $models = explode(',', getenv('BBLSLUG_SMOKE_MODELS') ?: ($this->offline ? 'google:gemini-3.6-flash'
+            : 'openai:gpt-6-luna,anthropic:claude-haiku-5.5,google:gemini-3.6-flash,xai:grok-4.7,'
+                . 'deepl:free,deepl:pro,yandex:aliceai-llm,yandex:yandexgpt-5-pro'));
         foreach ($models as $model) {
-            if (!$registry->has($model) || ($this->offline && $model !== 'google:gemini-flash-latest')) {
+            if (!$registry->has($model) || ($this->offline && $model !== 'google:gemini-3.6-flash')) {
                 throw new \InvalidArgumentException('Unknown model or unsupported offline model: ' . $model);
             }
         }

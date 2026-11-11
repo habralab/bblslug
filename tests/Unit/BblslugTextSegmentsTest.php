@@ -10,7 +10,7 @@ final class BblslugTextSegmentsTest extends TestCase
 {
     public function testProvidersTranslateTextSegmentsAndRestoreLineStructure(): void
     {
-        foreach (['openai:gpt-5-mini', 'google:gemini-2.5-flash', 'deepl:free', 'yandex:gpt-lite'] as $model) {
+        foreach (['openai:gpt-5.6-luna', 'google:gemini-3.6-flash', 'deepl:free', 'yandex:yandexgpt-5-pro'] as $model) {
             $result = $this->runFixture([
                 'model' => $model,
                 'input' => " Hello\r\nworld\nthird\r",

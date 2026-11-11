@@ -20,7 +20,7 @@ namespace Bblslug {
             usleep((int) (self::$scenario['delayMilliseconds'] ?? 0) * 1000);
             $body = (string) ($arguments['body'] ?? '');
             $request = json_decode($body, true, 512, JSON_THROW_ON_ERROR);
-            $model = self::$scenario['model'] ?? 'openai:gpt-5-mini';
+            $model = self::$scenario['model'] ?? 'openai:gpt-5.6-luna';
             if (str_starts_with($model, 'deepl:')) {
                 $packet = [];
                 foreach (($request['text'] ?? []) as $index => $value) {
@@ -118,7 +118,7 @@ namespace {
         $result = \Bblslug\Bblslug::translate(
             apiKey: 'fixture-key',
             format: $scenario['format'] ?? 'text',
-            modelKey: $scenario['model'] ?? 'openai:gpt-5-mini',
+            modelKey: $scenario['model'] ?? 'openai:gpt-5.6-luna',
             text: $scenario['input'] ?? "one\ntwo\nthree",
             filters: $scenario['filters'] ?? [],
             variables: $scenario['variables'] ?? [],

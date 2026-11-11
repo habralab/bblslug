@@ -66,7 +66,7 @@ namespace {
     $expected = $kind === 'long-token' ? '' : str_replace('<p>Hello</p>', '<p>Hallo</p>', $source);
     if ($kind === 'api') {
         $result = \Bblslug\Bblslug::translate(
-            modelKey: 'openai:gpt-5-mini',
+            modelKey: 'openai:gpt-5.6-luna',
             apiKey: 'fixture-key',
             text: $source,
             format: 'json',

@@ -4,17 +4,26 @@ Read the changes between your installed version and the version you are adopting
 
 ## Upcoming minor version (Unreleased)
 
-The built-in registry no longer includes pinned snapshot IDs such as
-`openai:gpt-5-mini-2025-08-07`. They are absent from PHP `listModels()` and both CLI listings;
-selecting one fails locally as an unknown model. Select a provider-maintained name such as
-`openai:gpt-5-mini` after reviewing its capabilities and lifecycle. Named versions such as
-`openai:gpt-5.5` remain registered. Claude 4.5 families use their official undated keys, such as
-`anthropic:claude-haiku-4.5`; existing dated keys are not silently mapped to them.
+The built-in registry contains canonical model IDs and DeepL tiers. Provider aliases such as
+`openai:gpt-5-mini`, `google:gemini-flash-latest` and `yandex:gpt-lite`, and pinned snapshots such as
+`openai:gpt-5-mini-2025-08-07`, are absent from PHP `listModels()` and both CLI listings.
+Selecting a removed key fails locally as an unknown model. Choose a canonical ID from the
+[catalogue](models.md), such as `openai:gpt-5.6-luna`, `google:gemini-3.6-flash` or
+`yandex:yandexgpt-5-pro`, after reviewing capabilities, access and cost. These are migration
+examples, not interchangeable replacements. Some older families, including Claude 4.5, have
+no entry because only aliases and dated builds are documented. No key is silently remapped.
 
-The surviving GPT-5 and o3 aliases are themselves scheduled to shut down on December 11, 2026;
-using an undated name does not avoid the shutdown. Yandex AI Studio `gpt-oss-20b` and
-`gpt-oss-120b` are also removed after their confirmed October 30 retirement. Historical observations
-and exclusion reasons remain in the [machine catalogue](../resources/model-catalog.json).
+The excluded GPT-5 and o3 aliases shut down on December 11, 2026. Yandex AI Studio
+`gpt-oss-20b` and `gpt-oss-120b` are also removed after their confirmed October 30 retirement.
+Rosalind and older search/Qwen identifiers without verified current canonical identity or
+transport are excluded separately; they are not declared retired.
+Historical observations and exclusion reasons remain in the
+[machine catalogue](../resources/model-catalog.json).
+
+Lifecycle metadata separates `shutdown_date` (API retirement), `redirect_date` (provider reroute)
+and `retirement_not_before` (a lower bound, not a scheduled shutdown). In particular, Gemini 2.5
+Pro and Flash will be rerouted on December 1, 2026; Gemini 3.1 Flash Lite's May 7, 2027 date is
+only an earliest possible retirement. Missing dates mean unknown, not indefinite support.
 
 These registry removals require a minor version. Published 0.12.x tags are unchanged.
 Complete pending checkpointed jobs with their original library version, or use a new checkpoint

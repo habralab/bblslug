@@ -56,7 +56,7 @@ namespace {
     \Bblslug\HttpClient::$reversed = $profile === 'translated-reversed';
     $source = str_repeat("Hi\n", intdiv(1024 * 1024, 3));
     $result = \Bblslug\Bblslug::translate(
-        modelKey: 'openai:gpt-5-mini',
+        modelKey: 'openai:gpt-5.6-luna',
         apiKey: 'fixture-key',
         text: $source,
         format: 'text',

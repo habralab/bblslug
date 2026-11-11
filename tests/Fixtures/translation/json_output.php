@@ -59,7 +59,7 @@ namespace {
         $result = \Bblslug\Bblslug::translate(
             apiKey: 'fixture-key',
             format: (string) ($scenario['format'] ?? 'json'),
-            modelKey: 'openai:gpt-5-mini',
+            modelKey: 'openai:gpt-5.6-luna',
             text: (string) ($scenario['input'] ?? ''),
             filters: $scenario['filters'] ?? [],
             validate: (bool) ($scenario['validate'] ?? true),

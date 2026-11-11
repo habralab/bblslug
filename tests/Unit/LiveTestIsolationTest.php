@@ -89,7 +89,7 @@ final class LiveTestIsolationTest extends TestCase
             'BBLSLUG_OPENAI_API_KEY' => $openai,
             'BBLSLUG_YANDEX_API_KEY' => $yandex,
             'BBLSLUG_YANDEX_FOLDER_ID' => $folder,
-            'BBLSLUG_LIVE_MODEL' => $leakDiagnostics ? 'openai:gpt-5-mini' : '',
+            'BBLSLUG_LIVE_MODEL' => $leakDiagnostics ? 'openai:gpt-5.6-luna' : '',
             'BBLSLUG_TEST_LEAK_DIAGNOSTICS' => $leakDiagnostics ? '1' : '0',
         ]);
         self::assertIsResource($process);

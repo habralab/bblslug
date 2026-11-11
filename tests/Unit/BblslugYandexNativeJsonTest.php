@@ -10,7 +10,7 @@ final class BblslugYandexNativeJsonTest extends TestCase
 {
     public function testNativeJsonFormatsKeepNestedStructureAndNonStringScalars(): void
     {
-        foreach (['yandex:gpt-lite', 'yandex:gpt-pro'] as $model) {
+        foreach (['yandex:yandexgpt-5-pro'] as $model) {
             foreach (['json', 'linedJson'] as $format) {
                 $r = $this->runFixture([
                     'model' => $model, 'format' => $format,

@@ -13,8 +13,8 @@ final class BblslugEmptyTranslationTest extends TestCase
     {
         $cases = [];
         foreach (
-            ['openai:gpt-5-mini', 'google:gemini-2.5-flash', 'anthropic:claude-haiku-5.5',
-                'xai:grok-4.6', 'yandex:gpt-lite', 'deepl:free'] as $model
+            ['openai:gpt-5.6-luna', 'google:gemini-3.6-flash', 'anthropic:claude-haiku-5.5',
+                'xai:grok-4.6', 'yandex:yandexgpt-5-pro', 'deepl:free'] as $model
         ) {
             foreach (['' => 'empty', " \t\r\n\u{00a0}\u{2003}" => 'whitespace'] as $value => $label) {
                 $cases[$model . ' ' . $label] = [$model, $value];
@@ -35,7 +35,7 @@ final class BblslugEmptyTranslationTest extends TestCase
     public function testEmptyAndWhitespaceInputMayProduceEmptyTranslation(): void
     {
         foreach (['', " \t\r\n\u{00a0}\u{2003}"] as $input) {
-            $result = $this->runFixture('openai:gpt-5-mini', $input, '');
+            $result = $this->runFixture('openai:gpt-5.6-luna', $input, '');
             self::assertSame('success', $result['type']);
             self::assertSame('', $result['result']);
         }
@@ -43,9 +43,9 @@ final class BblslugEmptyTranslationTest extends TestCase
 
     public function testLiteralZeroIsNonemptyInputAndOutput(): void
     {
-        $empty = $this->runFixture('openai:gpt-5-mini', '0', '');
+        $empty = $this->runFixture('openai:gpt-5.6-luna', '0', '');
         self::assertSame(\RuntimeException::class, $empty['type']);
-        $zero = $this->runFixture('openai:gpt-5-mini', 'source', '0');
+        $zero = $this->runFixture('openai:gpt-5.6-luna', 'source', '0');
         self::assertSame('success', $zero['type']);
         self::assertSame('0', $zero['result']);
     }

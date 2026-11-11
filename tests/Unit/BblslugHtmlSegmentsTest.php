@@ -10,7 +10,7 @@ final class BblslugHtmlSegmentsTest extends TestCase
 {
     public function testProviderJsonTransportsReconstructHtmlAndKeepRawResponses(): void
     {
-        foreach (['openai:gpt-5-mini', 'google:gemini-2.5-flash', 'deepl:free'] as $model) {
+        foreach (['openai:gpt-5.6-luna', 'google:gemini-3.6-flash', 'deepl:free'] as $model) {
             $result = $this->runFixture([
                 'model' => $model,
                 'input' => '<DIV class="keep"> Hello <em>world</em> </DIV>',

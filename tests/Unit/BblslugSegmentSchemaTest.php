@@ -40,7 +40,7 @@ final class BblslugSegmentSchemaTest extends TestCase
     public static function nativeCases(): array
     {
         $cases = [];
-        foreach (['yandex:gpt-lite', 'yandex:gpt-pro', 'xai:grok-4.7'] as $model) {
+        foreach (['yandex:yandexgpt-5-pro', 'xai:grok-4.7'] as $model) {
             foreach (['text', 'html', 'json'] as $format) {
                 foreach ([null, 2] as $size) {
                     $cases[] = [$model, $format, $size];
@@ -67,7 +67,7 @@ final class BblslugSegmentSchemaTest extends TestCase
     {
         $cases = [
             ['model' => 'xai:grok-4.7', 'variables' => ['json_transport' => 'markers']],
-            ['model' => 'yandex:gpt-lite', 'variables' => [
+            ['model' => 'yandex:yandexgpt-5-pro', 'variables' => [
                 'folder_id' => 'fixture-folder', 'json_transport' => 'markers',
             ]],
             ['model' => 'xai:grok-4.7', 'promptKey' => 'experimental_xml'],
@@ -100,7 +100,7 @@ final class BblslugSegmentSchemaTest extends TestCase
     public static function invalidPackets(): array
     {
         $cases = [];
-        foreach (['xai:grok-4.7', 'yandex:gpt-lite'] as $model) {
+        foreach (['xai:grok-4.7', 'yandex:yandexgpt-5-pro'] as $model) {
             foreach (['missing', 'extra', 'empty', 'type', 'duplicate', 'http'] as $failure) {
                 $cases[] = [$model, $failure];
             }

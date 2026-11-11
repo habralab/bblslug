@@ -119,7 +119,7 @@ final class CliAtomicOutputTest extends TestCase
         $result = $this->runProcess([
             PHP_BINARY,
             dirname(__DIR__, 2) . '/Fixtures/console/segment_batches.php',
-            '--model=openai:gpt-5-mini', '--format=text', '--source=' . $source,
+            '--model=openai:gpt-5.6-luna', '--format=text', '--source=' . $source,
             '--translated=' . $target . '/', '--text-transport=segments', '--text-segment-batch-size=1',
         ], ['BBLSLUG_TEST_COUNTER_FILE' => $counter]);
 
@@ -135,7 +135,7 @@ final class CliAtomicOutputTest extends TestCase
         return $this->runProcess([
             PHP_BINARY,
             dirname(__DIR__, 2) . '/Fixtures/console/successful_translation.php',
-            '--model=openai:gpt-4o', '--format=text', ...$arguments,
+            '--model=openai:gpt-6-sol', '--format=text', ...$arguments,
         ]);
     }
 
@@ -162,7 +162,7 @@ PHP);
         return $this->runProcess([
             PHP_BINARY, $script,
             dirname(__DIR__, 2) . '/Fixtures/console/successful_translation.php',
-            '--model=openai:gpt-4o', '--format=text', ...$arguments,
+            '--model=openai:gpt-6-sol', '--format=text', ...$arguments,
         ]);
     }
 

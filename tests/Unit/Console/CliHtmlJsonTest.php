@@ -96,7 +96,7 @@ final class CliHtmlJsonTest extends TestCase
     {
         $process = proc_open(
             [PHP_BINARY, dirname(__DIR__, 2) . '/Fixtures/console/html_json.php',
-                '--model=openai:gpt-5-mini', '--format=json', ...$options],
+                '--model=openai:gpt-5.6-luna', '--format=json', ...$options],
             [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']],
             $pipes,
             null,

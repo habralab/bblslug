@@ -106,7 +106,7 @@ final class CliTextSegmentBatchesTest extends TestCase
     private function runCli(array $options, ?string $input, array $extraEnv = []): array
     {
         $command = [PHP_BINARY, dirname(__DIR__, 2) . '/Fixtures/console/segment_batches.php',
-            '--model=openai:gpt-5-mini', '--format=text', ...$options];
+            '--model=openai:gpt-5.6-luna', '--format=text', ...$options];
         $process = proc_open(
             $command,
             [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']],

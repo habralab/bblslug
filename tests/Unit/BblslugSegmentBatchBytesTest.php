@@ -27,7 +27,7 @@ final class BblslugSegmentBatchBytesTest extends TestCase
         $sentence = 'The maintenance team checks the backup.';
         $input = implode(" \t", array_fill(0, 29, $sentence));
         $r = $this->runFixture([
-            'model' => 'yandex:gpt-pro', 'variables' => ['folder_id' => 'fixture-folder'],
+            'model' => 'yandex:yandexgpt-5-pro', 'variables' => ['folder_id' => 'fixture-folder'],
             'input' => $input, 'segmentBatchMaxBytes' => 180, 'identity' => true,
         ]);
         self::assertSame('success', $r['type'], $r['message'] ?? '');
@@ -44,7 +44,7 @@ final class BblslugSegmentBatchBytesTest extends TestCase
 
     public function testCountCapCombinesWithBytesAcrossNativeProviders(): void
     {
-        foreach (['openai:gpt-5-mini', 'google:gemini-2.5-flash', 'yandex:gpt-pro'] as $model) {
+        foreach (['openai:gpt-5.6-luna', 'google:gemini-3.6-flash', 'yandex:yandexgpt-5-pro'] as $model) {
             $r = $this->runFixture([
                 'model' => $model, 'input' => "One two three four five six\nSeven eight nine ten",
                 'variables' => str_starts_with($model, 'yandex:') ? ['folder_id' => 'fixture'] : [],

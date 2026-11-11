@@ -11,7 +11,7 @@ final class YandexHtmlFenceTest extends TestCase
 {
     private const CONFIG = [
         'endpoint' => 'https://llm.api.cloud.yandex.net/foundationModels/v1/completion',
-        'defaults' => ['model' => 'yandexgpt-lite/latest'],
+        'defaults' => ['model' => 'yandexgpt-5-lite'],
         'requirements' => ['headers' => ['Content-Type: application/json']],
     ];
 

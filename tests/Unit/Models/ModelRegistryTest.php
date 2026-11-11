@@ -29,11 +29,10 @@ class ModelRegistryTest extends TestCase
         'google:gemini-2.5-pro',
         'openai:gpt-6.1-sol',
         'openai:gpt-6-luna',
-        'openai:gpt-4o',
-        'openai:gpt-4o-mini',
-        'yandex:gpt-lite',
-        'yandex:gpt-pro',
-        'yandex:gpt-32k',
+        'openai:gpt-6.1-terra',
+        'yandex:yandexgpt-5-lite',
+        'yandex:yandexgpt-5-pro',
+        'yandex:yandexgpt-5.1',
     ];
 
     protected function setUp(): void
@@ -127,11 +126,10 @@ class ModelRegistryTest extends TestCase
             'google:gemini-2.5-pro'        => 'GOOGLE_API_KEY',
             'openai:gpt-6.1-sol'                 => 'OPENAI_API_KEY',
             'openai:gpt-6-luna'           => 'OPENAI_API_KEY',
-            'openai:gpt-4o'                => 'OPENAI_API_KEY',
-            'openai:gpt-4o-mini'           => 'OPENAI_API_KEY',
-            'yandex:gpt-lite'              => 'YANDEX_API_KEY',
-            'yandex:gpt-pro'               => 'YANDEX_API_KEY',
-            'yandex:gpt-32k'               => 'YANDEX_API_KEY',
+            'openai:gpt-6.1-terra'           => 'OPENAI_API_KEY',
+            'yandex:yandexgpt-5-lite'              => 'YANDEX_API_KEY',
+            'yandex:yandexgpt-5-pro'               => 'YANDEX_API_KEY',
+            'yandex:yandexgpt-5.1'               => 'YANDEX_API_KEY',
         ];
 
         foreach ($expected as $modelKey => $envName) {
@@ -148,9 +146,9 @@ class ModelRegistryTest extends TestCase
     {
         // All Yandex models should declare the same 'folder_id' variable
         $yandexModels = [
-            'yandex:gpt-lite',
-            'yandex:gpt-pro',
-            'yandex:gpt-32k',
+            'yandex:yandexgpt-5-lite',
+            'yandex:yandexgpt-5-pro',
+            'yandex:yandexgpt-5.1',
                 ];
         foreach ($yandexModels as $modelKey) {
             $this->assertSame(
@@ -184,11 +182,10 @@ class ModelRegistryTest extends TestCase
             'google:gemini-2.5-pro'        => 'makersuite.google.com/app/apikey',
             'openai:gpt-6.1-sol'                 => 'platform.openai.com/account/api-keys',
             'openai:gpt-6-luna'           => 'platform.openai.com/account/api-keys',
-            'openai:gpt-4o'                => 'platform.openai.com/account/api-keys',
-            'openai:gpt-4o-mini'           => 'platform.openai.com/account/api-keys',
-            'yandex:gpt-lite'              => 'yandex.cloud/en/docs/foundation-models/api-ref/authentication',
-            'yandex:gpt-pro'               => 'yandex.cloud/en/docs/foundation-models/api-ref/authentication',
-            'yandex:gpt-32k'               => 'yandex.cloud/en/docs/foundation-models/api-ref/authentication',
+            'openai:gpt-6.1-terra'           => 'platform.openai.com/account/api-keys',
+            'yandex:yandexgpt-5-lite'              => 'yandex.cloud/en/docs/foundation-models/api-ref/authentication',
+            'yandex:yandexgpt-5-pro'               => 'yandex.cloud/en/docs/foundation-models/api-ref/authentication',
+            'yandex:yandexgpt-5.1'               => 'yandex.cloud/en/docs/foundation-models/api-ref/authentication',
         ];
 
         foreach ($expected as $modelKey => $urlSubstring) {
@@ -247,11 +244,10 @@ class ModelRegistryTest extends TestCase
             'google:gemini-2.5-pro'        => GoogleDriver::class,
             'openai:gpt-6.1-sol'                 => OpenAiDriver::class,
             'openai:gpt-6-luna'           => OpenAiDriver::class,
-            'openai:gpt-4o'                => OpenAiDriver::class,
-            'openai:gpt-4o-mini'           => OpenAiDriver::class,
-            'yandex:gpt-lite'              => YandexDriver::class,
-            'yandex:gpt-pro'               => YandexDriver::class,
-            'yandex:gpt-32k'               => YandexDriver::class,
+            'openai:gpt-6.1-terra'           => OpenAiDriver::class,
+            'yandex:yandexgpt-5-lite'              => YandexDriver::class,
+            'yandex:yandexgpt-5-pro'               => YandexDriver::class,
+            'yandex:yandexgpt-5.1'               => YandexDriver::class,
         ];
 
         foreach ($map as $modelKey => $driverClass) {

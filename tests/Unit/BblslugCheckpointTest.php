@@ -139,7 +139,7 @@ final class BblslugCheckpointTest extends TestCase
         $before = file_get_contents($this->checkpoint);
         foreach (
             [
-                ['input' => "one\ntwo\nchanged"], ['model' => 'google:gemini-2.5-flash'],
+                ['input' => "one\ntwo\nchanged"], ['model' => 'google:gemini-3.6-flash'],
                 ['variables' => ['temperature' => 0.2]], ['textSegmentBatchSize' => 2],
                 ['context' => 'different context'],
             ] as $settings

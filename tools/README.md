@@ -18,7 +18,7 @@ The example checker prepares documented CLI and PHP calls, including CLI help, w
 `tools/live-smoke.php` makes real API requests through both the library and CLI. Requests may cost money and consume provider quota. Run it from a development checkout with Composer dependencies and provider credentials configured in the environment.
 
 ```bash
-BBLSLUG_SMOKE_MODELS=google:gemini-flash-latest \
+BBLSLUG_SMOKE_MODELS=google:gemini-3.6-flash \
 BBLSLUG_SMOKE_FORMATS=text BBLSLUG_SMOKE_ENTRIES=api php tools/live-smoke.php
 ```
 
@@ -36,7 +36,7 @@ By default, it checks the configured models with `text`, `html`, and `json` thro
 For example, choose explicit models, formats, and entry points (the chosen model keys must exist in the registry):
 
 ```bash
-BBLSLUG_SMOKE_MODELS=openai:gpt-6-luna,google:gemini-flash-latest \
+BBLSLUG_SMOKE_MODELS=openai:gpt-6-luna,google:gemini-3.6-flash \
 BBLSLUG_SMOKE_FORMATS=json BBLSLUG_SMOKE_ENTRIES=api \
 php tools/live-smoke.php
 ```
@@ -64,7 +64,7 @@ The live mode makes paid requests. Start with a limited selection:
 
 ```bash
 BBLSLUG_SMOKE_SUITE=segments BBLSLUG_SMOKE_LIVE=1 \
-BBLSLUG_SMOKE_MODELS=google:gemini-flash-latest \
+BBLSLUG_SMOKE_MODELS=google:gemini-3.6-flash \
 BBLSLUG_SMOKE_CASES=large BBLSLUG_SMOKE_FORMATS=text \
 php tools/live-smoke.php
 ```
@@ -81,7 +81,7 @@ These authored fixture checks do not establish general translation quality or se
 | --- | --- | --- |
 | `BBLSLUG_SMOKE_CASES` | `large,abbreviations` | Comma-separated fixture names |
 | `BBLSLUG_SMOKE_FORMATS` | `text,html,json` | Selected formats |
-| `BBLSLUG_SMOKE_MODELS` | Eight models in live mode; Google Flash alias offline | Exact registered keys; offline supports only its controlled Google client |
+| `BBLSLUG_SMOKE_MODELS` | Eight models in live mode; canonical Google Flash offline | Exact registered keys; offline supports only its controlled Google client |
 | `BBLSLUG_SMOKE_ENTRIES` | `api,cli` | Both are required for this composite check |
 | `BBLSLUG_SMOKE_PROMPT_KEY` | `translator` | Only the standard translator prompt is supported |
 | `BBLSLUG_SMOKE_REPORT_DIR` | A unique directory under system temp | Must be new or empty; newly created directories use mode `0700` |
@@ -117,7 +117,7 @@ This optional suite makes paid API requests only with explicit live mode and mod
 
 ```bash
 BBLSLUG_SMOKE_SUITE=prompts BBLSLUG_SMOKE_LIVE=1 \
-BBLSLUG_SMOKE_MODELS=google:gemini-flash-latest php tools/live-smoke.php
+BBLSLUG_SMOKE_MODELS=google:gemini-3.6-flash php tools/live-smoke.php
 ```
 
 Each LLM model runs three isolated cases: two consecutive calls with different glossary contexts in
@@ -140,7 +140,7 @@ case has a 270-second process limit; the output token budget is 1024 per request
 The PHPUnit `integration` suite makes paid requests only when `RUN_LIVE_TESTS` is exactly `1`. By default it chooses the first registry model for each vendor that has credentials. Set `BBLSLUG_LIVE_MODEL` to select one exact model:
 
 ```bash
-RUN_LIVE_TESTS=1 BBLSLUG_LIVE_MODEL=google:gemini-flash-latest \
+RUN_LIVE_TESTS=1 BBLSLUG_LIVE_MODEL=google:gemini-3.6-flash \
   vendor/bin/phpunit --testsuite integration --testdox
 ```
 

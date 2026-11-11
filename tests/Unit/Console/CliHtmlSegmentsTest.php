@@ -62,7 +62,7 @@ final class CliHtmlSegmentsTest extends TestCase
     private function runCli(array $options, ?string $input): array
     {
         $command = [PHP_BINARY, dirname(__DIR__, 2) . '/Fixtures/console/html_segments.php',
-            '--model=openai:gpt-5-mini', '--format=html', ...$options];
+            '--model=openai:gpt-5.6-luna', '--format=html', ...$options];
         $process = proc_open($command, [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes, null, [
             'OPENAI_API_KEY' => 'fixture-key',
         ]);

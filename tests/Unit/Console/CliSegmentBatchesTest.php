@@ -106,7 +106,7 @@ final class CliSegmentBatchesTest extends TestCase
     private function runCli(array $options, ?string $input, array $extraEnv = []): array
     {
         $command = [PHP_BINARY, dirname(__DIR__, 2) . '/Fixtures/console/segment_batches.php',
-            '--model=openai:gpt-5-mini', '--format=html', ...$options];
+            '--model=openai:gpt-5.6-luna', '--format=html', ...$options];
         $env = ['OPENAI_API_KEY' => 'fixture-key'] + $extraEnv;
         $process = proc_open(
             $command,

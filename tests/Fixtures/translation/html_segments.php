@@ -30,7 +30,7 @@ namespace Bblslug {
 
 namespace {
     $scenario = json_decode((string) file_get_contents('php://stdin'), true, 512, JSON_THROW_ON_ERROR);
-    $model = $scenario['model'] ?? 'openai:gpt-5-mini';
+    $model = $scenario['model'] ?? 'openai:gpt-5.6-luna';
     $translated = $scenario['translated'] ?? '{"s0":"Bonjour"}';
     if (str_starts_with($model, 'google:')) {
         $response = ['candidates' => [['finishReason' => 'STOP', 'content' => ['parts' => [

@@ -58,7 +58,7 @@ namespace {
     try {
         $result = \Bblslug\Bblslug::translate(
             apiKey: 'fixture-key',
-            modelKey: $scenario['model'] ?? 'yandex:gpt-lite',
+            modelKey: $scenario['model'] ?? 'yandex:yandexgpt-5-pro',
             format: $scenario['format'] ?? 'json',
             text: $scenario['input'] ?? '{"message":"Hello","count":1}',
             validate: $scenario['validate'] ?? true,

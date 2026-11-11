@@ -146,7 +146,7 @@ variables, including during dry-run.
 
 ```bash
 vendor/bin/bblslug \
-  --model=google:gemini-flash-latest \
+  --model=google:gemini-3.6-flash \
   --format=json \
   --source=input.json \
   --translated=output.json
@@ -156,7 +156,7 @@ vendor/bin/bblslug \
 
 ```bash
 vendor/bin/bblslug \
-  --model=google:gemini-flash-latest \
+  --model=google:gemini-3.6-flash \
   --format=html \
   --source=input.html \
   --translated=output.html \
@@ -173,7 +173,7 @@ templates include it alongside their translation and response-format instruction
 $result = \Bblslug\Bblslug::translate(
     apiKey: $apiKey,
     format: 'text',
-    modelKey: 'google:gemini-flash-latest',
+    modelKey: 'google:gemini-3.6-flash',
     text: 'Welcome to your workspace!',
     context: 'Use formal address. Translate "workspace" as "Arbeitsbereich".',
     sourceLang: 'EN',
@@ -190,7 +190,7 @@ The CLI equivalent is `--context`:
 
 ```bash
 vendor/bin/bblslug \
-  --model=google:gemini-flash-latest \
+  --model=google:gemini-3.6-flash \
   --format=html \
   --source=input.html \
   --translated=output.html \
@@ -277,7 +277,7 @@ returns a request preview without sending a request.
 
 ```bash
 vendor/bin/bblslug \
-  --model=google:gemini-flash-latest \
+  --model=google:gemini-3.6-flash \
   --format=text \
   --filters=url \
   --source=input.txt \
@@ -288,7 +288,7 @@ vendor/bin/bblslug \
 
 ```bash
 vendor/bin/bblslug \
-  --model=google:gemini-flash-latest \
+  --model=google:gemini-3.6-flash \
   --format=html \
   --verbose \
   --source=input.html \
@@ -299,7 +299,7 @@ vendor/bin/bblslug \
 
 ```bash
 printf 'Hello world\n' | vendor/bin/bblslug \
-  --model=google:gemini-flash-latest --format=text --target-lang=DE > translated.txt
+  --model=google:gemini-3.6-flash --format=text --target-lang=DE > translated.txt
 ```
 
 Use `--translated=translated.txt` instead of shell redirection to use the CLI output writer and its preflight checks.

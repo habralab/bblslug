@@ -446,7 +446,7 @@ JSON;
 
     public function testNativeStructuredJsonRejectsClearedStrings(): void
     {
-        foreach (['openai:gpt-5-mini', 'google:gemini-2.5-flash'] as $model) {
+        foreach (['openai:gpt-5.6-luna', 'google:gemini-3.6-flash'] as $model) {
             $checked = $this->runFixture([
                 'model' => $model,
                 'input' => '{"message":"Source"}',

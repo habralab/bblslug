@@ -19,7 +19,7 @@ final class BblslugErrorRedactionTest extends TestCase
 
         return [
             'google error with nested encoded key' => [
-                'model' => 'google:gemini-2.5-flash',
+                'model' => 'google:gemini-3.6-flash',
                 'status' => 401,
                 'body' => json_encode(
                     ['message' => json_encode(['key' => $rawKey], JSON_THROW_ON_ERROR)],
@@ -29,14 +29,14 @@ final class BblslugErrorRedactionTest extends TestCase
                 'verbose' => true,
             ],
             'google http error' => [
-                'model' => 'google:gemini-2.5-flash',
+                'model' => 'google:gemini-3.6-flash',
                 'status' => 401,
                 'body' => "Invalid API key {$rawKey} {$rawUrlEncoded} {$urlEncoded}",
                 'reason' => 'HTTP 401 error',
                 'verbose' => false,
             ],
             'google http error verbose' => [
-                'model' => 'google:gemini-2.5-flash',
+                'model' => 'google:gemini-3.6-flash',
                 'status' => 401,
                 'body' => "Invalid API key {$rawKey} {$rawUrlEncoded} {$urlEncoded}",
                 'reason' => 'HTTP 401 error',
@@ -69,7 +69,7 @@ final class BblslugErrorRedactionTest extends TestCase
                 'verbose' => true,
             ],
             'google malformed response' => [
-                'model' => 'google:gemini-2.5-flash',
+                'model' => 'google:gemini-3.6-flash',
                 'status' => 200,
                 'body' => json_encode([
                     'echo' => "{$rawKey} {$rawUrlEncoded} {$urlEncoded}",
@@ -78,7 +78,7 @@ final class BblslugErrorRedactionTest extends TestCase
                 'verbose' => false,
             ],
             'google malformed response verbose' => [
-                'model' => 'google:gemini-2.5-flash',
+                'model' => 'google:gemini-3.6-flash',
                 'status' => 200,
                 'body' => json_encode([
                     'echo' => "{$rawKey} {$rawUrlEncoded} {$urlEncoded}",
@@ -126,7 +126,7 @@ final class BblslugErrorRedactionTest extends TestCase
     {
         $folderId = 'fixture-folder-secret';
         $result = $this->runFixture([
-            'model' => 'yandex:gpt-lite',
+            'model' => 'yandex:yandexgpt-5-pro',
             'status' => 200,
             'body' => json_encode(['folder' => $folderId], JSON_THROW_ON_ERROR),
             'reason' => 'Yandex',

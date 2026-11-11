@@ -125,7 +125,7 @@ final class BblslugDryRunTest extends TestCase
             $out = Bblslug::translate(
                 apiKey: 'fixture-key',
                 format: 'text',
-                modelKey: 'openai:gpt-5-mini',
+                modelKey: 'openai:gpt-5.6-luna',
                 text: $input,
                 dryRun: true,
                 filters: $filters
@@ -152,7 +152,7 @@ final class BblslugDryRunTest extends TestCase
                 $out = Bblslug::translate(
                     apiKey: 'fixture-key',
                     format: $format,
-                    modelKey: 'openai:gpt-5-mini',
+                    modelKey: 'openai:gpt-5.6-luna',
                     text: $input,
                     dryRun: true,
                     filters: ['url'],

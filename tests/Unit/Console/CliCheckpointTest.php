@@ -267,7 +267,7 @@ final class CliCheckpointTest extends TestCase
         $command = [
             PHP_BINARY,
             dirname(__DIR__, 2) . '/Fixtures/console/segment_batches.php',
-            '--model=openai:gpt-5-mini', '--format=text', ...$options,
+            '--model=openai:gpt-5.6-luna', '--format=text', ...$options,
         ];
         $process = proc_open(
             $command,

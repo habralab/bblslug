@@ -63,7 +63,7 @@ namespace {
         $result = \Bblslug\Bblslug::translate(
             apiKey: 'demo +/key=value',
             format: $format,
-            modelKey: 'openai:gpt-5-mini',
+            modelKey: 'openai:gpt-5.6-luna',
             text: $source,
             filters: is_array($scenario['filters'] ?? null)
                 ? array_values(array_map('strval', $scenario['filters']))

@@ -41,7 +41,11 @@ class HelpTest extends TestCase
         self::assertStringContainsString('google:gemini-2.5-flash', $all);
         self::assertStringNotContainsString('openai:gpt-5.5-2026-04-23', $all);
         self::assertStringNotContainsString('anthropic:claude-sonnet-4.5-20250929', $all);
-        self::assertStringContainsString('shutdown 2026-12-11', $all);
+        self::assertStringContainsString('shutdown 2027-04-01', $all);
+        self::assertStringContainsString('shutdown 2026-11-15', $all);
+        self::assertStringContainsString('retirement not before 2027-11-09', $all);
+        self::assertStringContainsString('redirect 2026-12-01', $all);
+        self::assertStringNotContainsString('shutdown 2027-05-07', $all);
         self::assertStringNotContainsString('openai:gpt-4-turbo', $all);
     }
 }

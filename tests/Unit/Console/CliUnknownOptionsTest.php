@@ -29,7 +29,7 @@ final class CliUnknownOptionsTest extends TestCase
     {
         return [
             'standalone' => [['--dry-runn'], '--dry-runn'],
-            'normal translation' => [['--model=openai:gpt-5-mini', '--format=text', '--dry-runn'], '--dry-runn'],
+            'normal translation' => [['--model=openai:gpt-5.6-luna', '--format=text', '--dry-runn'], '--dry-runn'],
             'dry run' => [['--dry-run', '--dry-runn'], '--dry-runn'],
             'help' => [['--help', '--dry-runn'], '--dry-runn'],
             'model listing' => [['--list-models', '--dry-runn'], '--dry-runn'],
@@ -75,7 +75,7 @@ final class CliUnknownOptionsTest extends TestCase
     public function testRequiredValueThatLooksLikeAnOptionIsAccepted(): void
     {
         $result = $this->runCli([
-            '--model=openai:gpt-5-mini', '--format=text', '--dry-run', '--context', '--not-an-option',
+            '--model=openai:gpt-5.6-luna', '--format=text', '--dry-run', '--context', '--not-an-option',
         ], 'Hello');
 
         self::assertSame(0, $result['exitCode'], $result['stderr']);

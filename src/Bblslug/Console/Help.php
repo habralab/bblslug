@@ -123,11 +123,11 @@ class Help
         echo "\t    --filters=url,html_code,html_pre\n";
 
         echo "\n\tTranslate HTML using structured text segments\n";
-        echo "\tvendor/bin/bblslug --model=google:gemini-flash-latest --format=html --html-transport=segments \\\n";
+        echo "\tvendor/bin/bblslug --model=google:gemini-3.6-flash --format=html --html-transport=segments \\\n";
         echo "\t    --source=samples/quickstart/input.html --translated=out.html\n";
 
         echo "\n\tTranslate selected HTML strings inside JSON\n";
-        echo "\tvendor/bin/bblslug --model=google:gemini-flash-latest --format=json --html-transport=segments \\\n";
+        echo "\tvendor/bin/bblslug --model=google:gemini-3.6-flash --format=json --html-transport=segments \\\n";
         echo "\t    --html-json-pointer=/body --source=samples/quickstart/input.json --translated=out.json\n";
 
         echo "\n\tTranslate plain text via STDIN → STDOUT\n";
@@ -164,7 +164,7 @@ class Help
         echo "\t    --source=samples/quickstart/input.html --translated=out.html --filters=url,html_code,html_pre\n";
 
         echo "\n\tUsing model-specific variables (comma-separated):\n";
-        echo "\tvendor/bin/bblslug --model=yandex:gpt-lite --format=text \\\n";
+        echo "\tvendor/bin/bblslug --model=yandex:yandexgpt-5-pro --format=text \\\n";
         echo "\t    --variables=folder_id=... \\\n";
         echo "\t    --source=samples/quickstart/input.txt --translated=out.txt\n";
 
@@ -213,8 +213,16 @@ class Help
                         $labels[] = $conf[$field];
                     }
                 }
-                if (isset($conf['shutdown_date']) && is_string($conf['shutdown_date'])) {
-                    $labels[] = 'shutdown ' . $conf['shutdown_date'];
+                foreach (
+                    [
+                    'shutdown_date' => 'shutdown',
+                    'retirement_not_before' => 'retirement not before',
+                    'redirect_date' => 'redirect',
+                    ] as $field => $description
+                ) {
+                    if (isset($conf[$field]) && is_string($conf[$field])) {
+                        $labels[] = $description . ' ' . $conf[$field];
+                    }
                 }
                 $metadata = $labels === [] ? '' : '[' . implode('; ', $labels) . '] ';
                 $details = trim($metadata . $notes);

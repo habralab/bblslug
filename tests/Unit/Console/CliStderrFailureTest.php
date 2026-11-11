@@ -148,7 +148,7 @@ final class CliStderrFailureTest extends TestCase
             '-d',
             'log_errors=0',
             dirname(__DIR__, 2) . '/Fixtures/console/stderr_failure.php',
-            ...($includeModel ? ['--model=openai:gpt-4o'] : []),
+            ...($includeModel ? ['--model=openai:gpt-6-sol'] : []),
             '--format=json',
             ...$arguments,
         ];

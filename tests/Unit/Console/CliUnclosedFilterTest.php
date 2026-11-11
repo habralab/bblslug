@@ -74,7 +74,7 @@ final class CliUnclosedFilterTest extends TestCase
         $command = [
             PHP_BINARY,
             dirname(__DIR__, 2) . '/Fixtures/translation/unclosed_filter.php',
-            '--model=openai:gpt-5-mini',
+            '--model=openai:gpt-5.6-luna',
             '--format=' . $case['format'],
             '--filters=html_div',
             '--source=' . $source,

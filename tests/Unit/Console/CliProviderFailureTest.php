@@ -31,17 +31,19 @@ final class CliProviderFailureTest extends TestCase
     {
         return [
             'OpenAI reasoning budget' => ['openai-reasoning-budget', 'openai:gpt-6-luna', 'finish_reason=length'],
-            'authentication' => ['http401', 'openai:gpt-5-mini', 'HTTP 401 error'],
-            'rate limit' => ['http429', 'openai:gpt-5-mini', 'HTTP 429 error'],
+            'authentication' => ['http401', 'openai:gpt-5.6-luna', 'HTTP 401 error'],
+            'rate limit' => ['http429', 'openai:gpt-5.6-luna', 'HTTP 429 error'],
             'anthropic credit' => ['anthropic-credit', 'anthropic:claude-haiku-5.5', 'Credit balance too low'],
-            'OpenAI filtered with markers' => ['openai-filtered', 'openai:gpt-5-mini', 'did not finish successfully'],
+            'OpenAI filtered with markers' => ['openai-filtered', 'openai:gpt-5.6-luna', 'did not finish successfully'],
             'xAI tool-call with markers' => ['xai-tool-call', 'xai:grok-4.6',
                 'did not finish successfully'],
-            'cleared HTML' => ['cleared-html', 'openai:gpt-5-mini', 'became empty'],
-            'malformed response' => ['malformed', 'openai:gpt-5-mini', 'OpenAI translation failed'],
-            'timeout' => ['timeout', 'openai:gpt-5-mini', 'timed out'],
-            'Yandex truncation with markers' => ['yandex-truncated', 'yandex:gpt-lite', 'translation was truncated'],
-            'Yandex content filter with markers' => ['yandex-filtered', 'yandex:gpt-lite', 'content filter'],
+            'cleared HTML' => ['cleared-html', 'openai:gpt-5.6-luna', 'became empty'],
+            'malformed response' => ['malformed', 'openai:gpt-5.6-luna', 'OpenAI translation failed'],
+            'timeout' => ['timeout', 'openai:gpt-5.6-luna', 'timed out'],
+            'Yandex truncation with markers' => [
+                'yandex-truncated', 'yandex:yandexgpt-5-pro', 'translation was truncated',
+            ],
+            'Yandex content filter with markers' => ['yandex-filtered', 'yandex:yandexgpt-5-pro', 'content filter'],
         ];
     }
 
@@ -114,8 +116,8 @@ final class CliProviderFailureTest extends TestCase
     public static function emptyTranslationCases(): array
     {
         return [
-            'empty with validation' => ['empty-translation', false, 'openai:gpt-5-mini'],
-            'whitespace without validation' => ['whitespace-translation', true, 'openai:gpt-5-mini'],
+            'empty with validation' => ['empty-translation', false, 'openai:gpt-5.6-luna'],
+            'whitespace without validation' => ['whitespace-translation', true, 'openai:gpt-5.6-luna'],
             'Grok completed with empty markers' => ['grok-empty-markers', false, 'xai:grok-4.7'],
             'Grok empty markers without validation' => ['grok-empty-markers', true, 'xai:grok-4.7'],
         ];

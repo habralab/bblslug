@@ -10,7 +10,7 @@ final class BblslugSegmentBatchesTest extends TestCase
 {
     public function testSequentialPacketsPreserveGlobalIdsAndSumUsage(): void
     {
-        foreach (['openai:gpt-5-mini', 'google:gemini-2.5-flash'] as $model) {
+        foreach (['openai:gpt-5.6-luna', 'google:gemini-3.6-flash'] as $model) {
             $r = $this->runFixture(['model' => $model]);
             self::assertSame('success', $r['type'], (string) ($r['message'] ?? ''));
             self::assertSame('<p>T:One</p><p>T:Two</p><p>T:Three</p>', $r['result']['result']);

@@ -63,7 +63,7 @@ namespace {
     try {
         if ($api) {
             $result = \Bblslug\Bblslug::translate(
-                modelKey: 'openai:gpt-5-mini',
+                modelKey: 'openai:gpt-5.6-luna',
                 apiKey: 'fixture-key',
                 text: $source,
                 format: 'html',

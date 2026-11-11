@@ -150,7 +150,7 @@ final class BblslugEmbeddedJsonTest extends TestCase
             'details' => $this->innerJson(['enabled' => true]),
         ]));
 
-        foreach (['openai:gpt-5-mini', 'google:gemini-2.5-flash'] as $model) {
+        foreach (['openai:gpt-5.6-luna', 'google:gemini-3.6-flash'] as $model) {
             $result = $this->runStructuredFixture([
                 'model' => $model,
                 'input' => $input,
@@ -170,7 +170,7 @@ final class BblslugEmbeddedJsonTest extends TestCase
         $input = $this->outerWithPayload($this->innerJson(['count' => 1, 'enabled' => true]));
         $translated = $this->outerWithPayload($this->innerJson(['count' => 2, 'enabled' => false]));
 
-        foreach (['openai:gpt-5-mini', 'google:gemini-2.5-flash'] as $model) {
+        foreach (['openai:gpt-5.6-luna', 'google:gemini-3.6-flash'] as $model) {
             $result = $this->runStructuredFixture([
                 'model' => $model,
                 'input' => $input,

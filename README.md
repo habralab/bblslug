@@ -27,7 +27,7 @@ Translate HTML from STDIN, protecting code blocks and URLs:
 
 ```bash
 printf '%s' '<p>Hello! Read <code>status=ready</code> at https://example.invalid/guide</p>' | \
-  vendor/bin/bblslug --model=google:gemini-flash-latest --format=html \
+  vendor/bin/bblslug --model=google:gemini-3.6-flash --format=html \
     --source-lang=EN --target-lang=DE --filters=url,html_code,html_pre
 ```
 
@@ -58,7 +58,7 @@ if ($apiKey === false || $apiKey === '') {
 $result = Bblslug::translate(
     apiKey: $apiKey,
     format: 'json',
-    modelKey: 'google:gemini-flash-latest',
+    modelKey: 'google:gemini-3.6-flash',
     text: '{"message":"Welcome to your workspace!","count":2}',
     context: 'Use formal address. Translate "workspace" as "Arbeitsbereich".',
     sourceLang: 'EN',

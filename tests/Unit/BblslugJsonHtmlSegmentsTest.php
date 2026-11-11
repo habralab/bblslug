@@ -13,7 +13,7 @@ final class BblslugJsonHtmlSegmentsTest extends TestCase
         $source = '{"metadata" : "DO NOT SEND", "price":1.2300, "big":900719925474099312345,'
             . '"body":"<p>Hello <code>fixed</code><a href=\"https://example.com\">world</a></p>",'
             . '"tail":"\\u003Cunselected\\u003E"}';
-        foreach (['openai:gpt-5-mini', 'google:gemini-2.5-flash', 'deepl:free'] as $model) {
+        foreach (['openai:gpt-5.6-luna', 'google:gemini-3.6-flash', 'deepl:free'] as $model) {
             foreach (['json', 'linedJson'] as $format) {
                 $result = $this->runFixture([
                     'model' => $model, 'format' => $format, 'input' => $source,

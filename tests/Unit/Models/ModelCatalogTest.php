@@ -43,6 +43,13 @@ final class ModelCatalogTest extends TestCase
                 $key = "{$vendor}:{$name}";
                 $catalogKeys[] = $key;
                 self::assertNotNull($registry->get($key), "Catalog model {$key} is not registered");
+                $config = $registry->get($key);
+                self::assertIsArray($config);
+                $lifecycle = array_intersect_key($config, array_flip([
+                    'kind', 'status', 'access', 'checked_at', 'lifecycle_source',
+                    'shutdown_date', 'retirement_not_before', 'redirect_date', 'replacement',
+                ]));
+                self::assertEquals($lifecycle, $definition['lifecycle_evidence'][$name], $key);
 
                 if ($vendor === 'deepl') {
                     self::assertContains($payloadModel, ['Free tier', 'Pro tier']);
@@ -83,8 +90,8 @@ final class ModelCatalogTest extends TestCase
             self::assertFalse($registry->has($retiredKey), $retiredKey);
         }
 
-        foreach (['openai:gpt-5-mini', 'openai:gpt-4o', 'yandex:gpt-32k'] as $legacyKey) {
-            self::assertTrue($registry->has($legacyKey), $legacyKey);
+        foreach (['openai:gpt-5-mini', 'openai:gpt-4o', 'yandex:gpt-32k'] as $aliasKey) {
+            self::assertFalse($registry->has($aliasKey), $aliasKey);
         }
     }
 
@@ -126,23 +133,53 @@ final class ModelCatalogTest extends TestCase
             self::assertNull($registry->get($key), $key);
         }
         foreach (
-            ['openai:gpt-5.5', 'anthropic:claude-opus-4.6', 'xai:grok-4.7',
-            'anthropic:claude-haiku-4.5', 'anthropic:claude-opus-4.5', 'anthropic:claude-sonnet-4.5'] as $key
+            ['openai:gpt-6.1-terra', 'anthropic:claude-opus-4.6', 'xai:grok-4.7',
+            'anthropic:claude-fable-5.2', 'anthropic:claude-mythos-5.2', 'google:gemini-4-carbon'] as $key
         ) {
             self::assertTrue($registry->has($key), $key);
         }
     }
 
-    public function testScheduledOpenAiAliasesAreNotRecommendedForNewIntegrations(): void
+    public function testAliasesAndUnverifiedCanonicalIdsAreNotRegistered(): void
     {
         $registry = new ModelRegistry();
-        foreach (['gpt-5', 'gpt-5-mini', 'gpt-5-nano', 'gpt-5-pro', 'o3', 'o3-pro'] as $name) {
-            $config = $registry->get('openai:' . $name);
+        foreach (
+            [
+            'openai:gpt-5', 'openai:gpt-5-mini', 'openai:gpt-5-nano', 'openai:gpt-5-pro',
+            'openai:o3', 'openai:o3-pro', 'openai:chat-latest', 'openai:gpt-5.6-cyber',
+            'openai:gpt-rosalind-discovery', 'openai:gpt-rosalind-research', 'openai:gpt-6-rosalind',
+            'google:gemini-flash-latest', 'google:gemini-pro-latest', 'google:gemini-flash-lite-latest',
+            'anthropic:claude-haiku-4.5', 'anthropic:claude-opus-4.5', 'anthropic:claude-sonnet-4.5',
+            'yandex:gpt-lite', 'yandex:gpt-pro', 'yandex:yandexgpt-latest', 'yandex:yandexgpt-rc',
+            'yandex:qwen3-235b-a22b-fp8',
+            ] as $key
+        ) {
+            self::assertFalse($registry->has($key), $key);
+        }
+    }
+
+    public function testLifecycleDateMeaningsRemainDistinct(): void
+    {
+        $registry = new ModelRegistry();
+        $claude = $registry->get('anthropic:claude-fable-5.2');
+        self::assertIsArray($claude);
+        self::assertSame('2027-11-09', $claude['retirement_not_before']);
+        self::assertArrayNotHasKey('shutdown_date', $claude);
+        $google = $registry->get('google:gemini-3.1-flash-lite');
+        self::assertIsArray($google);
+        self::assertSame('available', $google['status']);
+        self::assertSame('2027-05-07', $google['retirement_not_before']);
+        self::assertArrayNotHasKey('shutdown_date', $google);
+        $redirect = $registry->get('google:gemini-2.5-pro');
+        self::assertIsArray($redirect);
+        self::assertSame('2026-12-01', $redirect['redirect_date']);
+        self::assertSame('google:gemini-3.8-flash', $redirect['replacement']);
+        self::assertArrayNotHasKey('shutdown_date', $redirect);
+        foreach (['yandex:yandexgpt-5-lite', 'yandex:deepseek-v4-flash'] as $key) {
+            $config = $registry->get($key);
             self::assertIsArray($config);
-            self::assertSame('deprecated', $config['status']);
-            self::assertSame('2026-12-11', $config['shutdown_date']);
+            self::assertSame('2026-11-15', $config['shutdown_date']);
             self::assertFalse(ModelRegistry::isDefaultListing($config));
-            self::assertTrue($registry->has($config['replacement']));
         }
     }
 
@@ -187,14 +224,14 @@ final class ModelCatalogTest extends TestCase
     public function testReasoningDefaultsDoNotInheritUnsupportedTemperature(): void
     {
         $registry = new ModelRegistry();
-        foreach (['gpt-5.6-sol', 'gpt-5.2-pro', 'gpt-6-luna', 'o3-pro', 'gpt-5.3-codex'] as $model) {
+        foreach (['gpt-5.6-sol', 'gpt-6-cyber', 'gpt-6-luna', 'gpt-5.5-cyber-preview', 'gpt-5.3-codex'] as $model) {
             $key = 'openai:' . $model;
             $config = $registry->get($key);
             self::assertIsArray($config);
             $request = $registry->getDriver($key)->buildRequest($config, 'Hello', ['format' => 'text']);
             $payload = json_decode($request['body'], true, 512, JSON_THROW_ON_ERROR);
             self::assertArrayNotHasKey('temperature', $payload, $key);
-            if (in_array($model, ['gpt-5.2-pro', 'o3-pro', 'gpt-5.3-codex'], true)) {
+            if (in_array($model, ['gpt-6-cyber', 'gpt-5.5-cyber-preview', 'gpt-5.3-codex'], true)) {
                 self::assertSame('https://api.openai.com/v1/responses', $request['url']);
                 self::assertArrayHasKey('input', $payload);
             }
@@ -204,7 +241,7 @@ final class ModelCatalogTest extends TestCase
     public function testAlternateApiUsageFieldsAreCounted(): void
     {
         $registry = new ModelRegistry();
-        foreach (['openai:gpt-5.2-pro'] as $key) {
+        foreach (['openai:gpt-5.3-codex'] as $key) {
             $config = $registry->get($key);
             self::assertIsArray($config);
             $usage = UsageExtractor::extract($config, [
@@ -240,13 +277,22 @@ final class ModelCatalogTest extends TestCase
         $registry = new ModelRegistry();
         foreach ($registry->getAll() as $key => $config) {
             self::assertContains($config['status'] ?? null, ['available', 'deprecated'], $key);
-            self::assertContains($config['kind'] ?? null, ['alias', 'model', 'preview', 'tier'], $key);
+            self::assertContains($config['kind'] ?? null, ['model', 'preview', 'tier'], $key);
             self::assertContains($config['access'] ?? null, ['standard', 'restricted', 'existing_customers'], $key);
             self::assertMatchesRegularExpression('/^\\d{4}-\\d{2}-\\d{2}$/', $config['checked_at'] ?? '', $key);
             self::assertStringStartsWith('https://', $config['lifecycle_source'] ?? '', $key);
             if (isset($config['shutdown_date'])) {
                 self::assertSame('deprecated', $config['status'], $key);
                 self::assertGreaterThan($config['checked_at'], $config['shutdown_date'], $key);
+            }
+            foreach (['shutdown_date', 'retirement_not_before', 'redirect_date'] as $field) {
+                if (isset($config[$field])) {
+                    self::assertMatchesRegularExpression('/^\\d{4}-\\d{2}-\\d{2}$/', $config[$field], $key);
+                }
+            }
+            if (isset($config['redirect_date'])) {
+                self::assertSame('deprecated', $config['status'], $key);
+                self::assertArrayHasKey('replacement', $config, $key);
             }
             if (isset($config['replacement'])) {
                 self::assertTrue($registry->has($config['replacement']), $key);
@@ -258,7 +304,7 @@ final class ModelCatalogTest extends TestCase
     {
         $groups = \Bblslug\Bblslug::listModels();
         self::assertSame(['anthropic', 'deepl', 'google', 'openai', 'xai', 'yandex'], array_keys($groups));
-        self::assertArrayHasKey('openai:gpt-5.5', $groups['openai']);
+        self::assertArrayHasKey('openai:gpt-6.1-terra', $groups['openai']);
         foreach ($groups as $models) {
             $keys = array_keys($models);
             $sorted = $keys;

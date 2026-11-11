@@ -42,7 +42,7 @@ final class CliReservedVariablesTest extends TestCase
         $command = [
             PHP_BINARY,
             dirname(__DIR__, 3) . '/bin/bblslug',
-            '--model=openai:gpt-5-mini',
+            '--model=openai:gpt-5.6-luna',
             '--format=text',
             ...$arguments,
         ];

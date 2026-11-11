@@ -12,7 +12,7 @@ final class BblslugStructuredOutputTest extends TestCase
     public function testRegisteredGeminiDefaultsToNativeJsonWithoutTransportOverride(): void
     {
         $result = $this->runFixture([
-            'model' => 'google:gemini-2.5-flash',
+            'model' => 'google:gemini-3.6-flash',
             'format' => 'json',
             'variables' => [],
             'input' => '{"message":"Hello","count":7}',
@@ -28,7 +28,7 @@ final class BblslugStructuredOutputTest extends TestCase
     {
         foreach (['json', 'linedJson'] as $format) {
             $result = $this->runFixture([
-                'model' => 'google:gemini-2.5-flash',
+                'model' => 'google:gemini-3.6-flash',
                 'format' => $format,
                 'variables' => ['json_transport' => 'native'],
                 'input' => '{"message":"Hello","count":7}',
@@ -45,7 +45,7 @@ final class BblslugStructuredOutputTest extends TestCase
     public function testGoogleNativeJsonDoesNotBypassValidation(string $output, string $reason): void
     {
         $result = $this->runFixture([
-            'model' => 'google:gemini-2.5-flash',
+            'model' => 'google:gemini-3.6-flash',
             'format' => 'json',
             'variables' => ['json_transport' => 'native'],
             'input' => '{"message":"Hello","count":7}',
@@ -68,7 +68,9 @@ final class BblslugStructuredOutputTest extends TestCase
 
     public function testNativeFormatsPassOptionsThroughTheFacadeAndValidateReturnedJson(): void
     {
-        foreach (['openai:gpt-5-mini', 'google:gemini-2.5-flash', 'xai:grok-4.7', 'yandex:gpt-lite'] as $model) {
+        foreach (
+            ['openai:gpt-5.6-luna', 'google:gemini-3.6-flash', 'xai:grok-4.7', 'yandex:yandexgpt-5-pro'] as $model
+        ) {
             $result = $this->runFixture([
                 'model' => $model,
                 'input' => '{"message":"Hello"}',
@@ -90,7 +92,7 @@ final class BblslugStructuredOutputTest extends TestCase
 
     public function testNativeFormatsRejectChangedNonStringScalarValues(): void
     {
-        foreach (['openai:gpt-5-mini', 'google:gemini-2.5-flash'] as $model) {
+        foreach (['openai:gpt-5.6-luna', 'google:gemini-3.6-flash'] as $model) {
             $result = $this->runFixture([
                 'model' => $model,
                 'input' => '{"nested":{"count":7,"ratio":0.12345678901234567,"enabled":true}}',
@@ -110,7 +112,7 @@ final class BblslugStructuredOutputTest extends TestCase
         $translated = json_encode([
             'number' => '8', 'boolean' => 'false', 'null' => 'null', 'text' => 'Перевод "ok" \\ путь',
         ], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
-        foreach (['openai:gpt-5-mini', 'google:gemini-2.5-flash'] as $model) {
+        foreach (['openai:gpt-5.6-luna', 'google:gemini-3.6-flash'] as $model) {
             $result = $this->runFixture([
                 'model' => $model,
                 'input' => $input,
@@ -135,7 +137,7 @@ final class BblslugStructuredOutputTest extends TestCase
             'additionalProperties' => true,
         ];
 
-        foreach (['openai:gpt-5-mini', 'google:gemini-2.5-flash'] as $model) {
+        foreach (['openai:gpt-5.6-luna', 'google:gemini-3.6-flash'] as $model) {
             $result = $this->runFixture([
                 'model' => $model,
                 'input' => $input,
@@ -150,7 +152,7 @@ final class BblslugStructuredOutputTest extends TestCase
 
     public function testNativeFormatsRejectScalarValuesMovedBetweenObjectKeys(): void
     {
-        foreach (['openai:gpt-5-mini', 'google:gemini-2.5-flash'] as $model) {
+        foreach (['openai:gpt-5.6-luna', 'google:gemini-3.6-flash'] as $model) {
             $result = $this->runFixture([
                 'model' => $model,
                 'input' => '{"a":1,"b":2,"nested":{"left":true,"right":false}}',
@@ -168,7 +170,7 @@ final class BblslugStructuredOutputTest extends TestCase
             . '"enabled":true,"empty":null,"nested":{"number":1.0}}';
         $translated = '{"nested":{"number":1.0},"empty":null,"enabled":true,'
             . '"large":9223372036854775808,"decimal":0.12345678901234567891}';
-        foreach (['openai:gpt-5-mini', 'google:gemini-2.5-flash'] as $model) {
+        foreach (['openai:gpt-5.6-luna', 'google:gemini-3.6-flash'] as $model) {
             $result = $this->runFixture([
                 'model' => $model,
                 'input' => $input,
@@ -213,7 +215,7 @@ final class BblslugStructuredOutputTest extends TestCase
         $result = Bblslug::translate(
             'fixture-key',
             'json',
-            'openai:gpt-5-mini',
+            'openai:gpt-5.6-luna',
             '{"message":"Hello"}',
             null,
             true,

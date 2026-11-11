@@ -60,7 +60,7 @@ namespace {
     $html = $profile !== 'text';
     $source = $html ? str_repeat('<p>Hello</p>', intdiv(1048576, 12)) : str_repeat("Hi\n", intdiv(131072, 3));
     $result = \Bblslug\Bblslug::translate(
-        modelKey: $profile === 'native-html' ? 'xai:grok-4.7' : 'openai:gpt-5-mini',
+        modelKey: $profile === 'native-html' ? 'xai:grok-4.7' : 'openai:gpt-5.6-luna',
         apiKey: 'fixture-key',
         text: $source,
         format: $html ? 'html' : 'text',

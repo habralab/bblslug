@@ -92,7 +92,7 @@ class CliOutputTest extends TestCase
     private function runCli(string ...$arguments): array
     {
         $fixture = dirname(__DIR__, 2) . '/Fixtures/console/successful_translation.php';
-        $command = [PHP_BINARY, $fixture, '--model=openai:gpt-4o', '--format=text', ...$arguments];
+        $command = [PHP_BINARY, $fixture, '--model=openai:gpt-6-sol', '--format=text', ...$arguments];
         $environment = ['BBLSLUG_OPENAI_API_KEY' => 'fake-test-key'];
         $process = proc_open($command, [
             0 => ['pipe', 'r'],

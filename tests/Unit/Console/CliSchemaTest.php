@@ -17,7 +17,7 @@ final class CliSchemaTest extends TestCase
 
     public function testSchemaFileIsAcceptedByAdditionalNativeDrivers(): void
     {
-        foreach (['xai:grok-4.7', 'yandex:gpt-lite'] as $model) {
+        foreach (['xai:grok-4.7', 'yandex:yandexgpt-5-pro'] as $model) {
             $result = $this->runCli('{"type":"object"}', 'structured_json', $model);
             self::assertSame(0, $result['exitCode'], $result['stderr']);
             self::assertSame('{"message":"Hello"}', $result['stdout']);
@@ -58,7 +58,7 @@ final class CliSchemaTest extends TestCase
     private function runCli(
         ?string $schema,
         string $format = 'structured_json',
-        string $model = 'openai:gpt-5-mini'
+        string $model = 'openai:gpt-5.6-luna'
     ): array {
         $schemaFile = tempnam(sys_get_temp_dir(), 'bblslug-schema-');
         self::assertIsString($schemaFile);

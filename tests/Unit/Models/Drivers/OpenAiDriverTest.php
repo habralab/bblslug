@@ -66,8 +66,11 @@ final class OpenAiDriverTest extends TestCase
 
     public function testLegacyTemperatureAndOutputBudgetOverrides(): void
     {
-        $config = (new ModelRegistry())->get('openai:gpt-4o');
-        $this->assertNotNull($config);
+        $config = [
+            'endpoint' => 'https://api.openai.com/v1/chat/completions',
+            'api_type' => 'chat_completions',
+            'defaults' => ['model' => 'gpt-4o', 'max_completion_tokens' => 2048, 'temperature' => 0.0],
+        ];
         $driver = new OpenAiDriver();
         $request = $driver->buildRequest($config, 'Hello', []);
         $body = json_decode($request['body'], true, 512, JSON_THROW_ON_ERROR);

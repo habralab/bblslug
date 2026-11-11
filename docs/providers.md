@@ -21,7 +21,7 @@ Choose a model from the [model catalogue](models.md) and configure its provider 
 
 The GPT-6 defaults use Chat Completions with `reasoning_effort=low` and omit `temperature`.
 Responses-only models use the Responses API with its own request and usage fields.
-Older OpenAI identifiers remain available; check your account for access.
+Canonical legacy OpenAI IDs remain available where documented; aliases and pinned builds are excluded.
 
 OpenAI's `max_completion_tokens` covers both reasoning and visible output. A request can
 reach that limit before producing any visible translation, even with `reasoning_effort=low`.
@@ -99,7 +99,7 @@ or a required JSON Schema. Current Gemini entries declare this capability; Gemma
 without it retain markers.
 
 ```bash
-printf '%s' '{"title":"Hello"}' | vendor/bin/bblslug --model=google:gemini-flash-latest \
+printf '%s' '{"title":"Hello"}' | vendor/bin/bblslug --model=google:gemini-3.6-flash \
   --format=json --source-lang=EN --target-lang=DE
 ```
 
@@ -178,7 +178,7 @@ and escaping are not repaired.
 `json_transport=auto` is the default. It selects native mode for `json`/`linedJson`
 only when the source root is an object, the model declares `native_json`, and the
 standard `translator` group has a `structured_json` template. Native capability is
-currently declared for `yandex:gpt-lite` and `yandex:gpt-pro`. HTML segment packets
+currently declared for `yandex:yandexgpt-5-pro`. HTML segment packets
 are objects, so they qualify automatically. Text, document-mode HTML, array/scalar
 JSON roots, other models, and custom prompt groups retain their marker protocol.
 
@@ -186,7 +186,7 @@ JSON roots, other models, and custom prompt groups retain their marker protocol.
 $result = Bblslug::translate(
     apiKey: $key,
     format: 'json',
-    modelKey: 'yandex:gpt-pro',
+    modelKey: 'yandex:yandexgpt-5-pro',
     text: $json,
     variables: ['folder_id' => $folderId, 'json_transport' => 'native'],
 );

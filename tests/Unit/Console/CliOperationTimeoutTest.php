@@ -63,7 +63,7 @@ final class CliOperationTimeoutTest extends TestCase
         $command = [
             PHP_BINARY,
             dirname(__DIR__, 2) . '/Fixtures/console/operation_timeout.php',
-            '--model=openai:gpt-5-mini',
+            '--model=openai:gpt-5.6-luna',
             '--format=text',
             ...$options,
         ];

@@ -103,7 +103,7 @@ final class CliOutputPreflightTest extends TestCase
         $source = $this->sourceFile();
         $counter = $this->counterFile();
         $result = $this->runSegmentCli(
-            ['--source=' . $source, '--translated', '--model=openai:gpt-5-mini'],
+            ['--source=' . $source, '--translated', '--model=openai:gpt-5.6-luna'],
             ['BBLSLUG_TEST_COUNTER_FILE' => $counter]
         );
 
@@ -278,7 +278,7 @@ final class CliOutputPreflightTest extends TestCase
         $command = [
             PHP_BINARY,
             dirname(__DIR__, 2) . '/Fixtures/console/segment_batches.php',
-            '--model=openai:gpt-5-mini', '--format=text', '--text-transport=segments',
+            '--model=openai:gpt-5.6-luna', '--format=text', '--text-transport=segments',
             '--text-segment-batch-size=1', '--no-validate', ...$options,
         ];
         return $this->runProcess($command, ['BBLSLUG_OPENAI_API_KEY' => 'fake-test-key'] + $extraEnvironment);
@@ -290,7 +290,7 @@ final class CliOutputPreflightTest extends TestCase
         $command = [
             PHP_BINARY,
             dirname(__DIR__, 2) . '/Fixtures/console/provider_failure.php',
-            '--model=openai:gpt-5-mini', '--format=text', '--source=' . $source,
+            '--model=openai:gpt-5.6-luna', '--format=text', '--source=' . $source,
             '--translated=' . $destination,
         ];
         return $this->runProcess($command, [
