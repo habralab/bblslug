@@ -2,6 +2,24 @@
 
 Read the changes between your installed version and the version you are adopting. Released compatibility notes below describe the behavior introduced by each release.
 
+## Upcoming minor version (Unreleased)
+
+The built-in registry no longer includes pinned snapshot IDs such as
+`openai:gpt-5-mini-2025-08-07`. They are absent from PHP `listModels()` and both CLI listings;
+selecting one fails locally as an unknown model. Select a provider-maintained name such as
+`openai:gpt-5-mini` after reviewing its capabilities and lifecycle. Named versions such as
+`openai:gpt-5.5` remain registered. Claude 4.5 families use their official undated keys, such as
+`anthropic:claude-haiku-4.5`; existing dated keys are not silently mapped to them.
+
+The surviving GPT-5 and o3 aliases are themselves scheduled to shut down on December 11, 2026;
+using an undated name does not avoid the shutdown. Yandex AI Studio `gpt-oss-20b` and
+`gpt-oss-120b` are also removed after their confirmed October 30 retirement. Historical observations
+and exclusion reasons remain in the [machine catalogue](../resources/model-catalog.json).
+
+These registry removals require a minor version. Published 0.12.x tags are unchanged.
+Complete pending checkpointed jobs with their original library version, or use a new checkpoint
+path after upgrading; source and template identity checks still apply.
+
 ## Upgrading to 0.12.1
 
 PHP calls keep their arguments. CLI option names must now match the full documented names;

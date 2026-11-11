@@ -4,6 +4,19 @@ This file follows the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) f
 
 ## [Unreleased]
 
+### Added
+
+- Official undated Claude Haiku, Opus and Sonnet 4.5 aliases retain access to those families without registering pinned builds.
+
+### Removed
+
+- Remove pinned snapshot IDs from the built-in registry, PHP model list and CLI catalogue. Selecting a removed ID now fails locally; named model versions remain selectable and no replacement is automatic.
+- Remove Yandex AI Studio `gpt-oss-20b` and `gpt-oss-120b`, retired on October 30, 2026.
+
+### Fixed
+
+- Mark the GPT-5, GPT-5 mini/nano/pro and o3/o3-pro aliases as deprecated until their announced December 11, 2026 shutdown, with official replacement guidance.
+
 ## [0.12.1] – 2026-10-29
 
 ### Added

@@ -26,7 +26,7 @@ class HelpTest extends TestCase
         $this->assertStringContainsString('Examples:', $output);
     }
 
-    public function testDefaultAndFullModelListsKeepSnapshotsAndLifecycleSeparate(): void
+    public function testDefaultAndFullModelListsKeepLifecycleSeparate(): void
     {
         ob_start();
         Help::printModelList();
@@ -37,19 +37,11 @@ class HelpTest extends TestCase
 
         self::assertStringContainsString('openai:gpt-6-luna', $default);
         self::assertStringContainsString('--list-models=all', $default);
-        foreach (
-            [
-            'openai:gpt-5.5-2026-04-23',
-            'google:gemini-2.5-flash',
-            'anthropic:claude-sonnet-4.5-20250929',
-            'yandex:gpt-oss-120b',
-            ] as $extendedKey
-        ) {
-            self::assertStringNotContainsString($extendedKey, $default);
-            self::assertStringContainsString($extendedKey, $all);
-        }
-        self::assertStringContainsString('shutdown 2026-11-30', $all);
-        self::assertStringContainsString('shutdown 2026-10-30', $all);
+        self::assertStringNotContainsString('google:gemini-2.5-flash', $default);
+        self::assertStringContainsString('google:gemini-2.5-flash', $all);
+        self::assertStringNotContainsString('openai:gpt-5.5-2026-04-23', $all);
+        self::assertStringNotContainsString('anthropic:claude-sonnet-4.5-20250929', $all);
+        self::assertStringContainsString('shutdown 2026-12-11', $all);
         self::assertStringNotContainsString('openai:gpt-4-turbo', $all);
     }
 }

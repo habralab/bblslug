@@ -14,7 +14,7 @@ final class BblslugEmptyTranslationTest extends TestCase
         $cases = [];
         foreach (
             ['openai:gpt-5-mini', 'google:gemini-2.5-flash', 'anthropic:claude-haiku-5.5',
-                'xai:grok-4.20-0309-non-reasoning', 'yandex:gpt-lite', 'deepl:free'] as $model
+                'xai:grok-4.6', 'yandex:gpt-lite', 'deepl:free'] as $model
         ) {
             foreach (['' => 'empty', " \t\r\n\u{00a0}\u{2003}" => 'whitespace'] as $value => $label) {
                 $cases[$model . ' ' . $label] = [$model, $value];

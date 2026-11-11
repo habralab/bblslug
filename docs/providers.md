@@ -34,7 +34,7 @@ who choose to disable reasoning. Model and provider support for this option vari
 The Claude 5.5 entries use the [Anthropic Messages API](https://platform.claude.com/docs/en/api/messages/create)
 with `effort=low`, no `temperature`, and an initial output budget of 4096 tokens.
 Use `--variables=maxTokens=8192` to override the output budget. Use `--variables=effort=low,maxTokens=8192` for models supporting effort; older
-Claude snapshots omit unsupported thinking and effort parameters.
+Claude models omit unsupported thinking and effort parameters.
 
 DeepL Free and Pro are service tiers. Select any documented translation engine
 with `--variables=model_type=quality_optimized`, `prefer_quality_optimized`, or

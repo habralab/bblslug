@@ -66,7 +66,7 @@ class Help
         echo "\t{$bold}--html-json-pointer=POINTER{$reset} Translate HTML at a JSON Pointer "
             . "(repeatable; segments only)\n";
         echo "\t{$bold}--help{$reset}               Show this help message\n";
-        echo "\t{$bold}--list-models{$reset}        Models for new integrations; =all includes snapshots and legacy\n";
+        echo "\t{$bold}--list-models{$reset}        Models for new integrations; =all includes previews and legacy\n";
         echo "\t{$bold}--list-prompts{$reset}       Show available prompt templates\n";
         echo "\t{$bold}--model=MODEL_ID{$reset}     Required model (see --list-models)\n";
         echo "\t{$bold}--operation-timeout=N{$reset} Total translation operation deadline in seconds\n";
@@ -224,7 +224,7 @@ class Help
         }
 
         if (!$includeAll) {
-            echo "Use --list-models=all for snapshots, previews, deprecated models, "
+            echo "Use --list-models=all for previews, deprecated models, "
                 . "and models with restricted or existing-customer access.\n";
         }
         echo $reset;

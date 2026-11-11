@@ -19,7 +19,6 @@ The library sends the selected API identifier; it does not silently replace reti
 | --- | --- |
 | `alias` | Provider-maintained alias; the target may change |
 | `model` | Version/family ID without a pinned build date |
-| `snapshot` | Pinned provider release; retained for existing integrations |
 | `preview` | Preview or release-candidate identifier |
 | `tier` | DeepL service tier; choose the translation engine with `model_type` |
 
@@ -32,7 +31,8 @@ Anthropic “not sooner than” guarantees are not shutdown dates.
 
 ## Models for new integrations
 
-This view omits pinned snapshots, previews, deprecated entries, and models with
+The built-in registry excludes pinned snapshots. Named model versions remain selectable.
+This view omits previews, deprecated entries, and models with
 `restricted` or `existing_customers` access.
 It is a discovery aid, not a claim that every listed model was live-tested for every format.
 
@@ -40,7 +40,9 @@ It is a discovery aid, not a claim that every listed model was live-tested for e
 | --- | --- |
 | `anthropic:claude-fable-5` | model |
 | `anthropic:claude-fable-5.1` | model |
+| `anthropic:claude-haiku-4.5` | alias |
 | `anthropic:claude-haiku-5.5` | model |
+| `anthropic:claude-opus-4.5` | alias |
 | `anthropic:claude-opus-4.6` | model |
 | `anthropic:claude-opus-4.7` | model |
 | `anthropic:claude-opus-4.8` | model |
@@ -61,10 +63,6 @@ It is a discovery aid, not a claim that every listed model was live-tested for e
 | `google:gemma-4-26b-a4b-it` | model |
 | `google:gemma-4-31b-it` | model |
 | `openai:chat-latest` | alias |
-| `openai:gpt-5` | alias |
-| `openai:gpt-5-mini` | alias |
-| `openai:gpt-5-nano` | alias |
-| `openai:gpt-5-pro` | alias |
 | `openai:gpt-5-search-api` | alias |
 | `openai:gpt-5.2` | alias |
 | `openai:gpt-5.2-pro` | alias |
@@ -80,8 +78,6 @@ It is a discovery aid, not a claim that every listed model was live-tested for e
 | `openai:gpt-6-luna` | alias |
 | `openai:gpt-6-sol` | alias |
 | `openai:gpt-6.1-sol` | alias |
-| `openai:o3` | alias |
-| `openai:o3-pro` | alias |
 | `xai:grok-4.3` | model |
 | `xai:grok-4.5` | model |
 | `xai:grok-4.6` | model |
@@ -102,25 +98,25 @@ It is a discovery aid, not a claim that every listed model was live-tested for e
 ## Full registry
 
 <details>
-<summary>Show all registered models, including snapshots and legacy entries</summary>
+<summary>Show all registered models, including previews and legacy entries</summary>
 
 APIs supported:
 
 - anthropic:
   - `anthropic:claude-fable-5` — model; available; standard
   - `anthropic:claude-fable-5.1` — model; available; standard
-  - `anthropic:claude-haiku-4.5-20251001` — snapshot; available; standard
+  - `anthropic:claude-haiku-4.5` — alias; available; standard
   - `anthropic:claude-haiku-5.5` — model; available; standard
   - `anthropic:claude-mythos-5` — model; available; restricted
   - `anthropic:claude-mythos-5.1` — model; available; restricted
   - `anthropic:claude-mythos-preview` — preview; deprecated; restricted
-  - `anthropic:claude-opus-4.5-20251101` — snapshot; available; standard
+  - `anthropic:claude-opus-4.5` — alias; available; standard
   - `anthropic:claude-opus-4.6` — model; available; standard
   - `anthropic:claude-opus-4.7` — model; available; standard
   - `anthropic:claude-opus-4.8` — model; available; standard
   - `anthropic:claude-opus-5` — model; available; standard
   - `anthropic:claude-opus-5.5` — model; available; standard
-  - `anthropic:claude-sonnet-4.5-20250929` — snapshot; deprecated; standard; shutdown 2026-11-30; replacement anthropic:claude-sonnet-5.5
+  - `anthropic:claude-sonnet-4.5` — alias; deprecated; standard; shutdown 2026-11-30; replacement anthropic:claude-sonnet-5.5
   - `anthropic:claude-sonnet-4.6` — model; available; standard
   - `anthropic:claude-sonnet-5` — model; available; standard
   - `anthropic:claude-sonnet-5.5` — model; available; standard
@@ -147,43 +143,24 @@ APIs supported:
 - openai:
   - `openai:chat-latest` — alias; available; standard
   - `openai:gpt-4.1` — alias; deprecated; standard; shutdown 2027-01-14
-  - `openai:gpt-4.1-2025-04-14` — snapshot; deprecated; standard; shutdown 2027-01-14
   - `openai:gpt-4.1-mini` — alias; deprecated; standard; shutdown 2027-01-14
-  - `openai:gpt-4.1-mini-2025-04-14` — snapshot; deprecated; standard; shutdown 2027-01-14
   - `openai:gpt-4o` — alias; deprecated; standard; shutdown 2027-01-14
-  - `openai:gpt-4o-2024-08-06` — snapshot; deprecated; standard; shutdown 2027-01-14
-  - `openai:gpt-4o-2024-11-20` — snapshot; deprecated; standard; shutdown 2027-01-14
   - `openai:gpt-4o-mini` — alias; deprecated; standard; shutdown 2027-01-14
-  - `openai:gpt-4o-mini-2024-07-18` — snapshot; deprecated; standard; shutdown 2027-01-14
-  - `openai:gpt-5` — alias; available; standard
-  - `openai:gpt-5-2025-08-07` — snapshot; deprecated; standard; shutdown 2026-12-11
-  - `openai:gpt-5-mini` — alias; available; standard
-  - `openai:gpt-5-mini-2025-08-07` — snapshot; deprecated; standard; shutdown 2026-12-11
-  - `openai:gpt-5-nano` — alias; available; standard
-  - `openai:gpt-5-nano-2025-08-07` — snapshot; deprecated; standard; shutdown 2026-12-11
-  - `openai:gpt-5-pro` — alias; available; standard
-  - `openai:gpt-5-pro-2025-10-06` — snapshot; deprecated; standard; shutdown 2026-12-11
+  - `openai:gpt-5` — alias; deprecated; standard; shutdown 2026-12-11; replacement openai:gpt-5.6-sol
+  - `openai:gpt-5-mini` — alias; deprecated; standard; shutdown 2026-12-11; replacement openai:gpt-5.6-terra
+  - `openai:gpt-5-nano` — alias; deprecated; standard; shutdown 2026-12-11; replacement openai:gpt-5.6-luna
+  - `openai:gpt-5-pro` — alias; deprecated; standard; shutdown 2026-12-11; replacement openai:gpt-5.6-sol
   - `openai:gpt-5-search-api` — alias; available; standard
-  - `openai:gpt-5-search-api-2025-10-14` — snapshot; available; standard
   - `openai:gpt-5.1` — alias; deprecated; standard; shutdown 2027-04-01
-  - `openai:gpt-5.1-2025-11-13` — snapshot; available; standard
   - `openai:gpt-5.2` — alias; available; standard
-  - `openai:gpt-5.2-2025-12-11` — snapshot; available; standard
   - `openai:gpt-5.2-pro` — alias; available; standard
-  - `openai:gpt-5.2-pro-2025-12-11` — snapshot; available; standard
   - `openai:gpt-5.3-codex` — alias; deprecated; standard; shutdown 2027-04-01
   - `openai:gpt-5.4` — alias; available; standard
-  - `openai:gpt-5.4-2026-03-05` — snapshot; available; standard
   - `openai:gpt-5.4-mini` — alias; available; standard
-  - `openai:gpt-5.4-mini-2026-03-17` — snapshot; available; standard
   - `openai:gpt-5.4-nano` — alias; deprecated; standard; shutdown 2027-04-01
-  - `openai:gpt-5.4-nano-2026-03-17` — snapshot; available; standard
   - `openai:gpt-5.4-pro` — alias; available; standard
-  - `openai:gpt-5.4-pro-2026-03-05` — snapshot; available; standard
   - `openai:gpt-5.5` — alias; available; standard
-  - `openai:gpt-5.5-2026-04-23` — snapshot; available; standard
   - `openai:gpt-5.5-pro` — alias; available; standard
-  - `openai:gpt-5.5-pro-2026-04-23` — snapshot; available; standard
   - `openai:gpt-5.6-cyber` — alias; available; restricted
   - `openai:gpt-5.6-luna` — alias; available; standard
   - `openai:gpt-5.6-sol` — alias; available; standard
@@ -194,18 +171,13 @@ APIs supported:
   - `openai:gpt-6.1-sol` — alias; available; standard
   - `openai:gpt-rosalind-discovery` — alias; available; restricted
   - `openai:gpt-rosalind-research` — alias; available; restricted
-  - `openai:o3` — alias; available; standard
-  - `openai:o3-2025-04-16` — snapshot; deprecated; standard; shutdown 2026-12-11
-  - `openai:o3-pro` — alias; available; standard
-  - `openai:o3-pro-2025-06-10` — snapshot; deprecated; standard; shutdown 2026-12-11
+  - `openai:o3` — alias; deprecated; standard; shutdown 2026-12-11; replacement openai:gpt-5.6-sol
+  - `openai:o3-pro` — alias; deprecated; standard; shutdown 2026-12-11; replacement openai:gpt-5.6-sol
 - xai:
   - `xai:grok-4.3` — model; available; standard
   - `xai:grok-4.5` — model; available; standard
   - `xai:grok-4.6` — model; available; standard
   - `xai:grok-4.7` — model; available; standard
-  - `xai:grok-4.20-0309-non-reasoning` — snapshot; available; standard
-  - `xai:grok-4.20-0309-reasoning` — snapshot; available; standard
-  - `xai:grok-4.20-multi-agent-0309` — snapshot; available; standard
   - `xai:grok-build-0.1` — model; available; standard
 - yandex:
   - `yandex:aliceai-llm` — model; available; standard
@@ -214,8 +186,6 @@ APIs supported:
   - `yandex:deepseek-v4.1-flash` — model; available; standard
   - `yandex:gpt-32k` — alias; available; standard
   - `yandex:gpt-lite` — alias; available; standard
-  - `yandex:gpt-oss-20b` — model; deprecated; standard; shutdown 2026-10-30
-  - `yandex:gpt-oss-120b` — model; deprecated; standard; shutdown 2026-10-30
   - `yandex:gpt-pro` — alias; available; standard
   - `yandex:qwen3-235b-a22b-fp8` — model; available; standard
   - `yandex:qwen3.6-35b-a3b` — model; available; standard
@@ -225,7 +195,7 @@ APIs supported:
   - `yandex:yandexgpt-latest` — alias; available; standard
   - `yandex:yandexgpt-rc` — preview; available; standard
 
-This list mirrors the registry. Lifecycle review: **2026-10-26**.
+This list mirrors the registry. Last broad lifecycle review: **2026-10-26**.
 
 </details>
 
