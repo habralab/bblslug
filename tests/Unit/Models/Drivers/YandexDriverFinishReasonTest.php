@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Bblslug\Tests\Models\Drivers;
 
 use Bblslug\Models\Drivers\YandexDriver;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
@@ -12,7 +13,7 @@ final class YandexDriverFinishReasonTest extends TestCase
 {
     private const MARKED = "‹‹TRANSLATION››\nHallo\n‹‹END››";
 
-    /** @dataProvider foundationRejectedStatusProvider */
+    #[DataProvider('foundationRejectedStatusProvider')]
     public function testFoundationRejectsNonFinalAlternativeStatus(mixed $status): void
     {
         $body = json_encode([
@@ -43,7 +44,7 @@ final class YandexDriverFinishReasonTest extends TestCase
         ];
     }
 
-    /** @dataProvider chatRejectedFinishReasonProvider */
+    #[DataProvider('chatRejectedFinishReasonProvider')]
     public function testChatCompletionsRejectsNonStopFinishReason(mixed $reason): void
     {
         $body = json_encode([
@@ -72,7 +73,7 @@ final class YandexDriverFinishReasonTest extends TestCase
         ];
     }
 
-    /** @dataProvider legacyRejectedFinishReasonProvider */
+    #[DataProvider('legacyRejectedFinishReasonProvider')]
     public function testLegacyCompletionsRejectNonStopFinishReason(mixed $reason): void
     {
         $body = json_encode([

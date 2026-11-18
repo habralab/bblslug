@@ -5,11 +5,12 @@ declare(strict_types=1);
 namespace Bblslug\Tests\Validation;
 
 use Bblslug\Validation\EmbeddedJsonValidator;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class EmbeddedJsonValidatorTest extends TestCase
 {
-    /** @dataProvider changedContainers */
+    #[DataProvider('changedContainers')]
     public function testChangedEmbeddedContainersAreRejected(string $source, string $output): void
     {
         $validator = new EmbeddedJsonValidator(self::outer($source));

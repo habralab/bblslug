@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace Bblslug\Tests\Filters;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class MarkerShieldingMemoryTest extends TestCase
 {
-    /** @dataProvider sourceKinds */
+    #[DataProvider('sourceKinds')]
     public function testDenseMarkersRestoreWithinBoundedMemory(string $kind): void
     {
         $command = [

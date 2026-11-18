@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace Bblslug\Tests;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class BblslugUnclosedFilterTest extends TestCase
 {
-    /** @dataProvider facadeScenarioProvider */
+    #[DataProvider('facadeScenarioProvider')]
     public function testUnclosedFilterFailsBeforeHttpForValidationModes(array $scenario): void
     {
         $result = $this->runFixture($scenario);

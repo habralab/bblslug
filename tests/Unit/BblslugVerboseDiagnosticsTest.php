@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Bblslug\Tests;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class BblslugVerboseDiagnosticsTest extends TestCase
@@ -69,7 +70,7 @@ final class BblslugVerboseDiagnosticsTest extends TestCase
         self::assertSame(50, preg_match_all('/^  @@[0-9]+@@ => /m', $feedback));
     }
 
-    /** @dataProvider invalidScenarioProvider */
+    #[DataProvider('invalidScenarioProvider')]
     public function testVerboseValidationErrorsContainBoundedMaskedDump(
         string $format,
         string $scenario,
@@ -106,7 +107,7 @@ final class BblslugVerboseDiagnosticsTest extends TestCase
         self::assertSame('success', $result['type']);
     }
 
-    /** @dataProvider invalidScenarioProvider */
+    #[DataProvider('invalidScenarioProvider')]
     public function testNonVerboseValidationErrorsExcludeRestoredDump(
         string $format,
         string $scenario,

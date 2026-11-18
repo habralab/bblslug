@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Bblslug\Tests\Translation;
 
 use Bblslug\Translation\SegmentPlan;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class SegmentPlanTest extends TestCase
@@ -101,7 +102,7 @@ final class SegmentPlanTest extends TestCase
         );
     }
 
-    /** @dataProvider proseBoundaries */
+    #[DataProvider('proseBoundaries')]
     public function testOrdinaryProseKeepsContextUnlessTheCapRequiresSplitting(array $units): void
     {
         $value = implode(" \t", array_fill(0, 4, implode(' ', $units)));
@@ -199,7 +200,7 @@ final class SegmentPlanTest extends TestCase
         new SegmentPlan('{"s0":"unbreakable"}', null, 10);
     }
 
-    /** @dataProvider invalidInputs */
+    #[DataProvider('invalidInputs')]
     public function testRejectsInvalidInputs(string $payload, ?int $count, int $bytes): void
     {
         $this->expectException(\InvalidArgumentException::class);

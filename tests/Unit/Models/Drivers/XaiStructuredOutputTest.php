@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Bblslug\Tests\Models\Drivers;
 
 use Bblslug\Models\Drivers\XaiDriver;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class XaiStructuredOutputTest extends TestCase
@@ -54,7 +55,7 @@ final class XaiStructuredOutputTest extends TestCase
         }
     }
 
-    /** @dataProvider invalidOptions */
+    #[DataProvider('invalidOptions')]
     public function testInvalidSchemaSettingsFailBeforeBuildingRequest(array $options): void
     {
         $this->expectException(\InvalidArgumentException::class);
@@ -75,7 +76,7 @@ final class XaiStructuredOutputTest extends TestCase
         ];
     }
 
-    /** @dataProvider invalidNativeResponses */
+    #[DataProvider('invalidNativeResponses')]
     public function testSchemaDoesNotBypassCompletionOrRefusalChecks(array $response): void
     {
         $this->expectException(\RuntimeException::class);

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Bblslug\Tests\Translation;
 
 use Bblslug\Translation\TextDocument;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class TextDocumentTest extends TestCase
@@ -40,7 +41,7 @@ final class TextDocumentTest extends TestCase
         );
     }
 
-    /** @dataProvider invalidTranslations */
+    #[DataProvider('invalidTranslations')]
     public function testRestoreUsesStrictSegmentTranslations(string $json): void
     {
         $document = new TextDocument("Hello\nWorld");

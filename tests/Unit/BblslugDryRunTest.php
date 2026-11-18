@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Bblslug\Tests;
 
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Bblslug\Bblslug;
 use Bblslug\Models\ModelRegistry;
@@ -35,7 +36,7 @@ final class BblslugDryRunTest extends TestCase
         return null;
     }
 
-    /** @test */
+    #[Test]
     public function dryRunTextWithFiltersRestoresOriginalAndReportsStats(): void
     {
         $modelKey = $this->findModelKeyForDriver(DeepLDriver::class);
@@ -95,7 +96,7 @@ final class BblslugDryRunTest extends TestCase
         $this->assertSame([], $out['consumed']);
     }
 
-    /** @test */
+    #[Test]
     public function dryRunYandexMasksFolderIdInVerboseRequestDiagnostics(): void
     {
         $modelKey = $this->findModelKeyForDriver(YandexDriver::class);
@@ -167,7 +168,7 @@ final class BblslugDryRunTest extends TestCase
         }
     }
 
-    /** @test */
+    #[Test]
     public function dryRunJsonValidatesSchemaBeforeAndAfter(): void
     {
         $modelKey = $this->findModelKeyForDriver(DeepLDriver::class);

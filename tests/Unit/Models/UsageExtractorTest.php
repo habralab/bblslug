@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Bblslug\Tests\Models;
 
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Bblslug\Models\UsageExtractor;
 
@@ -16,7 +18,7 @@ use Bblslug\Models\UsageExtractor;
  */
 final class UsageExtractorTest extends TestCase
 {
-    /** @test */
+    #[Test]
     public function returnsEmptyWhenNoMapOrNullRaw(): void
     {
         $this->assertSame([], UsageExtractor::extract(['vendor' => 'openai'], null));
@@ -24,7 +26,7 @@ final class UsageExtractorTest extends TestCase
         $this->assertSame([], UsageExtractor::extract([], null));
     }
 
-    /** @test */
+    #[Test]
     public function openAiStyleExtraction(): void
     {
         // Driver returns usage array like this (OpenAI-compatible)
@@ -54,7 +56,7 @@ final class UsageExtractorTest extends TestCase
         $this->assertSame(7, $out['tokens']['breakdown']['completion']);
     }
 
-    /** @test */
+    #[Test]
     public function anthropicStyleExtraction(): void
     {
         $raw = [
@@ -83,7 +85,7 @@ final class UsageExtractorTest extends TestCase
         $this->assertSame(3, $out['tokens']['breakdown']['completion']);
     }
 
-    /** @test */
+    #[Test]
     public function googleStyleExtraction(): void
     {
         // Google driver returns usageMetadata as "usage" slice:
@@ -113,7 +115,7 @@ final class UsageExtractorTest extends TestCase
         $this->assertSame(12, $out['tokens']['breakdown']['completion']);
     }
 
-    /** @test */
+    #[Test]
     public function yandexStyleExtraction(): void
     {
         // Yandex driver returns result.usage as "usage" slice:
@@ -143,7 +145,7 @@ final class UsageExtractorTest extends TestCase
         $this->assertSame(4, $out['tokens']['breakdown']['completion']);
     }
 
-    /** @test */
+    #[Test]
     public function deepLReturnsEmptyBecauseNoUsage(): void
     {
         $modelConfig = [
@@ -160,7 +162,7 @@ final class UsageExtractorTest extends TestCase
         $this->assertSame([], $out);
     }
 
-    /** @test */
+    #[Test]
     public function dotNotationPathsWork(): void
     {
         $raw = [
@@ -185,7 +187,7 @@ final class UsageExtractorTest extends TestCase
         $this->assertSame(12, $out['tokens']['total']);
     }
 
-    /** @test */
+    #[Test]
     public function missingOrNonNumericBecomesZero(): void
     {
         $raw = [
@@ -214,7 +216,7 @@ final class UsageExtractorTest extends TestCase
         $this->assertSame(0, $out['tokens']['breakdown']['y']);
     }
 
-    /** @dataProvider countValues */
+    #[DataProvider('countValues')]
     public function testOnlyRepresentableNonnegativeWholeCountsAreExtracted(mixed $value, int $expected): void
     {
         $config = ['usage' => ['tokens' => [

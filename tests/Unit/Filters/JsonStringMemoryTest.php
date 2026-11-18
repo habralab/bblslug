@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace Bblslug\Tests\Unit\Filters;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class JsonStringMemoryTest extends TestCase
 {
-    /** @dataProvider sourceKinds */
+    #[DataProvider('sourceKinds')]
     public function testDenseEscapesPreserveBytesWithinBoundedMemory(string $kind, array $counts): void
     {
         $command = [

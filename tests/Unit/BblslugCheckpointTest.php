@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Bblslug\Tests;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class BblslugCheckpointTest extends TestCase
@@ -54,7 +55,7 @@ final class BblslugCheckpointTest extends TestCase
         self::assertStringNotContainsString('debugRequest', $stored);
     }
 
-    /** @dataProvider invalidSecondResponses */
+    #[DataProvider('invalidSecondResponses')]
     public function testInvalidSecondResponseIsNotCheckpointed(string $failure): void
     {
         $failed = $this->runFixture(['failAt' => 2, 'failure' => $failure]);
@@ -291,7 +292,7 @@ final class BblslugCheckpointTest extends TestCase
         self::assertStringNotContainsString('"record":"partial', file_get_contents($this->checkpoint));
     }
 
-    /** @dataProvider recoveryFailures */
+    #[DataProvider('recoveryFailures')]
     public function testTailRecoveryFailureRejectsBeforeHttpAndCanResume(string $fault): void
     {
         $this->runFixture(['failAt' => 2, 'failure' => 'http']);

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Bblslug\Tests\Models\Drivers;
 
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Bblslug\Models\Drivers\YandexDriver;
 use RuntimeException;
@@ -17,7 +18,7 @@ use RuntimeException;
  */
 final class YandexDriverErrorsTest extends TestCase
 {
-    /** @test */
+    #[Test]
     public function folderIdMismatchIsSurfaced(): void
     {
         $driver = new YandexDriver();
@@ -33,7 +34,7 @@ final class YandexDriverErrorsTest extends TestCase
         $driver->parseResponse([], $json);
     }
 
-    /** @test */
+    #[Test]
     public function authenticationError401(): void
     {
         $driver = new YandexDriver();
@@ -49,7 +50,7 @@ final class YandexDriverErrorsTest extends TestCase
         $driver->parseResponse([], $json);
     }
 
-    /** @test */
+    #[Test]
     public function authenticationErrorByHttpStatusText(): void
     {
         $driver = new YandexDriver();
@@ -65,7 +66,7 @@ final class YandexDriverErrorsTest extends TestCase
         $driver->parseResponse([], $json);
     }
 
-    /** @test */
+    #[Test]
     public function internalServerError500(): void
     {
         $driver = new YandexDriver();
@@ -81,7 +82,7 @@ final class YandexDriverErrorsTest extends TestCase
         $driver->parseResponse([], $json);
     }
 
-    /** @test */
+    #[Test]
     public function genericApiErrorIsPassedThrough(): void
     {
         $driver = new YandexDriver();

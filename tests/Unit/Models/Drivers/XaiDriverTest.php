@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace Bblslug\Tests\Models\Drivers;
 
 use Bblslug\Models\Drivers\XaiDriver;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 final class XaiDriverTest extends TestCase
 {
-    /** @test */
+    #[Test]
     public function reasoningAndOutputBudgetAreSentToChatCompletions(): void
     {
         $request = (new XaiDriver())->buildRequest([
@@ -28,7 +30,7 @@ final class XaiDriverTest extends TestCase
         self::assertSame('https://api.x.ai/v1/chat/completions', $request['url']);
     }
 
-    /** @test */
+    #[Test]
     public function nullTemperatureIsOmittedForReasoningModels(): void
     {
         $request = (new XaiDriver())->buildRequest([
@@ -41,7 +43,7 @@ final class XaiDriverTest extends TestCase
         self::assertArrayNotHasKey('temperature', $payload);
     }
 
-    /** @test */
+    #[Test]
     public function responsesApiUsesReasoningAndParsesOutputMessages(): void
     {
         $driver = new XaiDriver();
@@ -80,7 +82,7 @@ final class XaiDriverTest extends TestCase
         ], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR));
     }
 
-    /** @test */
+    #[Test]
     public function incompleteResponsesAreRejectedEvenWhenMarkersArePresent(): void
     {
         $this->expectException(\RuntimeException::class);
@@ -97,7 +99,7 @@ final class XaiDriverTest extends TestCase
         ], JSON_UNESCAPED_UNICODE));
     }
 
-    /** @dataProvider invalidResponsesStatusProvider */
+    #[DataProvider('invalidResponsesStatusProvider')]
     public function testResponsesStatusMustBeCompletedWhenPresent(mixed $status): void
     {
         $this->expectException(\RuntimeException::class);
@@ -116,7 +118,7 @@ final class XaiDriverTest extends TestCase
         return ['null' => [null], 'integer' => [1], 'queued' => ['queued']];
     }
 
-    /** @test */
+    #[Test]
     public function outputTextPartsAreJoinedBeforeMarkerParsing(): void
     {
         $result = (new XaiDriver())->parseResponse([], json_encode([
@@ -132,7 +134,7 @@ final class XaiDriverTest extends TestCase
         self::assertSame('ok', $result['text']);
     }
 
-    /** @test */
+    #[Test]
     public function responsesRefusalIsRejected(): void
     {
         $this->expectException(\RuntimeException::class);
@@ -145,7 +147,7 @@ final class XaiDriverTest extends TestCase
         ], JSON_UNESCAPED_UNICODE));
     }
 
-    /** @dataProvider rejectedChatFinishReasonProvider */
+    #[DataProvider('rejectedChatFinishReasonProvider')]
     public function testChatFinishReasonMustBeStopWhenPresent(mixed $finishReason): void
     {
         $this->expectException(\RuntimeException::class);
@@ -177,7 +179,7 @@ final class XaiDriverTest extends TestCase
         ], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR));
         $this->assertSame('ok', $result['text']);
     }
-    /** @dataProvider capturedCompletedResponses */
+    #[DataProvider('capturedCompletedResponses')]
     public function testCapturedCompletedResponsePreservesTranslationContent(string $content, string $expected): void
     {
         $parsed = (new XaiDriver())->parseResponse([], json_encode([

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Bblslug\Tests\Validation;
 
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Bblslug\Validation\Schema;
 
@@ -38,7 +39,7 @@ final class SchemaTest extends TestCase
         self::assertFalse(Schema::validate(Schema::capture($before), Schema::capture(['Перевод', 1, true]))->isValid());
     }
 
-    /** @test */
+    #[Test]
     public function emptyObjectAndListHaveDifferentSchemas(): void
     {
         $before = Schema::capture(new \stdClass());
@@ -47,7 +48,7 @@ final class SchemaTest extends TestCase
         $this->assertFalse(Schema::validate($before, $after)->isValid());
     }
 
-    /** @test */
+    #[Test]
     public function objectsWithDifferentValuesHaveTheSameSchema(): void
     {
         $before = Schema::capture((object) ['title' => 'source']);
@@ -56,7 +57,7 @@ final class SchemaTest extends TestCase
         $this->assertTrue(Schema::validate($before, $after)->isValid());
     }
 
-    /** @test */
+    #[Test]
     public function nestedObjectMemberTypeChangeIsDetected(): void
     {
         $before = Schema::capture((object) ['value' => (object) ['text' => 'source']]);
@@ -65,7 +66,7 @@ final class SchemaTest extends TestCase
         $this->assertFalse(Schema::validate($before, $after)->isValid());
     }
 
-    /** @test */
+    #[Test]
     public function numericKeyObjectAndListHaveDifferentSchemas(): void
     {
         $before = Schema::capture((object) ['0' => 'source']);
@@ -74,7 +75,7 @@ final class SchemaTest extends TestCase
         $this->assertFalse(Schema::validate($before, $after)->isValid());
     }
 
-    /** @test */
+    #[Test]
     public function captureBuildsTypesAndShapes(): void
     {
         $in = [
@@ -94,7 +95,7 @@ final class SchemaTest extends TestCase
         $this->assertSame('double', $schema['meta']['score']);
     }
 
-    /** @test */
+    #[Test]
     public function validateReportsMismatch(): void
     {
         $before = Schema::capture(['a' => 1, 'b' => [true, false]]);
@@ -105,7 +106,7 @@ final class SchemaTest extends TestCase
         $this->assertNotEmpty($res->getErrors());
     }
 
-    /** @test */
+    #[Test]
     public function validateSuccessOnSameShapeWithDifferentValues(): void
     {
         // Same keys and node structure; values differ (e.g., translated strings).
@@ -133,7 +134,7 @@ final class SchemaTest extends TestCase
         $this->assertTrue(\Bblslug\Validation\Schema::validate($a, $b)->isValid());
     }
 
-    /** @test */
+    #[Test]
     public function applyRepairsIsNoopWithoutFlags(): void
     {
         $before = ['a' => null, 'b' => 1];
@@ -144,7 +145,7 @@ final class SchemaTest extends TestCase
         $this->assertSame($after, $fixed);
     }
 
-    /** @test */
+    #[Test]
     public function repairMissingNullsRestoresObjectKeysWithNull(): void
     {
         $before = [
@@ -172,7 +173,7 @@ final class SchemaTest extends TestCase
         $this->assertArrayNotHasKey('b', $fixed);
     }
 
-    /** @test */
+    #[Test]
     public function repairMissingNullsRestoresListSlotsThatWereNull(): void
     {
         $before = [null, null];
@@ -185,7 +186,7 @@ final class SchemaTest extends TestCase
         $this->assertSame([null, null], $fixed);
     }
 
-    /** @test */
+    #[Test]
     public function repairedOutputProducesSameCapturedSchema(): void
     {
         $original = [

@@ -58,21 +58,27 @@ jobs:
             ${{ runner.os }}-php-${{ matrix.php }}-composer-
 
       - name: Install latest dependencies
+        env:
+          COMPOSER_AUTH: '{"github-oauth":{"github.com":"${{ github.token }}"}}'
         if: matrix.dependencies == 'latest'
         run: make install
 
       - name: Install lowest dependencies
+        env:
+          COMPOSER_AUTH: '{"github-oauth":{"github.com":"${{ github.token }}"}}'
         if: matrix.dependencies == 'lowest'
         run: composer update --prefer-lowest --prefer-stable --no-interaction --optimize-autoloader
 
       - name: Install selected YAML version
+        env:
+          COMPOSER_AUTH: '{"github-oauth":{"github.com":"${{ github.token }}"}}'
         if: startsWith(matrix.dependencies, 'yaml-')
         run: composer update --with symfony/yaml:${{ matrix.yaml }} --prefer-stable --no-interaction --optimize-autoloader
 
-      - name: Show YAML version and audit runtime dependencies
+      - name: Show dependency versions and audit all dependencies
         run: |
-          composer show symfony/yaml
-          composer audit --no-dev
+          composer show --direct
+          composer audit
 
       - name: Lint PHP code (PSR-12)
         run: make test-phplint

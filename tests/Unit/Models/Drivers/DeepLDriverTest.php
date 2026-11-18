@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Bblslug\Tests\Models\Drivers;
 
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Bblslug\Models\Drivers\DeepLDriver;
 use RuntimeException;
@@ -16,7 +17,7 @@ use RuntimeException;
  */
 final class DeepLDriverTest extends TestCase
 {
-    /** @test */
+    #[Test]
     public function translationEngineCanBeSelectedWithoutChangingText(): void
     {
         $driver = new DeepLDriver();
@@ -32,14 +33,14 @@ final class DeepLDriverTest extends TestCase
         }
     }
 
-    /** @test */
+    #[Test]
     public function unsupportedTranslationEngineIsRejected(): void
     {
         $this->expectException(\InvalidArgumentException::class);
         (new DeepLDriver())->buildRequest([], 'Hello', ['model_type' => 'unknown']);
     }
 
-    /** @test */
+    #[Test]
     public function buildRequestTextFormat(): void
     {
         $driver = new DeepLDriver();
@@ -60,7 +61,7 @@ final class DeepLDriverTest extends TestCase
         $this->assertArrayNotHasKey('tag_handling', $params);
     }
 
-    /** @test */
+    #[Test]
     public function buildRequestHtmlFormatSetsFlags(): void
     {
         $driver = new DeepLDriver();
@@ -78,7 +79,7 @@ final class DeepLDriverTest extends TestCase
         $this->assertSame('1', $params['outline_detection']);
     }
 
-    /** @test */
+    #[Test]
     public function buildRequestJsonFormatSendsOnlyStringValues(): void
     {
         $driver = new DeepLDriver();
@@ -182,7 +183,7 @@ final class DeepLDriverTest extends TestCase
         (new DeepLDriver())->buildRequest([], str_repeat('a', 131_100), ['format' => 'html']);
     }
 
-    /** @test */
+    #[Test]
     public function parseResponseOk(): void
     {
         $driver = new DeepLDriver();
@@ -194,7 +195,7 @@ final class DeepLDriverTest extends TestCase
         $this->assertNull($out['usage']); // DeepL usage is null by design
     }
 
-    /** @test */
+    #[Test]
     public function parseResponsePreservesLiteralFormerPseudoTagsInText(): void
     {
         $driver = new DeepLDriver();
@@ -265,7 +266,7 @@ final class DeepLDriverTest extends TestCase
         );
     }
 
-    /** @test */
+    #[Test]
     public function parseResponseUnexpectedShapeThrows(): void
     {
         $driver = new DeepLDriver();

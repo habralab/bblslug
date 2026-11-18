@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Bblslug\Tests;
 
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Bblslug\HttpClient;
 
@@ -128,7 +129,7 @@ final class HttpClientTest extends TestCase
         return sprintf('http://%s:%d%s', self::$host, self::$port, $path);
     }
 
-    /** @test */
+    #[Test]
     public function dryRunBuildsRequestLogAndMasksSecrets(): void
     {
         $secret = 'MYSECRET';
@@ -159,7 +160,7 @@ final class HttpClientTest extends TestCase
         $this->assertSame('', $resp['debugResponse']);
     }
 
-    /** @test */
+    #[Test]
     public function dryRunMasksRawAndEncodedSecretsInUrl(): void
     {
         $secret = 'demo +/key=value';
@@ -182,7 +183,7 @@ final class HttpClientTest extends TestCase
         $this->assertStringContainsString('***', $resp['debugRequest']);
     }
 
-    /** @test */
+    #[Test]
     public function verboseRequestMasksUrlWithoutChangingSentBody(): void
     {
         $secret = 'demo+/key=value';
@@ -207,7 +208,7 @@ final class HttpClientTest extends TestCase
         $this->assertSame($body, $data['body']);
     }
 
-    /** @test */
+    #[Test]
     public function verboseSuccessParsesHeadersAndMasksResponse(): void
     {
         $secret = 'TOPSECRET';
@@ -239,7 +240,7 @@ final class HttpClientTest extends TestCase
         $this->assertStringContainsString('***', $resp['debugResponse']);
     }
 
-    /** @test */
+    #[Test]
     public function dryRunMasksAllSecretRepresentationsInRequestPreview(): void
     {
         $secret = 'quote" slash\\/ space café';
@@ -274,7 +275,7 @@ final class HttpClientTest extends TestCase
         $this->assertSame('[dry-run]', $resp['body']);
     }
 
-    /** @test */
+    #[Test]
     public function liveResponseMasksEncodedHeadersAndBodyButPreservesOriginalBytes(): void
     {
         $secret = 'quote" slash\\/ space café';
@@ -317,7 +318,7 @@ final class HttpClientTest extends TestCase
         $this->assertStringContainsString('***', $resp['debugResponse']);
     }
 
-    /** @test */
+    #[Test]
     public function nestedUnicodeJsonEchoPreservesBodyAndMasksSecondEscaping(): void
     {
         $secret = 'quote" slash\\/ space café';
@@ -347,7 +348,7 @@ final class HttpClientTest extends TestCase
         $this->assertStringContainsString('***', $resp['debugResponse']);
     }
 
-    /** @test */
+    #[Test]
     public function emptyMaskPatternsDoNotInsertMaskText(): void
     {
         $resp = HttpClient::request(
@@ -365,7 +366,7 @@ final class HttpClientTest extends TestCase
         $this->assertStringContainsString('ordinary body', $resp['debugRequest']);
     }
 
-    /** @test */
+    #[Test]
     public function overlappingSecretsAreMaskedLongestFirstWithoutPartialLeak(): void
     {
         $short = 'shared-secret';
@@ -402,7 +403,7 @@ final class HttpClientTest extends TestCase
         ];
     }
 
-    /** @test */
+    #[Test]
     public function postSendsBodyAndServerSeesRealMethod(): void
     {
         $payload = 'hello=world';
@@ -428,7 +429,7 @@ final class HttpClientTest extends TestCase
         $this->assertSame('', $resp['debugResponse']);
     }
 
-    /** @test */
+    #[Test]
     public function networkErrorThrowsRuntimeexception(): void
     {
         $this->expectException(\RuntimeException::class);
@@ -467,7 +468,7 @@ final class HttpClientTest extends TestCase
         }
     }
 
-    /** @test */
+    #[Test]
     public function customStatusAndHeaderMultivalueAreHandled(): void
     {
         $resp = HttpClient::request(
@@ -492,7 +493,7 @@ final class HttpClientTest extends TestCase
         $this->assertStringContainsString('Response (201)', $resp['debugResponse']);
     }
 
-    /** @test */
+    #[Test]
     public function explicitTimeoutsOverrideInvalidEnvironmentValues(): void
     {
         putenv('BBLSLUG_HTTP_TIMEOUT=invalid');
@@ -510,7 +511,7 @@ final class HttpClientTest extends TestCase
         $this->assertSame('[dry-run]', $resp['body']);
     }
 
-    /** @test */
+    #[Test]
     public function nonpositiveExplicitTimeoutsAreRejected(): void
     {
         $timeoutCases = [
@@ -535,7 +536,7 @@ final class HttpClientTest extends TestCase
         }
     }
 
-    /** @test */
+    #[Test]
     public function invalidTimeoutEnvironmentValuesNameTheSetting(): void
     {
         $environmentCases = [
@@ -562,7 +563,7 @@ final class HttpClientTest extends TestCase
         }
     }
 
-    /** @test */
+    #[Test]
     public function timeoutNetworkErrorCarriesCurlTimeoutCode(): void
     {
         try {
@@ -579,7 +580,7 @@ final class HttpClientTest extends TestCase
         }
     }
 
-    /** @test */
+    #[Test]
     public function millisecondTimeoutCapsRequestAndDoesNotLeakUrlSecret(): void
     {
         $secret = 'timeout-secret';
@@ -599,7 +600,7 @@ final class HttpClientTest extends TestCase
         }
     }
 
-    /** @test */
+    #[Test]
     public function millisecondTimeoutIsCappedByResolvedSecondTimeout(): void
     {
         putenv('BBLSLUG_HTTP_TIMEOUT=1');
@@ -616,7 +617,7 @@ final class HttpClientTest extends TestCase
         }
     }
 
-    /** @test */
+    #[Test]
     public function nonpositiveMillisecondTimeoutIsRejectedEvenForDryRun(): void
     {
         foreach ([0, -1] as $timeoutMilliseconds) {

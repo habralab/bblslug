@@ -7,12 +7,13 @@ namespace Bblslug\Tests\Models\Drivers;
 use Bblslug\Bblslug;
 use Bblslug\Models\Drivers\OpenAiDriver;
 use Bblslug\Models\ModelRegistry;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class OpenAiDriverTest extends TestCase
 {
     /** @return array<string,array{string,string,string}> */
-    public function currentModelsAndFormats(): array
+    public static function currentModelsAndFormats(): array
     {
         $cases = [];
         $formats = [
@@ -34,7 +35,7 @@ final class OpenAiDriverTest extends TestCase
         return $cases;
     }
 
-    /** @dataProvider currentModelsAndFormats */
+    #[DataProvider('currentModelsAndFormats')]
     public function testCurrentModelsBuildReasoningRequestsAndDryRunAllFormats(
         string $modelKey,
         string $format,
@@ -172,7 +173,7 @@ final class OpenAiDriverTest extends TestCase
         ], JSON_THROW_ON_ERROR));
     }
 
-    /** @dataProvider exhaustedBudgetContent */
+    #[DataProvider('exhaustedBudgetContent')]
     public function testExhaustedReasoningBudgetIsRejectedBeforeExtractingContent(string $content): void
     {
         $this->expectException(\RuntimeException::class);
@@ -210,7 +211,7 @@ final class OpenAiDriverTest extends TestCase
         ], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR));
     }
 
-    /** @dataProvider rejectedChatFinishReasonProvider */
+    #[DataProvider('rejectedChatFinishReasonProvider')]
     public function testChatFinishReasonMustBeStopWhenPresent(mixed $finishReason): void
     {
         $this->expectException(\RuntimeException::class);
@@ -243,7 +244,7 @@ final class OpenAiDriverTest extends TestCase
         $this->assertSame('ok', $result['text']);
     }
 
-    /** @dataProvider unexpectedResponsesStatusProvider */
+    #[DataProvider('unexpectedResponsesStatusProvider')]
     public function testResponsesStatusMustBeCompletedWhenPresent(mixed $status): void
     {
         $this->expectException(\RuntimeException::class);

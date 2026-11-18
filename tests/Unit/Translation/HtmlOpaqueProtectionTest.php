@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Bblslug\Tests\Translation;
 
 use Bblslug\Translation\HtmlTextDocument;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class HtmlOpaqueProtectionTest extends TestCase
@@ -87,7 +88,7 @@ final class HtmlOpaqueProtectionTest extends TestCase
         self::assertSame($html, $document->restore($document->getJson()));
     }
 
-    /** @dataProvider lateInvalidElements */
+    #[DataProvider('lateInvalidElements')]
     public function testLateIncompleteOpaqueElementsFail(string $html, string $message): void
     {
         $this->expectException(\RuntimeException::class);

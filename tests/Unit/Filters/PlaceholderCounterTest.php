@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Bblslug\Tests\Filters;
 
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Bblslug\Filters\PlaceholderCounter;
 
@@ -12,7 +13,7 @@ use Bblslug\Filters\PlaceholderCounter;
  */
 final class PlaceholderCounterTest extends TestCase
 {
-    /** @test */
+    #[Test]
     public function incrementsAndFormatsPlaceholders(): void
     {
         $c = new PlaceholderCounter();

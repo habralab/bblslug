@@ -6,6 +6,7 @@ namespace BblslugTests\Models\Drivers;
 
 use Bblslug\Models\Drivers\GoogleDriver;
 use InvalidArgumentException;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
@@ -54,7 +55,7 @@ final class GoogleStructuredOutputTest extends TestCase
         (new GoogleDriver())->buildRequest([], 'input', ['format' => 'structured_json']);
     }
 
-    /** @dataProvider invalidSchemaProvider */
+    #[DataProvider('invalidSchemaProvider')]
     public function testInvalidSchemaThrows(mixed $schema): void
     {
         $this->expectException(InvalidArgumentException::class);
@@ -91,7 +92,7 @@ final class GoogleStructuredOutputTest extends TestCase
         $this->assertSame(['totalTokenCount' => 12], $result['usage']);
     }
 
-    /** @dataProvider rejectedFinishReasonProvider */
+    #[DataProvider('rejectedFinishReasonProvider')]
     public function testNativeResponseRejectsBlockedAndTruncatedResponses(string $reason): void
     {
         $response = json_encode([

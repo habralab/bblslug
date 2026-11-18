@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Bblslug\Tests\Models\Drivers;
 
 use Bblslug\Models\Drivers\DeepLHtmlPlaceholders;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
@@ -77,7 +78,7 @@ final class DeepLHtmlPlaceholdersTest extends TestCase
         self::assertSame('<p>@@0@@</p>', $placeholders->restore($provider));
     }
 
-    /** @dataProvider invalidProviderResponses */
+    #[DataProvider('invalidProviderResponses')]
     public function testInvalidOrUnexpectedWrappersAreRejected(string $mutation): void
     {
         $placeholders = new DeepLHtmlPlaceholders('<p>@@0@@</p>');
@@ -138,7 +139,7 @@ final class DeepLHtmlPlaceholdersTest extends TestCase
         self::assertSame($source, $placeholders->restore($source));
     }
 
-    /** @dataProvider rawTextInputs */
+    #[DataProvider('rawTextInputs')]
     public function testUnclosedRawTextElementLeavesTheRestOfTheSourceAlone(string $source): void
     {
         $placeholders = new DeepLHtmlPlaceholders($source);

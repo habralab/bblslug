@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace Bblslug\Tests\Console;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class CliFilterNamesTest extends TestCase
 {
-    /** @dataProvider invalidFilters */
+    #[DataProvider('invalidFilters')]
     public function testInvalidFiltersAreReportedBeforeReadingNormalInput(string $filters, string $message): void
     {
         $result = $this->runCli(null, '--filters=' . $filters, '--source=/missing-filter-test-input');
@@ -20,7 +21,7 @@ final class CliFilterNamesTest extends TestCase
         self::assertStringNotContainsString('Fatal error', $result['stderr']);
     }
 
-    /** @dataProvider invalidFilters */
+    #[DataProvider('invalidFilters')]
     public function testInvalidFiltersAreReportedCleanlyInDryRun(string $filters, string $message): void
     {
         $result = $this->runCli('Hello', '--dry-run', '--filters=' . $filters);

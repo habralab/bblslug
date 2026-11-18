@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Bblslug\Tests\Filters;
 
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Bblslug\Filters\FilterManager;
 
@@ -12,7 +13,7 @@ use Bblslug\Filters\FilterManager;
  */
 final class FilterManagerTest extends TestCase
 {
-    /** @test */
+    #[Test]
     public function appliesFiltersInConfiguredOrderAndRestoresBack(): void
     {
         // Order matters: first mask URLs, then mask <a> tags.
@@ -43,7 +44,7 @@ final class FilterManagerTest extends TestCase
         $this->assertSame(1, $stats[1]['count']);
     }
 
-    /** @test */
+    #[Test]
     public function managerIsReusableAcrossDifferentInputs(): void
     {
         $fm = new FilterManager(['url']);

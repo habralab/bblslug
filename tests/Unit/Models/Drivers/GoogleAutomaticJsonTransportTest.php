@@ -6,6 +6,7 @@ namespace Bblslug\Tests\Models\Drivers;
 
 use Bblslug\Models\Drivers\GoogleDriver;
 use InvalidArgumentException;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
@@ -54,7 +55,7 @@ final class GoogleAutomaticJsonTransportTest extends TestCase
         self::assertSame('application/json', $body['generationConfig']['responseMimeType']);
     }
 
-    /** @dataProvider nonEligibleConfigProvider */
+    #[DataProvider('nonEligibleConfigProvider')]
     public function testAutoDoesNotGuessFromModelOrEndpoint(array $config): void
     {
         $body = $this->body($config, '{}', ['format' => 'json']);
@@ -83,7 +84,7 @@ final class GoogleAutomaticJsonTransportTest extends TestCase
         ];
     }
 
-    /** @dataProvider nonJsonFormatProvider */
+    #[DataProvider('nonJsonFormatProvider')]
     public function testAutoAlwaysUsesMarkersForTextAndHtml(string $format): void
     {
         $body = $this->body(self::CONFIG, 'Hello', ['format' => $format]);
@@ -162,7 +163,7 @@ final class GoogleAutomaticJsonTransportTest extends TestCase
         self::assertSame('{"title":"Hallo"}', $parsed['text']);
     }
 
-    /** @dataProvider rejectedAutomaticFinishReasonProvider */
+    #[DataProvider('rejectedAutomaticFinishReasonProvider')]
     public function testAutomaticNativeParseStillRejectsReferenceAndTruncation(string $reason): void
     {
         $this->expectException(RuntimeException::class);

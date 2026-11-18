@@ -8,6 +8,7 @@ use Bblslug\Bblslug;
 use Bblslug\Models\Drivers\GoogleDriver;
 use Bblslug\Models\Drivers\OpenAiDriver;
 use Bblslug\Models\Drivers\YandexDriver;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class ExperimentalXmlPromptTest extends TestCase
@@ -30,7 +31,7 @@ final class ExperimentalXmlPromptTest extends TestCase
         );
     }
 
-    /** @dataProvider driverProvider */
+    #[DataProvider('driverProvider')]
     public function testDriversSelectXmlTemplateAndPreserveMarkedUserPayload(string $driverClass): void
     {
         $options = [
@@ -61,7 +62,7 @@ final class ExperimentalXmlPromptTest extends TestCase
         ];
     }
 
-    /** @dataProvider unsupportedFormatProvider */
+    #[DataProvider('unsupportedFormatProvider')]
     public function testExperimentalXmlOnlySupportsJson(string $format): void
     {
         $driver = new OpenAiDriver();

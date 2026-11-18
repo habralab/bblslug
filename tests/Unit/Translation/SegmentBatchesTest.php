@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Bblslug\Tests\Translation;
 
 use Bblslug\Translation\SegmentBatches;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class SegmentBatchesTest extends TestCase
@@ -38,7 +39,7 @@ final class SegmentBatchesTest extends TestCase
         self::assertSame([], SegmentBatches::split('{}', 1));
     }
 
-    /** @dataProvider invalidPayloads */
+    #[DataProvider('invalidPayloads')]
     public function testRejectsInvalidInput(string $payload, int $size): void
     {
         $this->expectException(\InvalidArgumentException::class);

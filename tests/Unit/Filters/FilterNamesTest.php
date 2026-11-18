@@ -6,6 +6,7 @@ namespace Bblslug\Tests\Filters;
 
 use Bblslug\Filters\FilterManager;
 use Bblslug\Filters\HtmlTagFilter;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class FilterNamesTest extends TestCase
@@ -26,7 +27,7 @@ final class FilterNamesTest extends TestCase
         new FilterManager(['urll']);
     }
 
-    /** @dataProvider invalidHtmlTagNames */
+    #[DataProvider('invalidHtmlTagNames')]
     public function testInvalidHtmlTagNameIsRejected(string $tag): void
     {
         $this->expectException(\InvalidArgumentException::class);
@@ -35,7 +36,7 @@ final class FilterNamesTest extends TestCase
         new HtmlTagFilter($tag);
     }
 
-    /** @dataProvider invalidHtmlFilterNames */
+    #[DataProvider('invalidHtmlFilterNames')]
     public function testMalformedHtmlFilterNameIsRejected(string $filter): void
     {
         $this->expectException(\InvalidArgumentException::class);
@@ -44,7 +45,7 @@ final class FilterNamesTest extends TestCase
         new FilterManager([$filter]);
     }
 
-    /** @dataProvider validHtmlTagNames */
+    #[DataProvider('validHtmlTagNames')]
     public function testCustomHtmlTagNameMasksAndRestoresItsWholePair(string $tag): void
     {
         $manager = new FilterManager(['html_' . $tag]);

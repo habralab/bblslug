@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Bblslug\Tests\Models\Drivers;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Bblslug\Models\Drivers\OpenAiDriver;
 use Bblslug\Models\Drivers\AnthropicDriver;
@@ -25,7 +26,7 @@ final class DriverParseCommonTest extends TestCase
     /**
      * @return array<string, array{0: object, 1: string, 2: string}>
      */
-    public function driversAndValidPayloads(): array
+    public static function driversAndValidPayloads(): array
     {
         return [
             'openai' => [
@@ -86,9 +87,7 @@ final class DriverParseCommonTest extends TestCase
         ];
     }
 
-    /**
-     * @dataProvider driversAndValidPayloads
-     */
+    #[DataProvider('driversAndValidPayloads')]
     public function testParsesTextBetweenMarkers(object $driver, string $json, string $expected): void
     {
         $res = $driver->parseResponse([], $json);
@@ -102,7 +101,7 @@ final class DriverParseCommonTest extends TestCase
     /**
      * @return array<string, array{0: object, 1: string}>
      */
-    public function driversAndMissingMarkers(): array
+    public static function driversAndMissingMarkers(): array
     {
         return [
             'openai' => [
@@ -153,9 +152,7 @@ final class DriverParseCommonTest extends TestCase
         ];
     }
 
-    /**
-     * @dataProvider driversAndMissingMarkers
-     */
+    #[DataProvider('driversAndMissingMarkers')]
     public function testThrowsOnMissingMarkers(object $driver, string $json): void
     {
         $this->expectException(RuntimeException::class);
@@ -166,7 +163,7 @@ final class DriverParseCommonTest extends TestCase
     /**
      * @return array<string, array{0: object, 1: string}>
      */
-    public function driversWithTruncationPayloads(): array
+    public static function driversWithTruncationPayloads(): array
     {
         return [
             // OpenAI signals truncation via finish_reason = "length"
@@ -202,9 +199,7 @@ final class DriverParseCommonTest extends TestCase
         ];
     }
 
-    /**
-     * @dataProvider driversWithTruncationPayloads
-     */
+    #[DataProvider('driversWithTruncationPayloads')]
     public function testTruncationIsSurfacedAsError(object $driver, string $json): void
     {
         $this->expectException(RuntimeException::class);

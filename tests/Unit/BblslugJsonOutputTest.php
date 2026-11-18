@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Bblslug\Tests;
 
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 final class BblslugJsonOutputTest extends TestCase
@@ -46,7 +48,7 @@ JSON;
         self::assertSame(1, $result['httpCalls']);
     }
 
-    /** @dataProvider scalarRoots */
+    #[DataProvider('scalarRoots')]
     public function testJsonFormatsAcceptScalarRootsWithExactNonStringValues(
         string $format,
         string $input,
@@ -97,7 +99,7 @@ JSON;
         }
     }
 
-    /** @test */
+    #[Test]
     public function jsonFormatsRejectChangedNonStringScalarValues(): void
     {
         foreach (['json', 'linedJson'] as $format) {
@@ -134,7 +136,7 @@ JSON;
         }
     }
 
-    /** @test */
+    #[Test]
     public function jsonFormatsAllowChangedStringsWithScalarLookingText(): void
     {
         $input = json_encode([
@@ -160,7 +162,7 @@ JSON;
         }
     }
 
-    /** @test */
+    #[Test]
     public function jsonFormatsAllowObjectKeysToBeReorderedButKeepListOrder(): void
     {
         $input = '{"meta":{"0":"zero","1":"one","10":"ten","01":"leading",'
@@ -183,7 +185,7 @@ JSON;
         }
     }
 
-    /** @test */
+    #[Test]
     public function jsonFormatsRejectScalarValuesMovedBetweenObjectKeys(): void
     {
         foreach (['json', 'linedJson'] as $format) {
@@ -198,7 +200,7 @@ JSON;
         }
     }
 
-    /** @test */
+    #[Test]
     public function jsonFormatsRejectListValuesMovedBetweenIndexes(): void
     {
         foreach (['json', 'linedJson'] as $format) {
@@ -213,7 +215,7 @@ JSON;
         }
     }
 
-    /** @test */
+    #[Test]
     public function jsonFormatsMatchEquivalentEscapedAndUnicodeObjectKeys(): void
     {
         $result = $this->runFixture([
@@ -226,7 +228,7 @@ JSON;
         $this->assertSame('{"nested":{"a":"Перевод"},"caf\\u00e9":"Translation"}', $result['result']);
     }
 
-    /** @test */
+    #[Test]
     public function jsonFormatsPreserveExactNonStringScalarLexemesWhenKeysMove(): void
     {
         $input = '{"decimal":0.12345678901234567891,"large":9223372036854775808,'
@@ -244,7 +246,7 @@ JSON;
         }
     }
 
-    /** @test */
+    #[Test]
     public function jsonFormatsRejectNullChangedToAnotherType(): void
     {
         foreach (['json', 'linedJson'] as $format) {
@@ -258,7 +260,7 @@ JSON;
         }
     }
 
-    /** @test */
+    #[Test]
     public function validationDisabledKeepsChangedJsonScalarsPermissive(): void
     {
         $translated = '{"nested":{"count":8,"enabled":false}}';
@@ -272,7 +274,7 @@ JSON;
         $this->assertSame($translated, $result['result']);
     }
 
-    /** @test */
+    #[Test]
     public function emptyObjectAndListCannotBeSwappedAtRoot(): void
     {
         foreach ([['{}', '[]'], ['[]', '{}']] as [$input, $translated]) {
@@ -285,7 +287,7 @@ JSON;
         }
     }
 
-    /** @test */
+    #[Test]
     public function emptyObjectAndListCannotBeSwappedWhenNested(): void
     {
         foreach (
@@ -303,7 +305,7 @@ JSON;
         }
     }
 
-    /** @test */
+    #[Test]
     public function numericKeyObjectCannotBecomeList(): void
     {
         $result = $this->runFixture([
@@ -314,7 +316,7 @@ JSON;
         $this->assertSchemaMismatch($result);
     }
 
-    /** @test */
+    #[Test]
     public function nestedNumericKeyObjectCannotBecomeList(): void
     {
         $result = $this->runFixture([
@@ -325,7 +327,7 @@ JSON;
         $this->assertSchemaMismatch($result);
     }
 
-    /** @test */
+    #[Test]
     public function nestedMemberTypeChangesAreRejected(): void
     {
         $result = $this->runFixture([
@@ -336,7 +338,7 @@ JSON;
         $this->assertSchemaMismatch($result);
     }
 
-    /** @test */
+    #[Test]
     public function nestedObjectsAndListsWithTranslatedStringsArePreserved(): void
     {
         $translated = '{"article":{"title":"Перевод","items":[{"text":"Первый"},'
@@ -351,7 +353,7 @@ JSON;
         $this->assertSame($translated, $result['result']);
     }
 
-    /** @test */
+    #[Test]
     public function missingTrailingObjectNullIsRejected(): void
     {
         $result = $this->runFixture([
@@ -362,7 +364,7 @@ JSON;
         $this->assertSchemaMismatch($result);
     }
 
-    /** @test */
+    #[Test]
     public function missingNestedTrailingNullIsRejected(): void
     {
         $result = $this->runFixture([
@@ -373,7 +375,7 @@ JSON;
         $this->assertSchemaMismatch($result);
     }
 
-    /** @test */
+    #[Test]
     public function missingTrailingListNullIsRejected(): void
     {
         $result = $this->runFixture([
@@ -384,7 +386,7 @@ JSON;
         $this->assertSchemaMismatch($result);
     }
 
-    /** @test */
+    #[Test]
     public function missingObjectNullBeforeAnotherKeyIsRejected(): void
     {
         $result = $this->runFixture([
@@ -395,7 +397,7 @@ JSON;
         $this->assertSchemaMismatch($result);
     }
 
-    /** @test */
+    #[Test]
     public function intactJsonIsReturnedByteForByte(): void
     {
         $translated = '{"emptyObject":{},"emptyList":[],"number":1.0,"big":9223372036854775808,'
@@ -413,7 +415,7 @@ JSON;
         $this->assertSame("‹‹TRANSLATION››\n{$translated}\n‹‹END››", $raw['choices'][0]['message']['content']);
     }
 
-    /** @test */
+    #[Test]
     public function validationDisabledReturnsMissingNullUnmodified(): void
     {
         $translated = '{"title":"перевод"}';

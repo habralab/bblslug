@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Bblslug\Tests\Console;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class CliProviderFailureTest extends TestCase
@@ -47,7 +48,7 @@ final class CliProviderFailureTest extends TestCase
         ];
     }
 
-    /** @dataProvider failures */
+    #[DataProvider('failures')]
     public function testProviderFailureDoesNotOverwriteFilesOrLeakSecrets(
         string $case,
         string $model,
@@ -76,9 +77,7 @@ final class CliProviderFailureTest extends TestCase
         self::assertFileDoesNotExist($source . '.prepared');
     }
 
-    /**
-     * @dataProvider emptyTranslationCases
-     */
+    #[DataProvider('emptyTranslationCases')]
     public function testEmptyProviderTranslationDoesNotOverwriteFilesOrWriteStdout(
         string $case,
         bool $noValidate,

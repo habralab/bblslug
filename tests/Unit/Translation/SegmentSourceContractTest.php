@@ -6,11 +6,12 @@ namespace Bblslug\Tests\Translation;
 
 use Bblslug\Translation\SegmentBatches;
 use Bblslug\Translation\SegmentPlan;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class SegmentSourceContractTest extends TestCase
 {
-    /** @dataProvider invalidSources */
+    #[DataProvider('invalidSources')]
     public function testSourceFailuresPreserveMessages(
         string $consumer,
         string $payload,
@@ -60,7 +61,7 @@ final class SegmentSourceContractTest extends TestCase
         ];
     }
 
-    /** @dataProvider validSources */
+    #[DataProvider('validSources')]
     public function testValidSourcesPreserveOutput(string $consumer, string $payload, array $expected): void
     {
         self::assertSame($expected, $this->consume($consumer, $payload));

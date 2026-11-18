@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace Bblslug\Tests\Validation;
 
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Bblslug\Validation\TextLengthValidator;
 
 final class TextLengthValidatorTest extends TestCase
 {
-    /** @test */
+    #[Test]
     public function respectsLimitWithOverhead(): void
     {
         // Internal limit = limit - overhead.
@@ -22,7 +23,7 @@ final class TextLengthValidatorTest extends TestCase
         $this->assertFalse($v->validate($bad)->isValid());
     }
 
-    /** @test */
+    #[Test]
     public function zeroInternalLimitMeansNoCap(): void
     {
         // If overhead >= limit => internal limit becomes 0 => no restriction.
@@ -31,7 +32,7 @@ final class TextLengthValidatorTest extends TestCase
         $this->assertTrue($v->validate($long)->isValid());
     }
 
-    /** @test */
+    #[Test]
     public function multibyteLengthIsCounted(): void
     {
         $v = new TextLengthValidator(limitChars: 5, overheadChars: 0);
@@ -39,7 +40,7 @@ final class TextLengthValidatorTest extends TestCase
         $this->assertTrue($v->validate('мир')->isValid());     // 3 characters
     }
 
-    /** @test */
+    #[Test]
     public function fromModelConfigWithTokensAndOverheadZeroCaps(): void
     {
         $model = ['limits' => ['max_tokens' => 100, 'max_output_tokens' => 20]];
@@ -50,7 +51,7 @@ final class TextLengthValidatorTest extends TestCase
         $this->assertFalse($v->validate(str_repeat('a', 321))->isValid());
     }
 
-    /** @test */
+    #[Test]
     public function fromModelConfigWithDefaultOverheadOftenLeadsToNoCap(): void
     {
         $model = ['limits' => ['max_tokens' => 100, 'max_output_tokens' => 20]];

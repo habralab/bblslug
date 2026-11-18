@@ -4,19 +4,20 @@ declare(strict_types=1);
 
 namespace Bblslug\Tests\Validation;
 
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Bblslug\Validation\JsonValidator;
 
 final class JsonValidatorTest extends TestCase
 {
-    /** @test */
+    #[Test]
     public function validJsonPasses(): void
     {
         $v = new JsonValidator();
         $this->assertTrue($v->validate('{"a":1,"b":[2,3]}')->isValid());
     }
 
-    /** @test */
+    #[Test]
     public function invalidJsonFails(): void
     {
         $v = new JsonValidator();
@@ -26,14 +27,14 @@ final class JsonValidatorTest extends TestCase
         $this->assertStringContainsString('JSON syntax error', $res->getErrors()[0]);
     }
 
-    /** @test */
+    #[Test]
     public function emptyStringIsInvalid(): void
     {
         $v = new JsonValidator();
         $this->assertFalse($v->validate('')->isValid());
     }
 
-    /** @test */
+    #[Test]
     public function unicodeJsonPasses(): void
     {
         $v = new JsonValidator();

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Bblslug\Tests;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class BblslugEmptyTranslationTest extends TestCase
@@ -23,7 +24,7 @@ final class BblslugEmptyTranslationTest extends TestCase
         return $cases;
     }
 
-    /** @dataProvider emptyTranslations */
+    #[DataProvider('emptyTranslations')]
     public function testNonemptyInputRequiresNonemptyTranslationEvenWithoutValidation(string $model, string $text): void
     {
         $result = $this->runFixture($model, 'source text', $text);
@@ -50,7 +51,7 @@ final class BblslugEmptyTranslationTest extends TestCase
         self::assertSame('0', $zero['result']);
     }
 
-    /** @dataProvider verboseModes */
+    #[DataProvider('verboseModes')]
     public function testCompletedEmptyGrokResponseRetainsOnlyOptedInMaskedDiagnostics(bool $verbose): void
     {
         $apiKey = 'fixture +/key=value';

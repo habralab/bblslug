@@ -6,6 +6,7 @@ namespace Bblslug\Tests\Console;
 
 use Bblslug\Console\RawArguments;
 use InvalidArgumentException;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class RawArgumentsTest extends TestCase
@@ -16,7 +17,7 @@ final class RawArgumentsTest extends TestCase
         'segment-batch-max-bytes:', 'operation-timeout:', 'checkpoint:', 'segment-abbreviation:',
     ];
 
-    /** @dataProvider knownOptionArguments */
+    #[DataProvider('knownOptionArguments')]
     public function testKnownOptionValidationPreservesValuesAndTerminator(array $argv): void
     {
         RawArguments::validateKnownOptions($argv, [...self::LONG_OPTIONS, 'dry-run', 'list-models::']);
@@ -37,7 +38,7 @@ final class RawArgumentsTest extends TestCase
         ];
     }
 
-    /** @dataProvider unknownOptionArguments */
+    #[DataProvider('unknownOptionArguments')]
     public function testKnownOptionValidationRejectsExactNamesOnly(array $argv, string $option): void
     {
         $this->expectException(InvalidArgumentException::class);
@@ -59,7 +60,7 @@ final class RawArgumentsTest extends TestCase
         ];
     }
 
-    /** @dataProvider acceptedArguments */
+    #[DataProvider('acceptedArguments')]
     public function testAcceptsArguments(array $argv): void
     {
         RawArguments::validate($argv, self::LONG_OPTIONS);
@@ -82,7 +83,7 @@ final class RawArgumentsTest extends TestCase
         ];
     }
 
-    /** @dataProvider rejectedArguments */
+    #[DataProvider('rejectedArguments')]
     public function testRejectsArguments(array $argv, string $message): void
     {
         $this->expectException(InvalidArgumentException::class);

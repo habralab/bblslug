@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Bblslug\Tests\Unit\Translation;
 
 use Bblslug\Translation\BatchCheckpoint;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class BatchCheckpointTest extends TestCase
@@ -115,7 +116,7 @@ final class BatchCheckpointTest extends TestCase
         }
     }
 
-    /** @dataProvider unencodableRecords */
+    #[DataProvider('unencodableRecords')]
     public function testEncodingFailureLeavesPrefixReadyForRetry(array $record): void
     {
         $path = $this->directory . '/state.json';

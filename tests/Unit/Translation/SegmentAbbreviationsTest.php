@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Bblslug\Tests\Translation;
 
 use Bblslug\Translation\SegmentPlan;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class SegmentAbbreviationsTest extends TestCase
@@ -90,7 +91,7 @@ final class SegmentAbbreviationsTest extends TestCase
         self::assertSame($source, $plan->restore($source));
     }
 
-    /** @dataProvider invalidHints */
+    #[DataProvider('invalidHints')]
     public function testInvalidHintsFailEvenForEmptySource(array $hints): void
     {
         $this->expectException(\InvalidArgumentException::class);

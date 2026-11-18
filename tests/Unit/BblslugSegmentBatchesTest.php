@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Bblslug\Tests;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class BblslugSegmentBatchesTest extends TestCase
@@ -38,7 +39,7 @@ final class BblslugSegmentBatchesTest extends TestCase
         self::assertSame(3, $r['networkCalls']);
     }
 
-    /** @dataProvider failures */
+    #[DataProvider('failures')]
     public function testBadSecondPacketStopsImmediatelyWithoutReturningPartialDocument(string $failure): void
     {
         $r = $this->runFixture(['failAt' => 2, 'failure' => $failure, 'validate' => false]);

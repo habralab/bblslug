@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Bblslug\Tests\Console;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class CliUnknownOptionsTest extends TestCase
@@ -43,9 +44,10 @@ final class CliUnknownOptionsTest extends TestCase
     }
 
     /**
-     * @dataProvider unknownOptions
+     *
      * @param list<string> $options
      */
+    #[DataProvider('unknownOptions')]
     public function testUnknownOptionsFailBeforeAnySideEffects(array $options, string $unknown): void
     {
         $source = $this->directory . '/source';

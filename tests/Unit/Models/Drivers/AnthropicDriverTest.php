@@ -7,12 +7,13 @@ namespace Bblslug\Tests\Models\Drivers;
 use Bblslug\Models\Drivers\AnthropicDriver;
 use Bblslug\Models\ModelRegistry;
 use Bblslug\Models\UsageExtractor;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class AnthropicDriverTest extends TestCase
 {
     /** @return array<string,array{string}> */
-    public function currentModels(): array
+    public static function currentModels(): array
     {
         return [
             'haiku' => ['anthropic:claude-haiku-5.5'],
@@ -21,7 +22,7 @@ final class AnthropicDriverTest extends TestCase
         ];
     }
 
-    /** @dataProvider currentModels */
+    #[DataProvider('currentModels')]
     public function testBuildsMessagesRequestWithSeparateSystemPrompt(string $modelKey): void
     {
         $config = (new ModelRegistry())->get($modelKey);
@@ -80,7 +81,7 @@ final class AnthropicDriverTest extends TestCase
         ];
     }
 
-    /** @dataProvider malformedBoundaries */
+    #[DataProvider('malformedBoundaries')]
     public function testRejectsMalformedBoundariesOnCompletedResponse(string $text): void
     {
         $response = json_encode([
@@ -94,7 +95,7 @@ final class AnthropicDriverTest extends TestCase
     }
 
     /** @return array<string,array{string}> */
-    public function incompleteResponses(): array
+    public static function incompleteResponses(): array
     {
         return [
             'truncated' => ['max_tokens'],
@@ -105,7 +106,7 @@ final class AnthropicDriverTest extends TestCase
         ];
     }
 
-    /** @dataProvider incompleteResponses */
+    #[DataProvider('incompleteResponses')]
     public function testRejectsIncompleteResponsesEvenIfTheyContainMarkers(string $stopReason): void
     {
         $response = json_encode([

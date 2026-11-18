@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Bblslug\Tests;
 
 use Bblslug\Bblslug;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class BblslugStructuredOutputTest extends TestCase
@@ -41,7 +42,7 @@ final class BblslugStructuredOutputTest extends TestCase
         }
     }
 
-    /** @dataProvider googleNativeInvalidOutputProvider */
+    #[DataProvider('googleNativeInvalidOutputProvider')]
     public function testGoogleNativeJsonDoesNotBypassValidation(string $output, string $reason): void
     {
         $result = $this->runFixture([

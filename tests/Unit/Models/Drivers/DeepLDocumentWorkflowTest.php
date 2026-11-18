@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Bblslug\Tests\Unit\Models\Drivers;
 
 use Bblslug\Models\Drivers\DeepLDocumentWorkflow;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class DeepLDocumentWorkflowTest extends TestCase
@@ -68,7 +69,7 @@ final class DeepLDocumentWorkflowTest extends TestCase
         }
     }
 
-    /** @dataProvider malformedProvider */
+    #[DataProvider('malformedProvider')]
     public function testMalformedOrHttpResponsesFail(string $body, int $status, string $message): void
     {
         $workflow = new TestableWorkflow('https://example.test/document');

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Bblslug\Tests\Translation;
 
 use Bblslug\Translation\JsonHtmlDocument;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class JsonHtmlDocumentTest extends TestCase
@@ -126,7 +127,7 @@ final class JsonHtmlDocumentTest extends TestCase
         self::assertSame('<plaintext>Hello <b>world', $restored['plain']);
     }
 
-    /** @dataProvider invalidTranslations */
+    #[DataProvider('invalidTranslations')]
     public function testRestoreRejectsEveryMalformedOrNonStrictFlatTranslation(string $translation): void
     {
         $document = new JsonHtmlDocument('{"html":"<p>Hello</p>"}', ['/html']);
@@ -144,7 +145,7 @@ final class JsonHtmlDocumentTest extends TestCase
         ]);
     }
 
-    /** @dataProvider invalidPointers */
+    #[DataProvider('invalidPointers')]
     public function testInvalidMissingWrongTypeAndMalformedPointersFailBeforeTranslation(string $pointer): void
     {
         $this->expectException(\InvalidArgumentException::class);

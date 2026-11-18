@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace Bblslug\Tests;
 
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 final class BblslugHtmlOutputTest extends TestCase
 {
-    /** @test */
+    #[Test]
     public function changedHtmlStructureIsRejected(): void
     {
         $cases = [
@@ -36,7 +37,7 @@ final class BblslugHtmlOutputTest extends TestCase
         }
     }
 
-    /** @test */
+    #[Test]
     public function requiredAndNonTranslatableAttributesArePreserved(): void
     {
         $cases = [
@@ -64,7 +65,7 @@ final class BblslugHtmlOutputTest extends TestCase
         }
     }
 
-    /** @test */
+    #[Test]
     public function commentsAndDoctypeArePreserved(): void
     {
         $cases = [
@@ -90,7 +91,7 @@ final class BblslugHtmlOutputTest extends TestCase
         }
     }
 
-    /** @test */
+    #[Test]
     public function textAndTranslatableAttributesMayChange(): void
     {
         $input = '<p title="Original title"><img alt="Original alt" aria-label="Original label">Text</p>';
@@ -102,7 +103,7 @@ final class BblslugHtmlOutputTest extends TestCase
         self::assertSame($translated, $result['result']);
     }
 
-    /** @test */
+    #[Test]
     public function equivalentDomStructurePassesAndReturnsProviderBytes(): void
     {
         $input = '<!DOCTYPE html><DIV ID="intro" class="lead"><a '
@@ -115,7 +116,7 @@ final class BblslugHtmlOutputTest extends TestCase
         self::assertSame($translated, $result['result']);
     }
 
-    /** @test */
+    #[Test]
     public function fullDocumentStructureIsChecked(): void
     {
         $input = '<!DOCTYPE html><html><head><title>Title</title></head><body><main>Text</main></body></html>';
@@ -127,7 +128,7 @@ final class BblslugHtmlOutputTest extends TestCase
         self::assertSame($translated, $result['result']);
     }
 
-    /** @test */
+    #[Test]
     public function validationCanBeDisabledForLegacyBehavior(): void
     {
         $input = '<p>Text</p>';

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Bblslug\Tests\Unit\Translation;
 
 use Bblslug\Translation\BatchCheckpoint;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class CheckpointPersistenceTest extends TestCase
@@ -62,7 +63,7 @@ final class CheckpointPersistenceTest extends TestCase
         self::assertNull($resumed->get(count($inputs)));
     }
 
-    /** @dataProvider persistenceFailures */
+    #[DataProvider('persistenceFailures')]
     public function testFailurePreservesPrefixAndAllowsRetry(string $fault): void
     {
         $command = [PHP_BINARY, dirname(__DIR__, 2) . '/Fixtures/translation/checkpoint_persistence.php',

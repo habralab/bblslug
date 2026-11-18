@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Bblslug\Tests;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class BblslugErrorRedactionTest extends TestCase
@@ -89,7 +90,7 @@ final class BblslugErrorRedactionTest extends TestCase
         ];
     }
 
-    /** @dataProvider providerErrors */
+    #[DataProvider('providerErrors')]
     public function testProviderFailureDoesNotEchoApiKey(
         string $model,
         int $status,

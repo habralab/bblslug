@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace Bblslug\Tests\Translation;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class RestorationMemoryTest extends TestCase
 {
-    /** @dataProvider profiles */
+    #[DataProvider('profiles')]
     public function testDenseTextCompletesRestorationWithinMemoryBudget(string $profile): void
     {
         $process = proc_open([

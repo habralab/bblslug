@@ -8,6 +8,7 @@ use Bblslug\Models\Drivers\GoogleDriver;
 use Bblslug\Models\Drivers\OpenAiDriver;
 use Bblslug\Models\Drivers\YandexDriver;
 use Bblslug\Models\ModelRegistry;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 class ModelRegistryTest extends TestCase
@@ -40,7 +41,7 @@ class ModelRegistryTest extends TestCase
         $this->registry = new ModelRegistry();
     }
 
-    /** @test */
+    #[Test]
     public function getAllReturnsFullModelsArray(): void
     {
         $all = $this->registry->getAll();
@@ -55,7 +56,7 @@ class ModelRegistryTest extends TestCase
         }
     }
 
-    /** @test */
+    #[Test]
     public function itKnowsExistingAndMissingModels(): void
     {
         $all = $this->registry->list();
@@ -74,7 +75,7 @@ class ModelRegistryTest extends TestCase
         );
     }
 
-    /** @test */
+    #[Test]
     public function itReturnsCorrectEndpoint(): void
     {
         // Every known model should return a non-null HTTP(S) endpoint URL
@@ -99,7 +100,7 @@ class ModelRegistryTest extends TestCase
         );
     }
 
-    /** @test */
+    #[Test]
     public function itListsAllModelKeys(): void
     {
         $keys = $this->registry->list();
@@ -112,7 +113,7 @@ class ModelRegistryTest extends TestCase
         }
     }
 
-    /** @test */
+    #[Test]
     public function itReturnsExpectedAuthEnvForEachModel(): void
     {
         $expected = [
@@ -141,7 +142,7 @@ class ModelRegistryTest extends TestCase
         }
     }
 
-    /** @test */
+    #[Test]
     public function itReturnsExpectedVariablesForYandexModels(): void
     {
         // All Yandex models should declare the same 'folder_id' variable
@@ -159,7 +160,7 @@ class ModelRegistryTest extends TestCase
         }
     }
 
-    /** @test */
+    #[Test]
     public function itNotReturnsExpectedVariablesForModelsWithoutIt(): void
     {
         $this->assertEmpty(
@@ -168,7 +169,7 @@ class ModelRegistryTest extends TestCase
         );
     }
 
-    /** @test */
+    #[Test]
     public function itReturnsExpectedHelpUrlForEachModel(): void
     {
         $expected = [
@@ -197,7 +198,7 @@ class ModelRegistryTest extends TestCase
         }
     }
 
-    /** @test */
+    #[Test]
     public function itReturnsValidCharLimitsForAllModels(): void
     {
         foreach (self::EXPECTED_MODELS as $modelKey) {
@@ -214,7 +215,7 @@ class ModelRegistryTest extends TestCase
         }
     }
 
-    /** @test */
+    #[Test]
     public function itReturnsNonEmptyNotesForAllModels(): void
     {
         foreach (self::EXPECTED_MODELS as $modelKey) {
@@ -230,7 +231,7 @@ class ModelRegistryTest extends TestCase
         }
     }
 
-    /** @test */
+    #[Test]
     public function itInstantiatesCorrectDriverForEachModel(): void
     {
         $map = [
@@ -260,14 +261,14 @@ class ModelRegistryTest extends TestCase
         }
     }
 
-    /** @test */
+    #[Test]
     public function itThrowsOnUnknownVendor(): void
     {
         $this->expectException(\InvalidArgumentException::class);
         $this->registry->getDriver('foo:bar');
     }
 
-    /** @test */
+    #[Test]
     public function itThrowsOnUnsupportedGoogleModel(): void
     {
         // Retired models must not resolve to a driver.

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Bblslug\Tests\Models\Drivers;
 
 use Bblslug\Models\Drivers\YandexDriver;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class YandexStructuredOutputTest extends TestCase
@@ -41,7 +42,7 @@ final class YandexStructuredOutputTest extends TestCase
         self::assertSame('{}', $body['messages'][1]['content']);
     }
 
-    /** @dataProvider invalidOptions */
+    #[DataProvider('invalidOptions')]
     public function testInvalidSchemaOptionsAreRejected(array $options): void
     {
         $this->expectException(\InvalidArgumentException::class);
@@ -78,7 +79,7 @@ final class YandexStructuredOutputTest extends TestCase
         ])['text']);
     }
 
-    /** @dataProvider rejectedResponses */
+    #[DataProvider('rejectedResponses')]
     public function testSchemaParserPreservesFailureGuards(array $response): void
     {
         $this->expectException(\RuntimeException::class);

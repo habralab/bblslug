@@ -6,6 +6,7 @@ namespace Bblslug\Tests\Models\Drivers;
 
 use Bblslug\Models\Drivers\GoogleDriver;
 use InvalidArgumentException;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
@@ -45,7 +46,7 @@ final class GoogleJsonTransportTest extends TestCase
         self::assertStringNotContainsString('‹‹TRANSLATION››', $body['contents'][0]['parts'][0]['text']);
     }
 
-    /** @dataProvider nativeFormatProvider */
+    #[DataProvider('nativeFormatProvider')]
     public function testExplicitNativeTransportSupportsJsonFormats(string $format): void
     {
         $body = $this->body('{}', ['format' => $format, 'json_transport' => 'native']);
@@ -104,7 +105,7 @@ final class GoogleJsonTransportTest extends TestCase
         ]);
     }
 
-    /** @dataProvider invalidTransportProvider */
+    #[DataProvider('invalidTransportProvider')]
     public function testInvalidTransportIsRejected(mixed $transport): void
     {
         $this->expectException(InvalidArgumentException::class);
@@ -117,7 +118,7 @@ final class GoogleJsonTransportTest extends TestCase
         return ['null' => [null], 'boolean' => [true], 'unknown' => ['other'], 'array' => [[]]];
     }
 
-    /** @dataProvider nativeOnlyFormatProvider */
+    #[DataProvider('nativeOnlyFormatProvider')]
     public function testNativeTransportIsRejectedForTextAndHtml(string $format): void
     {
         $this->expectException(InvalidArgumentException::class);
@@ -148,7 +149,7 @@ final class GoogleJsonTransportTest extends TestCase
         )['text']);
     }
 
-    /** @dataProvider rejectedFinishReasonProvider */
+    #[DataProvider('rejectedFinishReasonProvider')]
     public function testNativeParseRejectsNonStopFinishReasons(string $reason): void
     {
         $response = json_encode([

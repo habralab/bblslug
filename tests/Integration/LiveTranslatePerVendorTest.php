@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace Bblslug\Tests\Integration;
 
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\Attributes\Large;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Bblslug\Bblslug;
 use Bblslug\Models\ModelRegistry;
@@ -20,6 +24,7 @@ use Bblslug\Models\ModelRegistry;
  * - BBLSLUG_YANDEX_FOLDER_ID or YANDEX_FOLDER_ID — required for Yandex
  * - BBLSLUG_PROXY         — optional proxy (http://..., socks5h://...)
  */
+#[Large]
 final class LiveTranslatePerVendorTest extends TestCase
 {
     protected function setUp(): void
@@ -35,7 +40,7 @@ final class LiveTranslatePerVendorTest extends TestCase
      *
      * @return array<string,array{string,string}>
      */
-    public function providerLiveVendors(): array
+    public static function providerLiveVendors(): array
     {
         // PHPUnit formats datasets before setUp(), including for skipped tests.
         if (getenv('RUN_LIVE_TESTS') !== '1') {
@@ -87,7 +92,7 @@ final class LiveTranslatePerVendorTest extends TestCase
 
         if (empty($cases)) {
             // ensure test shows as skipped in a readable way
-            $this->markTestSkipped('No vendors with credentials found for live tests');
+            self::markTestSkipped('No vendors with credentials found for live tests');
         }
 
         return $cases;
@@ -125,12 +130,9 @@ final class LiveTranslatePerVendorTest extends TestCase
         return getenv($name);
     }
 
-    /**
-     * @dataProvider providerLiveVendors
-     * @test
-     * @group live
-     * @large
-     */
+    #[DataProvider('providerLiveVendors')]
+    #[Test]
+    #[Group('live')]
     public function translatesSmallTextSnippet(string $vendor, string $modelKey): void
     {
         [$apiKey, $vars] = self::liveCredentials($vendor, $modelKey);
@@ -178,12 +180,10 @@ final class LiveTranslatePerVendorTest extends TestCase
     /**
      * HTML with two-level nesting: <div><p>Hi <strong>there</strong></p></div>
      * We enable validation to ensure container syntax is preserved.
-     *
-     * @dataProvider providerLiveVendors
-     * @test
-     * @group live
-     * @large
      */
+    #[DataProvider('providerLiveVendors')]
+    #[Test]
+    #[Group('live')]
     public function translatesSmallHtmlSnippet(string $vendor, string $modelKey): void
     {
         [$apiKey, $vars] = self::liveCredentials($vendor, $modelKey);
@@ -242,12 +242,10 @@ final class LiveTranslatePerVendorTest extends TestCase
      * }
      * JSON validation + schema check are enabled; if the model breaks structure,
      * Bblslug::translate() will throw and the test will fail (by design).
-     *
-     * @dataProvider providerLiveVendors
-     * @test
-     * @group live
-     * @large
      */
+    #[DataProvider('providerLiveVendors')]
+    #[Test]
+    #[Group('live')]
     public function translatesSmallJsonSnippet(string $vendor, string $modelKey): void
     {
         [$apiKey, $vars] = self::liveCredentials($vendor, $modelKey);

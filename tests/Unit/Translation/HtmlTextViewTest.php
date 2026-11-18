@@ -5,11 +5,12 @@ declare(strict_types=1);
 namespace Bblslug\Tests\Translation;
 
 use Bblslug\Translation\HtmlTextView;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class HtmlTextViewTest extends TestCase
 {
-    /** @dataProvider viewCases */
+    #[DataProvider('viewCases')]
     public function testTextAndByteBoundaries(string $raw, string $decoded, array $boundaries): void
     {
         $view = new HtmlTextView($raw);

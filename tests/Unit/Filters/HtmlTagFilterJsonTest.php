@@ -7,11 +7,12 @@ namespace Bblslug\Tests\Filters;
 use Bblslug\Filters\FilterManager;
 use Bblslug\Filters\HtmlTagFilter;
 use Bblslug\Filters\PlaceholderCounter;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class HtmlTagFilterJsonTest extends TestCase
 {
-    /** @dataProvider encodedSources */
+    #[DataProvider('encodedSources')]
     public function testProtectsEncodedHtmlAndRestoresExactSource(int $flags, int $depth): void
     {
         $html = '<div title="a > b and </div>">Keep 😀 <div>inner "quoted" \\ code</div>tail</div>';

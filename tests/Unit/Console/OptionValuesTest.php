@@ -6,11 +6,12 @@ namespace Bblslug\Tests\Console;
 
 use Bblslug\Console\OptionValues;
 use InvalidArgumentException;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class OptionValuesTest extends TestCase
 {
-    /** @dataProvider validIntegers */
+    #[DataProvider('validIntegers')]
     public function testPositiveInteger(array $options, ?int $expected): void
     {
         self::assertSame($expected, OptionValues::positiveInteger($options, 'limit'));
@@ -27,7 +28,7 @@ final class OptionValuesTest extends TestCase
         ];
     }
 
-    /** @dataProvider invalidIntegers */
+    #[DataProvider('invalidIntegers')]
     public function testRejectsInvalidInteger($value, string $message): void
     {
         $this->expectException(InvalidArgumentException::class);
@@ -55,7 +56,7 @@ final class OptionValuesTest extends TestCase
         ];
     }
 
-    /** @dataProvider validStrings */
+    #[DataProvider('validStrings')]
     public function testStrings(array $options, array $expected): void
     {
         self::assertSame($expected, OptionValues::strings($options, 'pointer', 'bad pointer'));
@@ -73,7 +74,7 @@ final class OptionValuesTest extends TestCase
         ];
     }
 
-    /** @dataProvider invalidStrings */
+    #[DataProvider('invalidStrings')]
     public function testRejectsNonStringValues($value): void
     {
         $this->expectException(InvalidArgumentException::class);
@@ -91,7 +92,7 @@ final class OptionValuesTest extends TestCase
         ];
     }
 
-    /** @dataProvider validVariables */
+    #[DataProvider('validVariables')]
     public function testVariables(array $options, array $expected): void
     {
         self::assertSame($expected, OptionValues::variables($options));
@@ -113,7 +114,7 @@ final class OptionValuesTest extends TestCase
         ];
     }
 
-    /** @dataProvider invalidVariables */
+    #[DataProvider('invalidVariables')]
     public function testRejectsMalformedVariables(string $value, string $message): void
     {
         $this->expectException(InvalidArgumentException::class);

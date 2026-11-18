@@ -8,14 +8,16 @@ use Bblslug\Filters\FilterManager;
 use Bblslug\Filters\HtmlTagFilter;
 use Bblslug\Filters\PlaceholderCounter;
 use Bblslug\Filters\UrlFilter;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class JsonMarkerShieldingTest extends TestCase
 {
     /**
-     * @dataProvider orders
+     *
      * @param array<int,string> $order
      */
+    #[DataProvider('orders')]
     public function testEachStageAndManagerProtectFragmentsAndRestoreExactJson(array $order): void
     {
         $source = <<<'JSON'
@@ -80,9 +82,10 @@ JSON;
     }
 
     /**
-     * @dataProvider orders
+     *
      * @param array<int,string> $order
      */
+    #[DataProvider('orders')]
     public function testNestedEncodedJsonRemainsValidAtEveryStage(array $order): void
     {
         $inner = <<<'JSON'

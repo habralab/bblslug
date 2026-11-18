@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Bblslug\Tests\Models;
 
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Yaml\Yaml;
 use Symfony\Component\Yaml\Exception\ParseException;
@@ -30,14 +31,14 @@ final class PromptsYamlTest extends TestCase
         return $data;
     }
 
-    /** @test */
+    #[Test]
     public function promptsYamlIsValidAndNonEmpty(): void
     {
         $this->loadPrompts(); // assertions inside
         $this->addToAssertionCount(1);
     }
 
-    /** @test */
+    #[Test]
     public function translatorTemplateHasAllRequiredFormats(): void
     {
         $data = $this->loadPrompts();
@@ -55,7 +56,7 @@ final class PromptsYamlTest extends TestCase
         }
     }
 
-    /** @test */
+    #[Test]
     public function eachFormatContainsRequiredPlaceholders(): void
     {
         $data = $this->loadPrompts();

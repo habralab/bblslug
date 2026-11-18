@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace Bblslug\Tests\Models;
 
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Yaml\Yaml;
 use Symfony\Component\Yaml\Exception\ParseException;
 
 class ModelsYamlTest extends TestCase
 {
-    /** @test */
+    #[Test]
     public function modelsYamlIsValidAndNonEmpty(): void
     {
         $path = __DIR__ . '/../../../resources/models.yaml';

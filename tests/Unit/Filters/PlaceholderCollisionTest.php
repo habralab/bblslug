@@ -8,6 +8,8 @@ use Bblslug\Filters\FilterManager;
 use Bblslug\Filters\HtmlTagFilter;
 use Bblslug\Filters\PlaceholderCounter;
 use Bblslug\Filters\UrlFilter;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -35,7 +37,7 @@ final class PlaceholderCollisionTest extends TestCase
         self::assertCount(1, $filter->debugDump());
     }
 
-    /** @test */
+    #[Test]
     public function managerRoundTripsLiteralMarkerAlongsideUrl(): void
     {
         $manager = new FilterManager(['url']);
@@ -49,7 +51,7 @@ final class PlaceholderCollisionTest extends TestCase
         $this->assertSame(1, $manager->getStats()[0]['count']);
     }
 
-    /** @test */
+    #[Test]
     public function literalMarkersInsideUrlsRoundTripAsUrlContent(): void
     {
         $manager = new FilterManager(['url']);
@@ -63,10 +65,8 @@ final class PlaceholderCollisionTest extends TestCase
         $this->assertSame(2, $manager->getStats()[0]['count']);
     }
 
-    /**
-     * @test
-     * @dataProvider markerBoundarySources
-     */
+    #[Test]
+    #[DataProvider('markerBoundarySources')]
     public function consecutiveAndIncompleteMarkersRoundTrip(string $source): void
     {
         $manager = new FilterManager(['url']);
@@ -78,10 +78,12 @@ final class PlaceholderCollisionTest extends TestCase
     }
 
     /**
-     * @test
-     * @dataProvider filterOrders
+     *
+     *
      * @param array<int,string> $filters
      */
+    #[Test]
+    #[DataProvider('filterOrders')]
     public function urlAndProtectedHtmlRoundTripInEitherOrder(array $filters, string $source): void
     {
         $manager = new FilterManager($filters);
@@ -95,7 +97,7 @@ final class PlaceholderCollisionTest extends TestCase
         $this->assertSame(1, $stats[array_search($htmlFilter, $filters, true)]['count']);
     }
 
-    /** @test */
+    #[Test]
     public function managerRestoresOlderAndNewerInputsAfterBothWereApplied(): void
     {
         $manager = new FilterManager(['url']);
@@ -110,7 +112,7 @@ final class PlaceholderCollisionTest extends TestCase
         $this->assertSame(2, $manager->getStats()[0]['count']);
     }
 
-    /** @test */
+    #[Test]
     public function directUrlFilterRestoresOlderAndNewerInputsWithSharedCounter(): void
     {
         $filter = new UrlFilter();
@@ -126,7 +128,7 @@ final class PlaceholderCollisionTest extends TestCase
         $this->assertSame(2, $filter->getStats()['count']);
     }
 
-    /** @test */
+    #[Test]
     public function directHtmlFilterRestoresOlderAndNewerInputsWithSharedCounter(): void
     {
         $filter = new HtmlTagFilter('code');
@@ -142,7 +144,7 @@ final class PlaceholderCollisionTest extends TestCase
         $this->assertSame(2, $filter->getStats()['count']);
     }
 
-    /** @test */
+    #[Test]
     public function restoredHtmlContentContainingLiteralMarkerIsNotExpandedAgain(): void
     {
         $manager = new FilterManager(['url', 'html_code']);

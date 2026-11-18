@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Bblslug\Tests\Models\Drivers;
 
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Bblslug\Models\Drivers\OpenAiDriver;
 use Bblslug\Models\Drivers\AnthropicDriver;
@@ -12,7 +13,7 @@ use Bblslug\Models\Drivers\YandexDriver;
 
 final class DriverBuildRequestRequiredConfigTest extends TestCase
 {
-    /** @test */
+    #[Test]
     public function openaiRequiresModelName(): void
     {
         $driver = new OpenAiDriver();
@@ -27,7 +28,7 @@ final class DriverBuildRequestRequiredConfigTest extends TestCase
         $driver->buildRequest($config, 'text', []);
     }
 
-    /** @test */
+    #[Test]
     public function anthropicRequiresModelName(): void
     {
         $driver = new AnthropicDriver();
@@ -42,7 +43,7 @@ final class DriverBuildRequestRequiredConfigTest extends TestCase
         $driver->buildRequest($config, 'text', []);
     }
 
-    /** @test */
+    #[Test]
     public function xaiRequiresModelName(): void
     {
         $driver = new XaiDriver();
@@ -57,7 +58,7 @@ final class DriverBuildRequestRequiredConfigTest extends TestCase
         $driver->buildRequest($config, 'text', []);
     }
 
-    /** @test */
+    #[Test]
     public function yandexRequiresFolderIdInOptions(): void
     {
         $driver = new YandexDriver();

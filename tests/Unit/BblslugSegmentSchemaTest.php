@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace Bblslug\Tests;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class BblslugSegmentSchemaTest extends TestCase
 {
-    /** @dataProvider nativeCases */
+    #[DataProvider('nativeCases')]
     public function testPacketSchemaRequiresEverySourceId(string $model, string $format, ?int $batchSize): void
     {
         $html = '<h1>Section 1</h1><h2>Section 1</h2><p>Last</p>';
@@ -84,7 +85,7 @@ final class BblslugSegmentSchemaTest extends TestCase
         }
     }
 
-    /** @dataProvider invalidPackets */
+    #[DataProvider('invalidPackets')]
     public function testProviderSchemaDoesNotReplaceLocalValidation(string $model, string $failure): void
     {
         $r = $this->runFixture([

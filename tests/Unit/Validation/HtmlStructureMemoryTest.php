@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace Bblslug\Tests\Validation;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class HtmlStructureMemoryTest extends TestCase
 {
-    /** @dataProvider operations */
+    #[DataProvider('operations')]
     public function testDenseHtmlRetainsValidationWithinMemoryBudget(string $operation, string $limit): void
     {
         $command = [

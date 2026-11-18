@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Bblslug\Tests\Filters;
 
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Bblslug\Filters\HtmlTagFilter;
 use Bblslug\Filters\PlaceholderCounter;
@@ -13,7 +15,7 @@ use Bblslug\Filters\PlaceholderCounter;
  */
 final class HtmlTagFilterTest extends TestCase
 {
-    /** @test */
+    #[Test]
     public function masksAndRestoresTagBlocks(): void
     {
         $f = new HtmlTagFilter('a');
@@ -34,7 +36,7 @@ final class HtmlTagFilterTest extends TestCase
         $this->assertSame(2, $stats['count']);
     }
 
-    /** @test */
+    #[Test]
     public function unrelatedTagsRemain(): void
     {
         $f = new HtmlTagFilter('code');
@@ -49,7 +51,7 @@ final class HtmlTagFilterTest extends TestCase
         $this->assertSame(0, $f->getStats()['count']);
     }
 
-    /** @dataProvider exactTagProvider */
+    #[DataProvider('exactTagProvider')]
     public function testOnlyTheExactTagNameIsProtected(string $tag, string $source, string $expected): void
     {
         $filter = new HtmlTagFilter($tag);

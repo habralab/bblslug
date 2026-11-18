@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Bblslug\Tests\Console;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class CliUnclosedFilterTest extends TestCase
@@ -26,7 +27,7 @@ final class CliUnclosedFilterTest extends TestCase
         rmdir($this->temporaryDirectory);
     }
 
-    /** @dataProvider failureProvider */
+    #[DataProvider('failureProvider')]
     public function testUnclosedFilterFailsWithoutOutputOrFileMutation(array $case): void
     {
         $source = $this->temporaryDirectory . '/source.txt';

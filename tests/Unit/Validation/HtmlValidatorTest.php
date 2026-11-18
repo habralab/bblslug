@@ -4,19 +4,21 @@ declare(strict_types=1);
 
 namespace Bblslug\Tests\Validation;
 
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Bblslug\Validation\HtmlValidator;
 
 final class HtmlValidatorTest extends TestCase
 {
-    /** @test */
+    #[Test]
     public function validFragmentPasses(): void
     {
         $v = new HtmlValidator();
         $this->assertTrue($v->validate('<p>Hello <strong>world</strong></p>')->isValid());
     }
 
-    /** @test */
+    #[Test]
     public function fullDocumentWithHtml5TagsPasses(): void
     {
         $html = '<!DOCTYPE html><html><body><section><article>ok</article></section></body></html>';
@@ -24,7 +26,7 @@ final class HtmlValidatorTest extends TestCase
         $this->assertTrue($v->validate($html)->isValid());
     }
 
-    /** @test */
+    #[Test]
     public function unclosedTagFails(): void
     {
         $v = new HtmlValidator();
@@ -33,14 +35,14 @@ final class HtmlValidatorTest extends TestCase
         $this->assertNotEmpty($res->getErrors());
     }
 
-    /** @test */
+    #[Test]
     public function obviouslyBrokenMarkupFails(): void
     {
         $v = new HtmlValidator();
         $res = $v->validate('<p> <- broken >> </span>');
         $this->assertFalse($res->isValid());
     }
-    /** @dataProvider callerErrorModes */
+    #[DataProvider('callerErrorModes')]
     public function testCallerErrorModeIsRestored(bool $mode): void
     {
         $previous = libxml_use_internal_errors($mode);

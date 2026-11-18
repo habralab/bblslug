@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Bblslug\Tests\Models\Drivers;
 
 use Bblslug\Models\Drivers\YandexDriver;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class YandexHtmlFenceTest extends TestCase
@@ -50,7 +51,7 @@ final class YandexHtmlFenceTest extends TestCase
         self::assertNull($text['responseContext'] ?? null);
     }
 
-    /** @dataProvider allowedOpeningFences */
+    #[DataProvider('allowedOpeningFences')]
     public function testOnlyOneAllowedOpeningFenceIsRemoved(string $prefix): void
     {
         $result = (new YandexDriver())->parseResponse(
@@ -73,7 +74,7 @@ final class YandexHtmlFenceTest extends TestCase
         ];
     }
 
-    /** @dataProvider unsupportedFences */
+    #[DataProvider('unsupportedFences')]
     public function testAnyOtherIntroducedFenceIsRejected(string $translated): void
     {
         $this->expectException(\RuntimeException::class);

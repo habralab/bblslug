@@ -7,6 +7,7 @@ namespace Bblslug\Tests\Filters;
 use Bblslug\Filters\FilterManager;
 use Bblslug\Filters\HtmlTagFilter;
 use Bblslug\Filters\PlaceholderCounter;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class HtmlTagFilterNestingTest extends TestCase
@@ -52,7 +53,7 @@ final class HtmlTagFilterNestingTest extends TestCase
         self::assertSame($source, $filter->restore($prepared));
     }
 
-    /** @dataProvider rawTextTagProvider */
+    #[DataProvider('rawTextTagProvider')]
     public function testSelectedRawTextElementIsProtectedAsOneVerbatimBlock(string $tag, string $source): void
     {
         $filter = new HtmlTagFilter($tag);
@@ -135,7 +136,7 @@ final class HtmlTagFilterNestingTest extends TestCase
         self::assertSame($source, $filter->restore($prepared));
     }
 
-    /** @dataProvider foreignSelfClosingProvider */
+    #[DataProvider('foreignSelfClosingProvider')]
     public function testForeignSelfClosingAndNestedBlocksAreProtectedVerbatim(string $tag, string $source): void
     {
         $filter = new HtmlTagFilter($tag);
@@ -184,7 +185,7 @@ final class HtmlTagFilterNestingTest extends TestCase
         self::assertSame('<svg data="/>">text</svg>', $filter->restore('@@1@@'));
     }
 
-    /** @dataProvider ordinarySelfClosingProvider */
+    #[DataProvider('ordinarySelfClosingProvider')]
     public function testOrdinaryHtmlSelfClosingSyntaxStillRequiresClosingTag(string $tag): void
     {
         $filter = new HtmlTagFilter($tag);
@@ -248,7 +249,7 @@ final class HtmlTagFilterNestingTest extends TestCase
         self::assertSame($source, $filter->restore($prepared));
     }
 
-    /** @dataProvider filterOrderProvider */
+    #[DataProvider('filterOrderProvider')]
     public function testFilterManagerRoundTripsBothOrdersAndLiteralMarkers(array $filters): void
     {
         $source = 'Literal @@0@@ with <div data-url="https://example.test/a?q=1">'

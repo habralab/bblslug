@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace Bblslug\Tests\Translation;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class HtmlTextDocumentMemoryTest extends TestCase
 {
-    /** @dataProvider sourceKinds */
+    #[DataProvider('sourceKinds')]
     public function testLargeSpanPreservesBytesWithinBoundedMemory(string $kind): void
     {
         $command = [

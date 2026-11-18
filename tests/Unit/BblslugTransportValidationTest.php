@@ -5,14 +5,16 @@ declare(strict_types=1);
 namespace Bblslug\Tests;
 
 use Bblslug\Bblslug;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class BblslugTransportValidationTest extends TestCase
 {
     /**
-     * @dataProvider invalidOptions
+     *
      * @param array<string,mixed> $options
      */
+    #[DataProvider('invalidOptions')]
     public function testValidationPrecedence(array $options, string $message): void
     {
         $feedback = [];

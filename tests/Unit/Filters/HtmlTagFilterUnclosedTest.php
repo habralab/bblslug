@@ -6,12 +6,13 @@ namespace Bblslug\Tests\Filters;
 
 use Bblslug\Filters\HtmlTagFilter;
 use Bblslug\Filters\PlaceholderCounter;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
 final class HtmlTagFilterUnclosedTest extends TestCase
 {
-    /** @dataProvider unclosedTagProvider */
+    #[DataProvider('unclosedTagProvider')]
     public function testUnclosedSelectedNonVoidTagFails(string $tag, string $source): void
     {
         $this->expectUnclosed($tag, $source);
@@ -31,7 +32,7 @@ final class HtmlTagFilterUnclosedTest extends TestCase
         ];
     }
 
-    /** @dataProvider rawTextTagProvider */
+    #[DataProvider('rawTextTagProvider')]
     public function testUnclosedSelectedRawTextTagFails(string $tag): void
     {
         $this->expectUnclosed($tag, "<{$tag}>secret <div>fake</div>");
@@ -56,7 +57,7 @@ final class HtmlTagFilterUnclosedTest extends TestCase
         self::assertSame(0, $filter->getStats()['count']);
     }
 
-    /** @dataProvider voidTagProvider */
+    #[DataProvider('voidTagProvider')]
     public function testValidUnpairedVoidTagsRemainAllowed(string $tag): void
     {
         $source = "before <{$tag}>after";

@@ -1,5 +1,16 @@
 # Development tools
 
+## Supported development environment
+
+Install development dependencies with `composer install`. PHP 8.2 remains the minimum:
+Composer selects PHPUnit 11 on PHP 8.2, PHPUnit 12 on PHP 8.3, and PHPUnit 13 on
+PHP 8.4.1 or later. PHP_CodeSniffer 4 and PHPStan 2 are used across the supported runtimes.
+Tests use PHPUnit attributes shared by these versions.
+
+CI checks PHP 8.2–8.5, lowest allowed dependencies and the supported Symfony YAML
+branches. Security audits include development dependencies. These tools are in
+`require-dev`; applications installing the library do not inherit them.
+
 ## Offline documentation checks
 
 From a repository checkout with Composer dependencies installed:

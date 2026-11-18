@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Bblslug\Tests;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class LiveTestIsolationTest extends TestCase
@@ -14,7 +15,7 @@ final class LiveTestIsolationTest extends TestCase
         return ['empty' => [''], 'zero' => ['0'], 'false' => ['false'], 'off' => ['off'], 'true' => ['true']];
     }
 
-    /** @dataProvider disabledFlags */
+    #[DataProvider('disabledFlags')]
     public function testDisabledLiveSuiteDoesNotPrintSecretsOrPerformHttp(string $flag): void
     {
         $report = tempnam(sys_get_temp_dir(), 'bblslug-live-junit-');
@@ -22,7 +23,7 @@ final class LiveTestIsolationTest extends TestCase
         try {
             [$code, $stdout, $stderr] = $this->runProcess($flag, [
                 '--configuration=' . dirname(__DIR__, 2) . '/phpunit.xml',
-                '--testsuite=integration', '--verbose', '--colors=never', '--log-junit=' . $report,
+                '--testsuite=integration', '--colors=never', '--log-junit=' . $report,
             ]);
             self::assertSame(0, $code, $stderr);
             self::assertStringContainsString('Skipped: 3', $stdout);
@@ -59,7 +60,7 @@ final class LiveTestIsolationTest extends TestCase
         try {
             [$code, $stdout, $stderr] = $this->runProcess('1', [
                 '--configuration=' . dirname(__DIR__, 2) . '/phpunit.xml',
-                '--testsuite=integration', '--verbose', '--colors=never', '--log-junit=' . $report,
+                '--testsuite=integration', '--colors=never', '--log-junit=' . $report,
             ], true);
             self::assertSame(1, $code, $stderr);
             self::assertStringContainsString('Failures: 3', $stdout);

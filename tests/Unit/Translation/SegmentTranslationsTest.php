@@ -5,11 +5,12 @@ declare(strict_types=1);
 namespace Bblslug\Tests\Translation;
 
 use Bblslug\Translation\SegmentTranslations;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class SegmentTranslationsTest extends TestCase
 {
-    /** @dataProvider invalidTranslations */
+    #[DataProvider('invalidTranslations')]
     public function testDecodePreservesFailurePrecedence(string $payload, array $expected, string $message): void
     {
         $this->expectException(\RuntimeException::class);
@@ -53,7 +54,7 @@ final class SegmentTranslationsTest extends TestCase
         );
     }
 
-    /** @dataProvider invalidSources */
+    #[DataProvider('invalidSources')]
     public function testSourcePreservesFailureAndPreviousException(
         string $payload,
         bool $bounded,
@@ -69,7 +70,7 @@ final class SegmentTranslationsTest extends TestCase
         }
     }
 
-    /** @dataProvider scanFailureOperations */
+    #[DataProvider('scanFailureOperations')]
     public function testFailedTokenScanCannotAcceptDuplicateIds(bool $source): void
     {
         $previousLimit = ini_set('pcre.backtrack_limit', '1');

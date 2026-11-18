@@ -35,9 +35,11 @@ namespace {
     require dirname(__DIR__, 3) . '/vendor/autoload.php';
     if (in_array('--provider-only', $argv, true)) {
         require dirname(__DIR__, 2) . '/Integration/LiveTranslatePerVendorTest.php';
-        $test = new \Bblslug\Tests\Integration\LiveTranslatePerVendorTest('translatesSmallTextSnippet');
-        echo json_encode($test->providerLiveVendors(), JSON_THROW_ON_ERROR);
+        echo json_encode(
+            \Bblslug\Tests\Integration\LiveTranslatePerVendorTest::providerLiveVendors(),
+            JSON_THROW_ON_ERROR
+        );
     } else {
-        \PHPUnit\TextUI\Command::main();
+        exit((new \PHPUnit\TextUI\Application())->run($_SERVER['argv']));
     }
 }

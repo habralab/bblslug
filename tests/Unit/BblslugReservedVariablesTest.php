@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Bblslug\Tests;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class BblslugReservedVariablesTest extends TestCase
@@ -21,7 +22,7 @@ final class BblslugReservedVariablesTest extends TestCase
         ];
     }
 
-    /** @dataProvider reservedVariables */
+    #[DataProvider('reservedVariables')]
     public function testReservedVariableValuesAreRejectedBeforeFiltersAndHttp(string $name, mixed $value): void
     {
         $result = $this->runFixture([
@@ -52,7 +53,7 @@ final class BblslugReservedVariablesTest extends TestCase
         self::assertSame(0, $result['requestCount']);
     }
 
-    /** @dataProvider reservedVariables */
+    #[DataProvider('reservedVariables')]
     public function testReservedVariableNullIsRejectedWithoutHttp(string $name, mixed $value): void
     {
         $result = $this->runFixture([

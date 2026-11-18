@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Bblslug\Tests\Translation;
 
 use Bblslug\Translation\HtmlTextDocument;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class HtmlTextDocumentTest extends TestCase
@@ -53,7 +54,7 @@ final class HtmlTextDocumentTest extends TestCase
         $document->restore('{"s0":"a","s0":"b","s1":"c"}');
     }
 
-    /** @dataProvider preservationCases */
+    #[DataProvider('preservationCases')]
     public function testBytePreservationAndSafeReconstruction(
         string $html,
         array $texts,
@@ -128,7 +129,7 @@ final class HtmlTextDocumentTest extends TestCase
         ];
     }
 
-    /** @dataProvider invalidTranslations */
+    #[DataProvider('invalidTranslations')]
     public function testBrokenProviderProtocolAlwaysFails(string $output): void
     {
         $document = new HtmlTextDocument('<p>Hello</p>');
@@ -154,7 +155,7 @@ final class HtmlTextDocumentTest extends TestCase
         self::assertSame($value, html_entity_decode(strip_tags($html), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
     }
 
-    /** @dataProvider incompleteSources */
+    #[DataProvider('incompleteSources')]
     public function testUnsupportedOrIncompleteSourceFailsBeforeTranslation(string $html): void
     {
         $this->expectException(\Exception::class);

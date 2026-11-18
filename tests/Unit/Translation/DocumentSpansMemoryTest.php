@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace Bblslug\Tests\Translation;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class DocumentSpansMemoryTest extends TestCase
 {
-    /** @dataProvider sourceKinds */
+    #[DataProvider('sourceKinds')]
     public function testManySpansPreserveSourceAndTranslationWithinMemoryBudget(string $kind, string $limit): void
     {
         $command = [

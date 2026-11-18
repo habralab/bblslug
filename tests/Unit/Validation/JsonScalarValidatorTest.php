@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Bblslug\Tests\Validation;
 
 use Bblslug\Validation\JsonScalarValidator;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class JsonScalarValidatorTest extends TestCase
@@ -50,7 +51,7 @@ final class JsonScalarValidatorTest extends TestCase
         self::assertTrue((new JsonScalarValidator($source))->validate($output)->isValid());
     }
 
-    /** @dataProvider scalarChanges */
+    #[DataProvider('scalarChanges')]
     public function testChangedScalarTokensAreRejected(string $source, string $output): void
     {
         $result = (new JsonScalarValidator($source))->validate($output);

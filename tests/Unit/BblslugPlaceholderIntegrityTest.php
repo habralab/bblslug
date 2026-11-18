@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Bblslug\Tests;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class BblslugPlaceholderIntegrityTest extends TestCase
@@ -20,7 +21,7 @@ final class BblslugPlaceholderIntegrityTest extends TestCase
         );
     }
 
-    /** @dataProvider markerLosses */
+    #[DataProvider('markerLosses')]
     public function testMarkerLossOrDuplicationFailsBeforeRestoration(string $mutation): void
     {
         $input = 'Keep https://private.example/secret and https://another.example/token.';
@@ -64,7 +65,7 @@ final class BblslugPlaceholderIntegrityTest extends TestCase
         $this->assertPlaceholderMismatch($result);
     }
 
-    /** @dataProvider markerLosses */
+    #[DataProvider('markerLosses')]
     public function testJsonMarkerLossOrDuplicationFailsWithValidJson(string $mutation): void
     {
         $result = $this->runFixture([

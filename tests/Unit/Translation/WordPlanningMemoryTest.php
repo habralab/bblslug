@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace Bblslug\Tests\Translation;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class WordPlanningMemoryTest extends TestCase
 {
-    /** @dataProvider operations */
+    #[DataProvider('operations')]
     public function testWordsAndLookaheadPreservePacketsWithinMemoryBudget(string $kind, string $outcome): void
     {
         $command = [

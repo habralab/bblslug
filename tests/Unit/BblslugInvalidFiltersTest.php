@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace Bblslug\Tests;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class BblslugInvalidFiltersTest extends TestCase
 {
-    /** @dataProvider invalidFilters */
+    #[DataProvider('invalidFilters')]
     public function testInvalidFiltersAreRejectedBeforeAnyHttpRequest(array $filters, string $message): void
     {
         $result = $this->runFixture([

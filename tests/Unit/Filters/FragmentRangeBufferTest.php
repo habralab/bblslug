@@ -7,12 +7,13 @@ namespace Bblslug\Tests\Filters;
 use Bblslug\Filters\FragmentProtection;
 use Bblslug\Filters\HtmlTagFilter;
 use Bblslug\Filters\PlaceholderCounter;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
 final class FragmentRangeBufferTest extends TestCase
 {
-    /** @dataProvider malformedHtmlProvider */
+    #[DataProvider('malformedHtmlProvider')]
     public function testLateMalformedHtmlKeepsEarlierCapturesAndShieldingState(string $source): void
     {
         $filter = new HtmlTagFilter('div');

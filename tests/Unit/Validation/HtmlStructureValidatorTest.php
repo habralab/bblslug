@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Bblslug\Tests\Validation;
 
 use Bblslug\Validation\HtmlStructureValidator;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class HtmlStructureValidatorTest extends TestCase
@@ -16,7 +17,7 @@ final class HtmlStructureValidatorTest extends TestCase
         self::assertTrue((new HtmlStructureValidator($source))->validate($output)->isValid());
     }
 
-    /** @dataProvider markupChanges */
+    #[DataProvider('markupChanges')]
     public function testMarkupChangesAreRejected(string $source, string $output): void
     {
         $result = (new HtmlStructureValidator($source))->validate($output);
@@ -80,7 +81,7 @@ final class HtmlStructureValidatorTest extends TestCase
         self::assertTrue((new HtmlStructureValidator($source))->validate($output)->isValid());
     }
 
-    /** @dataProvider clearedTextContainers */
+    #[DataProvider('clearedTextContainers')]
     public function testNonemptyVisibleTextCannotBeCleared(string $source, string $output): void
     {
         $result = (new HtmlStructureValidator($source))->validate($output);
@@ -113,7 +114,7 @@ final class HtmlStructureValidatorTest extends TestCase
         ];
     }
 
-    /** @dataProvider clearedAttributes */
+    #[DataProvider('clearedAttributes')]
     public function testNonemptyTranslatableAttributesCannotBeCleared(string $source, string $output): void
     {
         $result = (new HtmlStructureValidator($source))->validate($output);

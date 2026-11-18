@@ -8,6 +8,10 @@ This file follows the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) f
 
 - Kimi K3, K3.1 Pro and Highspeed through the Responses API, including strict native JSON Schema and segment translation. K2.6/K2.7 Code entries use Chat Completions and remain limited to existing customers.
 
+### Changed
+
+- Upgrade development tools to PHP_CodeSniffer 4 and current PHPStan 2; select PHPUnit 11, 12 or 13 according to PHP compatibility. Migrate test metadata to attributes and include development dependencies in CI security audits. The library's PHP 8.2 minimum and Symfony YAML compatibility ranges are unchanged.
+
 ### Fixed
 
 - Remove YandexGPT Lite 5 and Yandex-hosted DeepSeek V4 Flash after their November 15 shutdown; former keys report the retirement and recommend DeepSeek V4.1 Flash.

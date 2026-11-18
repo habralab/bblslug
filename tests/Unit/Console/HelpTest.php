@@ -6,11 +6,12 @@ namespace Bblslug\Tests\Console;
 
 use Bblslug\Console\Help;
 use Bblslug\Models\ModelRegistry;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 class HelpTest extends TestCase
 {
-    /** @test */
+    #[Test]
     public function printHelpWithNoExitOptionOutputsUsageAndOptions(): void
     {
         // Capture STDOUT

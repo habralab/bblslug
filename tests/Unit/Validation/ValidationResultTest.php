@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace Bblslug\Tests\Validation;
 
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Bblslug\Validation\ValidationResult;
 
 final class ValidationResultTest extends TestCase
 {
-    /** @test */
+    #[Test]
     public function successAndFailureFactoriesWork(): void
     {
         $ok = ValidationResult::success();

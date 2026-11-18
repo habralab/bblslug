@@ -7,6 +7,7 @@ namespace Bblslug\Tests\Models\Drivers;
 use Bblslug\Models\Drivers\YandexDriver;
 use Bblslug\Models\Prompts;
 use InvalidArgumentException;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
@@ -56,7 +57,7 @@ final class YandexNativeJsonTest extends TestCase
         self::assertSame(['json_native' => true], $request['responseContext']);
     }
 
-    /** @dataProvider nativeFormatProvider */
+    #[DataProvider('nativeFormatProvider')]
     public function testNativeSupportsBothJsonFormats(string $format): void
     {
         $request = $this->body(self::FOUNDATION, '{}', ['format' => $format, 'json_transport' => 'native']);
@@ -69,7 +70,7 @@ final class YandexNativeJsonTest extends TestCase
         return ['json' => ['json'], 'lined JSON' => ['linedJson']];
     }
 
-    /** @dataProvider invalidNativeFormatProvider */
+    #[DataProvider('invalidNativeFormatProvider')]
     public function testNativeRejectsNonJsonFormats(string $format): void
     {
         $this->expectException(InvalidArgumentException::class);
@@ -84,7 +85,7 @@ final class YandexNativeJsonTest extends TestCase
         return ['text' => ['text'], 'html' => ['html'], 'structured_json' => ['structured_json']];
     }
 
-    /** @dataProvider invalidTransportProvider */
+    #[DataProvider('invalidTransportProvider')]
     public function testUnknownTransportIsRejectedForBothJsonFormats(mixed $transport): void
     {
         foreach (['json', 'linedJson'] as $format) {
@@ -105,7 +106,7 @@ final class YandexNativeJsonTest extends TestCase
         return ['null' => [null], 'boolean' => [true], 'array' => [[]], 'unknown' => ['other']];
     }
 
-    /** @dataProvider invalidSourceProvider */
+    #[DataProvider('invalidSourceProvider')]
     public function testNativeRejectsInvalidOrNonObjectSourceBeforeBuildingHttpRequest(string $source): void
     {
         $this->expectException(InvalidArgumentException::class);
@@ -136,7 +137,7 @@ final class YandexNativeJsonTest extends TestCase
         self::assertSame(['json_native' => true], $request['responseContext']);
     }
 
-    /** @dataProvider autoMarkerConfigProvider */
+    #[DataProvider('autoMarkerConfigProvider')]
     public function testAutoPreservesMarkersWhenEligibilityIsMissing(array $config, string $source): void
     {
         $request = $this->body($config, $source, ['format' => 'json']);
@@ -183,7 +184,7 @@ final class YandexNativeJsonTest extends TestCase
         self::assertStringContainsString('‹‹TRANSLATION››', $request['decoded']['messages'][1]['text']);
     }
 
-    /** @dataProvider nativeDocumentProvider */
+    #[DataProvider('nativeDocumentProvider')]
     public function testNativeParseRequiresStrictJsonObjectWithoutFenceCleanup(string $json): void
     {
         $result = (new YandexDriver())->parseResponse([], $this->response($json), [
@@ -202,7 +203,7 @@ final class YandexNativeJsonTest extends TestCase
         ];
     }
 
-    /** @dataProvider invalidNativeResponseProvider */
+    #[DataProvider('invalidNativeResponseProvider')]
     public function testNativeParseRejectsInvalidOrNonObjectResponse(string $content): void
     {
         $this->expectException(RuntimeException::class);
@@ -272,7 +273,7 @@ final class YandexNativeJsonTest extends TestCase
         );
     }
 
-    /** @dataProvider responseShapeProvider */
+    #[DataProvider('responseShapeProvider')]
     public function testNativeResponseShapesAndCompletionStatusesAreCheckedBeforeParsing(array $response): void
     {
         $result = (new YandexDriver())->parseResponse(
@@ -299,7 +300,7 @@ final class YandexNativeJsonTest extends TestCase
         ];
     }
 
-    /** @dataProvider rejectedStatusProvider */
+    #[DataProvider('rejectedStatusProvider')]
     public function testNativeRejectsTruncationFilterRefusalAndOtherStatuses(array $response): void
     {
         $this->expectException(RuntimeException::class);

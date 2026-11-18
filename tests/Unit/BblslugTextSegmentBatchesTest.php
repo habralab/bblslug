@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace Bblslug\Tests;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class BblslugTextSegmentBatchesTest extends TestCase
 {
-    /** @dataProvider providers */
+    #[DataProvider('providers')]
     public function testSequentialTextBatchesPreserveGlobalIdsAndAggregateUsage(string $model, array $variables): void
     {
         $result = $this->runFixture([
@@ -94,7 +95,7 @@ final class BblslugTextSegmentBatchesTest extends TestCase
         self::assertStringContainsString('batch 2/2', $result['message']);
     }
 
-    /** @dataProvider failures */
+    #[DataProvider('failures')]
     public function testSecondPacketFailureStopsWithoutPartialResult(string $failure): void
     {
         $result = $this->runFixture([

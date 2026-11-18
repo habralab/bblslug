@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace Bblslug\Tests\Filters;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class FilterRangesMemoryTest extends TestCase
 {
-    /** @dataProvider profiles */
+    #[DataProvider('profiles')]
     public function testFilterPreservesRawCapturesWithinMemoryBudget(string $profile, string $limit): void
     {
         $process = proc_open([

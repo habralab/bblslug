@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Bblslug\Tests\Unit\Translation;
 
 use Bblslug\Translation\BatchCheckpoint;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class CheckpointJournalTest extends TestCase
@@ -72,7 +73,7 @@ final class CheckpointJournalTest extends TestCase
         }
     }
 
-    /** @dataProvider invalidJournals */
+    #[DataProvider('invalidJournals')]
     public function testCompleteCorruptionIsRejectedWithoutMutation(string $bytes): void
     {
         file_put_contents($this->path, $bytes);
@@ -118,7 +119,7 @@ final class CheckpointJournalTest extends TestCase
         }
     }
 
-    /** @dataProvider ioFailures */
+    #[DataProvider('ioFailures')]
     public function testFailedAppendRequiresReopen(string $fault, bool $complete): void
     {
         $process = proc_open([PHP_BINARY, dirname(__DIR__, 2) . '/Fixtures/translation/checkpoint_journal_failure.php',

@@ -6,6 +6,7 @@ namespace Bblslug\Tests\Unit\Models\Drivers;
 
 use Bblslug\Models\Drivers\DeepLDocumentWorkflow;
 use Bblslug\Models\Drivers\DeepLDriver;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class DeepLDocumentRequestTest extends TestCase
@@ -64,7 +65,7 @@ final class DeepLDocumentRequestTest extends TestCase
         (new DeepLDriver())->buildRequest(self::CONFIG, $oversize, ['format' => 'json']);
     }
 
-    /** @dataProvider invalidTimeoutProvider */
+    #[DataProvider('invalidTimeoutProvider')]
     public function testInvalidDocumentTimeoutIsRejectedBeforeWorkflowConstruction(mixed $timeout): void
     {
         $this->expectException(\InvalidArgumentException::class);
@@ -97,7 +98,7 @@ final class DeepLDocumentRequestTest extends TestCase
         $driver->buildRequest(self::CONFIG, '{"title":"Hello"}', ['format' => 'json', 'json_transport' => 'nope']);
     }
 
-    /** @dataProvider nativeUnsupportedProvider */
+    #[DataProvider('nativeUnsupportedProvider')]
     public function testContextAndModelTypeAreRejectedForNativeDocuments(array $defaults, array $options = []): void
     {
         $this->expectExceptionMessage('does not support');

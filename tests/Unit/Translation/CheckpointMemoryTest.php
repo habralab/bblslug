@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace Bblslug\Tests\Translation;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class CheckpointMemoryTest extends TestCase
 {
-    /** @dataProvider profiles */
+    #[DataProvider('profiles')]
     public function testCheckpointPreservesRecordsAndBytesWithinMemoryBudget(string $profile, string $format): void
     {
         $directory = sys_get_temp_dir() . '/bblslug-checkpoint-memory-' . bin2hex(random_bytes(6));

@@ -5,11 +5,12 @@ declare(strict_types=1);
 namespace Bblslug\Tests\Models\Drivers;
 
 use Bblslug\Models\Drivers\YandexDriver;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 final class YandexDriverBuildRequestTest extends TestCase
 {
-    /** @test */
+    #[Test]
     public function nativeFoundationRequestKeepsLegacyModelUri(): void
     {
         $request = (new YandexDriver())->buildRequest([
@@ -23,7 +24,7 @@ final class YandexDriverBuildRequestTest extends TestCase
         self::assertArrayNotHasKey('choices', $payload);
     }
 
-    /** @test */
+    #[Test]
     public function openAiCompatibleRequestUsesExplicitModelUriAndProjectHeader(): void
     {
         $request = (new YandexDriver())->buildRequest([
@@ -43,7 +44,7 @@ final class YandexDriverBuildRequestTest extends TestCase
         self::assertSame('user', $payload['messages'][1]['role']);
     }
 
-    /** @test */
+    #[Test]
     public function openAiCompatibleResponseIsParsed(): void
     {
         $body = json_encode([

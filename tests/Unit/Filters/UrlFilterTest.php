@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Bblslug\Tests\Filters;
 
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Bblslug\Filters\UrlFilter;
 use Bblslug\Filters\PlaceholderCounter;
@@ -13,7 +15,7 @@ use Bblslug\Filters\PlaceholderCounter;
  */
 final class UrlFilterTest extends TestCase
 {
-    /** @test */
+    #[Test]
     public function masksAndRestoresMultipleUrls(): void
     {
         $f = new UrlFilter();
@@ -40,7 +42,7 @@ final class UrlFilterTest extends TestCase
         $this->assertSame(3, $stats['count']);
     }
 
-    /** @test */
+    #[Test]
     public function nonUrlTextIsLeftAsIs(): void
     {
         $f = new UrlFilter();
@@ -52,10 +54,8 @@ final class UrlFilterTest extends TestCase
         $this->assertSame(0, $f->getStats()['count']);
     }
 
-    /**
-     * @test
-     * @dataProvider jsonEncodingFlags
-     */
+    #[Test]
+    #[DataProvider('jsonEncodingFlags')]
     public function masksUrlInsideJsonHtmlAttributeWithoutCorruptingJson(int $flags): void
     {
         $f = new UrlFilter();
@@ -73,10 +73,8 @@ final class UrlFilterTest extends TestCase
         $this->assertSame($in, $f->restore($masked));
     }
 
-    /**
-     * @test
-     * @dataProvider nestedJsonEncodingFlags
-     */
+    #[Test]
+    #[DataProvider('nestedJsonEncodingFlags')]
     public function masksUrlInsideNestedJsonAtDifferentEscapeDepths(int $innerFlags, int $outerFlags): void
     {
         $f = new UrlFilter();
@@ -99,7 +97,7 @@ final class UrlFilterTest extends TestCase
         $this->assertSame($in, $f->restore($masked));
     }
 
-    /** @test */
+    #[Test]
     public function preservesSingleQuotedHtmlAttributeBoundary(): void
     {
         $f = new UrlFilter();
@@ -113,7 +111,7 @@ final class UrlFilterTest extends TestCase
         $this->assertSame($in, $f->restore($masked));
     }
 
-    /** @test */
+    #[Test]
     public function masksStandardMailtoUrl(): void
     {
         $f = new UrlFilter();
@@ -127,7 +125,7 @@ final class UrlFilterTest extends TestCase
         $this->assertSame($in, $f->restore($masked));
     }
 
-    /** @dataProvider longUrlSources */
+    #[DataProvider('longUrlSources')]
     public function testLongUrlsDoNotExhaustTheRegexStack(string $source): void
     {
         $filter = new UrlFilter();

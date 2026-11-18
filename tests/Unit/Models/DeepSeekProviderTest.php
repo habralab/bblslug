@@ -7,6 +7,7 @@ namespace Bblslug\Tests\Models;
 use Bblslug\Models\Drivers\OpenAiDriver;
 use Bblslug\Models\ModelRegistry;
 use Bblslug\Models\UsageExtractor;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class DeepSeekProviderTest extends TestCase
@@ -107,7 +108,7 @@ final class DeepSeekProviderTest extends TestCase
         ]]], UsageExtractor::extract($config, $result['usage']));
     }
 
-    /** @dataProvider rejectedResponses */
+    #[DataProvider('rejectedResponses')]
     public function testUnsuccessfulResponsesAreRejected(array $response): void
     {
         $config = $this->config();
@@ -135,7 +136,7 @@ final class DeepSeekProviderTest extends TestCase
         ];
     }
 
-    /** @dataProvider facadeTranslations */
+    #[DataProvider('facadeTranslations')]
     public function testFacadeTranslatesWithResponses(string $format, string $input, string $translated): void
     {
         $result = $this->runFacade($format, $input, $translated);

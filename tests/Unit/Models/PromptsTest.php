@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Bblslug\Tests\Models;
 
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Bblslug\Models\Prompts;
 use ReflectionClass;
@@ -40,7 +41,7 @@ class PromptsTest extends TestCase
         parent::tearDown();
     }
 
-    /** @test */
+    #[Test]
     public function testLoadThrowsExceptionForMissingFile(): void
     {
         // Should throw when file is not readable
@@ -48,7 +49,7 @@ class PromptsTest extends TestCase
         Prompts::load('/path/does/not/exist.yaml');
     }
 
-    /** @test */
+    #[Test]
     public function testRenderReplacesPlaceholders(): void
     {
         // Create a simple YAML with one template
@@ -74,7 +75,7 @@ YAML;
         );
     }
 
-    /** @test */
+    #[Test]
     public function testRenderThrowsExceptionForUndefinedGroup(): void
     {
         // Create YAML with a single known template; group "unknown" is not present
@@ -96,7 +97,7 @@ YAML;
         );
     }
 
-    /** @test */
+    #[Test]
     public function testRenderThrowsExceptionForUndefinedFormat(): void
     {
         // Create YAML where group exists, but requested format does not

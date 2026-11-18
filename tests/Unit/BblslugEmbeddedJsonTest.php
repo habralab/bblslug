@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace Bblslug\Tests;
 
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 final class BblslugEmbeddedJsonTest extends TestCase
 {
-    /** @test */
+    #[Test]
     public function jsonFormatsRejectInvalidEmbeddedJsonWhenOptedIn(): void
     {
         $input = $this->outerWithPayload($this->innerJson([
@@ -39,7 +40,7 @@ final class BblslugEmbeddedJsonTest extends TestCase
         }
     }
 
-    /** @test */
+    #[Test]
     public function optedInJsonFormatsAllowTranslatedNestedStringsAndReorderedKeys(): void
     {
         $input = $this->outerWithPayload($this->innerJson([
@@ -64,7 +65,7 @@ final class BblslugEmbeddedJsonTest extends TestCase
         }
     }
 
-    /** @test */
+    #[Test]
     public function ordinaryAndMalformedStringsRemainTranslatable(): void
     {
         $input = $this->outer([
@@ -89,7 +90,7 @@ final class BblslugEmbeddedJsonTest extends TestCase
         self::assertSame($translated, $result['result']);
     }
 
-    /** @test */
+    #[Test]
     public function embeddedJsonValidationIsOptInAndRespectsValidateFlag(): void
     {
         $input = $this->outerWithPayload($this->innerJson(['count' => 1]));
@@ -125,7 +126,7 @@ final class BblslugEmbeddedJsonTest extends TestCase
         self::assertSame($scenario['translated'], $unchecked['result']);
     }
 
-    /** @test */
+    #[Test]
     public function embeddedJsonValidationIsRejectedForNonJsonFormats(): void
     {
         $result = $this->runJsonFixture([
@@ -138,7 +139,7 @@ final class BblslugEmbeddedJsonTest extends TestCase
         self::assertSame(\InvalidArgumentException::class, $result['type']);
     }
 
-    /** @test */
+    #[Test]
     public function structuredJsonProvidersValidateEmbeddedJson(): void
     {
         $input = $this->outerWithPayload($this->innerJson([
@@ -164,7 +165,7 @@ final class BblslugEmbeddedJsonTest extends TestCase
         }
     }
 
-    /** @test */
+    #[Test]
     public function structuredJsonProvidersRejectChangedEmbeddedScalars(): void
     {
         $input = $this->outerWithPayload($this->innerJson(['count' => 1, 'enabled' => true]));

@@ -6,6 +6,7 @@ namespace Bblslug\Tests\Translation;
 
 use Bblslug\Translation\TextDocument;
 use Bblslug\Translation\UnprotectedText;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class SegmentExtractionTest extends TestCase
@@ -18,7 +19,7 @@ final class SegmentExtractionTest extends TestCase
         self::assertSame('@@1@@@@02@@translated@@3@@', $document->restore('{"s0":"translated"}'));
     }
 
-    /** @dataProvider scanKinds */
+    #[DataProvider('scanKinds')]
     public function testFailedScanCannotSilentlySkipText(string $kind): void
     {
         $previousLimit = ini_set('pcre.backtrack_limit', '0');

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Bblslug\Tests\Models\Drivers;
 
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Bblslug\Models\Drivers\GoogleDriver;
 use RuntimeException;
@@ -14,7 +15,7 @@ use RuntimeException;
  */
 final class GoogleDriverFinishReasonTest extends TestCase
 {
-    /** @test */
+    #[Test]
     public function unexpectedFinishReasonThrows(): void
     {
         $driver = new GoogleDriver();

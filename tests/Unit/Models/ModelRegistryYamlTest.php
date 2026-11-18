@@ -3,6 +3,7 @@
 namespace Bblslug\Tests\Models;
 
 use Bblslug\Models\ModelRegistry;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 class ModelRegistryYamlTest extends TestCase
@@ -26,14 +27,14 @@ YAML
         @unlink($this->tmpFile);
     }
 
-    /** @test */
+    #[Test]
     public function constructorThrowsWhenYamlNotReadable(): void
     {
         $this->expectException(\RuntimeException::class);
         new ModelRegistry('/path/does/not/exist.yaml');
     }
 
-    /** @test */
+    #[Test]
     public function itLoadsModelsFromCustomYaml(): void
     {
         $registry = new ModelRegistry($this->tmpFile);
@@ -44,7 +45,7 @@ YAML
         $this->assertSame('https://example.test', $all['foo']['endpoint']);
     }
 
-    /** @test */
+    #[Test]
     public function itFlattensVendorLevelModels(): void
     {
         // create temporary YAML with vendor-level config and two nested models
