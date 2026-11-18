@@ -1276,30 +1276,6 @@ yandex:
       access: standard
       checked_at: '2026-11-11'
       lifecycle_source: 'https://aistudio.yandex.ru/ru/docs/ai-studio/release-notes/deprecations'
-    deepseek-v4-flash:
-      defaults:
-        model: deepseek-v4-flash
-        max_tokens: 2048
-      limits:
-        max_tokens: 1048576
-        estimated_max_chars: 4194304
-      api_type: chat_completions
-      name: deepseek-v4-flash
-      notes: 'Provider text-generation model; account access may vary.'
-      endpoint: 'https://llm.api.cloud.yandex.net/v1/chat/completions'
-      usage:
-        tokens:
-          total: total_tokens
-          breakdown:
-            prompt: prompt_tokens
-            completion: completion_tokens
-      status: deprecated
-      kind: model
-      access: standard
-      checked_at: '2026-11-11'
-      lifecycle_source: 'https://aistudio.yandex.ru/ru/docs/ai-studio/release-notes/deprecations'
-      shutdown_date: '2026-11-15'
-      replacement: 'yandex:deepseek-v4.1-flash'
     deepseek-v4.1-flash:
       defaults:
         model: deepseek-v4.1-flash
@@ -1344,30 +1320,6 @@ yandex:
       access: standard
       checked_at: '2026-11-11'
       lifecycle_source: 'https://aistudio.yandex.ru/ru/docs/ai-studio/release-notes/deprecations'
-    yandexgpt-5-lite:
-      defaults:
-        model: yandexgpt-5-lite
-        max_tokens: 2048
-      limits:
-        max_tokens: 32768
-        estimated_max_chars: 131072
-      api_type: chat_completions
-      name: yandexgpt-5-lite
-      notes: 'Retires November 15. DeepSeek v4.1 Flash is the capability replacement; Qwen3.6 35B A3B is the speed alternative. Native text-generation clients must switch to the OpenAI-compatible API.'
-      endpoint: 'https://llm.api.cloud.yandex.net/v1/chat/completions'
-      usage:
-        tokens:
-          total: total_tokens
-          breakdown:
-            prompt: prompt_tokens
-            completion: completion_tokens
-      status: deprecated
-      kind: model
-      access: standard
-      checked_at: '2026-11-11'
-      lifecycle_source: 'https://aistudio.yandex.ru/ru/docs/ai-studio/release-notes/deprecations'
-      shutdown_date: '2026-11-15'
-      replacement: 'yandex:deepseek-v4.1-flash'
     yandexgpt-5-pro:
       capabilities:
         native_json: true

@@ -157,10 +157,8 @@ APIs supported:
 - yandex:
   - `yandex:aliceai-llm` — model; available; standard
   - `yandex:aliceai-llm-flash` — model; available; standard
-  - `yandex:deepseek-v4-flash` — model; deprecated; standard; shutdown 2026-11-15; replacement yandex:deepseek-v4.1-flash
   - `yandex:deepseek-v4.1-flash` — model; available; standard
   - `yandex:qwen3.6-35b-a3b` — model; available; standard
-  - `yandex:yandexgpt-5-lite` — model; deprecated; standard; shutdown 2026-11-15; replacement yandex:deepseek-v4.1-flash
   - `yandex:yandexgpt-5-pro` — model; available; standard
   - `yandex:yandexgpt-5.1` — model; available; standard
 

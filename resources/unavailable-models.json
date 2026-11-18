@@ -288,6 +288,10 @@
   "xai:grok-4.20-multi-agent-0309": {
     "reason": "Pinned snapshot excluded by registry policy; this does not mean the provider has retired it."
   },
+  "yandex:deepseek-v4-flash": {
+    "reason": "Yandex retired this provider-hosted model on November 15, 2026.",
+    "replacement": "yandex:deepseek-v4.1-flash"
+  },
   "yandex:gpt-32k": {
     "reason": "Provider alias excluded by registry policy; this does not mean the provider has retired it."
   },
@@ -312,6 +316,11 @@
   },
   "yandex:qwen3-235b-a22b-fp8": {
     "reason": "Current canonical identity or supported provider transport could not be verified; retirement is not asserted."
+  },
+  "yandex:yandexgpt-5-lite": {
+    "reason": "Yandex retired this provider-hosted model on November 15, 2026.",
+    "replacement": "yandex:deepseek-v4.1-flash",
+    "migration_note": "Qwen3.6 35B A3B is the provider-recommended speed alternative; native text-generation integrations must switch to an OpenAI-compatible API."
   },
   "yandex:yandexgpt-latest": {
     "reason": "Provider alias excluded by registry policy; this does not mean the provider has retired it.",

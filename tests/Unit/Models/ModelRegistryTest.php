@@ -30,7 +30,7 @@ class ModelRegistryTest extends TestCase
         'openai:gpt-6.1-sol',
         'openai:gpt-6-luna',
         'openai:gpt-6.1-terra',
-        'yandex:yandexgpt-5-lite',
+        'yandex:aliceai-llm-flash',
         'yandex:yandexgpt-5-pro',
         'yandex:yandexgpt-5.1',
     ];
@@ -127,7 +127,7 @@ class ModelRegistryTest extends TestCase
             'openai:gpt-6.1-sol'                 => 'OPENAI_API_KEY',
             'openai:gpt-6-luna'           => 'OPENAI_API_KEY',
             'openai:gpt-6.1-terra'           => 'OPENAI_API_KEY',
-            'yandex:yandexgpt-5-lite'              => 'YANDEX_API_KEY',
+            'yandex:aliceai-llm-flash'              => 'YANDEX_API_KEY',
             'yandex:yandexgpt-5-pro'               => 'YANDEX_API_KEY',
             'yandex:yandexgpt-5.1'               => 'YANDEX_API_KEY',
         ];
@@ -146,7 +146,7 @@ class ModelRegistryTest extends TestCase
     {
         // All Yandex models should declare the same 'folder_id' variable
         $yandexModels = [
-            'yandex:yandexgpt-5-lite',
+            'yandex:aliceai-llm-flash',
             'yandex:yandexgpt-5-pro',
             'yandex:yandexgpt-5.1',
                 ];
@@ -183,7 +183,7 @@ class ModelRegistryTest extends TestCase
             'openai:gpt-6.1-sol'                 => 'platform.openai.com/account/api-keys',
             'openai:gpt-6-luna'           => 'platform.openai.com/account/api-keys',
             'openai:gpt-6.1-terra'           => 'platform.openai.com/account/api-keys',
-            'yandex:yandexgpt-5-lite'              => 'yandex.cloud/en/docs/foundation-models/api-ref/authentication',
+            'yandex:aliceai-llm-flash'              => 'yandex.cloud/en/docs/foundation-models/api-ref/authentication',
             'yandex:yandexgpt-5-pro'               => 'yandex.cloud/en/docs/foundation-models/api-ref/authentication',
             'yandex:yandexgpt-5.1'               => 'yandex.cloud/en/docs/foundation-models/api-ref/authentication',
         ];
@@ -245,7 +245,7 @@ class ModelRegistryTest extends TestCase
             'openai:gpt-6.1-sol'                 => OpenAiDriver::class,
             'openai:gpt-6-luna'           => OpenAiDriver::class,
             'openai:gpt-6.1-terra'           => OpenAiDriver::class,
-            'yandex:yandexgpt-5-lite'              => YandexDriver::class,
+            'yandex:aliceai-llm-flash'              => YandexDriver::class,
             'yandex:yandexgpt-5-pro'               => YandexDriver::class,
             'yandex:yandexgpt-5.1'               => YandexDriver::class,
         ];

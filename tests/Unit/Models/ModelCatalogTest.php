@@ -176,10 +176,11 @@ final class ModelCatalogTest extends TestCase
         self::assertSame('google:gemini-3.8-flash', $redirect['replacement']);
         self::assertArrayNotHasKey('shutdown_date', $redirect);
         foreach (['yandex:yandexgpt-5-lite', 'yandex:deepseek-v4-flash'] as $key) {
-            $config = $registry->get($key);
-            self::assertIsArray($config);
-            self::assertSame('2026-11-15', $config['shutdown_date']);
-            self::assertFalse(ModelRegistry::isDefaultListing($config));
+            self::assertFalse($registry->has($key));
+            $message = $registry->getUnavailableMessage($key);
+            self::assertIsString($message);
+            self::assertStringContainsString('November 15, 2026', $message);
+            self::assertStringContainsString('yandex:deepseek-v4.1-flash', $message);
         }
     }
 

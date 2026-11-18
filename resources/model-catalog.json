@@ -2138,10 +2138,8 @@
       "models": {
         "aliceai-llm": "aliceai-llm",
         "aliceai-llm-flash": "aliceai-llm-flash",
-        "deepseek-v4-flash": "deepseek-v4-flash",
         "deepseek-v4.1-flash": "deepseek-v4.1-flash",
         "qwen3.6-35b-a3b": "qwen3.6-35b-a3b",
-        "yandexgpt-5-lite": "yandexgpt-5-lite",
         "yandexgpt-5-pro": "yandexgpt-5-pro",
         "yandexgpt-5.1": "yandexgpt-5.1"
       },
@@ -2154,6 +2152,10 @@
         ],
         "unverified_current_canonical": [
           "qwen3-235b-a22b-fp8"
+        ],
+        "shutdown_2026-11-15": [
+          "deepseek-v4-flash",
+          "yandexgpt-5-lite"
         ]
       },
       "live_confirmed_exclusions": [],
@@ -2229,7 +2231,8 @@
       "lifecycle_checked_at": "2026-11-11",
       "lifecycle_source": "https://aistudio.yandex.ru/ru/docs/ai-studio/release-notes/deprecations",
       "audit_notes": [
-        "The retired qwen3-235b-a22b URI does not prove a retirement date for the distinct -fp8 identifier in older examples."
+        "The retired qwen3-235b-a22b URI does not prove a retirement date for the distinct -fp8 identifier in older examples.",
+        "On 2026-11-18 the official deprecation page confirms YandexGPT Lite 5 and DeepSeek V4 Flash were shut down on November 15. Their former library keys now produce an unavailable-model diagnostic with DeepSeek V4.1 Flash guidance."
       ],
       "lifecycle_evidence": {
         "aliceai-llm": {
@@ -2246,15 +2249,6 @@
           "checked_at": "2026-11-11",
           "lifecycle_source": "https://aistudio.yandex.ru/ru/docs/ai-studio/release-notes/deprecations"
         },
-        "deepseek-v4-flash": {
-          "kind": "model",
-          "status": "deprecated",
-          "access": "standard",
-          "checked_at": "2026-11-11",
-          "lifecycle_source": "https://aistudio.yandex.ru/ru/docs/ai-studio/release-notes/deprecations",
-          "shutdown_date": "2026-11-15",
-          "replacement": "yandex:deepseek-v4.1-flash"
-        },
         "deepseek-v4.1-flash": {
           "kind": "model",
           "status": "available",
@@ -2268,15 +2262,6 @@
           "access": "standard",
           "checked_at": "2026-11-11",
           "lifecycle_source": "https://aistudio.yandex.ru/ru/docs/ai-studio/release-notes/deprecations"
-        },
-        "yandexgpt-5-lite": {
-          "kind": "model",
-          "status": "deprecated",
-          "access": "standard",
-          "checked_at": "2026-11-11",
-          "lifecycle_source": "https://aistudio.yandex.ru/ru/docs/ai-studio/release-notes/deprecations",
-          "shutdown_date": "2026-11-15",
-          "replacement": "yandex:deepseek-v4.1-flash"
         },
         "yandexgpt-5-pro": {
           "kind": "model",
@@ -2335,6 +2320,24 @@
           "access": "standard",
           "checked_at": "2026-10-26",
           "lifecycle_source": "https://aistudio.yandex.ru/ru/docs/ai-studio/concepts/generation/models"
+        },
+        "deepseek-v4-flash": {
+          "kind": "model",
+          "status": "deprecated",
+          "access": "standard",
+          "checked_at": "2026-11-18",
+          "lifecycle_source": "https://aistudio.yandex.ru/ru/docs/ai-studio/release-notes/deprecations",
+          "shutdown_date": "2026-11-15",
+          "replacement": "yandex:deepseek-v4.1-flash"
+        },
+        "yandexgpt-5-lite": {
+          "kind": "model",
+          "status": "deprecated",
+          "access": "standard",
+          "checked_at": "2026-11-18",
+          "lifecycle_source": "https://aistudio.yandex.ru/ru/docs/ai-studio/release-notes/deprecations",
+          "shutdown_date": "2026-11-15",
+          "replacement": "yandex:deepseek-v4.1-flash"
         }
       }
     },
