@@ -2,6 +2,30 @@
 
 Read the changes between your installed version and the version you are adopting. Released compatibility notes below describe the behavior introduced by each release.
 
+## Upgrading to 0.14.0
+
+PHP 8.2 remains the minimum, with the same Symfony YAML 6.4, 7.4 and 8.1 ranges.
+An exact 0.13.0 pin or a `^0.13` constraint does not select 0.14.0; update the
+application's Composer constraint and lockfile together.
+
+Yandex-hosted `yandex:yandexgpt-5-lite` and `yandex:deepseek-v4-flash` are removed
+following their November 15 shutdown. Requests using those keys fail locally with
+retirement details and `yandex:deepseek-v4.1-flash` as the suggested replacement.
+For YandexGPT Lite 5, `yandex:qwen3.6-35b-a3b` is the provider's speed alternative.
+Review prompts, parameters, access and pricing before switching; no model key is
+silently replaced. Native text-generation integrations must switch to an
+OpenAI-compatible API when adopting these replacements.
+
+Kimi is available through the existing PHP and CLI interfaces. Set `BBLSLUG_KIMI_API_KEY`
+or `KIMI_API_KEY` and choose a K3 model from the [catalogue](models.md).
+Restricted K2 entries appear only in the extended list and require an older account;
+see [provider settings](providers.md#kimi-responses-api).
+
+For contributors, run Composer again after updating the checkout. Development now uses
+PHP_CodeSniffer 4, current PHPStan 2 and PHPUnit 11, 12 or 13 according to PHP compatibility.
+Tests use attributes instead of PHPUnit annotations. These development tools are not
+installed in applications that depend on the library.
+
 ## Upgrading to 0.13.0
 
 The built-in registry contains canonical model IDs and DeepL tiers. DeepSeek Flash uses its
