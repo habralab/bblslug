@@ -42,7 +42,12 @@ class HelpTest extends TestCase
         self::assertStringNotContainsString('openai:gpt-5.5-2026-04-23', $all);
         self::assertStringNotContainsString('anthropic:claude-sonnet-4.5-20250929', $all);
         self::assertStringContainsString('shutdown 2027-04-01', $all);
-        self::assertStringContainsString('shutdown 2026-11-15', $all);
+        self::assertStringNotContainsString('shutdown 2026-11-15', $all);
+        self::assertStringNotContainsString('yandex:yandexgpt-5-lite', $all);
+        self::assertStringNotContainsString('yandex:deepseek-v4-flash', $all);
+        self::assertStringContainsString('kimi:kimi-k3.1-pro', $default);
+        self::assertStringNotContainsString('kimi:kimi-k2.6', $default);
+        self::assertStringContainsString('kimi:kimi-k2.6', $all);
         self::assertStringContainsString('retirement not before 2027-11-09', $all);
         self::assertStringContainsString('redirect 2026-12-01', $all);
         self::assertStringNotContainsString('shutdown 2027-05-07', $all);
