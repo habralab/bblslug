@@ -358,11 +358,13 @@ class Cli
             if (
                 !\in_array(
                     $registry->get($modelKey)['vendor'] ?? null,
-                    ['openai', 'google', 'yandex', 'xai', 'deepseek'],
+                    ['openai', 'google', 'yandex', 'xai', 'deepseek', 'kimi'],
                     true
                 )
             ) {
-                Help::error('Native JSON schema output is supported only by OpenAI, Google, Yandex, xAI and DeepSeek.');
+                Help::error(
+                    'Native JSON schema output is supported only by OpenAI, Google, Yandex, xAI, DeepSeek and Kimi.'
+                );
             }
             $schemaPath = $options['response-schema'];
             $schemaJson = \is_string($schemaPath) ? @\file_get_contents($schemaPath) : false;

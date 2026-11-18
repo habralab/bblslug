@@ -141,6 +141,7 @@ $env = [
     'BBLSLUG_GOOGLE_API_KEY' => 'offline-dummy',
     'BBLSLUG_OPENAI_API_KEY' => 'offline-dummy',
     'BBLSLUG_DEEPSEEK_API_KEY' => 'offline-dummy',
+    'BBLSLUG_KIMI_API_KEY' => 'offline-dummy',
     'BBLSLUG_ANTHROPIC_API_KEY' => 'offline-dummy',
     'BBLSLUG_XAI_API_KEY' => 'offline-dummy',
     'BBLSLUG_DEEPL_FREE_API_KEY' => 'offline-dummy',

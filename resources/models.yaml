@@ -737,6 +737,123 @@ google:
       access: standard
       checked_at: '2026-11-11'
       lifecycle_source: 'https://aistudio.google.com/docs/deprecations'
+kimi:
+  endpoint: 'https://api.moonshot.ai/v1/responses'
+  api_type: responses
+  format: text
+  defaults:
+    temperature: null
+    reasoning_effort: low
+    max_completion_tokens: 4096
+    source_lang: auto
+    target_lang: EN
+  capabilities:
+    native_json_schema: true
+  requirements:
+    auth:
+      type: header
+      key_name: Authorization
+      prefix: Bearer
+      env: KIMI_API_KEY
+      help_url: 'https://platform.kimi.ai/console/api-keys'
+    headers:
+      - 'Content-Type: application/json'
+  limits:
+    max_tokens: 1048576
+    max_output_tokens: 1048576
+    estimated_max_chars: 4194304
+    token_estimator: gpt
+  http_error_handling: true
+  usage:
+    tokens:
+      total: total_tokens
+      breakdown:
+        prompt: input_tokens
+        completion: output_tokens
+        cached: input_tokens_details.cached_tokens
+        reasoning: output_tokens_details.reasoning_tokens
+  models:
+    kimi-k2.6:
+      endpoint: 'https://api.moonshot.ai/v1/chat/completions'
+      api_type: chat_completions
+      defaults:
+        model: kimi-k2.6
+        reasoning_effort: null
+      limits:
+        max_tokens: 262144
+        max_output_tokens: 262144
+        estimated_max_chars: 1048576
+      name: kimi-k2.6
+      notes: 'Only accounts registered before November 1, 2026. Thinking remains enabled by the provider. Retirement expected in late December 2026; no exact shutdown date announced.'
+      status: deprecated
+      kind: model
+      access: existing_customers
+      checked_at: '2026-11-18'
+      lifecycle_source: 'https://platform.kimi.ai/docs/models'
+    kimi-k2.7-code:
+      endpoint: 'https://api.moonshot.ai/v1/chat/completions'
+      api_type: chat_completions
+      defaults:
+        model: kimi-k2.7-code
+        reasoning_effort: null
+      limits:
+        max_tokens: 262144
+        max_output_tokens: 262144
+        estimated_max_chars: 1048576
+      name: kimi-k2.7-code
+      notes: 'Only accounts registered before November 1, 2026. Thinking remains enabled by the provider. Retirement expected in late December 2026; no exact shutdown date announced.'
+      status: deprecated
+      kind: model
+      access: existing_customers
+      checked_at: '2026-11-18'
+      lifecycle_source: 'https://platform.kimi.ai/docs/models'
+    kimi-k2.7-code-highspeed:
+      endpoint: 'https://api.moonshot.ai/v1/chat/completions'
+      api_type: chat_completions
+      defaults:
+        model: kimi-k2.7-code-highspeed
+        reasoning_effort: null
+      limits:
+        max_tokens: 262144
+        max_output_tokens: 262144
+        estimated_max_chars: 1048576
+      name: kimi-k2.7-code-highspeed
+      notes: 'Only accounts registered before November 1, 2026. Thinking remains enabled by the provider. Retirement expected in late December 2026; no exact shutdown date announced.'
+      status: deprecated
+      kind: model
+      access: existing_customers
+      checked_at: '2026-11-18'
+      lifecycle_source: 'https://platform.kimi.ai/docs/models'
+    kimi-k3:
+      defaults:
+        model: kimi-k3
+      name: Kimi K3
+      notes: 'Provider-hosted Responses API; low reasoning effort by default. Native strict schemas must comply with Moonshot Flavored JSON Schema (MFJS).'
+      status: available
+      kind: model
+      access: standard
+      checked_at: '2026-11-18'
+      lifecycle_source: 'https://platform.kimi.ai/docs/models'
+    kimi-k3.1-pro:
+      defaults:
+        model: kimi-k3.1-pro
+      name: Kimi K3.1 Pro
+      notes: 'Provider-hosted Responses API; low reasoning effort by default. Native strict schemas must comply with Moonshot Flavored JSON Schema (MFJS).'
+      status: available
+      kind: model
+      access: standard
+      checked_at: '2026-11-18'
+      lifecycle_source: 'https://platform.kimi.ai/docs/models'
+    kimi-k3.1-pro-highspeed:
+      defaults:
+        model: kimi-k3.1-pro-highspeed
+      name: Kimi K3.1 Pro Highspeed
+      notes: 'Provider-hosted Responses API; low reasoning effort by default. Native strict schemas must comply with Moonshot Flavored JSON Schema (MFJS).'
+      status: available
+      kind: model
+      access: standard
+      checked_at: '2026-11-18'
+      lifecycle_source: 'https://platform.kimi.ai/docs/models'
 openai:
   endpoint: 'https://api.openai.com/v1/chat/completions'
   defaults:

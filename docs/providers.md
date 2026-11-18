@@ -9,6 +9,7 @@ Choose a model from the [model catalogue](models.md) and configure its provider 
 
 - [Model defaults](#model-defaults)
 - [Native structured JSON](#native-structured-json)
+- [Kimi Responses API](#kimi-responses-api)
 - [DeepSeek Responses API](#deepseek-responses-api)
 - [Google native JSON transport](#google-native-json-transport)
 - [Grok 4.7 request settings](#grok-47-request-settings)
@@ -48,7 +49,7 @@ same credentials/folder variables. The model determines the endpoint.
 
 Use `format: 'structured_json'` with an explicit JSON Schema in
 `variables['response_schema']`. This mode is implemented for OpenAI Chat
-Completions/Responses, DeepSeek Responses, Google Gemini, Yandex Foundation/Chat Completions, and
+Completions/Responses, DeepSeek Responses, Kimi K3 Responses, Google Gemini, Yandex Foundation/Chat Completions, and
 xAI Chat Completions/Responses; the selected model must support native
 structured output. Unsupported providers and legacy OpenAI Completions are
 rejected locally. Provider schema restrictions and access rules still apply.
@@ -90,6 +91,47 @@ or a document domain. Use [context](usage.md#add-translation-context-prompt-sour
 for application instructions or [application-owned templates](usage.md#application-owned-templates)
 for an application-wide prompt policy. Custom templates must provide the requested format; native
 mode requests `structured_json`.
+
+## Kimi Responses API
+
+`kimi:kimi-k3`, `kimi:kimi-k3.1-pro` and `kimi:kimi-k3.1-pro-highspeed` use
+[Kimi Responses](https://platform.kimi.ai/docs/api/responses) at
+`https://api.moonshot.ai/v1/responses`. Set `BBLSLUG_KIMI_API_KEY` or `KIMI_API_KEY`;
+the nonempty prefixed value takes precedence. Defaults are `reasoning_effort=low`,
+no temperature, and `max_completion_tokens=4096`, mapped to Responses
+`max_output_tokens`. This budget includes reasoning and visible output.
+
+```bash
+printf 'Hello world\n' | vendor/bin/bblslug --model=kimi:kimi-k3 \
+  --format=text --source-lang=EN --target-lang=DE
+```
+
+```php
+$translation = \Bblslug\Bblslug::translate(
+    apiKey: getenv('BBLSLUG_KIMI_API_KEY') ?: getenv('KIMI_API_KEY'),
+    modelKey: 'kimi:kimi-k3',
+    format: 'text',
+    text: 'Hello world',
+    sourceLang: 'EN',
+    targetLang: 'DE'
+);
+echo $translation['result'];
+```
+
+Native schemas use `text.format=json_schema` and default to `strict=true`.
+See Kimi's [response format guide](https://platform.kimi.ai/docs/guide/response_format)
+for supported schema dialect and restrictions. The library validates JSON syntax, container
+structure and unchanged scalar values; it does not independently validate every
+JSON Schema constraint. Plain `json` retains translation markers; an explicit
+`response_schema` or segment transport selects native schemas. Reasoning content
+is excluded from translations, and incomplete responses and refusals fail locally.
+
+K2 entries appear only in the extended model list and use Chat Completions; access is
+restricted to customers registered before November 1, 2026, with retirement expected
+in late December 2026. Their availability has not been verified with current credentials.
+
+Live smoke checks are opt-in and may incur provider charges. Select Kimi explicitly
+with `BBLSLUG_SMOKE_MODELS=kimi:kimi-k3`; follow the [smoke tool instructions](../tools/README.md).
 
 ## DeepSeek Responses API
 

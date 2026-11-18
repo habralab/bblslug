@@ -26,7 +26,7 @@ final class Prompts
         $environment = getenv();
         $secrets = [];
         foreach (
-            ['OPENAI_API_KEY', 'DEEPSEEK_API_KEY', 'ANTHROPIC_API_KEY', 'GOOGLE_API_KEY', 'XAI_API_KEY',
+            ['OPENAI_API_KEY', 'DEEPSEEK_API_KEY', 'KIMI_API_KEY', 'ANTHROPIC_API_KEY', 'GOOGLE_API_KEY', 'XAI_API_KEY',
             'YANDEX_API_KEY',
             'YANDEX_FOLDER_ID', 'DEEPL_FREE_API_KEY', 'DEEPL_PRO_API_KEY', 'PROXY'] as $name
         ) {
@@ -131,7 +131,7 @@ final class Prompts
         try {
             $vendor = $registry->get($model)['vendor'] ?? '';
             $variables = match ($vendor) {
-                'openai', 'xai' => ['max_completion_tokens' => 1024],
+                'openai', 'xai', 'kimi' => ['max_completion_tokens' => 1024],
                 'google' => ['maxOutputTokens' => 1024],
                 'anthropic', 'yandex' => ['maxTokens' => 1024],
                 default => throw new \RuntimeException('Unsupported prompt vendor'),

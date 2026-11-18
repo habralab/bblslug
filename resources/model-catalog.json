@@ -693,6 +693,92 @@
         }
       }
     },
+    "kimi": {
+      "sources": [
+        "https://platform.kimi.ai/docs/models",
+        "https://platform.kimi.ai/docs/api/models-overview",
+        "https://platform.kimi.ai/docs/api/responses",
+        "https://platform.kimi.ai/docs/api/chat",
+        "https://platform.kimi.ai/docs/guide/response_format"
+      ],
+      "models": {
+        "kimi-k2.6": "kimi-k2.6",
+        "kimi-k2.7-code": "kimi-k2.7-code",
+        "kimi-k2.7-code-highspeed": "kimi-k2.7-code-highspeed",
+        "kimi-k3": "kimi-k3",
+        "kimi-k3.1-pro": "kimi-k3.1-pro",
+        "kimi-k3.1-pro-highspeed": "kimi-k3.1-pro-highspeed"
+      },
+      "exclusions": {
+        "retired": [
+          "kimi-k2.5",
+          "moonshot-v1-8k",
+          "moonshot-v1-32k",
+          "moonshot-v1-128k",
+          "kimi-k2-thinking",
+          "kimi-k2-thinking-turbo"
+        ],
+        "aliases": [
+          "kimi-latest",
+          "moonshot-v1-auto"
+        ],
+        "snapshots": [
+          "kimi-k2-0905-preview",
+          "kimi-k2-0711-preview"
+        ]
+      },
+      "live_confirmed_exclusions": [],
+      "lifecycle_evidence": {
+        "kimi-k2.6": {
+          "status": "deprecated",
+          "kind": "model",
+          "access": "existing_customers",
+          "checked_at": "2026-11-18",
+          "lifecycle_source": "https://platform.kimi.ai/docs/models"
+        },
+        "kimi-k2.7-code": {
+          "status": "deprecated",
+          "kind": "model",
+          "access": "existing_customers",
+          "checked_at": "2026-11-18",
+          "lifecycle_source": "https://platform.kimi.ai/docs/models"
+        },
+        "kimi-k2.7-code-highspeed": {
+          "status": "deprecated",
+          "kind": "model",
+          "access": "existing_customers",
+          "checked_at": "2026-11-18",
+          "lifecycle_source": "https://platform.kimi.ai/docs/models"
+        },
+        "kimi-k3": {
+          "status": "available",
+          "kind": "model",
+          "access": "standard",
+          "checked_at": "2026-11-18",
+          "lifecycle_source": "https://platform.kimi.ai/docs/models"
+        },
+        "kimi-k3.1-pro": {
+          "status": "available",
+          "kind": "model",
+          "access": "standard",
+          "checked_at": "2026-11-18",
+          "lifecycle_source": "https://platform.kimi.ai/docs/models"
+        },
+        "kimi-k3.1-pro-highspeed": {
+          "status": "available",
+          "kind": "model",
+          "access": "standard",
+          "checked_at": "2026-11-18",
+          "lifecycle_source": "https://platform.kimi.ai/docs/models"
+        }
+      },
+      "lifecycle_checked_at": "2026-11-18",
+      "lifecycle_source": "https://platform.kimi.ai/docs/models",
+      "audit_notes": [
+        "GET /v1/models with the current account returned the three K3 IDs on 2026-11-18. Restricted K2 entries are documented for accounts registered before November 1; no live availability claim is made for those entries.",
+        "On 2026-11-18 all three K3 entries passed bounded PHP and CLI checks for text, HTML, nested JSON, explicit strict JSON Schema and HTML segments (30 scenarios). These checks do not guarantee arbitrary translation quality or JSON Schema coverage."
+      ]
+    },
     "openai": {
       "sources": [
         "https://developers.openai.com/api/docs/deprecations",

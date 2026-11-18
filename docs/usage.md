@@ -44,6 +44,7 @@ Export credentials only for the provider you use:
 | DeepL | `DEEPL_FREE_API_KEY` or `DEEPL_PRO_API_KEY`, matching the selected tier |
 | DeepSeek | `DEEPSEEK_API_KEY` |
 | Google | `GOOGLE_API_KEY` |
+| Kimi | `KIMI_API_KEY` |
 | OpenAI | `OPENAI_API_KEY` |
 | Yandex | `YANDEX_API_KEY` and `YANDEX_FOLDER_ID` |
 | xAI | `XAI_API_KEY` |

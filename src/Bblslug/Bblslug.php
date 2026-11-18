@@ -235,9 +235,9 @@ class Bblslug
         }
 
         if ($format === 'structured_json' || \array_key_exists('response_schema', $variables)) {
-            if (!\in_array($model['vendor'] ?? null, ['openai', 'google', 'yandex', 'xai', 'deepseek'], true)) {
+            if (!\in_array($model['vendor'] ?? null, ['openai', 'google', 'yandex', 'xai', 'deepseek', 'kimi'], true)) {
                 throw new \InvalidArgumentException(
-                    'Native JSON schema output is supported only by OpenAI, Google, Yandex, xAI and DeepSeek'
+                    'Native JSON schema output is supported only by OpenAI, Google, Yandex, xAI, DeepSeek and Kimi'
                 );
             }
             if (!\in_array($format, ['json', 'structured_json', 'linedJson'], true)) {

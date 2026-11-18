@@ -61,6 +61,9 @@ It is a discovery aid, not a claim that every listed model was live-tested for e
 | `google:gemini-4-carbon` | model |
 | `google:gemma-4-26b-a4b-it` | model |
 | `google:gemma-4-31b-it` | model |
+| `kimi:kimi-k3` | model |
+| `kimi:kimi-k3.1-pro` | model |
+| `kimi:kimi-k3.1-pro-highspeed` | model |
 | `openai:gpt-5.6-luna` | model |
 | `openai:gpt-5.6-sol` | model |
 | `openai:gpt-5.6-terra` | model |
@@ -126,6 +129,13 @@ APIs supported:
   - `google:gemini-4-carbon` — model; available; standard
   - `google:gemma-4-26b-a4b-it` — model; available; standard
   - `google:gemma-4-31b-it` — model; available; standard
+- kimi:
+  - `kimi:kimi-k2.6` — model; deprecated; existing_customers
+  - `kimi:kimi-k2.7-code` — model; deprecated; existing_customers
+  - `kimi:kimi-k2.7-code-highspeed` — model; deprecated; existing_customers
+  - `kimi:kimi-k3` — model; available; standard
+  - `kimi:kimi-k3.1-pro` — model; available; standard
+  - `kimi:kimi-k3.1-pro-highspeed` — model; available; standard
 - openai:
   - `openai:gpt-5.3-codex` — model; deprecated; standard; shutdown 2027-04-01; replacement openai:gpt-6-sol
   - `openai:gpt-5.5-cyber-preview` — preview; deprecated; restricted; shutdown 2027-02-01; replacement openai:gpt-6-cyber
@@ -169,6 +179,7 @@ not similarly named models on third-party hosting. Verified retired IDs are excl
 - [deepl](https://developers.deepl.com/api-reference/translate/request-translation)
 - [deepseek](https://api-docs.deepseek.com/updates/)
 - [google](https://aistudio.google.com/docs/deprecations)
+- [kimi](https://platform.kimi.ai/docs/models)
 - [openai](https://developers.openai.com/api/docs/deprecations)
 - [xai](https://docs.x.ai/developers/pricing)
 - [yandex](https://aistudio.yandex.ru/ru/docs/ai-studio/release-notes/deprecations)

@@ -4,6 +4,10 @@ This file follows the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) f
 
 ## [Unreleased]
 
+### Added
+
+- Kimi K3, K3.1 Pro and Highspeed through the Responses API, including strict native JSON Schema and segment translation. K2.6/K2.7 Code entries use Chat Completions and remain limited to existing customers.
+
 ## [0.13.0] – 2026-11-11
 
 ### Added

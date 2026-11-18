@@ -345,6 +345,7 @@ class ModelRegistry
             'deepl' => new DeepLDriver(),
             'deepseek' => new OpenAiDriver(),
             'google' => new GoogleDriver(),
+            'kimi' => new OpenAiDriver(),
             'openai' => new OpenAiDriver(),
             'yandex' => new YandexDriver(),
             'xai' => new XaiDriver(),
